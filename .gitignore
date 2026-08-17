@@ -6,4 +6,7 @@ node_modules
 coverage
 drizzle
 .DS_Store
-/.vs
+.vs/
+*.slnx
+*.user
+*.suo

@@ -2340,3 +2340,97 @@ strong {
     padding: 1.4rem;
   }
 }
+
+
+/* Authentication password controls */
+.password-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-input-wrap input {
+  width: 100%;
+  padding-right: 4.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.7rem;
+  min-height: 34px;
+  padding: 0.3rem 0.55rem;
+  border: 0;
+  border-radius: 9px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  background: rgb(15 118 110 / 16%);
+}
+
+.password-toggle:focus-visible,
+.auth-link:focus-visible {
+  outline: 3px solid rgb(245 158 11 / 35%);
+  outline-offset: 2px;
+}
+
+.auth-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 1.25rem;
+  margin-top: -0.35rem;
+}
+
+.auth-link {
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-link-center {
+  display: block;
+  text-align: center;
+}
+
+.auth-success-panel {
+  padding: 1rem;
+  border: 1px solid rgb(22 163 74 / 20%);
+  border-radius: 14px;
+  background: rgb(22 163 74 / 8%);
+  color: var(--ink-deep);
+}
+
+.auth-success-panel strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--success);
+}
+
+.auth-success-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.auth-dev-note {
+  margin: 1.25rem 0 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--bg);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}

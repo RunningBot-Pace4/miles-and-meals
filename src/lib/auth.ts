@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
+import { after } from "next/server";
 import { admin } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
+import { sendPasswordResetEmail } from "@/lib/email";
 import { schema, session } from "@/db/schema";
 
 export const auth = betterAuth({
@@ -16,6 +18,19 @@ export const auth = betterAuth({
     minPasswordLength: 12,
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
+    resetPasswordTokenExpiresIn: 60 * 30,
+    sendResetPassword: ({ user, url }) => {
+      after(async () => {
+        try {
+          await sendPasswordResetEmail({
+            to: user.email,
+            url,
+          });
+        } catch (error) {
+          console.error("[Miles & Meals] Unable to send password reset email.", error);
+        }
+      });
+    },
   },
   plugins: [admin()],
   session: {
@@ -28,6 +43,14 @@ export const auth = betterAuth({
     max: 60,
     customRules: {
       "/sign-in/email": {
+        window: 60,
+        max: 5,
+      },
+      "/request-password-reset": {
+        window: 60,
+        max: 3,
+      },
+      "/reset-password": {
         window: 60,
         max: 5,
       },
