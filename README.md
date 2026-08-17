@@ -175,3 +175,8 @@ Mobile browsers may pause the website when the phone is locked or the browser is
 ```powershell
 npm test
 ```
+
+
+## Better Auth admin API typing
+
+The admin user creation route uses a narrow local type adapter for `auth.api.createUser`. This avoids a Better Auth plugin endpoint inference issue while retaining the documented server API at runtime.
