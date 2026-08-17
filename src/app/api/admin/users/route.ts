@@ -3,24 +3,6 @@ import { auth } from "@/lib/auth";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createUserSchema } from "@/lib/validation";
 
-type AdminCreateUserInput = {
-  headers: Headers;
-  body: {
-    name: string;
-    email: string;
-    password: string;
-    role: string;
-  };
-};
-
-type AdminCreateUserApi = {
-  createUser(input: AdminCreateUserInput): Promise<unknown>;
-};
-
-function getAdminApi(): AdminCreateUserApi {
-  return auth.api as unknown as AdminCreateUserApi;
-}
-
 export async function POST(request: Request) {
   const session = await getSession();
 
@@ -35,7 +17,7 @@ export async function POST(request: Request) {
   try {
     const input = createUserSchema.parse(await request.json());
 
-    const created = await getAdminApi().createUser({
+    const created = await auth.api.createUser({
       headers: await headers(),
       body: {
         name: input.name,
@@ -49,7 +31,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to create user.";
-
     return Response.json({ error: message }, { status: 400 });
   }
 }
