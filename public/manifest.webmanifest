@@ -1,0 +1,17 @@
+{
+  "name": "Miles & Meals",
+  "short_name": "Miles & Meals",
+  "description": "Travel together. Spend smarter.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/miles-meals-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
