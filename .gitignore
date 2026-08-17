@@ -7,4 +7,3 @@ coverage
 drizzle
 .DS_Store
 /.vs
-/.env.example
