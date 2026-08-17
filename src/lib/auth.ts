@@ -19,7 +19,7 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
     revokeSessionsOnPasswordReset: true,
     resetPasswordTokenExpiresIn: 60 * 30,
-    sendResetPassword: ({ user, url }) => {
+    sendResetPassword: async ({ user, url }) => {
       after(async () => {
         try {
           await sendPasswordResetEmail({
@@ -27,7 +27,10 @@ export const auth = betterAuth({
             url,
           });
         } catch (error) {
-          console.error("[Miles & Meals] Unable to send password reset email.", error);
+          console.error(
+            "[Miles & Meals] Unable to send password reset email.",
+            error,
+          );
         }
       });
     },
