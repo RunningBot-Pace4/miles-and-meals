@@ -132,3 +132,32 @@ src/app/(app)/location/page.tsx     GPS map page
 src/app/(app)/admin/page.tsx        Admin page
 src/db/schema.ts                    Neon database schema
 ```
+
+
+## Forgot password / reset password
+
+The login screen now has:
+
+- **Show / Hide** beside the password field.
+- **Forgot password?** below the password field.
+
+For local testing you do not need an email provider:
+
+1. Run `npm run dev`.
+2. Open `http://localhost:3000/login`.
+3. Choose **Forgot password?**.
+4. Enter an existing user email.
+5. Look at the Visual Studio terminal.
+6. Miles & Meals prints a password-reset URL there when Resend is not configured.
+7. Copy that URL into your browser.
+8. Enter and confirm the new password.
+9. Sign in again.
+
+For a real Vercel deployment, configure:
+
+```env
+RESEND_API_KEY=re_your_api_key
+EMAIL_FROM="Miles & Meals <noreply@your-verified-domain.com>"
+```
+
+The app never stores or displays a readable copy of a user's saved password. The Show button only reveals what is currently typed into the password box.

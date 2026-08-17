@@ -46,6 +46,32 @@ Mobile-first travel tracker built for Visual Studio 2026, Vercel and Neon Postgr
 - MapLibre live member map
 - Mobile bottom navigation
 
+## Password recovery
+
+Miles & Meals includes:
+
+- **Show / Hide password** on the sign-in screen. This only reveals the password currently typed into the browser; stored passwords remain hashed and cannot be displayed.
+- **Forgot password** at `/forgot-password`.
+- **Reset password** at `/reset-password`.
+- Reset links expire after 30 minutes.
+- All existing sessions are revoked after a successful password reset.
+- Password-reset requests are rate-limited.
+
+### Local testing
+
+If `RESEND_API_KEY` and `EMAIL_FROM` are not configured while running locally, submit the Forgot Password form and copy the reset URL printed in the Visual Studio terminal.
+
+### Production email
+
+For deployed password-reset emails, add these environment variables to `.env` locally and to Vercel:
+
+```env
+RESEND_API_KEY=re_your_api_key
+EMAIL_FROM="Miles & Meals <noreply@your-verified-domain.com>"
+```
+
+The sender domain must be configured/verified with your email provider.
+
 ## Visual Studio 2026
 
 1. Install the Node.js development workload.
@@ -102,6 +128,8 @@ Change the password before using the app with real travel data.
    - `BETTER_AUTH_SECRET`
    - `BETTER_AUTH_URL=https://your-domain.vercel.app`
    - `NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app`
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM=Miles & Meals <noreply@your-verified-domain.com>`
 4. Deploy.
 
 Before the first production deploy, run database schema push against the production Neon database:
