@@ -17,7 +17,13 @@ export default async function LoginPage() {
           <BrandLogo href="" inverse />
           <div className="auth-showcase-copy">
             <p className="eyebrow eyebrow-light">YOUR TRIP, IN ONE PLACE</p>
-            <h1>Every mile.<br />Every meal.<br />One shared trip.</h1>
+            <h1>
+              Every mile.
+              <br />
+              Every meal.
+              <br />
+              One shared trip.
+            </h1>
             <p>
               Plan the day, split expenses, keep the right exchange rate and
               find your travel crew when plans change.
@@ -37,14 +43,9 @@ export default async function LoginPage() {
           <p className="eyebrow">WELCOME BACK</p>
           <h2 className="auth-title">Ready for the next stop?</h2>
           <p className="muted auth-intro">
-            Sign in to your shared trip. A new login securely signs out the
-            previous device.
+            Sign in to continue to your Miles & Meals trip.
           </p>
           <LoginForm />
-          <p className="auth-security-note">
-            <span aria-hidden="true">●</span>
-            One active device per account
-          </p>
         </section>
       </div>
     </main>

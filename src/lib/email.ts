@@ -3,6 +3,12 @@ type PasswordResetEmailInput = {
   url: string;
 };
 
+type ResendResponse = {
+  id?: string;
+  message?: string;
+  name?: string;
+};
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -35,7 +41,7 @@ export async function sendPasswordResetEmail({
     }
 
     throw new Error(
-      "Password reset email is not configured. Set RESEND_API_KEY and EMAIL_FROM.",
+      "Password reset email is not configured. Set RESEND_API_KEY and EMAIL_FROM in Vercel.",
     );
   }
 
@@ -57,6 +63,8 @@ export async function sendPasswordResetEmail({
         "",
         `Reset your password: ${url}`,
         "",
+        "This link expires in 30 minutes.",
+        "",
         "If you did not request this, you can ignore this email.",
       ].join("\n"),
       html: `
@@ -72,6 +80,9 @@ export async function sendPasswordResetEmail({
             </a>
           </p>
           <p style="color:#64748b;font-size:13px">
+            This link expires in 30 minutes.
+          </p>
+          <p style="color:#64748b;font-size:13px">
             If you did not request this, you can ignore this email.
           </p>
         </div>
@@ -79,8 +90,28 @@ export async function sendPasswordResetEmail({
     }),
   });
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`Resend email failed (${response.status}): ${message}`);
+  const rawBody = await response.text();
+  let result: ResendResponse = {};
+
+  if (rawBody) {
+    try {
+      result = JSON.parse(rawBody) as ResendResponse;
+    } catch {
+      result = { message: rawBody };
+    }
   }
+
+  if (!response.ok) {
+    throw new Error(
+      `Resend email failed (${response.status}): ${
+        result.message ?? rawBody ?? "Unknown Resend error"
+      }`,
+    );
+  }
+
+  console.info(
+    `[Miles & Meals] Password reset email accepted by Resend. Recipient: ${to}; Email ID: ${
+      result.id ?? "unknown"
+    }`,
+  );
 }
