@@ -34,6 +34,29 @@ export const resetUserPasswordSchema = z.object({
   newPassword: z.string().min(12).max(128),
 });
 
+export const profilePreferencesSchema = z.object({
+  avatarColor: z.enum([
+    "teal",
+    "amber",
+    "ocean",
+    "coral",
+    "violet",
+    "forest",
+    "rose",
+    "slate",
+  ]),
+  avatarIcon: z.enum([
+    "initial",
+    "plane",
+    "meal",
+    "pin",
+    "luggage",
+    "palm",
+    "coffee",
+    "camera",
+  ]),
+});
+
 export const expenseSchema = z.object({
   countryId: uuidSchema,
   expenseDate: z.string().min(10).max(10),

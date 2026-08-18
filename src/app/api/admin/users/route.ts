@@ -1,7 +1,11 @@
 import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { user } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createUserSchema } from "@/lib/validation";
+import { setMustChangePassword } from "@/lib/user-preferences";
 
 type AdminCreateUserInput = {
   headers: Headers;
@@ -44,6 +48,16 @@ export async function POST(request: Request) {
         role: "user",
       },
     });
+
+    const createdRows = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.email, input.email))
+      .limit(1);
+
+    if (createdRows[0]) {
+      await setMustChangePassword(createdRows[0].id, true);
+    }
 
     return Response.json({ user: created }, { status: 201 });
   } catch (error) {

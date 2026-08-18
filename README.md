@@ -132,3 +132,15 @@ limitation and would require a native companion app later.
 ```powershell
 npm test
 ```
+
+
+## v8 update
+
+After upgrading from v7, run:
+
+```powershell
+npm run db:push
+```
+
+v8 adds `user_preferences` for avatar choices and the mandatory password-change
+flag used after an Admin issues a temporary password. Existing trip data is kept.

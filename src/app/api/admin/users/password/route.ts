@@ -3,6 +3,7 @@ import { session } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { resetUserPasswordSchema } from "@/lib/validation";
+import { setMustChangePassword } from "@/lib/user-preferences";
 import { eq } from "drizzle-orm";
 
 type SetUserPasswordInput = {
@@ -43,11 +44,13 @@ export async function POST(request: Request) {
       },
     });
 
+    await setMustChangePassword(input.userId, true);
     await db.delete(session).where(eq(session.userId, input.userId));
 
     return Response.json({
       ok: true,
-      message: "Password updated. Existing sessions were signed out.",
+      message:
+        "Temporary password set. The user must create a private password after signing in.",
     });
   } catch (error) {
     const message =

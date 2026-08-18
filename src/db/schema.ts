@@ -89,6 +89,18 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+export const userPreferences = pgTable("user_preferences", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  avatarColor: text("avatar_color").default("teal").notNull(),
+  avatarIcon: text("avatar_icon").default("initial").notNull(),
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 export const trips = pgTable("trips", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -285,6 +297,7 @@ export const schema = {
   session,
   account,
   verification,
+  userPreferences,
   trips,
   tripMembers,
   countries,

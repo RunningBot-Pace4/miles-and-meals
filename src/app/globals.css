@@ -3486,3 +3486,142 @@ body {
     animation: none;
   }
 }
+
+
+/* v8 account preferences and mandatory password setup */
+.forced-password-screen {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.85rem;
+  padding: 2rem;
+  text-align: center;
+  background:
+    radial-gradient(circle at 30% 20%, rgb(245 158 11 / 15%), transparent 26%),
+    radial-gradient(circle at 75% 70%, rgb(15 118 110 / 18%), transparent 32%),
+    var(--bg);
+}
+
+.forced-password-screen h1 {
+  margin: 0.4rem 0 0;
+  color: var(--ink-deep);
+}
+
+.forced-password-screen p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.required-password-card {
+  border-color: rgb(245 158 11 / 45%);
+  box-shadow: 0 18px 50px rgb(245 158 11 / 10%);
+}
+
+.profile-settings-card {
+  align-items: stretch;
+}
+
+.profile-settings-form {
+  width: 100%;
+}
+
+.profile-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--surface-2), #fff);
+}
+
+.profile-preview-avatar {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  box-shadow: 0 10px 26px rgb(23 49 44 / 14%);
+  font-size: 1.45rem;
+  font-weight: 900;
+}
+
+.profile-preview > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.profile-preview small {
+  line-height: 1.45;
+}
+
+.avatar-picker {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.avatar-icon-grid,
+.avatar-color-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.avatar-choice,
+.color-choice {
+  min-width: 0;
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.avatar-choice > span {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.avatar-choice small,
+.color-choice small {
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.avatar-choice.selected,
+.color-choice.selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(15 118 110 / 10%);
+}
+
+.color-choice > span {
+  width: 32px;
+  height: 32px;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.account-avatar {
+  overflow: hidden;
+  font-size: 0.78rem;
+}
+
+.account-avatar.large {
+  font-size: 1rem;
+}
+
+@media (max-width: 520px) {
+  .avatar-icon-grid,
+  .avatar-color-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

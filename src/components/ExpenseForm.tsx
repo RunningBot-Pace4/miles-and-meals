@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { parseTravelNumber } from "@/lib/numbers";
 
 type CountryOption = {
   id: string;
@@ -144,10 +145,15 @@ export function ExpenseForm({
   const currentCountry = countries.find((country) => country.id === countryId);
 
   const converted = useMemo(() => {
-    const parsedAmount = Number(amount);
-    const parsedRate = Number(rate);
+    const parsedAmount = parseTravelNumber(amount);
+    const parsedRate = parseTravelNumber(rate);
 
-    if (!Number.isFinite(parsedAmount) || !Number.isFinite(parsedRate)) {
+    if (
+      parsedAmount === null ||
+      parsedRate === null ||
+      parsedAmount < 0 ||
+      parsedRate < 0
+    ) {
       return 0;
     }
 
@@ -155,9 +161,9 @@ export function ExpenseForm({
   }, [amount, rate]);
 
   const settlementTotal = useMemo(() => {
-    const actual = Number(actualConvertedAmount);
+    const actual = parseTravelNumber(actualConvertedAmount);
 
-    if (actualConvertedAmount !== "" && Number.isFinite(actual)) {
+    if (actualConvertedAmount.trim() !== "" && actual !== null) {
       return actual;
     }
 
@@ -175,7 +181,7 @@ export function ExpenseForm({
     }
 
     const entered = splitUserIds.reduce(
-      (sum, userId) => sum + Number(splitValues[userId] || 0),
+      (sum, userId) => sum + (parseTravelNumber(splitValues[userId]) ?? 0),
       0,
     );
 
@@ -244,6 +250,15 @@ export function ExpenseForm({
     }
   }
 
+  function handleRateType(nextType: RateType) {
+    setRateType(nextType);
+
+    if (nextType === "DEFAULT" && currentCountry) {
+      setRate(currentCountry.defaultExchangeRate);
+      setActualConvertedAmount("");
+    }
+  }
+
   function handleSplitMode(nextMode: SplitMode) {
     setSplitMode(nextMode);
 
@@ -302,6 +317,53 @@ export function ExpenseForm({
       return;
     }
 
+    const parsedAmount = parseTravelNumber(amount);
+    const parsedRate = parseTravelNumber(rate);
+    const parsedActual =
+      actualConvertedAmount.trim() === ""
+        ? null
+        : parseTravelNumber(actualConvertedAmount);
+
+    if (parsedAmount === null || parsedAmount <= 0) {
+      setError(
+        "Enter a valid transaction amount. You can use values like 150000 or 150,000.",
+      );
+      return;
+    }
+
+    if (parsedRate === null || parsedRate <= 0) {
+      setError(
+        "Enter a valid exchange rate. You can use values like 0.0001579.",
+      );
+      return;
+    }
+
+    if (
+      actualConvertedAmount.trim() !== "" &&
+      (parsedActual === null || parsedActual < 0)
+    ) {
+      setError("Enter a valid actual card charge or leave it blank.");
+      return;
+    }
+
+    const parsedSplits = splitUserIds.map((userId) => ({
+      userId,
+      value:
+        splitMode === "EQUAL"
+          ? 0
+          : parseTravelNumber(splitValues[userId]) ?? Number.NaN,
+    }));
+
+    if (
+      splitMode !== "EQUAL" &&
+      parsedSplits.some(
+        (split) => !Number.isFinite(split.value) || split.value < 0,
+      )
+    ) {
+      setError("Enter a valid share for every selected traveler.");
+      return;
+    }
+
     setBusy(true);
     const form = new FormData(event.currentTarget);
     const body = {
@@ -310,19 +372,16 @@ export function ExpenseForm({
       category,
       description: String(form.get("description") ?? ""),
       transactionCurrency: currency,
-      transactionAmount: amount,
-      exchangeRate: rate,
+      transactionAmount: parsedAmount,
+      exchangeRate: parsedRate,
       rateType,
-      actualConvertedAmount,
+      actualConvertedAmount: parsedActual ?? "",
       paidByUserId,
       paymentMethod: String(form.get("paymentMethod") ?? ""),
       receiptUrl: String(form.get("receiptUrl") ?? ""),
       notes: String(form.get("notes") ?? ""),
       splitMode,
-      splits: splitUserIds.map((userId) => ({
-        userId,
-        value: splitMode === "EQUAL" ? 0 : Number(splitValues[userId] ?? 0),
-      })),
+      splits: parsedSplits,
     };
 
     const response = await fetch(
@@ -460,7 +519,7 @@ export function ExpenseForm({
             <button
               className={rateType === item.value ? "segment active" : "segment"}
               key={item.value}
-              onClick={() => setRateType(item.value)}
+              onClick={() => handleRateType(item.value)}
               type="button"
             >
               {item.label}

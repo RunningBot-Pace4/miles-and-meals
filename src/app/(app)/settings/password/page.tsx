@@ -1,37 +1,48 @@
 import Link from "next/link";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { requirePageSession } from "@/lib/session";
+import { getUserPreferences } from "@/lib/user-preferences";
 
 export default async function ChangePasswordPage() {
   const session = await requirePageSession();
+  const preferences = await getUserPreferences(session.user.id);
+  const required = preferences.mustChangePassword;
 
   return (
     <div className="stack gap-lg settings-page">
       <div className="page-heading settings-heading">
         <div>
-          <p className="eyebrow">ACCOUNT SECURITY</p>
-          <h1>Change password</h1>
+          <p className="eyebrow">
+            {required ? "REQUIRED SECURITY STEP" : "ACCOUNT SECURITY"}
+          </p>
+          <h1>
+            {required ? "Create your own private password" : "Change password"}
+          </h1>
           <p className="muted">
-            Update the password for {session.user.email}.
+            {required
+              ? "Your administrator issued a temporary password. Replace it now with a password only you know."
+              : `Update the password for ${session.user.email}.`}
           </p>
         </div>
-        <Link className="button secondary" href="/dashboard">
-          Back home
-        </Link>
+        {!required ? (
+          <Link className="button secondary" href="/dashboard">
+            Back home
+          </Link>
+        ) : null}
       </div>
 
-      <section className="settings-card">
+      <section className={required ? "settings-card required-password-card" : "settings-card"}>
         <div className="settings-card-art" aria-hidden="true">
           <span>✦</span>
           <div className="settings-lock">⌾</div>
         </div>
         <div>
-          <h2>Keep your trip private</h2>
+          <h2>{required ? "Temporary password detected" : "Keep your trip private"}</h2>
           <p className="muted">
-            Enter your current password, then choose a new password with at
-            least 12 characters.
+            Enter the temporary/current password, then choose a new password
+            with at least 12 characters.
           </p>
-          <ChangePasswordForm />
+          <ChangePasswordForm forceChange={required} />
         </div>
       </section>
     </div>

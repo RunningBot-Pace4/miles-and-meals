@@ -140,7 +140,7 @@ export function AdminForms({
                 email: String(form.get("email") ?? ""),
                 password: String(form.get("password") ?? ""),
               }),
-              "Traveler created.",
+              "Traveler created with a temporary password. They must set their own password after signing in.",
             )
           }
         >
@@ -207,7 +207,7 @@ export function AdminForms({
                   newPassword,
                 };
               },
-              "User password reset. Existing sessions were signed out.",
+              "Temporary password set. The user must choose their own password at next sign-in.",
             )
           }
         >

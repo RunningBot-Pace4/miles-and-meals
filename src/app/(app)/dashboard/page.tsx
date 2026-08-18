@@ -63,8 +63,7 @@ export default async function DashboardPage({
       <section className="dashboard-welcome">
         <div>
           <p className="eyebrow">MILES &amp; MEALS</p>
-          <h1>Ready for the next stop, {firstName}?</h1>
-          <p className="muted">Everything for the trip, without the spreadsheet scroll.</p>
+<h1>Welcome back, {firstName}. Let&apos;s keep every mile and meal on track.</h1>
         </div>
         <Link className="button primary dashboard-add" href="/expenses/new">
           <span aria-hidden="true">＋</span>

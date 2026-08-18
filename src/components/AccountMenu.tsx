@@ -4,11 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { getAvatarColor, getAvatarSymbol } from "@/lib/avatar";
 
 type AccountMenuProps = {
   name: string;
   email: string;
   isAdmin: boolean;
+  avatarColor: string;
+  avatarIcon: string;
 };
 
 function UserIcon() {
@@ -50,13 +53,20 @@ export function AccountMenu({
   name,
   email,
   isAdmin,
+  avatarColor,
+  avatarIcon,
 }: AccountMenuProps) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
-  const initial = name.trim().charAt(0).toUpperCase() || "U";
+  const color = getAvatarColor(avatarColor);
+  const avatarSymbol = getAvatarSymbol(avatarIcon, name);
+  const avatarStyle = {
+    background: color.background,
+    color: color.foreground,
+  };
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -105,7 +115,7 @@ export function AccountMenu({
         aria-label="Open account menu"
         onClick={() => setOpen((value) => !value)}
       >
-        <span className="account-avatar">{initial}</span>
+        <span className="account-avatar" style={avatarStyle}>{avatarSymbol}</span>
         <span className="account-trigger-copy">
           <strong>{name}</strong>
           <small>{isAdmin ? "Administrator" : "Traveler"}</small>
@@ -118,7 +128,7 @@ export function AccountMenu({
       {open ? (
         <div className="account-popover" role="menu">
           <div className="account-popover-head">
-            <span className="account-avatar large">{initial}</span>
+            <span className="account-avatar large" style={avatarStyle}>{avatarSymbol}</span>
             <div>
               <strong>{name}</strong>
               <small>{email}</small>
@@ -160,7 +170,7 @@ export function AccountMenu({
 
             <Link
               className="account-menu-item"
-              href="/more"
+              href="/settings/profile"
               role="menuitem"
               onClick={() => setOpen(false)}
             >
@@ -168,8 +178,8 @@ export function AccountMenu({
                 <UserIcon />
               </span>
               <span>
-                <strong>Account</strong>
-                <small>Trip tools and account details</small>
+                <strong>Profile & avatar</strong>
+                <small>Choose your icon and color</small>
               </span>
             </Link>
           </div>

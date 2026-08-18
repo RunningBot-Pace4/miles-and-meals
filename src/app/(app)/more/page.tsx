@@ -29,6 +29,10 @@ export default async function MorePage() {
             <span>›</span>
           </Link>
         ) : null}
+        <Link className="menu-row link-row" href="/settings/profile">
+          <span>Profile & avatar</span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/settings/password">
           <span>Change password</span>
           <span>›</span>
