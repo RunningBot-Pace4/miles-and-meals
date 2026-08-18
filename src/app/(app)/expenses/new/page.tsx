@@ -6,5 +6,8 @@ export default async function NewExpensePage() {
   const session = await requirePageSession();
   const countries = await listAccessibleCountries(session.user);
 
-  return <ExpenseForm countries={countries} />;
+  return <ExpenseForm
+      countries={countries}
+      currentUserId={session.user.id}
+    />;
 }

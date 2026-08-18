@@ -126,9 +126,11 @@ function initials(name: string) {
 
 export function ExpenseForm({
   countries,
+  currentUserId,
   initial,
 }: {
   countries: CountryOption[];
+  currentUserId: string;
   initial?: ExpenseInitial;
 }) {
   const router = useRouter();
@@ -163,13 +165,14 @@ export function ExpenseForm({
     initial?.splitMode ?? "EQUAL",
   );
   const [splitUserIds, setSplitUserIds] = useState<string[]>(
-    initial?.splitUserIds ?? [],
+    initial?.splitUserIds ??
+      (currentUserId ? [currentUserId] : []),
   );
   const [splitValues, setSplitValues] = useState<Record<string, string>>(
     initial?.splitValues ?? {},
   );
   const [paidByUserId, setPaidByUserId] = useState(
-    initial?.paidByUserId ?? "",
+    initial?.paidByUserId ?? currentUserId,
   );
   const [description, setDescription] = useState(
     initial?.description ?? "",
@@ -185,9 +188,6 @@ export function ExpenseForm({
   const [receiptResult, setReceiptResult] =
     useState<ReceiptAnalysis | null>(null);
   const [receiptMessage, setReceiptMessage] = useState("");
-  const [savingMessage, setSavingMessage] = useState(
-    "Updating the trip total and everyone’s share.",
-  );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -307,12 +307,23 @@ export function ExpenseForm({
       setMembers(payload.members);
 
       if (!initial || countryId !== initial.countryId) {
-        const ids = payload.members.map((member) => member.id);
-        setSplitUserIds(ids);
-        setSplitValues(
-          splitMode === "PERCENTAGE" ? equalPercentages(ids) : {},
+        const loggedInUserIsAvailable = payload.members.some(
+          (member) => member.id === currentUserId,
         );
-        setPaidByUserId(payload.members[0]?.id ?? "");
+        const defaultUserId = loggedInUserIsAvailable
+          ? currentUserId
+          : payload.members[0]?.id ?? "";
+        const defaultSplitIds = defaultUserId
+          ? [defaultUserId]
+          : [];
+
+        setSplitUserIds(defaultSplitIds);
+        setSplitValues(
+          splitMode === "PERCENTAGE"
+            ? equalPercentages(defaultSplitIds)
+            : {},
+        );
+        setPaidByUserId(defaultUserId);
       }
     }
 
@@ -602,12 +613,6 @@ export function ExpenseForm({
     }
 
     setBusy(true);
-    setSavingMessage(
-      receiptFile
-        ? "Compressing the receipt photo for your trip."
-        : "Updating the trip total and everyone’s share.",
-    );
-
     const form = new FormData(event.currentTarget);
     let finalReceiptUrl = receiptUrl.trim();
 
@@ -615,9 +620,6 @@ export function ExpenseForm({
       if (receiptFile) {
         finalReceiptUrl =
           await prepareReceiptForSave(receiptFile);
-        setSavingMessage(
-          "Receipt ready. Updating the trip total and everyone’s share.",
-        );
       }
     } catch (caught) {
       setError(
@@ -689,10 +691,7 @@ export function ExpenseForm({
   return (
     <>
       {busy ? (
-        <SavingOverlay
-          title={initial ? "Saving your changes" : "Saving your expense"}
-          message={savingMessage}
-        />
+        <SavingOverlay />
       ) : null}
       <form className="expense-editor" onSubmit={submit}>
         <header className="expense-editor-hero">
@@ -734,7 +733,6 @@ export function ExpenseForm({
                     ? "Scan another"
                     : "Scan receipt"}
               </strong>
-              <small>Auto-fill shop &amp; amount</small>
             </span>
           </label>
         </header>

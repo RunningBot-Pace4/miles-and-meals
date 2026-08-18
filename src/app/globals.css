@@ -5360,3 +5360,131 @@ body {
   color: var(--primary-dark);
   background: var(--primary-soft);
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* Standard Miles & Meals loading screen v22                                  */
+/* -------------------------------------------------------------------------- */
+
+.standard-loading-screen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 1.25rem;
+  color: var(--ink-deep);
+  background: #ffffff;
+}
+
+.standard-loading-content {
+  width: min(100%, 360px);
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  text-align: center;
+  transform: translateY(-2px);
+}
+
+.standard-loading-content .brand-logo {
+  gap: 0.78rem;
+  margin-bottom: 1.65rem;
+}
+
+.standard-loading-content .brand-logo-mark {
+  width: 48px;
+  height: 48px;
+}
+
+.standard-loading-content .brand-logo-name {
+  gap: 0.3rem;
+  font-size: 1.48rem;
+  line-height: 1;
+}
+
+.standard-loading-content .brand-logo-tagline {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.015em;
+}
+
+.standard-loading-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.62rem;
+  min-height: 16px;
+  margin-bottom: 2rem;
+}
+
+.standard-loading-dots span {
+  width: 12px;
+  height: 12px;
+  display: block;
+  border-radius: 50%;
+  background: #22968f;
+  animation: standard-loading-pulse 1.15s ease-in-out infinite;
+}
+
+.standard-loading-dots span:nth-child(2) {
+  background: #f4b94f;
+  animation-delay: 140ms;
+}
+
+.standard-loading-dots span:nth-child(3) {
+  background: #9dc9c7;
+  animation-delay: 280ms;
+}
+
+.standard-loading-copy h2 {
+  margin: 0 0 0.55rem;
+  color: #082f2c;
+  font-size: clamp(1.34rem, 5vw, 1.58rem);
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.standard-loading-copy p {
+  margin: 0;
+  color: #70817c;
+  font-size: clamp(0.96rem, 4vw, 1.08rem);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+@keyframes standard-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@media (max-width: 430px) {
+  .standard-loading-content {
+    width: min(100%, 320px);
+  }
+
+  .standard-loading-content .brand-logo-mark {
+    width: 46px;
+    height: 46px;
+  }
+
+  .standard-loading-content .brand-logo-name {
+    font-size: 1.42rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standard-loading-dots span {
+    animation: none;
+  }
+}

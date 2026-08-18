@@ -60,6 +60,7 @@ export default async function EditExpensePage({ params }: Props) {
   return (
       <ExpenseForm
         countries={countries}
+        currentUserId={session.user.id}
         initial={{
           id: expense.id,
           countryId: expense.countryId,

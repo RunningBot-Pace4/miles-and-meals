@@ -58,14 +58,7 @@ export function SettlementActionButton({
   return (
     <>
       {busy ? (
-        <SavingOverlay
-          title={
-            action === "MARK_PAID"
-              ? "Recording your payment"
-              : "Confirming money received"
-          }
-          message="Recalculating everyone’s trip balance."
-        />
+        <SavingOverlay />
       ) : null}
 
       <div className="settlement-action-wrap">
