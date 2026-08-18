@@ -1,6 +1,6 @@
-import { desc, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { travelItems } from "@/db/schema";
+import { travelItems, user } from "@/db/schema";
 import { PlannerClient } from "@/components/PlannerClient";
 import { listAccessibleCountries } from "@/lib/access";
 import { requirePageSession } from "@/lib/session";
@@ -14,8 +14,29 @@ export default async function PlannerPage() {
     ids.length === 0
       ? []
       : await db
-          .select()
+          .select({
+            id: travelItems.id,
+            countryId: travelItems.countryId,
+            itemType: travelItems.itemType,
+            title: travelItems.title,
+            itemDate: travelItems.itemDate,
+            itemTime: travelItems.itemTime,
+            area: travelItems.area,
+            subtype: travelItems.subtype,
+            priority: travelItems.priority,
+            status: travelItems.status,
+            ownerUserId: travelItems.ownerUserId,
+            estimatedCost: travelItems.estimatedCost,
+            quantity: travelItems.quantity,
+            provider: travelItems.provider,
+            confirmationNo: travelItems.confirmationNo,
+            linkUrl: travelItems.linkUrl,
+            notes: travelItems.notes,
+            createdBy: travelItems.createdBy,
+            proposedByName: user.name,
+          })
           .from(travelItems)
+          .leftJoin(user, eq(travelItems.createdBy, user.id))
           .where(inArray(travelItems.countryId, ids))
           .orderBy(desc(travelItems.itemDate), desc(travelItems.createdAt));
 
@@ -26,10 +47,12 @@ export default async function PlannerPage() {
           <p className="eyebrow">MILES & MEALS</p>
           <h1>Plan the good stuff</h1>
           <p className="muted">
-            Itinerary, places, meals, shopping and bookings — built for the phone in your hand.
+            Build the trip together — plans can be proposed, refined and
+            updated by travelers who have access to the country.
           </p>
         </div>
       </div>
+
       <PlannerClient countries={countries} items={items} />
     </div>
   );

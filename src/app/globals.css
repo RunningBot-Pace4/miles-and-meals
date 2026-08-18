@@ -4726,3 +4726,143 @@ body {
     width: 100%;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* Planner edit + proposer v15                                                 */
+/* -------------------------------------------------------------------------- */
+
+.planner-edit-form {
+  display: grid;
+  gap: 1.15rem;
+  margin: 0 0 1rem;
+  padding: clamp(1rem, 2.5vw, 1.45rem);
+  scroll-margin-top: 96px;
+  border: 1px solid rgb(15 118 110 / 24%);
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgb(245 158 11 / 10%),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      rgb(232 247 243 / 86%),
+      white 44%
+    );
+  box-shadow: 0 18px 44px rgb(23 49 44 / 8%);
+}
+
+.planner-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.planner-form-actions .button {
+  min-width: 140px;
+}
+
+.planner-card-link {
+  margin-top: 0.8rem;
+}
+
+.planner-card-link a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.planner-card-link a:hover {
+  text-decoration: underline;
+}
+
+.planner-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.planner-proposer {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.planner-proposer strong {
+  color: var(--text);
+}
+
+.planner-proposer-icon {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #a15c00;
+  background: #fff4cf;
+  font-size: 0.72rem;
+}
+
+.planner-card-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.planner-edit-button {
+  min-height: 36px;
+  padding: 0.35rem 0.72rem;
+  border: 1px solid rgb(15 118 110 / 22%);
+  border-radius: 10px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-edit-button:hover {
+  border-color: rgb(15 118 110 / 42%);
+  background: #d9f1ec;
+}
+
+@media (max-width: 639px) {
+  .planner-card-footer {
+    align-items: flex-end;
+  }
+
+  .planner-proposer {
+    max-width: 62%;
+  }
+
+  .planner-card-buttons {
+    gap: 0.4rem;
+  }
+
+  .planner-form-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .planner-form-actions .button {
+    min-width: 0;
+    width: 100%;
+  }
+}

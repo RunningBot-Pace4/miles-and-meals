@@ -448,7 +448,9 @@ export function LocationTracker({
     async function setupMap() {
       const maplibre = await import("maplibre-gl");
 
-      maplibre.setWorkerUrl("/maplibre-gl-worker.mjs");
+      maplibre.setWorkerUrl(
+        "/maplibre/maplibre-gl-worker.mjs",
+      );
 
       if (
         cancelled ||
@@ -471,7 +473,17 @@ export function LocationTracker({
         "top-right",
       );
 
+      const loadTimeout = window.setTimeout(() => {
+        if (!cancelled && !map.loaded()) {
+          setMapError(
+            "The map could not finish loading. Refresh the page. If this continues, check the browser console for a MapLibre worker or tile error.",
+          );
+        }
+      }, 12_000);
+
       map.once("load", () => {
+        window.clearTimeout(loadTimeout);
+
         if (cancelled) {
           return;
         }
@@ -481,10 +493,16 @@ export function LocationTracker({
         map.resize();
       });
 
-      map.on("error", () => {
+      map.on("error", (event) => {
         if (!cancelled) {
+          const detail =
+            event.error instanceof Error
+              ? event.error.message
+              : "Unknown map error.";
+
+          console.error("[Miles & Meals] MapLibre error:", event.error);
           setMapError(
-            "The map tiles could not load. Your GPS data is still listed below.",
+            `The map could not load: ${detail}`,
           );
         }
       });

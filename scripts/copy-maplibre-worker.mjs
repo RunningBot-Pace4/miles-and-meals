@@ -1,9 +1,22 @@
-import { copyFile, mkdir } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { copyFileSync, mkdirSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
 
-const source = resolve("node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs");
-const destination = resolve("public/maplibre-gl-worker.mjs");
+const require = createRequire(import.meta.url);
+const packageJsonPath = require.resolve("maplibre-gl/package.json");
+const dist = path.join(path.dirname(packageJsonPath), "dist");
+const destination = path.join(process.cwd(), "public", "maplibre");
 
-await mkdir(dirname(destination), { recursive: true });
-await copyFile(source, destination);
-console.log("MapLibre worker copied to public/maplibre-gl-worker.mjs");
+mkdirSync(destination, { recursive: true });
+
+for (const file of [
+  "maplibre-gl-worker.mjs",
+  "maplibre-gl-shared.mjs",
+]) {
+  copyFileSync(
+    path.join(dist, file),
+    path.join(destination, file),
+  );
+}
+
+console.log("[Miles & Meals] MapLibre worker assets copied.");
