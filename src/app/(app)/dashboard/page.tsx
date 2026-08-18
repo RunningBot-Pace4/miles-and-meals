@@ -53,17 +53,20 @@ export default async function DashboardPage({
   const budgetPercent =
     budget > 0 ? Math.min(100, Math.max(0, (summary.total / budget) * 100)) : 0;
   const admin = isSystemAdmin(session.user.role);
-  const firstName = admin
-    ? "Admin"
-    : session.user.name.trim().split(/\s+/)[0] || "traveler";
+  const displayName = session.user.name.trim() || "Traveler";
   const tripName = selectedCountries[0]?.tripName ?? "Your journey starts here";
 
   return (
     <div className="stack gap-lg dashboard-page">
       <section className="dashboard-welcome">
-        <div>
-          <p className="eyebrow">MILES &amp; MEALS</p>
-<h1>Welcome back, {firstName}. Let&apos;s keep every mile and meal on track.</h1>
+        <div className="dashboard-welcome-copy">
+          <p className="eyebrow">YOUR TRAVEL COMPANION</p>
+          <h1 className="dashboard-welcome-title">
+            <span className="welcome-user">Welcome back, {displayName}.</span>
+            <span className="welcome-gradient">
+              Make every mile, meal &amp; memory count.
+            </span>
+          </h1>
         </div>
         <Link className="button primary dashboard-add" href="/expenses/new">
           <span aria-hidden="true">＋</span>

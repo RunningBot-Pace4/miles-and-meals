@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildExpenseSplits } from "@/lib/money";
+import { buildExpenseSplits, effectiveConvertedAmount } from "@/lib/money";
 
 describe("buildExpenseSplits", () => {
   it("splits equally without losing cents", () => {
@@ -47,5 +47,16 @@ describe("buildExpenseSplits", () => {
         { userId: "b", value: 30 },
       ]),
     ).toThrow("100%");
+  });
+});
+
+
+describe("effectiveConvertedAmount", () => {
+  it("falls back to converted amount when a legacy actual amount is zero", () => {
+    expect(effectiveConvertedAmount("46.58", "0.00")).toBe(46.58);
+  });
+
+  it("uses a positive actual card amount when available", () => {
+    expect(effectiveConvertedAmount("46.58", "46.90")).toBe(46.9);
   });
 });

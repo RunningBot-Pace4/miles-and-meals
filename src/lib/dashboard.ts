@@ -5,7 +5,7 @@ import {
   expenses,
   user,
 } from "@/db/schema";
-import { toNumber } from "@/lib/money";
+import { effectiveConvertedAmount, toNumber } from "@/lib/money";
 import { calculateSettlements } from "@/lib/settlement";
 
 export async function buildExpenseSummary(countryIds: string[]) {
@@ -37,7 +37,10 @@ export async function buildExpenseSummary(countryIds: string[]) {
   const paid = new Map<string, number>();
 
   for (const row of rows) {
-    const amount = toNumber(row.actualConvertedAmount ?? row.convertedAmount);
+    const amount = effectiveConvertedAmount(
+      row.convertedAmount,
+      row.actualConvertedAmount,
+    );
     categories.set(row.category, (categories.get(row.category) ?? 0) + amount);
     paid.set(row.paidByUserId, (paid.get(row.paidByUserId) ?? 0) + amount);
   }
@@ -71,7 +74,11 @@ export async function buildExpenseSummary(countryIds: string[]) {
   return {
     total: rows.reduce(
       (sum, row) =>
-        sum + toNumber(row.actualConvertedAmount ?? row.convertedAmount),
+        sum +
+        effectiveConvertedAmount(
+          row.convertedAmount,
+          row.actualConvertedAmount,
+        ),
       0,
     ),
     categories: [...categories.entries()]

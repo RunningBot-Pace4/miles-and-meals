@@ -74,11 +74,11 @@ export async function PUT(request: Request, context: Context) {
     );
 
     const actual =
-      input.actualConvertedAmount === "" ||
-      input.actualConvertedAmount === null ||
-      input.actualConvertedAmount === undefined
-        ? null
-        : Number(input.actualConvertedAmount);
+      input.rateType === "CREDIT_CARD" &&
+      typeof input.actualConvertedAmount === "number" &&
+      input.actualConvertedAmount > 0
+        ? input.actualConvertedAmount
+        : null;
 
     await db
       .update(expenses)

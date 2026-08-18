@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SavingOverlay } from "@/components/SavingOverlay";
+import { splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
 
 type CountryOption = {
@@ -163,19 +165,38 @@ export function ExpenseForm({
   const settlementTotal = useMemo(() => {
     const actual = parseTravelNumber(actualConvertedAmount);
 
-    if (actualConvertedAmount.trim() !== "" && actual !== null) {
+    if (
+      rateType === "CREDIT_CARD" &&
+      actualConvertedAmount.trim() !== "" &&
+      actual !== null &&
+      actual > 0
+    ) {
       return actual;
     }
 
     return converted;
-  }, [actualConvertedAmount, converted]);
+  }, [actualConvertedAmount, converted, rateType]);
+
+  const equalShares = useMemo(() => {
+    if (splitMode !== "EQUAL" || splitUserIds.length === 0) {
+      return new Map<string, string>();
+    }
+
+    return new Map(
+      splitEqually(settlementTotal, splitUserIds).map((split) => [
+        split.userId,
+        split.shareAmountBase,
+      ]),
+    );
+  }, [settlementTotal, splitMode, splitUserIds]);
 
   const splitStatus = useMemo(() => {
     if (splitMode === "EQUAL") {
-      const perPerson =
-        splitUserIds.length > 0 ? settlementTotal / splitUserIds.length : 0;
       return {
-        label: `${currentCountry?.baseCurrency ?? "MYR"} ${perPerson.toFixed(2)} each`,
+        label:
+          splitUserIds.length > 0
+            ? `${currentCountry?.baseCurrency ?? "MYR"} ${settlementTotal.toFixed(2)} shared by ${splitUserIds.length} ${splitUserIds.length === 1 ? "traveler" : "travelers"}`
+            : "Choose at least one traveler",
         valid: splitUserIds.length > 0,
       };
     }
@@ -340,7 +361,7 @@ export function ExpenseForm({
 
     if (
       actualConvertedAmount.trim() !== "" &&
-      (parsedActual === null || parsedActual < 0)
+      (parsedActual === null || parsedActual <= 0)
     ) {
       setError("Enter a valid actual card charge or leave it blank.");
       return;
@@ -375,7 +396,10 @@ export function ExpenseForm({
       transactionAmount: parsedAmount,
       exchangeRate: parsedRate,
       rateType,
-      actualConvertedAmount: parsedActual ?? "",
+      actualConvertedAmount:
+        rateType === "CREDIT_CARD" && parsedActual !== null
+          ? parsedActual
+          : "",
       paidByUserId,
       paymentMethod: String(form.get("paymentMethod") ?? ""),
       receiptUrl: String(form.get("receiptUrl") ?? ""),
@@ -384,26 +408,31 @@ export function ExpenseForm({
       splits: parsedSplits,
     };
 
-    const response = await fetch(
-      initial ? `/api/expenses/${initial.id}` : "/api/expenses",
-      {
-        method: initial ? "PUT" : "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
+    try {
+      const response = await fetch(
+        initial ? `/api/expenses/${initial.id}` : "/api/expenses",
+        {
+          method: initial ? "PUT" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      setError(payload.error ?? "Unable to save expense.");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        setError(payload.error ?? "Unable to save expense.");
+        setBusy(false);
+        return;
+      }
+
+      router.push("/expenses");
+      router.refresh();
+    } catch {
+      setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);
-      return;
     }
-
-    router.push("/expenses");
-    router.refresh();
   }
 
   if (countries.length === 0) {
@@ -416,7 +445,14 @@ export function ExpenseForm({
   }
 
   return (
-    <form className="expense-editor" onSubmit={submit}>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title={initial ? "Saving your changes" : "Saving your expense"}
+          message="Updating the trip total and everyone’s share."
+        />
+      ) : null}
+      <form className="expense-editor" onSubmit={submit}>
       <section className="expense-section amount-section">
         <div className="section-heading">
           <span className="section-number">1</span>
@@ -656,9 +692,7 @@ export function ExpenseForm({
                 ) : selected ? (
                   <strong className="equal-share">
                     {currentCountry?.baseCurrency ?? "MYR"}{" "}
-                    {(
-                      settlementTotal / Math.max(splitUserIds.length, 1)
-                    ).toFixed(2)}
+                    {equalShares.get(member.id) ?? "0.00"}
                   </strong>
                 ) : null}
               </div>
@@ -726,6 +760,7 @@ export function ExpenseForm({
           {busy ? "Saving…" : initial ? "Save changes" : "Save expense"}
         </button>
       </div>
-    </form>
+      </form>
+    </>
   );
 }

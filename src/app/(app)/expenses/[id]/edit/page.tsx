@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { expenseSplits, expenses } from "@/db/schema";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { canAccessCountry, listAccessibleCountries } from "@/lib/access";
+import { effectiveConvertedAmount } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
 
 type Props = {
@@ -28,8 +29,9 @@ export default async function EditExpensePage({ params }: Props) {
     .from(expenseSplits)
     .where(eq(expenseSplits.expenseId, id));
 
-  const settlementTotal = Number(
-    expense.actualConvertedAmount ?? expense.convertedAmount,
+  const settlementTotal = effectiveConvertedAmount(
+    expense.convertedAmount,
+    expense.actualConvertedAmount,
   );
   const splitMode =
     expense.splitMode === "PERCENTAGE" || expense.splitMode === "EXACT"

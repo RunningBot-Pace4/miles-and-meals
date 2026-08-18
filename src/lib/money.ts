@@ -15,6 +15,16 @@ export function convertedAmount(amount: number, rate: number): number {
   return roundMoney(amount * rate);
 }
 
+export function effectiveConvertedAmount(
+  converted: string | number | null | undefined,
+  actual: string | number | null | undefined,
+): number {
+  const convertedValue = toNumber(converted);
+  const actualValue = toNumber(actual);
+
+  return actualValue > 0 ? actualValue : convertedValue;
+}
+
 export function formatMoney(amount: number, currency = "MYR"): string {
   return new Intl.NumberFormat("en-MY", {
     style: "currency",

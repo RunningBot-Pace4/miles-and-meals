@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { countries, expenses, user } from "@/db/schema";
 import { DeleteExpenseButton } from "@/components/DeleteExpenseButton";
 import { listAccessibleCountries } from "@/lib/access";
-import { formatMoney, toNumber } from "@/lib/money";
+import { effectiveConvertedAmount, formatMoney } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
 
 export default async function ExpensesPage() {
@@ -54,8 +54,9 @@ export default async function ExpensesPage() {
       <section className="card-list">
         {rows.length ? (
           rows.map((expense) => {
-            const displayAmount = toNumber(
-              expense.actualConvertedAmount ?? expense.convertedAmount,
+            const displayAmount = effectiveConvertedAmount(
+              expense.convertedAmount,
+              expense.actualConvertedAmount,
             );
 
             return (

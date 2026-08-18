@@ -57,6 +57,12 @@ export const profilePreferencesSchema = z.object({
   ]),
 });
 
+const optionalPositiveMoneySchema = z.preprocess(
+  (value) =>
+    value === "" || value === null || value === undefined ? null : value,
+  z.coerce.number().positive().max(1_000_000_000).nullable(),
+);
+
 export const expenseSchema = z.object({
   countryId: uuidSchema,
   expenseDate: z.string().min(10).max(10),
@@ -66,7 +72,7 @@ export const expenseSchema = z.object({
   transactionAmount: z.coerce.number().positive().max(1_000_000_000),
   exchangeRate: z.coerce.number().positive().max(1_000_000),
   rateType: z.enum(["DEFAULT", "CASH_EXCHANGE", "CREDIT_CARD", "MANUAL"]),
-  actualConvertedAmount: z.union([z.coerce.number().min(0), z.literal(""), z.null()]).optional(),
+  actualConvertedAmount: optionalPositiveMoneySchema.optional(),
   paidByUserId: z.string().min(1),
   paymentMethod: z.string().trim().max(100).optional().default(""),
   receiptUrl: z.union([z.string().url(), z.literal("")]).optional().default(""),

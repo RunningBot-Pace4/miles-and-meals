@@ -91,11 +91,11 @@ export async function POST(request: Request) {
         baseCurrency: country.baseCurrency,
         convertedAmount: baseAmount.toFixed(2),
         actualConvertedAmount:
-          input.actualConvertedAmount === "" ||
-          input.actualConvertedAmount === null ||
-          input.actualConvertedAmount === undefined
-            ? null
-            : Number(input.actualConvertedAmount).toFixed(2),
+          input.rateType === "CREDIT_CARD" &&
+          typeof input.actualConvertedAmount === "number" &&
+          input.actualConvertedAmount > 0
+            ? input.actualConvertedAmount.toFixed(2)
+            : null,
         splitMode: input.splitMode,
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
@@ -106,11 +106,11 @@ export async function POST(request: Request) {
       .returning({ id: expenses.id });
 
     const settlementBase =
-      input.actualConvertedAmount === "" ||
-      input.actualConvertedAmount === null ||
-      input.actualConvertedAmount === undefined
-        ? baseAmount
-        : Number(input.actualConvertedAmount);
+      input.rateType === "CREDIT_CARD" &&
+      typeof input.actualConvertedAmount === "number" &&
+      input.actualConvertedAmount > 0
+        ? input.actualConvertedAmount
+        : baseAmount;
 
     await db.insert(expenseSplits).values(
       buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(
