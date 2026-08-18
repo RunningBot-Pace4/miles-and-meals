@@ -106,6 +106,71 @@ export function AdminForms({
         <form
           className="panel stack"
           onSubmit={(event) =>
+            run(event, "/api/admin/users/password", (form) => {
+              const newPassword = String(form.get("newPassword") ?? "");
+              const confirmPassword = String(
+                form.get("confirmPassword") ?? "",
+              );
+
+              if (newPassword !== confirmPassword) {
+                throw new Error("Passwords do not match.");
+              }
+
+              return {
+                userId: String(form.get("userId") ?? ""),
+                newPassword,
+              };
+            })
+          }
+        >
+          <h2>Reset user password</h2>
+          <p className="muted">
+            Set a temporary password for a registered traveler. Their existing
+            login session will be signed out.
+          </p>
+
+          <label>
+            User
+            <select name="userId" required>
+              <option value="">Choose user</option>
+              {users.map((member) => (
+                <option value={member.id} key={member.id}>
+                  {member.name} · {member.email}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            New temporary password
+            <input
+              name="newPassword"
+              type="password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+
+          <label>
+            Confirm password
+            <input
+              name="confirmPassword"
+              type="password"
+              minLength={12}
+              maxLength={128}
+              required
+            />
+          </label>
+
+          <button className="button primary" type="submit">
+            Reset password
+          </button>
+        </form>
+
+        <form
+          className="panel stack"
+          onSubmit={(event) =>
             run(event, "/api/admin/trips", (form) => ({
               name: String(form.get("name") ?? ""),
               baseCurrency: String(form.get("baseCurrency") ?? "MYR"),

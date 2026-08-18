@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
-import { ForgotPasswordForm } from "@/components/ForgotPasswordForm";
 import { getSession } from "@/lib/session";
 
 export default async function ForgotPasswordPage() {
@@ -16,16 +16,13 @@ export default async function ForgotPasswordPage() {
         <section className="auth-showcase" aria-label="Miles & Meals">
           <BrandLogo href="" inverse />
           <div className="auth-showcase-copy">
-            <p className="eyebrow eyebrow-light">ACCOUNT RECOVERY</p>
-            <h1>Back on the road in a few taps.</h1>
+            <p className="eyebrow eyebrow-light">PASSWORD HELP</p>
+            <h1>Simple recovery, managed by your trip Admin.</h1>
             <p>
-              Enter your account email and we will send a secure, time-limited
-              reset link.
+              We do not allow password resets using only an email address,
+              because anyone who knows your email could otherwise take over
+              your account.
             </p>
-          </div>
-          <div className="auth-feature-strip">
-            <span>✦ 30-minute reset link</span>
-            <span>✦ Old sessions revoked</span>
           </div>
         </section>
 
@@ -34,17 +31,20 @@ export default async function ForgotPasswordPage() {
             <BrandLogo href="" />
           </div>
           <p className="eyebrow">FORGOT PASSWORD</p>
-          <h2 className="auth-title">Reset your password</h2>
+          <h2 className="auth-title">Ask your Admin to reset it</h2>
           <p className="muted auth-intro">
-            Enter the email address used for your Miles & Meals account.
+            Tell your Miles & Meals Admin which account email you use. The
+            Admin can set a new temporary password from Admin → Users.
           </p>
-          <ForgotPasswordForm />
-          {process.env.NODE_ENV !== "production" ? (
-            <p className="auth-dev-note">
-              Local development: if Resend is not configured, the reset link
-              will appear in the Visual Studio terminal.
-            </p>
-          ) : null}
+
+          <div className="stack">
+            <Link className="button primary full" href="/login">
+              Back to sign in
+            </Link>
+            <Link className="auth-link auth-link-center" href="/register">
+              Need a new account? Register
+            </Link>
+          </div>
         </section>
       </div>
     </main>

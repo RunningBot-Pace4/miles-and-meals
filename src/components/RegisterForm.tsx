@@ -5,10 +5,10 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
-export function LoginForm() {
+export function RegisterForm() {
   const router = useRouter();
-  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -17,17 +17,25 @@ export function LoginForm() {
     setError("");
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "").trim();
+    const name = String(form.get("name") ?? "").trim();
+    const email = String(form.get("email") ?? "").trim().toLowerCase();
     const password = String(form.get("password") ?? "");
+    const confirmPassword = String(form.get("confirmPassword") ?? "");
 
-    const result = await authClient.signIn.email({
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setBusy(false);
+      return;
+    }
+
+    const result = await authClient.signUp.email({
+      name,
       email,
       password,
-      rememberMe: true,
     });
 
     if (result.error) {
-      setError(result.error.message ?? "Unable to sign in.");
+      setError(result.error.message ?? "Unable to create account.");
       setBusy(false);
       return;
     }
@@ -38,6 +46,19 @@ export function LoginForm() {
 
   return (
     <form className="stack" onSubmit={handleSubmit}>
+      <label>
+        Name
+        <input
+          name="name"
+          type="text"
+          autoComplete="name"
+          minLength={2}
+          maxLength={100}
+          required
+          placeholder="Your name"
+        />
+      </label>
+
       <label>
         Email
         <input
@@ -55,15 +76,15 @@ export function LoginForm() {
           <input
             name="password"
             type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            required
+            autoComplete="new-password"
             minLength={12}
+            maxLength={128}
+            required
           />
           <button
             className="password-toggle"
             type="button"
             aria-pressed={showPassword}
-            aria-label={showPassword ? "Hide password" : "Show password"}
             onClick={() => setShowPassword((value) => !value)}
           >
             {showPassword ? "Hide" : "Show"}
@@ -71,23 +92,32 @@ export function LoginForm() {
         </span>
       </label>
 
-      <div className="auth-form-row">
-        <span />
-        <Link className="auth-link" href="/forgot-password">
-          Forgot password?
-        </Link>
-      </div>
+      <label>
+        Confirm password
+        <input
+          name="confirmPassword"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          minLength={12}
+          maxLength={128}
+          required
+        />
+      </label>
 
-      {error ? <p className="error-text">{error}</p> : null}
+      {error ? (
+        <p className="error-text" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <button className="button primary full" disabled={busy} type="submit">
-        {busy ? "Signing in…" : "Sign in"}
+        {busy ? "Creating account…" : "Create account"}
       </button>
 
       <p className="muted" style={{ textAlign: "center", margin: 0 }}>
-        New traveler?{" "}
-        <Link className="auth-link" href="/register">
-          Create account
+        Already registered?{" "}
+        <Link className="auth-link" href="/login">
+          Sign in
         </Link>
       </p>
     </form>

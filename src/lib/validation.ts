@@ -29,6 +29,11 @@ export const createUserSchema = z.object({
   password: z.string().min(12).max(128),
 });
 
+export const resetUserPasswordSchema = z.object({
+  userId: z.string().min(1),
+  newPassword: z.string().min(12).max(128),
+});
+
 export const expenseSchema = z.object({
   countryId: uuidSchema,
   expenseDate: z.string().min(10).max(10),

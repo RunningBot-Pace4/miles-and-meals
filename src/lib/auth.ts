@@ -1,22 +1,57 @@
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
-import { after } from "next/server";
 import { admin } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
-import { sendPasswordResetEmail } from "@/lib/email";
 import { schema, session } from "@/db/schema";
 
-function hostFromUrl(value: string | undefined): string | null {
-  if (!value) {
+function normalizeBaseUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
     return null;
   }
 
   try {
-    return new URL(value).host;
+    const parsed = new URL(trimmed);
+    return parsed.origin;
   } catch {
     return null;
   }
+}
+
+function hostFromUrl(value: string | undefined): string | null {
+  const baseUrl = normalizeBaseUrl(value);
+
+  if (!baseUrl) {
+    return null;
+  }
+
+  return new URL(baseUrl).host;
+}
+
+function vercelUrl(value: string | undefined): string | null {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  return normalizeBaseUrl(
+    trimmed.startsWith("http://") || trimmed.startsWith("https://")
+      ? trimmed
+      : `https://${trimmed}`,
+  );
+}
+
+function getFallbackBaseUrl(): string {
+  return (
+    normalizeBaseUrl(process.env.BETTER_AUTH_URL) ??
+    normalizeBaseUrl(process.env.NEXT_PUBLIC_APP_URL) ??
+    vercelUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ??
+    vercelUrl(process.env.VERCEL_URL) ??
+    "http://localhost:3000"
+  );
 }
 
 function getAllowedHosts(): string[] {
@@ -47,6 +82,7 @@ export const auth = betterAuth({
   baseURL: {
     allowedHosts: getAllowedHosts(),
     protocol: process.env.NODE_ENV === "development" ? "http" : "https",
+    fallback: getFallbackBaseUrl(),
   },
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -54,26 +90,9 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    disableSignUp: process.env.ALLOW_BOOTSTRAP_SIGNUP !== "true",
+    disableSignUp: false,
     minPasswordLength: 12,
     maxPasswordLength: 128,
-    revokeSessionsOnPasswordReset: true,
-    resetPasswordTokenExpiresIn: 60 * 30,
-    sendResetPassword: async ({ user, url }) => {
-      after(async () => {
-        try {
-          await sendPasswordResetEmail({
-            to: user.email,
-            url,
-          });
-        } catch (error) {
-          console.error(
-            "[Miles & Meals] Unable to send password reset email.",
-            error,
-          );
-        }
-      });
-    },
   },
   plugins: [admin()],
   session: {
@@ -86,14 +105,6 @@ export const auth = betterAuth({
     max: 60,
     customRules: {
       "/sign-in/email": {
-        window: 60,
-        max: 5,
-      },
-      "/request-password-reset": {
-        window: 60,
-        max: 3,
-      },
-      "/reset-password": {
         window: 60,
         max: 5,
       },
