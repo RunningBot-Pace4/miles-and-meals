@@ -7,7 +7,47 @@ import { db } from "@/db";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { schema, session } from "@/db/schema";
 
+function hostFromUrl(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).host;
+  } catch {
+    return null;
+  }
+}
+
+function getAllowedHosts(): string[] {
+  const hosts = new Set<string>([
+    "localhost:3000",
+    "127.0.0.1:3000",
+    "*.vercel.app",
+  ]);
+
+  const configuredHosts = [
+    hostFromUrl(process.env.BETTER_AUTH_URL),
+    hostFromUrl(process.env.NEXT_PUBLIC_APP_URL),
+    process.env.VERCEL_URL?.trim() || null,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() || null,
+  ];
+
+  for (const host of configuredHosts) {
+    if (host) {
+      hosts.add(host);
+    }
+  }
+
+  return [...hosts];
+}
+
 export const auth = betterAuth({
+  appName: "Miles & Meals",
+  baseURL: {
+    allowedHosts: getAllowedHosts(),
+    protocol: process.env.NODE_ENV === "development" ? "http" : "https",
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
@@ -72,8 +112,4 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: [
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-    process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
-  ],
 });
