@@ -6,7 +6,7 @@ import {
   getCountryWithTrip,
   listCountryMembers,
 } from "@/lib/access";
-import { buildExpenseSplits, convertedAmount } from "@/lib/money";
+import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { getSession } from "@/lib/session";
 import { deleteStoredReceipt } from "@/lib/receipt-storage";
 import { expenseSchema } from "@/lib/validation";
@@ -69,12 +69,26 @@ export async function PUT(request: Request, context: Context) {
       );
     }
 
+    const baseCurrencyTransaction = sameCurrency(
+      input.transactionCurrency,
+      country.baseCurrency,
+    );
+    const appliedExchangeRate = effectiveExchangeRate(
+      input.transactionCurrency,
+      country.baseCurrency,
+      input.exchangeRate,
+    );
+    const appliedRateType = baseCurrencyTransaction
+      ? "DEFAULT"
+      : input.rateType;
+
     const baseAmount = convertedAmount(
       input.transactionAmount,
-      input.exchangeRate,
+      appliedExchangeRate,
     );
 
     const actual =
+      !baseCurrencyTransaction &&
       input.rateType === "CREDIT_CARD" &&
       typeof input.actualConvertedAmount === "number" &&
       input.actualConvertedAmount > 0
@@ -91,8 +105,8 @@ export async function PUT(request: Request, context: Context) {
         description: input.description,
         transactionCurrency: input.transactionCurrency,
         transactionAmount: input.transactionAmount.toFixed(2),
-        exchangeRate: input.exchangeRate.toFixed(10),
-        rateType: input.rateType,
+        exchangeRate: appliedExchangeRate.toFixed(10),
+        rateType: appliedRateType,
         baseCurrency: country.baseCurrency,
         convertedAmount: baseAmount.toFixed(2),
         actualConvertedAmount: actual === null ? null : actual.toFixed(2),

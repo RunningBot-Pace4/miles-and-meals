@@ -3,7 +3,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
-import { splitEqually } from "@/lib/money";
+import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
 
 type CountryOption = {
@@ -140,14 +140,21 @@ export function ExpenseForm({
     countries.find((country) => country.id === initial?.countryId) ??
     countries[0];
 
+  const startingCurrency = (
+    initial?.transactionCurrency ??
+    first?.currencyCode ??
+    ""
+  ).toUpperCase();
+
+  const startingRate =
+    first && sameCurrency(startingCurrency, first.baseCurrency)
+      ? "1"
+      : initial?.exchangeRate ?? first?.defaultExchangeRate ?? "1";
+
   const [countryId, setCountryId] = useState(first?.id ?? "");
   const [category, setCategory] = useState(initial?.category ?? "Food");
-  const [currency, setCurrency] = useState(
-    initial?.transactionCurrency ?? first?.currencyCode ?? "",
-  );
-  const [rate, setRate] = useState(
-    initial?.exchangeRate ?? first?.defaultExchangeRate ?? "1",
-  );
+  const [currency, setCurrency] = useState(startingCurrency);
+  const [rate, setRate] = useState(startingRate);
   const [rateType, setRateType] = useState<RateType>(
     initial?.rateType ?? "DEFAULT",
   );
@@ -188,7 +195,13 @@ export function ExpenseForm({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const currentCountry = countries.find((country) => country.id === countryId);
+  const currentCountry = countries.find(
+    (country) => country.id === countryId,
+  );
+  const isBaseCurrency = sameCurrency(
+    currency,
+    currentCountry?.baseCurrency,
+  );
 
   const converted = useMemo(() => {
     const parsedAmount = parseTravelNumber(amount);
@@ -311,13 +324,44 @@ export function ExpenseForm({
     return () => controller.abort();
   }, [countryId, initial]);
 
+  function handleCurrencyChange(nextCurrency: string) {
+    const normalized = nextCurrency.trim().toUpperCase().slice(0, 3);
+
+    setCurrency(normalized);
+
+    if (!currentCountry) {
+      return;
+    }
+
+    if (sameCurrency(normalized, currentCountry.baseCurrency)) {
+      setRate("1");
+      setRateType("DEFAULT");
+      setActualConvertedAmount("");
+      return;
+    }
+
+    if (isBaseCurrency || rate === "1") {
+      setRate(currentCountry.defaultExchangeRate);
+      setRateType("DEFAULT");
+      setActualConvertedAmount("");
+    }
+  }
+
   function handleCountryChange(nextId: string) {
     setCountryId(nextId);
     const country = countries.find((item) => item.id === nextId);
 
     if (country) {
-      setCurrency(country.currencyCode);
-      setRate(country.defaultExchangeRate);
+      const nextCurrency = country.currencyCode.toUpperCase();
+      const nextRate = sameCurrency(
+        nextCurrency,
+        country.baseCurrency,
+      )
+        ? "1"
+        : country.defaultExchangeRate;
+
+      setCurrency(nextCurrency);
+      setRate(nextRate);
       setRateType("DEFAULT");
       setActualConvertedAmount("");
       setReceiptResult(null);
@@ -328,6 +372,13 @@ export function ExpenseForm({
   }
 
   function handleRateType(nextType: RateType) {
+    if (isBaseCurrency) {
+      setRateType("DEFAULT");
+      setRate("1");
+      setActualConvertedAmount("");
+      return;
+    }
+
     setRateType(nextType);
 
     if (nextType === "DEFAULT" && currentCountry) {
@@ -420,7 +471,7 @@ export function ExpenseForm({
         detected.currencyCode &&
         /^[A-Z]{3}$/.test(detected.currencyCode)
       ) {
-        setCurrency(detected.currencyCode);
+        handleCurrencyChange(detected.currencyCode);
       }
 
       if (!detected.merchantName && detected.totalAmount === null) {
@@ -659,6 +710,50 @@ export function ExpenseForm({
         />
       ) : null}
       <form className="expense-editor" onSubmit={submit}>
+        <header className="expense-editor-hero">
+          <div className="expense-editor-title">
+            <p className="eyebrow">MILES &amp; MEALS · EXPENSES</p>
+            <h1>{initial ? "Edit expense" : "Add a spend"}</h1>
+            <p className="muted">
+              {initial
+                ? "Update the spend, exchange rate and sharing details."
+                : "Record it quickly, split it fairly, keep the trip moving."}
+            </p>
+          </div>
+
+          <label
+            className={
+              receiptScanning
+                ? "expense-scan-action scanning"
+                : "expense-scan-action"
+            }
+          >
+            <input
+              className="receipt-file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              onChange={handleReceiptFile}
+              disabled={receiptScanning || busy}
+            />
+            {receiptScanning ? (
+              <span className="mini-spinner" />
+            ) : (
+              <span className="expense-scan-icon">📷</span>
+            )}
+            <span>
+              <strong>
+                {receiptScanning
+                  ? "Reading receipt…"
+                  : receiptFile
+                    ? "Scan another"
+                    : "Scan receipt"}
+              </strong>
+              <small>Auto-fill shop &amp; amount</small>
+            </span>
+          </label>
+        </header>
+
       <section className="expense-section amount-section">
         <div className="section-heading">
           <span className="section-number">1</span>
@@ -729,7 +824,7 @@ export function ExpenseForm({
             <input
               value={currency}
               maxLength={3}
-              onChange={(event) => setCurrency(event.target.value.toUpperCase())}
+              onChange={(event) => handleCurrencyChange(event.target.value)}
               required
               aria-label="Transaction currency"
             />
@@ -753,7 +848,11 @@ export function ExpenseForm({
           <span className="section-number amber">2</span>
           <div>
             <h2>Exchange rate</h2>
-            <p>Use the actual cash or card rate for accurate trip totals.</p>
+            <p>
+              {isBaseCurrency
+                ? `${currentCountry?.baseCurrency ?? "MYR"} is the trip base currency, so the rate is fixed at 1:1.`
+                : "Use the actual cash or card rate for accurate trip totals."}
+            </p>
           </div>
         </div>
 
@@ -764,6 +863,8 @@ export function ExpenseForm({
               key={item.value}
               onClick={() => handleRateType(item.value)}
               type="button"
+              disabled={isBaseCurrency}
+              aria-disabled={isBaseCurrency}
             >
               {item.label}
             </button>
@@ -775,14 +876,23 @@ export function ExpenseForm({
             1 {currency || "CUR"} =
             <input
               inputMode="decimal"
-              value={rate}
-              onChange={(event) => setRate(event.target.value)}
+              value={isBaseCurrency ? "1" : rate}
+              onChange={(event) => {
+                if (!isBaseCurrency) {
+                  setRate(event.target.value);
+                }
+              }}
+              readOnly={isBaseCurrency}
+              className={isBaseCurrency ? "fx-rate-locked" : undefined}
               required
             />
           </label>
           <div className="fx-currency">
             {currentCountry?.baseCurrency ?? "MYR"}
           </div>
+          {isBaseCurrency ? (
+            <span className="base-currency-badge">1:1 Base currency</span>
+          ) : null}
         </div>
 
         <div className="conversion-hero">
@@ -798,7 +908,7 @@ export function ExpenseForm({
           </small>
         </div>
 
-        {rateType === "CREDIT_CARD" ? (
+        {rateType === "CREDIT_CARD" && !isBaseCurrency ? (
           <label className="actual-charge">
             Actual card charge in {currentCountry?.baseCurrency ?? "MYR"}
             <input
@@ -913,39 +1023,22 @@ export function ExpenseForm({
         </div>
       </section>
 
-      <section className="expense-section receipt-section">
-        <div className="section-heading">
-          <span className="section-number amber">4</span>
-          <div>
-            <h2>Scan receipt</h2>
-            <p>
-              Take a clear photo. Miles & Meals reads it directly on this
-              device and fills the shop name and final amount.
-            </p>
-          </div>
-        </div>
-
-        <div className="receipt-scanner">
-          <label className="receipt-camera-button">
-            <input
-              className="receipt-file-input"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              onChange={handleReceiptFile}
-              disabled={receiptScanning || busy}
-            />
-            <span className="receipt-camera-icon">📷</span>
-            <span>
-              <strong>
-                {receiptFile ? "Take another photo" : "Take receipt photo"}
-              </strong>
+      {(receiptFile ||
+        receiptPreviewUrl ||
+        receiptScanning ||
+        receiptMessage ||
+        initial?.receiptUrl) ? (
+        <section className="receipt-inline-panel">
+          <div className="receipt-inline-heading">
+            <div>
+              <strong>Receipt scan</strong>
               <small>
-                Free on-device OCR · no OpenAI API key · JPEG / PNG / WebP
+                Detected values stay editable before you save.
               </small>
-            </span>
-          </label>
+            </div>
+          </div>
 
+          <div className="receipt-scanner">
           {receiptPreviewUrl ? (
             <div className="receipt-preview-card">
               <img
@@ -1048,11 +1141,12 @@ export function ExpenseForm({
             Always check Description, Currency and Amount before saving.
           </p>
         </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="expense-section details-section">
         <div className="section-heading">
-          <span className="section-number">5</span>
+          <span className="section-number">4</span>
           <div>
             <h2>Payment details</h2>
             <p>Optional information that helps you reconcile later.</p>

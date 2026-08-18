@@ -58,13 +58,6 @@ export default async function EditExpensePage({ params }: Props) {
   const countries = await listAccessibleCountries(session.user);
 
   return (
-    <div className="stack gap-lg">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">EXPENSES</p>
-          <h1>Edit expense</h1>
-        </div>
-      </div>
       <ExpenseForm
         countries={countries}
         initial={{
@@ -95,6 +88,5 @@ export default async function EditExpensePage({ params }: Props) {
           splitValues,
         }}
       />
-    </div>
   );
 }

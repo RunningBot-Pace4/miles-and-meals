@@ -7,7 +7,7 @@ import {
   listAccessibleCountries,
   listCountryMembers,
 } from "@/lib/access";
-import { buildExpenseSplits, convertedAmount } from "@/lib/money";
+import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { getSession } from "@/lib/session";
 import { expenseSchema } from "@/lib/validation";
 
@@ -71,9 +71,29 @@ export async function POST(request: Request) {
       );
     }
 
+    const baseCurrencyTransaction = sameCurrency(
+      input.transactionCurrency,
+      country.baseCurrency,
+    );
+    const appliedExchangeRate = effectiveExchangeRate(
+      input.transactionCurrency,
+      country.baseCurrency,
+      input.exchangeRate,
+    );
+    const appliedRateType = baseCurrencyTransaction
+      ? "DEFAULT"
+      : input.rateType;
+    const actualConvertedAmount =
+      !baseCurrencyTransaction &&
+      input.rateType === "CREDIT_CARD" &&
+      typeof input.actualConvertedAmount === "number" &&
+      input.actualConvertedAmount > 0
+        ? input.actualConvertedAmount
+        : null;
+
     const baseAmount = convertedAmount(
       input.transactionAmount,
-      input.exchangeRate,
+      appliedExchangeRate,
     );
 
     const inserted = await db
@@ -86,16 +106,14 @@ export async function POST(request: Request) {
         description: input.description,
         transactionCurrency: input.transactionCurrency,
         transactionAmount: input.transactionAmount.toFixed(2),
-        exchangeRate: input.exchangeRate.toFixed(10),
-        rateType: input.rateType,
+        exchangeRate: appliedExchangeRate.toFixed(10),
+        rateType: appliedRateType,
         baseCurrency: country.baseCurrency,
         convertedAmount: baseAmount.toFixed(2),
         actualConvertedAmount:
-          input.rateType === "CREDIT_CARD" &&
-          typeof input.actualConvertedAmount === "number" &&
-          input.actualConvertedAmount > 0
-            ? input.actualConvertedAmount.toFixed(2)
-            : null,
+          actualConvertedAmount === null
+            ? null
+            : actualConvertedAmount.toFixed(2),
         splitMode: input.splitMode,
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
@@ -106,11 +124,7 @@ export async function POST(request: Request) {
       .returning({ id: expenses.id });
 
     const settlementBase =
-      input.rateType === "CREDIT_CARD" &&
-      typeof input.actualConvertedAmount === "number" &&
-      input.actualConvertedAmount > 0
-        ? input.actualConvertedAmount
-        : baseAmount;
+      actualConvertedAmount ?? baseAmount;
 
     await db.insert(expenseSplits).values(
       buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(

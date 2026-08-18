@@ -1,3 +1,21 @@
+export function sameCurrency(
+  left: string | null | undefined,
+  right: string | null | undefined,
+): boolean {
+  return (left ?? "").trim().toUpperCase() ===
+    (right ?? "").trim().toUpperCase();
+}
+
+export function effectiveExchangeRate(
+  transactionCurrency: string,
+  baseCurrency: string,
+  requestedRate: number,
+): number {
+  return sameCurrency(transactionCurrency, baseCurrency)
+    ? 1
+    : requestedRate;
+}
+
 export function toNumber(value: string | number | null | undefined): number {
   if (value === null || value === undefined || value === "") {
     return 0;
