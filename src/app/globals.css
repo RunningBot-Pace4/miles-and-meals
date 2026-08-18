@@ -5313,3 +5313,50 @@ body {
     min-width: 0;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* Receipt merchant improvements + Neon storage v19                           */
+/* -------------------------------------------------------------------------- */
+
+.receipt-shop-suggestions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.receipt-shop-suggestions > small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.receipt-shop-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.receipt-shop-chip {
+  min-height: 34px;
+  max-width: 100%;
+  padding: 0.38rem 0.7rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  background: white;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.receipt-shop-chip:hover,
+.receipt-shop-chip.active {
+  border-color: rgb(15 118 110 / 40%);
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+}

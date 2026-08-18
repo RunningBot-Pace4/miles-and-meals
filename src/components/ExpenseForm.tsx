@@ -22,15 +22,11 @@ type Member = {
 
 type ReceiptAnalysis = {
   merchantName: string | null;
+  merchantCandidates: string[];
   totalAmount: number | null;
   currencyCode: string | null;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   rawText: string;
-};
-
-type ReceiptUploadResponse = {
-  receiptUrl?: string;
-  error?: string;
 };
 
 type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
@@ -530,26 +526,14 @@ export function ExpenseForm({
     setReceiptScanProgress(0);
   }
 
-  async function uploadReceiptPhoto(file: File): Promise<string> {
-    const form = new FormData();
-    form.append("file", file);
-    form.append("countryId", countryId);
+  async function prepareReceiptForSave(
+    file: File,
+  ): Promise<string> {
+    const { compressReceiptForDatabase } = await import(
+      "@/lib/receipt-image-storage"
+    );
 
-    const response = await fetch("/api/receipts/upload", {
-      method: "POST",
-      body: form,
-    });
-
-    const payload =
-      (await response.json().catch(() => ({}))) as ReceiptUploadResponse;
-
-    if (!response.ok || !payload.receiptUrl) {
-      throw new Error(
-        payload.error ?? "Unable to store receipt photo.",
-      );
-    }
-
-    return payload.receiptUrl;
+    return compressReceiptForDatabase(file);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -620,7 +604,7 @@ export function ExpenseForm({
     setBusy(true);
     setSavingMessage(
       receiptFile
-        ? "Uploading your receipt photo securely."
+        ? "Compressing the receipt photo for your trip."
         : "Updating the trip total and everyone’s share.",
     );
 
@@ -629,16 +613,17 @@ export function ExpenseForm({
 
     try {
       if (receiptFile) {
-        finalReceiptUrl = await uploadReceiptPhoto(receiptFile);
+        finalReceiptUrl =
+          await prepareReceiptForSave(receiptFile);
         setSavingMessage(
-          "Receipt saved. Updating the trip total and everyone’s share.",
+          "Receipt ready. Updating the trip total and everyone’s share.",
         );
       }
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Unable to upload receipt photo.",
+          : "Unable to prepare the receipt photo.",
       );
       setBusy(false);
       return;
@@ -848,11 +833,11 @@ export function ExpenseForm({
           <span className="section-number amber">2</span>
           <div>
             <h2>Exchange rate</h2>
-            <p>
-              {isBaseCurrency
-                ? `${currentCountry?.baseCurrency ?? "MYR"} is the trip base currency, so the rate is fixed at 1:1.`
-                : "Use the actual cash or card rate for accurate trip totals."}
-            </p>
+            {!isBaseCurrency ? (
+              <p>
+                Use the actual cash or card rate for accurate trip totals.
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -1129,6 +1114,29 @@ export function ExpenseForm({
             </div>
           ) : null}
 
+          {receiptResult?.merchantCandidates &&
+          receiptResult.merchantCandidates.length > 1 ? (
+            <div className="receipt-shop-suggestions">
+              <small>Shop suggestions</small>
+              <div>
+                {receiptResult.merchantCandidates.map((candidate) => (
+                  <button
+                    className={
+                      description === candidate
+                        ? "receipt-shop-chip active"
+                        : "receipt-shop-chip"
+                    }
+                    key={candidate}
+                    type="button"
+                    onClick={() => setDescription(candidate)}
+                  >
+                    {candidate}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {receiptResult?.rawText ? (
             <details className="receipt-ocr-text">
               <summary>View detected receipt text</summary>
@@ -1136,10 +1144,6 @@ export function ExpenseForm({
             </details>
           ) : null}
 
-          <p className="receipt-ai-note">
-            Local OCR is free but less accurate than an AI vision model.
-            Always check Description, Currency and Amount before saving.
-          </p>
         </div>
         </section>
       ) : null}
@@ -1168,9 +1172,19 @@ export function ExpenseForm({
             <input
               name="receiptUrl"
               type="url"
-              value={receiptUrl}
-              onChange={(event) => setReceiptUrl(event.target.value)}
-              placeholder="Optional external receipt URL"
+              value={
+                receiptUrl.startsWith("data:image/")
+                  ? ""
+                  : receiptUrl
+              }
+              onChange={(event) =>
+                setReceiptUrl(event.target.value)
+              }
+              placeholder={
+                receiptUrl.startsWith("data:image/")
+                  ? "Receipt photo stored with expense"
+                  : "Optional external receipt URL"
+              }
             />
           </label>
         </div>

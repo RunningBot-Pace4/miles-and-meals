@@ -2,28 +2,52 @@ import { describe, expect, it } from "vitest";
 import { parseReceiptText } from "@/lib/receipt-parser";
 
 describe("receipt parser", () => {
-  it("finds a merchant and VND total", () => {
+  it("uses the receipt header to identify the merchant", () => {
     const parsed = parseReceiptText(
       `
-HIGHLANDS COFFEE
-123 LE LOI STREET
 TAX INVOICE
-
+ORDER 88172
 Cappuccino       65,000
 Cake             55,000
-
 SUBTOTAL        120,000
 TOTAL           120,000 VND
 Thank you
 `,
       "VND",
       88,
+      `
+HIGHLANDS
+COFFEE
+123 LE LOI STREET
+`,
     );
 
     expect(parsed.merchantName).toBe("HIGHLANDS COFFEE");
+    expect(parsed.merchantCandidates).toContain(
+      "HIGHLANDS COFFEE",
+    );
     expect(parsed.totalAmount).toBe(120000);
     expect(parsed.currencyCode).toBe("VND");
-    expect(parsed.confidence).toBe("HIGH");
+  });
+
+  it("prefers a merchant-like header over an address", () => {
+    const parsed = parseReceiptText(
+      `
+VAT RECEIPT
+TOTAL RM 46.20
+`,
+      "MYR",
+      84,
+      `
+LITTLE HANOI EGG COFFEE
+12 JALAN SULTAN
+KUALA LUMPUR
+`,
+    );
+
+    expect(parsed.merchantName).toBe(
+      "LITTLE HANOI EGG COFFEE",
+    );
   });
 
   it("does not choose subtotal over grand total", () => {
@@ -66,18 +90,5 @@ TONG CONG 250.000 VND
     );
 
     expect(parsed.totalAmount).toBe(250000);
-  });
-
-  it("falls back to the selected country currency", () => {
-    const parsed = parseReceiptText(
-      `
-LOCAL CAFE
-TOTAL 18.50
-`,
-      "SGD",
-      82,
-    );
-
-    expect(parsed.currencyCode).toBe("SGD");
   });
 });

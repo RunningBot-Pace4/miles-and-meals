@@ -57,6 +57,18 @@ export const profilePreferencesSchema = z.object({
   ]),
 });
 
+const receiptReferenceSchema = z.union([
+  z.string().url().max(4096),
+  z
+    .string()
+    .max(900_000)
+    .regex(
+      /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/,
+      "Invalid stored receipt image.",
+    ),
+  z.literal(""),
+]);
+
 const optionalPositiveMoneySchema = z.preprocess((value) => {
   if (value === "" || value === null || value === undefined) {
     return null;
@@ -86,7 +98,7 @@ export const expenseSchema = z.object({
   actualConvertedAmount: optionalPositiveMoneySchema.optional(),
   paidByUserId: z.string().min(1),
   paymentMethod: z.string().trim().max(100).optional().default(""),
-  receiptUrl: z.union([z.string().url(), z.literal("")]).optional().default(""),
+  receiptUrl: receiptReferenceSchema.optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
   splitMode: z.enum(["EQUAL", "PERCENTAGE", "EXACT"]),
   splits: z

@@ -8,7 +8,6 @@ import {
 } from "@/lib/access";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { getSession } from "@/lib/session";
-import { deleteStoredReceipt } from "@/lib/receipt-storage";
 import { expenseSchema } from "@/lib/validation";
 
 type Context = {
@@ -130,13 +129,6 @@ export async function PUT(request: Request, context: Context) {
       ),
     );
 
-    if (
-      existing.receiptUrl &&
-      existing.receiptUrl !== (input.receiptUrl || null)
-    ) {
-      await deleteStoredReceipt(existing.receiptUrl);
-    }
-
     return Response.json({ ok: true });
   } catch (error) {
     const message =
@@ -164,7 +156,6 @@ export async function DELETE(_request: Request, context: Context) {
   }
 
   await db.delete(expenses).where(eq(expenses.id, id));
-  await deleteStoredReceipt(existing.receiptUrl);
 
   return Response.json({ ok: true });
 }
