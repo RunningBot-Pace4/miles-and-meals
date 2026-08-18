@@ -690,8 +690,20 @@ export function ExpenseForm({
 
   return (
     <>
-      {busy ? (
-        <SavingOverlay />
+      {receiptScanning ? (
+        <SavingOverlay
+          title="Reading your receipt"
+          message="Finding the shop name and final amount on this device."
+        />
+      ) : busy ? (
+        <SavingOverlay
+          title={initial ? "Saving expense changes" : "Saving your expense"}
+          message={
+            receiptFile
+              ? "Storing the receipt, totals and traveler shares."
+              : "Updating totals and traveler shares."
+          }
+        />
       ) : null}
       <form className="expense-editor" onSubmit={submit}>
         <header className="expense-editor-hero">

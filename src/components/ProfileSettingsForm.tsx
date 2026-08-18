@@ -10,6 +10,7 @@ import {
   type AvatarColor,
   type AvatarIcon,
 } from "@/lib/avatar";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function ProfileSettingsForm({
   name,
@@ -63,7 +64,15 @@ export function ProfileSettingsForm({
   }
 
   return (
-    <form className="profile-settings-form stack" onSubmit={submit}>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Saving your profile"
+          message="Updating how you appear to your travel crew."
+        />
+      ) : null}
+
+      <form className="profile-settings-form stack" onSubmit={submit}>
       <div className="profile-preview">
         <span
           className="profile-preview-avatar"
@@ -136,6 +145,7 @@ export function ProfileSettingsForm({
           "Save profile"
         )}
       </button>
-    </form>
+      </form>
+    </>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarColor, getAvatarSymbol } from "@/lib/avatar";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 type AccountMenuProps = {
   name: string;
@@ -106,7 +107,15 @@ export function AccountMenu({
   }
 
   return (
-    <div className="account-menu" ref={menuRef}>
+    <>
+      {signingOut ? (
+        <SavingOverlay
+          title="Signing you out"
+          message="Closing this session and returning to sign in."
+        />
+      ) : null}
+
+      <div className="account-menu" ref={menuRef}>
       <button
         className="account-trigger"
         type="button"
@@ -201,6 +210,7 @@ export function AccountMenu({
           </button>
         </div>
       ) : null}
-    </div>
+      </div>
+    </>
   );
 }

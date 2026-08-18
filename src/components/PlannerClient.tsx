@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 type CountryOption = {
   id: string;
@@ -389,6 +390,7 @@ export function PlannerClient({
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
 
   const meta = tabMeta[tab];
 
@@ -434,6 +436,7 @@ export function PlannerClient({
     const form = new FormData(formElement);
 
     setError("");
+    setLoadingTitle(`Adding ${meta.titleLabel.toLowerCase()}`);
     setBusy(true);
 
     try {
@@ -477,6 +480,7 @@ export function PlannerClient({
     const form = new FormData(event.currentTarget);
 
     setError("");
+    setLoadingTitle(`Saving ${tabMeta[editingItem.itemType as TabValue].titleLabel.toLowerCase()}`);
     setBusy(true);
 
     try {
@@ -520,25 +524,36 @@ export function PlannerClient({
     }
 
     setError("");
+    setLoadingTitle("Removing plan item");
+    setBusy(true);
 
-    const response = await fetch(`/api/travel-items/${id}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`/api/travel-items/${id}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
 
-      setError(payload.error ?? "Unable to delete item.");
-      return;
+        throw new Error(payload.error ?? "Unable to delete item.");
+      }
+
+      if (editingItem?.id === id) {
+        setEditingItem(null);
+      }
+
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to delete item.",
+      );
+    } finally {
+      setBusy(false);
     }
-
-    if (editingItem?.id === id) {
-      setEditingItem(null);
-    }
-
-    router.refresh();
   }
 
   function startEdit(item: PlannerItem) {
@@ -576,6 +591,12 @@ export function PlannerClient({
 
   return (
     <div className="planner-shell">
+      {busy ? (
+        <SavingOverlay
+          title={loadingTitle}
+          message="Updating the shared trip plan for everyone."
+        />
+      ) : null}
       <div
         className="planner-tabs"
         role="tablist"

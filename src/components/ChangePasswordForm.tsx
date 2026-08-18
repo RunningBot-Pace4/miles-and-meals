@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function ChangePasswordForm({
   forceChange = false,
@@ -87,7 +88,15 @@ export function ChangePasswordForm({
   }
 
   return (
-    <form className="settings-form stack" onSubmit={handleSubmit}>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Updating your password"
+          message="Securing your account and refreshing your session."
+        />
+      ) : null}
+
+      <form className="settings-form stack" onSubmit={handleSubmit}>
       <label>
         {forceChange ? "Temporary password" : "Current password"}
         <span className="password-input-wrap">
@@ -154,6 +163,7 @@ export function ChangePasswordForm({
           "Change password"
         )}
       </button>
-    </form>
+      </form>
+    </>
   );
 }

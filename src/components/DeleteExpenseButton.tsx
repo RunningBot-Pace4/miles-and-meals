@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function DeleteExpenseButton({ id }: { id: string }) {
   const router = useRouter();
@@ -25,8 +26,22 @@ export function DeleteExpenseButton({ id }: { id: string }) {
   }
 
   return (
-    <button className="text-danger" disabled={busy} onClick={remove} type="button">
-      {busy ? "Deleting…" : "Delete"}
-    </button>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Removing expense"
+          message="Updating trip totals and traveler balances."
+        />
+      ) : null}
+
+      <button
+        className="text-danger"
+        disabled={busy}
+        onClick={remove}
+        type="button"
+      >
+        Delete
+      </button>
+    </>
   );
 }

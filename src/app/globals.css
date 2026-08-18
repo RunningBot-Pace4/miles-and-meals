@@ -5488,3 +5488,629 @@ body {
     animation: none;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v23 — Transparent meaningful loading + receipt viewer                      */
+/* -------------------------------------------------------------------------- */
+
+.trip-loading-overlay {
+  position: fixed;
+  z-index: 1400;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: rgb(245 248 246 / 56%);
+  backdrop-filter: blur(5px) saturate(0.92);
+  -webkit-backdrop-filter: blur(5px) saturate(0.92);
+}
+
+.trip-loading-card {
+  width: min(100%, 390px);
+  display: grid;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 1.45rem 1.35rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 78%);
+  border-radius: 26px;
+  background:
+    radial-gradient(
+      circle at 95% 0,
+      rgb(245 158 11 / 12%),
+      transparent 35%
+    ),
+    rgb(255 255 255 / 86%);
+  box-shadow:
+    0 24px 70px rgb(23 49 44 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 72%);
+  text-align: center;
+}
+
+.trip-loading-card .brand-logo {
+  gap: 0.68rem;
+}
+
+.trip-loading-card .brand-logo-mark {
+  width: 43px;
+  height: 43px;
+}
+
+.trip-loading-card .brand-logo-name {
+  font-size: 1.22rem;
+}
+
+.trip-loading-card .brand-logo-tagline {
+  font-size: 0.64rem;
+}
+
+.trip-loading-route {
+  position: relative;
+  width: min(100%, 270px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.trip-loading-line {
+  position: absolute;
+  top: 14px;
+  right: 15%;
+  left: 15%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(15 118 110 / 13%);
+}
+
+.trip-loading-line > span {
+  width: 42%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      var(--primary),
+      var(--accent),
+      transparent
+    );
+  animation: trip-loading-route 1.45s ease-in-out infinite;
+}
+
+.trip-loading-stop {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.28rem;
+}
+
+.trip-loading-stop i {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgb(255 255 255 / 96%);
+  border-radius: 50%;
+  color: #47736c;
+  background: #dcece8;
+  box-shadow: 0 4px 12px rgb(23 49 44 / 10%);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.trip-loading-stop:nth-of-type(3) i {
+  color: #9a6408;
+  background: #fff0c9;
+}
+
+.trip-loading-stop small {
+  color: #71827d;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.trip-loading-copy {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.trip-loading-copy h2 {
+  margin: 0;
+  color: var(--ink-deep);
+  font-size: clamp(1.2rem, 5vw, 1.48rem);
+  line-height: 1.16;
+}
+
+.trip-loading-copy p {
+  max-width: 310px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.trip-loading-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  color: var(--muted);
+}
+
+.trip-loading-foot small {
+  font-size: 0.66rem;
+}
+
+.trip-loading-pulse {
+  width: 8px;
+  height: 8px;
+  display: block;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 0 0 rgb(15 118 110 / 30%);
+  animation: trip-loading-pulse 1.3s ease-out infinite;
+}
+
+@keyframes trip-loading-route {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(270%);
+  }
+}
+
+@keyframes trip-loading-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(15 118 110 / 30%);
+  }
+
+  70% {
+    box-shadow: 0 0 0 7px rgb(15 118 110 / 0%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(15 118 110 / 0%);
+  }
+}
+
+.receipt-view-button {
+  padding: 0;
+  border: 0;
+  color: var(--primary);
+  background: transparent;
+  font: inherit;
+  font-weight: 750;
+}
+
+.receipt-view-error {
+  display: block;
+  flex-basis: 100%;
+  color: var(--danger);
+}
+
+.receipt-modal-backdrop {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom))
+    max(0.75rem, env(safe-area-inset-left));
+  background: rgb(7 28 25 / 58%);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.receipt-modal {
+  width: min(100%, 720px);
+  max-height: min(88svh, 860px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 28%);
+}
+
+.receipt-modal-header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.receipt-modal-header > div {
+  min-width: 0;
+}
+
+.receipt-modal-header h2 {
+  max-width: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.receipt-modal-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.receipt-modal-image-wrap {
+  min-height: 0;
+  overflow: auto;
+  padding: 1rem;
+  background: #edf2ef;
+}
+
+.receipt-modal-image {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 72svh;
+  display: block;
+  margin: 0 auto;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgb(23 49 44 / 14%);
+}
+
+.receipt-modal-external {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.9rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.receipt-modal-external > span {
+  font-size: 2rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* v23 — Mobile UI audit / overflow hardening                                 */
+/* -------------------------------------------------------------------------- */
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.app-shell,
+.page-container,
+.stack,
+.panel,
+.empty-card,
+.info-card,
+.expense-editor,
+.expense-section,
+.expense-card,
+.expense-main,
+.expense-main > div,
+.expense-overview-card,
+.planner-shell,
+.planner-intro,
+.planner-filter,
+.planner-add-form,
+.planner-edit-form,
+.travel-card,
+.travel-card-body,
+.timeline-card,
+.admin-form-grid,
+.admin-form-card,
+.settings-card,
+.settings-form,
+.profile-settings-form,
+.live-location-control,
+.live-location-control-top,
+.live-map-panel,
+.location-member-card,
+.person-ledger-card,
+.settlement-action-wrap,
+.receipt-inline-panel,
+.receipt-scanner {
+  min-width: 0;
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+.eyebrow,
+.muted,
+.travel-card-meta,
+.travel-notes,
+.coordinate-text,
+.location-help-text,
+.expense-share-chip,
+.member-copy,
+.planner-proposer,
+.auth-intro,
+.info-card,
+.panel {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 719px) {
+  .page-container {
+    width: 100%;
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+  }
+
+  .page-heading,
+  .planner-intro,
+  .expense-editor-hero,
+  .live-location-control-top,
+  .dashboard-welcome,
+  .settlement-page-heading,
+  .split-heading-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-heading > .button,
+  .planner-add-button,
+  .expense-scan-action {
+    width: 100%;
+  }
+
+  .two-col,
+  .form-grid,
+  .admin-form-grid,
+  .expense-overview-grid,
+  .receipt-detected-grid,
+  .live-location-status-grid,
+  .settings-card,
+  .my-money-strip,
+  .loading-stat-grid,
+  .loading-panel-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+
+  .expense-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .expense-main > strong {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .expense-meta,
+  .card-actions,
+  .planner-card-footer,
+  .planner-card-buttons,
+  .planner-form-actions,
+  .travel-card-actions {
+    flex-wrap: wrap;
+  }
+
+  .card-actions {
+    gap: 0.75rem 1rem;
+  }
+
+  .planner-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .planner-proposer {
+    max-width: 100%;
+  }
+
+  .planner-card-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .planner-filter {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .planner-count {
+    justify-self: start;
+  }
+
+  .planner-tabs,
+  .tabs,
+  .people-scroll,
+  .mini-segments,
+  .segmented-control {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+  }
+
+  .planner-tab,
+  .tab,
+  .person-pill,
+  .mini-segment,
+  .segment {
+    flex: 0 0 auto;
+  }
+
+  .timeline-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timeline-time {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .money-entry {
+    grid-template-columns: minmax(86px, 0.36fr) minmax(0, 1fr);
+  }
+
+  .fx-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .base-currency-badge {
+    justify-self: start;
+  }
+
+  .member-split-card {
+    min-width: 0;
+  }
+
+  .member-select {
+    min-width: 0;
+  }
+
+  .member-copy {
+    min-width: 0;
+  }
+
+  .live-location-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .live-location-actions .button,
+  .location-open-button {
+    width: 100%;
+  }
+
+  .location-member-card {
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .receipt-preview-card,
+  .receipt-modal {
+    width: 100%;
+  }
+
+  .receipt-modal {
+    max-height: calc(100svh - 1.5rem);
+    border-radius: 20px;
+  }
+
+  .receipt-modal-image {
+    max-height: 68svh;
+  }
+
+  .trip-loading-card {
+    width: min(100%, 360px);
+    padding: 1.25rem 1rem 1.1rem;
+    border-radius: 22px;
+  }
+
+  .trip-loading-route {
+    width: min(100%, 250px);
+  }
+
+  .auth-card,
+  .settings-card,
+  .panel,
+  .expense-section,
+  .travel-card,
+  .timeline-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .topbar {
+    min-width: 0;
+  }
+
+  .topbar .brand-logo-tagline {
+    display: none;
+  }
+
+  .mobile-nav {
+    right: 0.45rem;
+    left: 0.45rem;
+  }
+
+  .money-entry {
+    grid-template-columns: minmax(78px, 0.34fr) minmax(0, 1fr);
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .receipt-shop-chip {
+    max-width: 100%;
+  }
+
+  .trip-loading-card .brand-logo-name {
+    font-size: 1.08rem;
+  }
+
+  .trip-loading-card .brand-logo-tagline {
+    font-size: 0.58rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trip-loading-line > span,
+  .trip-loading-pulse {
+    animation: none;
+  }
+}

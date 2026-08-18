@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function LoginForm() {
   const router = useRouter();
@@ -20,24 +21,37 @@ export function LoginForm() {
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const result = await authClient.signIn.email({
-      email,
-      password,
-      rememberMe: true,
-    });
+    try {
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe: true,
+      });
 
-    if (result.error) {
-      setError(result.error.message ?? "Unable to sign in.");
+      if (result.error) {
+        setError(result.error.message ?? "Unable to sign in.");
+        setBusy(false);
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);
-      return;
     }
-
-    router.replace("/dashboard");
-    router.refresh();
   }
 
   return (
-    <form className="stack" onSubmit={handleSubmit}>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Signing you in"
+          message="Opening your trips, plans and balances."
+        />
+      ) : null}
+
+      <form className="stack" onSubmit={handleSubmit}>
       <label>
         Email
         <input
@@ -90,6 +104,7 @@ export function LoginForm() {
           Create account
         </Link>
       </p>
-    </form>
+      </form>
+    </>
   );
 }

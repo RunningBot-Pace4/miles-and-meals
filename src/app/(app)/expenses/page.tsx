@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { countries, expenseSplits, expenses, user } from "@/db/schema";
 import { DeleteExpenseButton } from "@/components/DeleteExpenseButton";
+import { ReceiptViewerButton } from "@/components/ReceiptViewerButton";
 import { listAccessibleCountries } from "@/lib/access";
 import { effectiveConvertedAmount, formatMoney, toNumber } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
@@ -29,6 +30,9 @@ export default async function ExpensesPage() {
             baseCurrency: expenses.baseCurrency,
             countryName: countries.name,
             paidByName: user.name,
+            hasReceipt: sql<boolean>`
+              coalesce(${expenses.receiptUrl}, '') <> ''
+            `,
           })
           .from(expenses)
           .innerJoin(countries, eq(expenses.countryId, countries.id))
@@ -163,6 +167,9 @@ export default async function ExpensesPage() {
                 </div>
                 <div className="card-actions">
                   <Link href={`/expenses/${expense.id}/edit`}>Edit</Link>
+                  {expense.hasReceipt ? (
+                    <ReceiptViewerButton expenseId={expense.id} />
+                  ) : null}
                   <DeleteExpenseButton id={expense.id} />
                 </div>
               </article>

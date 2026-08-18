@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 type Trip = {
   id: string;
@@ -26,6 +27,32 @@ type FormKey =
   | "create-trip"
   | "add-country"
   | "assign-person";
+
+const adminLoadingCopy: Record<
+  FormKey,
+  { title: string; message: string }
+> = {
+  "create-user": {
+    title: "Creating traveler",
+    message: "Preparing their account and trip access.",
+  },
+  "reset-password": {
+    title: "Resetting password",
+    message: "Securing the traveler account and next sign-in.",
+  },
+  "create-trip": {
+    title: "Creating trip",
+    message: "Setting up the shared travel workspace.",
+  },
+  "add-country": {
+    title: "Adding country",
+    message: "Updating currencies, access and trip planning.",
+  },
+  "assign-person": {
+    title: "Assigning traveler",
+    message: "Updating who can see this country and its trip data.",
+  },
+};
 
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, {
@@ -125,8 +152,17 @@ export function AdminForms({
     }
   }
 
+  const activeLoading =
+    busyForm ? adminLoadingCopy[busyForm] : null;
+
   return (
     <div className="stack gap-lg">
+      {activeLoading ? (
+        <SavingOverlay
+          title={activeLoading.title}
+          message={activeLoading.message}
+        />
+      ) : null}
       {message ? (
         <div className="form-notice form-toast success-text" role="status">
           <span>✓</span>

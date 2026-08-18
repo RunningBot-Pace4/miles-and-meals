@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -28,24 +29,37 @@ export function RegisterForm() {
       return;
     }
 
-    const result = await authClient.signUp.email({
-      name,
-      email,
-      password,
-    });
+    try {
+      const result = await authClient.signUp.email({
+        name,
+        email,
+        password,
+      });
 
-    if (result.error) {
-      setError(result.error.message ?? "Unable to create account.");
+      if (result.error) {
+        setError(result.error.message ?? "Unable to create account.");
+        setBusy(false);
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);
-      return;
     }
-
-    router.replace("/dashboard");
-    router.refresh();
   }
 
   return (
-    <form className="stack" onSubmit={handleSubmit}>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Creating your account"
+          message="Setting up your Miles & Meals travel profile."
+        />
+      ) : null}
+
+      <form className="stack" onSubmit={handleSubmit}>
       <label>
         Name
         <input
@@ -120,6 +134,7 @@ export function RegisterForm() {
           Sign in
         </Link>
       </p>
-    </form>
+      </form>
+    </>
   );
 }

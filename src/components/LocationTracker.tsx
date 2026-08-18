@@ -11,6 +11,7 @@ import type {
   Map as MapLibreMap,
   Marker as MapLibreMarker,
 } from "maplibre-gl";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 type CountryOption = {
   id: string;
@@ -141,6 +142,9 @@ export function LocationTracker({
 }) {
   const [countryId, setCountryId] = useState(countries[0]?.id ?? "");
   const [sharing, setSharing] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [manualRefreshing, setManualRefreshing] = useState(false);
+  const [secureContext, setSecureContext] = useState(true);
   const [gpsMessage, setGpsMessage] = useState(
     "Live sharing is off.",
   );
@@ -161,6 +165,10 @@ export function LocationTracker({
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markers = useRef<Map<string, MapLibreMarker>>(new Map());
+
+  useEffect(() => {
+    setSecureContext(window.isSecureContext);
+  }, []);
 
   const locatedMembers = useMemo(
     () =>
@@ -247,6 +255,7 @@ export function LocationTracker({
         setLastUploadedAt(uploadedAt);
         setGpsMessage("Live location shared.");
         setSyncError("");
+        setLocating(false);
 
         shouldFitMap.current = true;
         await refreshLocations();
@@ -257,6 +266,7 @@ export function LocationTracker({
             : "Unable to save your location.";
 
         setSyncError(message);
+        setLocating(false);
       } finally {
         sending.current = false;
       }
@@ -282,6 +292,7 @@ export function LocationTracker({
     (showMessage = true) => {
       clearSharingResources();
       setSharing(false);
+      setLocating(false);
 
       if (showMessage) {
         setGpsMessage(
@@ -293,7 +304,7 @@ export function LocationTracker({
   );
 
   const startSharing = useCallback(() => {
-    if (!window.isSecureContext) {
+    if (!secureContext) {
       setGpsMessage(
         "Live GPS requires HTTPS. Open the deployed Vercel site on your phone.",
       );
@@ -314,6 +325,7 @@ export function LocationTracker({
     setSyncError("");
     setGpsMessage("Waiting for a GPS fix…");
     setSharing(true);
+    setLocating(true);
     lastSentAt.current = 0;
 
     watchId.current = navigator.geolocation.watchPosition(
@@ -327,6 +339,7 @@ export function LocationTracker({
       (error) => {
         clearSharingResources();
         setSharing(false);
+        setLocating(false);
         setGpsMessage(getGpsErrorMessage(error));
       },
       {
@@ -346,8 +359,25 @@ export function LocationTracker({
   }, [
     clearSharingResources,
     countryId,
+    secureContext,
     sendPosition,
   ]);
+
+  const manualRefresh = useCallback(async () => {
+    setManualRefreshing(true);
+
+    try {
+      await refreshLocations();
+    } catch (error) {
+      setSyncError(
+        error instanceof Error
+          ? error.message
+          : "Unable to refresh locations.",
+      );
+    } finally {
+      setManualRefreshing(false);
+    }
+  }, [refreshLocations]);
 
   const fitEveryone = useCallback(() => {
     const map = mapRef.current;
@@ -452,16 +482,18 @@ export function LocationTracker({
         "/maplibre/maplibre-gl-worker.mjs",
       );
 
+      const container = mapContainer.current;
+
       if (
         cancelled ||
-        !mapContainer.current ||
+        !container ||
         mapRef.current
       ) {
         return;
       }
 
       const map = new maplibre.Map({
-        container: mapContainer.current,
+        container,
         style: "https://tiles.openfreemap.org/styles/liberty",
         center: [101.6869, 3.139],
         zoom: 4,
@@ -512,7 +544,7 @@ export function LocationTracker({
           map.resize();
         });
 
-        resizeObserver.observe(mapContainer.current);
+        resizeObserver.observe(container);
       }
     }
 
@@ -597,14 +629,18 @@ export function LocationTracker({
             `map-marker map-marker-${freshness}`;
         }
 
+        const popupText = [
+          location.name,
+          formatAge(location.createdAt, now),
+          location.accuracyMeters
+            ? `Accuracy ±${Math.round(location.accuracyMeters)}m`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+
         marker.setPopup(
-          new maplibre.Popup({ offset: 20 }).setHTML(
-            `<strong>${location.name}</strong><br>` +
-              `${formatAge(location.createdAt, now)}` +
-              (location.accuracyMeters
-                ? `<br>Accuracy ±${Math.round(location.accuracyMeters)}m`
-                : ""),
-          ),
+          new maplibre.Popup({ offset: 20 }).setText(popupText),
         );
       }
 
@@ -659,6 +695,17 @@ export function LocationTracker({
 
   return (
     <div className="stack gap-lg">
+      {locating ? (
+        <SavingOverlay
+          title="Finding your location"
+          message="Getting a GPS fix and sharing it with your travel crew."
+        />
+      ) : manualRefreshing ? (
+        <SavingOverlay
+          title="Refreshing live locations"
+          message="Checking the latest positions for your travel crew."
+        />
+      ) : null}
       <section className="panel live-location-control">
         <div className="live-location-control-top">
           <label className="live-location-country">
@@ -705,15 +752,8 @@ export function LocationTracker({
             <button
               className="button secondary"
               type="button"
-              onClick={() => {
-                refreshLocations().catch((error: unknown) => {
-                  setSyncError(
-                    error instanceof Error
-                      ? error.message
-                      : "Unable to refresh locations.",
-                  );
-                });
-              }}
+              onClick={() => void manualRefresh()}
+              disabled={manualRefreshing}
             >
               ↻ Refresh
             </button>
@@ -741,7 +781,7 @@ export function LocationTracker({
           <div className="location-status-tile">
             <span
               className={
-                window.isSecureContext
+                secureContext
                   ? "status-dot live"
                   : "status-dot warning"
               }
@@ -749,7 +789,7 @@ export function LocationTracker({
             <div>
               <small>Connection</small>
               <strong>
-                {window.isSecureContext ? "Secure HTTPS" : "HTTPS required"}
+                {secureContext ? "Secure HTTPS" : "HTTPS required"}
               </strong>
             </div>
           </div>

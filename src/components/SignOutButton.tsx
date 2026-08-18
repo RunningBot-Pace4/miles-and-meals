@@ -1,20 +1,43 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function SignOutButton() {
   const router = useRouter();
+  const [busy, setBusy] = useState(false);
 
   async function signOut() {
-    await authClient.signOut();
-    router.replace("/login");
-    router.refresh();
+    setBusy(true);
+
+    try {
+      await authClient.signOut();
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <button className="link-button" type="button" onClick={signOut}>
-      Sign out
-    </button>
+    <>
+      {busy ? (
+        <SavingOverlay
+          title="Signing you out"
+          message="Closing this session and returning to sign in."
+        />
+      ) : null}
+
+      <button
+        className="link-button"
+        type="button"
+        onClick={signOut}
+        disabled={busy}
+      >
+        Sign out
+      </button>
+    </>
   );
 }
