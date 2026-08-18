@@ -235,6 +235,44 @@ export const expenseSplits = pgTable(
   (table) => [primaryKey({ columns: [table.expenseId, table.userId] })],
 );
 
+export const settlements = pgTable(
+  "settlements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    countryId: uuid("country_id")
+      .notNull()
+      .references(() => countries.id, { onDelete: "cascade" }),
+    fromUserId: text("from_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    toUserId: text("to_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+    currency: text("currency").notNull(),
+    status: text("status").default("SENT").notNull(),
+    initiatedBy: text("initiated_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    confirmedBy: text("confirmed_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("settlement_country_status_idx").on(table.countryId, table.status),
+    index("settlement_trip_idx").on(table.tripId),
+    index("settlement_from_user_idx").on(table.fromUserId),
+    index("settlement_to_user_idx").on(table.toUserId),
+  ],
+);
+
 export const travelItems = pgTable(
   "travel_items",
   {
@@ -304,6 +342,7 @@ export const schema = {
   countryMembers,
   expenses,
   expenseSplits,
+  settlements,
   travelItems,
   locationPings,
 };

@@ -69,9 +69,17 @@ export function MobileNav() {
   return (
     <nav className="mobile-nav" aria-label="Main navigation">
       {links.map((link) => {
+        const moreSection =
+          link.href === "/more" &&
+          ["/expenses", "/settlements", "/admin", "/settings"].some(
+            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+          );
+
         const active =
           !link.action &&
-          (pathname === link.href || pathname.startsWith(`${link.href}/`));
+          (pathname === link.href ||
+            pathname.startsWith(`${link.href}/`) ||
+            moreSection);
 
         return (
           <Link

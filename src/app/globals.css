@@ -3821,3 +3821,526 @@ body {
     transform: translateX(-50%);
   }
 }
+
+
+/* v10 — one-click settlements and person-level trip ledger */
+
+.my-money-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.my-money-strip > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(23 49 44 / 5%);
+}
+
+.my-money-strip span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.my-money-strip strong {
+  color: var(--ink-deep);
+  font-size: 1rem;
+}
+
+.my-money-strip .money-due {
+  border-color: rgb(180 35 24 / 20%);
+  background: linear-gradient(145deg, #fff, var(--danger-soft));
+}
+
+.my-money-strip .money-due strong {
+  color: var(--danger);
+}
+
+.my-money-strip .money-receive {
+  border-color: rgb(22 133 91 / 22%);
+  background: linear-gradient(145deg, #fff, #e8f8f0);
+}
+
+.my-money-strip .money-receive strong {
+  color: var(--success);
+}
+
+.balance-explainer {
+  display: grid;
+  gap: 1rem;
+}
+
+.balance-big {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1.1rem;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(245 158 11 / 16%), transparent 35%),
+    var(--primary-soft);
+}
+
+.balance-big span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.balance-big strong {
+  color: var(--ink-deep);
+  font-size: clamp(1.45rem, 5vw, 2rem);
+}
+
+.balance-explainer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.settlement-action-secondary {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.settlement-action-secondary:hover {
+  background: #d7efea;
+}
+
+.people-ledger-panel {
+  overflow: hidden;
+}
+
+.people-ledger-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.person-ledger-card {
+  min-width: 0;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 96%), rgb(247 250 248 / 96%));
+}
+
+.person-ledger-card.current-person {
+  border-color: rgb(15 118 110 / 30%);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(245 158 11 / 10%), transparent 34%),
+    linear-gradient(160deg, #f1fbf8, #fff);
+  box-shadow: 0 10px 28px rgb(15 118 110 / 8%);
+}
+
+.person-ledger-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.person-ledger-head > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.person-ledger-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.person-ledger-head small {
+  font-size: 0.68rem;
+}
+
+.person-ledger-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.person-ledger-metrics > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.7rem;
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.person-ledger-metrics span {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 750;
+}
+
+.person-ledger-metrics strong {
+  overflow-wrap: anywhere;
+  color: var(--ink-deep);
+  font-size: 0.84rem;
+}
+
+.person-ledger-metrics .metric-receive {
+  background: #eaf8f1;
+}
+
+.person-ledger-metrics .metric-receive strong {
+  color: var(--success);
+}
+
+.person-ledger-metrics .metric-pay {
+  background: #fff1ee;
+}
+
+.person-ledger-metrics .metric-pay strong {
+  color: var(--danger);
+}
+
+.person-status-note {
+  padding-top: 0.65rem;
+  border-top: 1px dashed var(--border);
+  color: var(--primary);
+  line-height: 1.45;
+}
+
+.settlement-status-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.settlement-status-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.settlement-status-row.waiting {
+  border-color: rgb(245 158 11 / 24%);
+  background:
+    linear-gradient(145deg, #fff, rgb(255 243 214 / 45%));
+}
+
+.settlement-status-row.sent {
+  border-color: rgb(15 118 110 / 24%);
+  background:
+    linear-gradient(145deg, #fff, rgb(230 244 241 / 60%));
+}
+
+.settlement-status-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 900;
+}
+
+.settlement-status-row.waiting .settlement-status-icon {
+  color: #9a5c00;
+  background: var(--accent-soft);
+}
+
+.settlement-status-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.settlement-status-copy strong,
+.settlement-status-copy small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settlement-status-copy small {
+  line-height: 1.35;
+}
+
+.settlement-amount {
+  color: var(--ink-deep);
+  white-space: nowrap;
+}
+
+.settlement-action-wrap {
+  grid-column: 2 / -1;
+  display: grid;
+  justify-items: stretch;
+  gap: 0.35rem;
+}
+
+.settlement-action-button {
+  width: 100%;
+  min-height: 40px;
+}
+
+.settlement-action-error {
+  max-width: 360px;
+  color: var(--danger);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.settle-page {
+  max-width: 1180px;
+}
+
+.settlement-page-heading {
+  align-items: center;
+}
+
+.settle-filter-panel {
+  padding: 0.8rem;
+}
+
+.settle-country-filter {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.settle-country-filter .button {
+  align-self: end;
+}
+
+.settle-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.settle-summary-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgb(23 49 44 / 5%);
+}
+
+.settle-summary-card > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.settle-summary-card > strong {
+  overflow-wrap: anywhere;
+  color: var(--ink-deep);
+  font-size: 1.15rem;
+}
+
+.settle-summary-card > small {
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.settle-summary-card.receive {
+  border-color: rgb(22 133 91 / 22%);
+  background: linear-gradient(145deg, #fff, #e8f8f0);
+}
+
+.settle-summary-card.receive > strong {
+  color: var(--success);
+}
+
+.settle-summary-card.pay {
+  border-color: rgb(180 35 24 / 18%);
+  background: linear-gradient(145deg, #fff, #fff0ed);
+}
+
+.settle-summary-card.pay > strong {
+  color: var(--danger);
+}
+
+.settlement-history {
+  display: grid;
+}
+
+.settlement-history-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settlement-history-row:last-child {
+  border-bottom: 0;
+}
+
+.settlement-history-check {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: var(--success);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.settlement-history-row > span:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.settlement-history-row small {
+  line-height: 1.35;
+}
+
+.expense-overview-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.expense-overview-card {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.expense-overview-card > span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.expense-overview-card > strong {
+  color: var(--ink-deep);
+  font-size: 1.05rem;
+}
+
+.expense-overview-card > small {
+  line-height: 1.4;
+}
+
+.expense-overview-card.personal {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(245 158 11 / 10%), transparent 35%),
+    var(--primary-soft);
+}
+
+.expense-overview-card.settle-link {
+  color: white;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(245 158 11 / 28%), transparent 38%),
+    linear-gradient(145deg, #0f766e, #0b625b);
+}
+
+.expense-overview-card.settle-link > span,
+.expense-overview-card.settle-link > strong,
+.expense-overview-card.settle-link > small {
+  color: white;
+}
+
+@media (min-width: 640px) {
+  .my-money-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .people-ledger-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settle-country-filter {
+    grid-template-columns: minmax(220px, 1fr) auto;
+  }
+
+  .settle-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .expense-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .settlement-status-row {
+    grid-template-columns: 38px minmax(0, 1fr) auto auto;
+  }
+
+  .settlement-action-wrap {
+    grid-column: auto;
+    min-width: 132px;
+  }
+}
+
+@media (min-width: 1120px) {
+  .people-ledger-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .settlement-page-heading {
+    align-items: flex-start;
+  }
+
+  .settlement-page-heading > .button {
+    display: none;
+  }
+
+  .settlement-history-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .settlement-history-row > strong {
+    grid-column: 2;
+  }
+}
+
+.expense-share-summary {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.expense-share-summary > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.expense-share-summary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.expense-share-chip {
+  padding: 0.32rem 0.52rem;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 0.68rem;
+  font-weight: 750;
+}

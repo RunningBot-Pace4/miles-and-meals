@@ -113,3 +113,10 @@ export const locationSchema = z.object({
   longitude: z.number().min(-180).max(180),
   accuracyMeters: z.number().min(0).max(100_000).optional(),
 });
+
+
+export const settlementActionSchema = z.object({
+  countryId: uuidSchema,
+  counterpartyUserId: z.string().min(1),
+  action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),
+});

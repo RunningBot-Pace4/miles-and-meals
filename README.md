@@ -5,18 +5,20 @@ Travel together. Spend smarter.
 Mobile-first travel tracker built with Next.js, Better Auth, Neon PostgreSQL,
 Drizzle ORM and Vercel.
 
-## v7 highlights
+## v10 highlights
 
 - Responsive mobile, tablet and desktop layout
+- One-click Settle Up with no manual repayment amount
+- Settlement status flow: Waiting → Payment sent → Received
+- Receiver can directly mark an outstanding repayment as received
+- Trip Crew dashboard: Paid · Personal Share · To Receive · To Pay
+- Dedicated `/settlements` page with current status and received history
+- Entire-trip expense overview with trip total and your personal share
 - Mobile bottom navigation and desktop vertical sidebar
-- Richer dashboard and first-trip Admin onboarding
-- Top-right account avatar menu
-- Change Password page
-- Admin password reset for travelers
-- Normal traveler registration page
-- Fixed async form reset crash when creating trips/planner items
-- Branded loading splash and authenticated route skeletons
-- Button-level loading states for Admin forms
+- Top-right account avatar menu and user profile colors/icons
+- Forced private-password change after an Admin issues a temporary password
+- Historical per-expense FX rates and Equal / Percentage / Exact splits
+- Branded loading states for saves and payment-status actions
 
 ## Main features
 
@@ -25,10 +27,11 @@ Drizzle ORM and Vercel.
 - Admin trip creation and multi-country setup
 - Admin country assignment
 - Normal users only see assigned-country data
-- Dashboard with budget, spending, payer and settlement summaries
+- Dashboard with budget, spending, person-level shares and settlement summaries
 - Expense add/view/edit/delete
 - Historical per-expense FX rates
 - Equal / Percentage / Exact Amount splits
+- One-click repayment tracking with server-calculated settlement amounts
 - Itinerary / Places / Meals / Shopping / Bookings
 - GPS location sharing with country-level authorization
 - MapLibre member map
@@ -144,3 +147,24 @@ npm run db:push
 
 v8 adds `user_preferences` for avatar choices and the mandatory password-change
 flag used after an Admin issues a temporary password. Existing trip data is kept.
+
+
+## v10 settlement update
+
+After upgrading from v9, run:
+
+```powershell
+npm run db:push
+```
+
+v10 adds the `settlements` table. A repayment is never typed manually. Miles &
+Meals calculates the current amount from the expense ledger:
+
+- `Waiting`: the debtor still needs to pay.
+- `Payment sent`: the debtor clicked **Mark paid**.
+- `Received`: the receiver clicked **Confirm received**.
+- The receiver can also click **Mark received** directly if the money already
+  arrived outside the app.
+
+`SENT` and `SETTLED` repayments are applied to the ledger so the same balance is
+not offered twice. Each country keeps its own settlement ledger.

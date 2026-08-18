@@ -13,6 +13,12 @@ export type SettlementTransfer = {
   amount: number;
 };
 
+export type RecordedSettlement = {
+  fromUserId: string;
+  toUserId: string;
+  amount: number;
+};
+
 export function calculateSettlements(
   input: SettlementInput[],
 ): SettlementTransfer[] {
@@ -59,4 +65,37 @@ export function calculateSettlements(
   }
 
   return transfers;
+}
+
+/**
+ * A sent settlement is treated as no longer payable so the same debt is not
+ * offered twice while the receiver is confirming it.
+ */
+export function calculateOutstandingSettlements(
+  input: SettlementInput[],
+  recorded: RecordedSettlement[],
+): SettlementTransfer[] {
+  const adjusted = new Map(
+    input.map((person) => [
+      person.userId,
+      {
+        ...person,
+      },
+    ]),
+  );
+
+  for (const payment of recorded) {
+    const from = adjusted.get(payment.fromUserId);
+    const to = adjusted.get(payment.toUserId);
+
+    if (from) {
+      from.paid += payment.amount;
+    }
+
+    if (to) {
+      to.owed += payment.amount;
+    }
+  }
+
+  return calculateSettlements([...adjusted.values()]);
 }

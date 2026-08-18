@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SettlementActionButton } from "@/components/SettlementActionButton";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney, toNumber } from "@/lib/money";
@@ -55,6 +56,7 @@ export default async function DashboardPage({
   const admin = isSystemAdmin(session.user.role);
   const displayName = session.user.name.trim() || "Traveler";
   const tripName = selectedCountries[0]?.tripName ?? "Your journey starts here";
+  const me = summary.people.find((person) => person.userId === session.user.id);
 
   return (
     <div className="stack gap-lg dashboard-page">
@@ -117,7 +119,10 @@ export default async function DashboardPage({
               <span>Trip spend</span>
               <strong>{formatMoney(summary.total, baseCurrency)}</strong>
             </div>
-            <div className="budget-track" aria-label={`${budgetPercent.toFixed(0)}% of budget used`}>
+            <div
+              className="budget-track"
+              aria-label={`${budgetPercent.toFixed(0)}% of budget used`}
+            >
               <span style={{ width: `${budgetPercent}%` }} />
             </div>
             <div className="hero-budget-foot">
@@ -199,12 +204,37 @@ export default async function DashboardPage({
               <strong>{formatMoney(budget, baseCurrency)}</strong>
               <small>Planned trip total</small>
             </article>
-            <article className={remaining < 0 ? "stat-card danger" : "stat-card success"}>
+            <article
+              className={remaining < 0 ? "stat-card danger" : "stat-card success"}
+            >
               <span>Remaining</span>
               <strong>{formatMoney(remaining, baseCurrency)}</strong>
-              <small>{remaining < 0 ? "Over planned budget" : "Available to spend"}</small>
+              <small>
+                {remaining < 0 ? "Over planned budget" : "Available to spend"}
+              </small>
             </article>
           </section>
+
+          {me ? (
+            <section className="my-money-strip">
+              <div>
+                <span>Your personal share</span>
+                <strong>{formatMoney(me.share, baseCurrency)}</strong>
+              </div>
+              <div>
+                <span>You paid</span>
+                <strong>{formatMoney(me.paid, baseCurrency)}</strong>
+              </div>
+              <div className={me.toPay > 0 ? "money-due" : ""}>
+                <span>To pay</span>
+                <strong>{formatMoney(me.toPay, baseCurrency)}</strong>
+              </div>
+              <div className={me.toReceive > 0 ? "money-receive" : ""}>
+                <span>To receive</span>
+                <strong>{formatMoney(me.toReceive, baseCurrency)}</strong>
+              </div>
+            </section>
+          ) : null}
 
           <section className="quick-grid" aria-label="Quick actions">
             <Link className="quick-action" href="/planner">
@@ -215,11 +245,11 @@ export default async function DashboardPage({
               </span>
               <span className="quick-arrow">›</span>
             </Link>
-            <Link className="quick-action" href="/location">
-              <span className="quick-action-icon amber">⌖</span>
+            <Link className="quick-action" href="/settlements">
+              <span className="quick-action-icon amber">✓</span>
               <span>
-                <strong>Find the crew</strong>
-                <small>See shared live locations</small>
+                <strong>Settle up</strong>
+                <small>See who has paid and who is waiting</small>
               </span>
               <span className="quick-arrow">›</span>
             </Link>
@@ -270,60 +300,203 @@ export default async function DashboardPage({
             <article className="panel dashboard-panel">
               <div className="panel-title">
                 <div>
-                  <p className="eyebrow">TRIP CREW</p>
-                  <h2>Who paid</h2>
+                  <p className="eyebrow">YOUR BALANCE</p>
+                  <h2>What happens next</h2>
                 </div>
               </div>
-              <div className="payer-list">
-                {summary.payers.length ? (
-                  summary.payers.map((payer) => (
-                    <div className="payer-row" key={payer.userId}>
-                      <span className="avatar">
-                        {payer.name.trim().charAt(0).toUpperCase()}
-                      </span>
-                      <span className="payer-copy">
-                        <strong>{payer.name}</strong>
-                        <small>Paid so far</small>
-                      </span>
-                      <strong>{formatMoney(payer.amount, baseCurrency)}</strong>
-                    </div>
-                  ))
-                ) : (
-                  <p className="muted">No payer activity yet.</p>
-                )}
-              </div>
+              {me ? (
+                <div className="balance-explainer">
+                  <div className="balance-big">
+                    <span>
+                      {me.toPay > 0
+                        ? "You still need to pay"
+                        : me.toReceive > 0
+                          ? "You are still receiving"
+                          : me.paymentSent > 0
+                            ? "Waiting for confirmation"
+                            : "You are all caught up"}
+                    </span>
+                    <strong>
+                      {formatMoney(
+                        me.toPay > 0
+                          ? me.toPay
+                          : me.toReceive > 0
+                            ? me.toReceive
+                            : me.paymentSent,
+                        baseCurrency,
+                      )}
+                    </strong>
+                  </div>
+                  {me.paymentSent > 0 ? (
+                    <p>
+                      {formatMoney(me.paymentSent, baseCurrency)} has been marked
+                      as sent and is waiting for the receiver to confirm.
+                    </p>
+                  ) : (
+                    <p>
+                      Miles &amp; Meals calculates this automatically from who
+                      paid and everyone&apos;s personal share.
+                    </p>
+                  )}
+                  <Link className="button settlement-action-secondary" href="/settlements">
+                    Open Settle Up
+                  </Link>
+                </div>
+              ) : (
+                <p className="muted">
+                  Add an expense to start calculating balances.
+                </p>
+              )}
             </article>
+          </section>
+
+          <section className="panel people-ledger-panel">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">TRIP CREW</p>
+                <h2>Paid vs personal share</h2>
+              </div>
+              <Link className="panel-link" href="/settlements">
+                Settlement details
+              </Link>
+            </div>
+
+            <div className="people-ledger-grid">
+              {summary.people.map((person) => (
+                <article
+                  className={
+                    person.userId === session.user.id
+                      ? "person-ledger-card current-person"
+                      : "person-ledger-card"
+                  }
+                  key={person.userId}
+                >
+                  <div className="person-ledger-head">
+                    <span className="avatar">
+                      {person.name.trim().charAt(0).toUpperCase()}
+                    </span>
+                    <div>
+                      <strong>{person.name}</strong>
+                      <small>
+                        {person.userId === session.user.id ? "You" : "Traveler"}
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="person-ledger-metrics">
+                    <div>
+                      <span>Paid</span>
+                      <strong>{formatMoney(person.paid, baseCurrency)}</strong>
+                    </div>
+                    <div>
+                      <span>Personal share</span>
+                      <strong>{formatMoney(person.share, baseCurrency)}</strong>
+                    </div>
+                    <div className="metric-receive">
+                      <span>To receive</span>
+                      <strong>
+                        {formatMoney(person.toReceive, baseCurrency)}
+                      </strong>
+                    </div>
+                    <div className="metric-pay">
+                      <span>To pay</span>
+                      <strong>{formatMoney(person.toPay, baseCurrency)}</strong>
+                    </div>
+                  </div>
+
+                  {person.paymentSent > 0 ? (
+                    <small className="person-status-note">
+                      ✓ {formatMoney(person.paymentSent, baseCurrency)} payment
+                      sent · waiting for confirmation
+                    </small>
+                  ) : null}
+                </article>
+              ))}
+            </div>
           </section>
 
           <section className="panel settlement-panel">
             <div className="panel-title">
               <div>
-                <p className="eyebrow">SETTLEMENT</p>
-                <h2>Keep it fair</h2>
+                <p className="eyebrow">SETTLE UP</p>
+                <h2>Who paid, who&apos;s waiting</h2>
               </div>
+              <Link className="panel-link" href="/settlements">
+                View history
+              </Link>
             </div>
-            <div className="list">
-              {summary.settlements.length ? (
-                summary.settlements.map((settlement, index) => (
-                  <div
-                    className="settlement-row"
-                    key={`${settlement.fromUserId}-${settlement.toUserId}-${index}`}
-                  >
-                    <div className="settlement-route">
-                      <span className="avatar small">
-                        {settlement.fromName.trim().charAt(0).toUpperCase()}
-                      </span>
-                      <span>
-                        <strong>{settlement.fromName}</strong>
-                        <small> pays {settlement.toName}</small>
-                      </span>
-                    </div>
-                    <strong className="settlement-amount">
-                      {formatMoney(settlement.amount, baseCurrency)}
+
+            <div className="settlement-status-list">
+              {summary.pendingSettlements.map((payment) => (
+                <article className="settlement-status-row sent" key={payment.id}>
+                  <div className="settlement-status-icon">↗</div>
+                  <div className="settlement-status-copy">
+                    <strong>
+                      {payment.fromUserId === session.user.id
+                        ? `You paid ${payment.toName}`
+                        : payment.toUserId === session.user.id
+                          ? `${payment.fromName} marked payment sent`
+                          : `${payment.fromName} → ${payment.toName}`}
                     </strong>
+                    <small>
+                      {payment.countryName} · Payment sent · Waiting for
+                      confirmation
+                    </small>
                   </div>
-                ))
-              ) : (
+                  <strong className="settlement-amount">
+                    {formatMoney(payment.amount, payment.currency)}
+                  </strong>
+                  {payment.toUserId === session.user.id ? (
+                    <SettlementActionButton
+                      action="MARK_RECEIVED"
+                      countryId={payment.countryId}
+                      counterpartyUserId={payment.fromUserId}
+                      label="Confirm received"
+                    />
+                  ) : null}
+                </article>
+              ))}
+
+              {summary.waitingTransfers.map((transfer, index) => (
+                <article
+                  className="settlement-status-row waiting"
+                  key={`${transfer.countryId}-${transfer.fromUserId}-${transfer.toUserId}-${index}`}
+                >
+                  <div className="settlement-status-icon">○</div>
+                  <div className="settlement-status-copy">
+                    <strong>
+                      {transfer.fromUserId === session.user.id
+                        ? `You owe ${transfer.toName}`
+                        : transfer.toUserId === session.user.id
+                          ? `${transfer.fromName} owes you`
+                          : `${transfer.fromName} → ${transfer.toName}`}
+                    </strong>
+                    <small>{transfer.countryName} · Waiting for payment</small>
+                  </div>
+                  <strong className="settlement-amount">
+                    {formatMoney(transfer.amount, transfer.currency)}
+                  </strong>
+
+                  {transfer.fromUserId === session.user.id ? (
+                    <SettlementActionButton
+                      action="MARK_PAID"
+                      countryId={transfer.countryId}
+                      counterpartyUserId={transfer.toUserId}
+                      label="Mark paid"
+                    />
+                  ) : transfer.toUserId === session.user.id ? (
+                    <SettlementActionButton
+                      action="MARK_RECEIVED"
+                      countryId={transfer.countryId}
+                      counterpartyUserId={transfer.fromUserId}
+                      label="Mark received"
+                    />
+                  ) : null}
+                </article>
+              ))}
+
+              {!summary.pendingSettlements.length &&
+              !summary.waitingTransfers.length ? (
                 <div className="settled-state">
                   <span aria-hidden="true">✓</span>
                   <div>
@@ -331,7 +504,7 @@ export default async function DashboardPage({
                     <small>No outstanding trip balances.</small>
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           </section>
         </>

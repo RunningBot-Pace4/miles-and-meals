@@ -42,7 +42,11 @@ export default async function MorePage() {
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/expenses">
-          <span>Expenses & settlement</span>
+          <span>All trip expenses</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settlements">
+          <span>Settle Up · paid & received</span>
           <span>›</span>
         </Link>
       </section>
