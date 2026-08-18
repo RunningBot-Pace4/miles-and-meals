@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { splitEqually } from "@/lib/money";
@@ -18,6 +18,24 @@ type Member = {
   id: string;
   name: string;
   email: string;
+};
+
+type ReceiptAnalysis = {
+  merchantName: string | null;
+  totalAmount: number | null;
+  currencyCode: string | null;
+  receiptDate: string | null;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+};
+
+type ReceiptAnalyzeResponse = {
+  receipt?: ReceiptAnalysis;
+  error?: string;
+};
+
+type ReceiptUploadResponse = {
+  receiptUrl?: string;
+  error?: string;
 };
 
 type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
@@ -155,6 +173,21 @@ export function ExpenseForm({
   const [paidByUserId, setPaidByUserId] = useState(
     initial?.paidByUserId ?? "",
   );
+  const [description, setDescription] = useState(
+    initial?.description ?? "",
+  );
+  const [receiptUrl, setReceiptUrl] = useState(
+    initial?.receiptUrl ?? "",
+  );
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState("");
+  const [receiptScanning, setReceiptScanning] = useState(false);
+  const [receiptResult, setReceiptResult] =
+    useState<ReceiptAnalysis | null>(null);
+  const [receiptMessage, setReceiptMessage] = useState("");
+  const [savingMessage, setSavingMessage] = useState(
+    "Updating the trip total and everyone’s share.",
+  );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -240,6 +273,14 @@ export function ExpenseForm({
   ]);
 
   useEffect(() => {
+    return () => {
+      if (receiptPreviewUrl) {
+        URL.revokeObjectURL(receiptPreviewUrl);
+      }
+    };
+  }, [receiptPreviewUrl]);
+
+  useEffect(() => {
     if (!countryId) {
       return;
     }
@@ -282,6 +323,8 @@ export function ExpenseForm({
       setRate(country.defaultExchangeRate);
       setRateType("DEFAULT");
       setActualConvertedAmount("");
+      setReceiptResult(null);
+      setReceiptMessage("");
     }
   }
 
@@ -332,6 +375,124 @@ export function ExpenseForm({
 
       return next;
     });
+  }
+
+  async function analyzeReceipt(file: File) {
+    setReceiptScanning(true);
+    setReceiptMessage("");
+    setReceiptResult(null);
+    setError("");
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("countryId", countryId);
+
+      const response = await fetch("/api/receipts/analyze", {
+        method: "POST",
+        body: form,
+      });
+
+      const payload =
+        (await response.json().catch(() => ({}))) as ReceiptAnalyzeResponse;
+
+      if (!response.ok || !payload.receipt) {
+        throw new Error(
+          payload.error ?? "Unable to read this receipt.",
+        );
+      }
+
+      const detected = payload.receipt;
+      setReceiptResult(detected);
+
+      if (detected.merchantName) {
+        setDescription(detected.merchantName);
+      }
+
+      if (
+        detected.totalAmount !== null &&
+        Number.isFinite(detected.totalAmount) &&
+        detected.totalAmount > 0
+      ) {
+        setAmount(
+          detected.totalAmount
+            .toFixed(2)
+            .replace(/\.00$/, ""),
+        );
+      }
+
+      if (
+        detected.currencyCode &&
+        /^[A-Z]{3}$/.test(detected.currencyCode)
+      ) {
+        setCurrency(detected.currencyCode);
+      }
+
+      setReceiptMessage(
+        detected.confidence === "LOW"
+          ? "Receipt read with low confidence — please verify the shop name and amount."
+          : "Receipt read. Please verify the detected fields before saving.",
+      );
+    } catch (caught) {
+      setReceiptMessage(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to analyze receipt.",
+      );
+    } finally {
+      setReceiptScanning(false);
+    }
+  }
+
+  function handleReceiptFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
+    void analyzeReceipt(file);
+
+    event.target.value = "";
+  }
+
+  function removeReceiptPhoto() {
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+
+    setReceiptFile(null);
+    setReceiptPreviewUrl("");
+    setReceiptResult(null);
+    setReceiptMessage("");
+  }
+
+  async function uploadReceiptPhoto(file: File): Promise<string> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("countryId", countryId);
+
+    const response = await fetch("/api/receipts/upload", {
+      method: "POST",
+      body: form,
+    });
+
+    const payload =
+      (await response.json().catch(() => ({}))) as ReceiptUploadResponse;
+
+    if (!response.ok || !payload.receiptUrl) {
+      throw new Error(
+        payload.error ?? "Unable to store receipt photo.",
+      );
+    }
+
+    return payload.receiptUrl;
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -400,12 +561,37 @@ export function ExpenseForm({
     }
 
     setBusy(true);
+    setSavingMessage(
+      receiptFile
+        ? "Uploading your receipt photo securely."
+        : "Updating the trip total and everyone’s share.",
+    );
+
     const form = new FormData(event.currentTarget);
+    let finalReceiptUrl = receiptUrl.trim();
+
+    try {
+      if (receiptFile) {
+        finalReceiptUrl = await uploadReceiptPhoto(receiptFile);
+        setSavingMessage(
+          "Receipt saved. Updating the trip total and everyone’s share.",
+        );
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to upload receipt photo.",
+      );
+      setBusy(false);
+      return;
+    }
+
     const body = {
       countryId,
       expenseDate: String(form.get("expenseDate") ?? ""),
       category,
-      description: String(form.get("description") ?? ""),
+      description,
       transactionCurrency: currency,
       transactionAmount: parsedAmount,
       exchangeRate: parsedRate,
@@ -416,7 +602,7 @@ export function ExpenseForm({
           : "",
       paidByUserId,
       paymentMethod: String(form.get("paymentMethod") ?? ""),
-      receiptUrl: String(form.get("receiptUrl") ?? ""),
+      receiptUrl: finalReceiptUrl,
       notes: String(form.get("notes") ?? ""),
       splitMode,
       splits: parsedSplits,
@@ -463,7 +649,7 @@ export function ExpenseForm({
       {busy ? (
         <SavingOverlay
           title={initial ? "Saving your changes" : "Saving your expense"}
-          message="Updating the trip total and everyone’s share."
+          message={savingMessage}
         />
       ) : null}
       <form className="expense-editor" onSubmit={submit}>
@@ -508,8 +694,9 @@ export function ExpenseForm({
             name="description"
             required
             maxLength={250}
-            defaultValue={initial?.description ?? ""}
-            placeholder="e.g. Pho lunch, Grab to hotel"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Shop name or expense description"
           />
         </label>
 
@@ -720,9 +907,124 @@ export function ExpenseForm({
         </div>
       </section>
 
+      <section className="expense-section receipt-section">
+        <div className="section-heading">
+          <span className="section-number amber">4</span>
+          <div>
+            <h2>Scan receipt</h2>
+            <p>
+              Take a clear photo and Miles & Meals will fill the shop name and
+              final amount for you.
+            </p>
+          </div>
+        </div>
+
+        <div className="receipt-scanner">
+          <label className="receipt-camera-button">
+            <input
+              className="receipt-file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              onChange={handleReceiptFile}
+              disabled={receiptScanning || busy}
+            />
+            <span className="receipt-camera-icon">📷</span>
+            <span>
+              <strong>
+                {receiptFile ? "Take another photo" : "Take receipt photo"}
+              </strong>
+              <small>Camera or photo library · JPEG / PNG / WebP</small>
+            </span>
+          </label>
+
+          {receiptPreviewUrl ? (
+            <div className="receipt-preview-card">
+              <img
+                src={receiptPreviewUrl}
+                alt="Receipt preview"
+                className="receipt-preview-image"
+              />
+              <button
+                className="receipt-remove-button"
+                type="button"
+                onClick={removeReceiptPhoto}
+                disabled={receiptScanning || busy}
+              >
+                Remove
+              </button>
+            </div>
+          ) : initial?.receiptUrl ? (
+            <div className="receipt-existing">
+              <span>🧾</span>
+              <div>
+                <strong>Receipt already attached</strong>
+                <small>
+                  Take a new photo above if you want to replace it.
+                </small>
+              </div>
+            </div>
+          ) : null}
+
+          {receiptScanning ? (
+            <div className="receipt-ai-status scanning" role="status">
+              <span className="mini-spinner" />
+              <div>
+                <strong>Reading receipt…</strong>
+                <small>Finding the shop name and final total.</small>
+              </div>
+            </div>
+          ) : receiptMessage ? (
+            <div
+              className={
+                receiptResult
+                  ? "receipt-ai-status success"
+                  : "receipt-ai-status warning"
+              }
+              role="status"
+            >
+              <span>{receiptResult ? "✓" : "!"}</span>
+              <div>
+                <strong>
+                  {receiptResult ? "Receipt scanned" : "Could not auto-fill"}
+                </strong>
+                <small>{receiptMessage}</small>
+              </div>
+            </div>
+          ) : null}
+
+          {receiptResult ? (
+            <div className="receipt-detected-grid">
+              <div>
+                <small>Shop</small>
+                <strong>
+                  {receiptResult.merchantName ?? "Not detected"}
+                </strong>
+              </div>
+              <div>
+                <small>Total</small>
+                <strong>
+                  {receiptResult.currencyCode ?? currency}{" "}
+                  {receiptResult.totalAmount?.toFixed(2) ?? "—"}
+                </strong>
+              </div>
+              <div>
+                <small>Confidence</small>
+                <strong>{receiptResult.confidence}</strong>
+              </div>
+            </div>
+          ) : null}
+
+          <p className="receipt-ai-note">
+            AI can misread receipts. Check Description, Currency and Amount
+            before saving.
+          </p>
+        </div>
+      </section>
+
       <section className="expense-section details-section">
         <div className="section-heading">
-          <span className="section-number">4</span>
+          <span className="section-number">5</span>
           <div>
             <h2>Payment details</h2>
             <p>Optional information that helps you reconcile later.</p>
@@ -744,8 +1046,9 @@ export function ExpenseForm({
             <input
               name="receiptUrl"
               type="url"
-              defaultValue={initial?.receiptUrl ?? ""}
-              placeholder="https://..."
+              value={receiptUrl}
+              onChange={(event) => setReceiptUrl(event.target.value)}
+              placeholder="Optional external receipt URL"
             />
           </label>
         </div>
