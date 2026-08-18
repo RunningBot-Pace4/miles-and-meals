@@ -12,7 +12,7 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  const [tripRows, countryRows, users] = await Promise.all([
+  const [rawTripRows, countryRows, users] = await Promise.all([
     db.select({ id: trips.id, name: trips.name }).from(trips).orderBy(trips.name),
     db
       .select({
@@ -32,6 +32,18 @@ export default async function AdminPage() {
       .from(user)
       .orderBy(user.name),
   ]);
+
+  const seenTripNames = new Set<string>();
+  const tripRows = rawTripRows.filter((trip) => {
+    const normalizedName = trip.name.trim().toLocaleLowerCase();
+
+    if (seenTripNames.has(normalizedName)) {
+      return false;
+    }
+
+    seenTripNames.add(normalizedName);
+    return true;
+  });
 
   return (
     <div className="stack gap-lg">

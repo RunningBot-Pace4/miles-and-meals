@@ -1,4 +1,5 @@
 import { db } from "@/db";
+import { and, eq, sql } from "drizzle-orm";
 import { tripMembers, trips } from "@/db/schema";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createTripSchema } from "@/lib/validation";
@@ -16,6 +17,26 @@ export async function POST(request: Request) {
 
   try {
     const input = createTripSchema.parse(await request.json());
+    const normalizedName = input.name.trim().toLocaleLowerCase();
+
+    const existingTrip = await db
+      .select({ id: trips.id })
+      .from(trips)
+      .where(
+        and(
+          eq(trips.createdBy, session.user.id),
+          sql`lower(trim(${trips.name})) = ${normalizedName}`,
+        ),
+      )
+      .limit(1);
+
+    if (existingTrip.length > 0) {
+      return Response.json(
+        { error: "A trip with this name already exists." },
+        { status: 409 },
+      );
+    }
+
     const created = await db
       .insert(trips)
       .values({

@@ -57,11 +57,22 @@ export const profilePreferencesSchema = z.object({
   ]),
 });
 
-const optionalPositiveMoneySchema = z.preprocess(
-  (value) =>
-    value === "" || value === null || value === undefined ? null : value,
-  z.coerce.number().positive().max(1_000_000_000).nullable(),
-);
+const optionalPositiveMoneySchema = z.preprocess((value) => {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  if (
+    value === 0 ||
+    (typeof value === "string" &&
+      value.trim() !== "" &&
+      Number(value.trim()) === 0)
+  ) {
+    return null;
+  }
+
+  return value;
+}, z.coerce.number().positive().max(1_000_000_000).nullable());
 
 export const expenseSchema = z.object({
   countryId: uuidSchema,

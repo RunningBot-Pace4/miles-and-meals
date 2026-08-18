@@ -81,7 +81,11 @@ export default async function EditExpensePage({ params }: Props) {
             | "CASH_EXCHANGE"
             | "CREDIT_CARD"
             | "MANUAL",
-          actualConvertedAmount: expense.actualConvertedAmount,
+          actualConvertedAmount:
+            expense.actualConvertedAmount &&
+            Number(expense.actualConvertedAmount) > 0
+              ? expense.actualConvertedAmount
+              : null,
           splitMode,
           paidByUserId: expense.paidByUserId,
           paymentMethod: expense.paymentMethod,

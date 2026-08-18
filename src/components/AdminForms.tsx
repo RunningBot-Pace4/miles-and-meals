@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Trip = {
@@ -80,6 +80,20 @@ export function AdminForms({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setMessage("");
+    }, 3500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [message]);
+
   async function run(
     event: FormEvent<HTMLFormElement>,
     formKey: FormKey,
@@ -114,9 +128,17 @@ export function AdminForms({
   return (
     <div className="stack gap-lg">
       {message ? (
-        <div className="form-notice success-text" role="status">
+        <div className="form-notice form-toast success-text" role="status">
           <span>✓</span>
-          {message}
+          <div>{message}</div>
+          <button
+            className="notice-dismiss"
+            type="button"
+            aria-label="Dismiss notification"
+            onClick={() => setMessage("")}
+          >
+            ×
+          </button>
         </div>
       ) : null}
 
@@ -360,7 +382,11 @@ export function AdminForms({
 
           <label>
             Trip
-            <select name="tripId" required>
+            <select
+              name="tripId"
+              required
+              defaultValue={trips.length === 1 ? trips[0].id : ""}
+            >
               <option value="">Choose trip</option>
               {trips.map((trip) => (
                 <option value={trip.id} key={trip.id}>

@@ -23,6 +23,20 @@ type Member = {
 type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
 type RateType = "DEFAULT" | "CASH_EXCHANGE" | "CREDIT_CARD" | "MANUAL";
 
+function normalizeOptionalActualCharge(
+  value: string | null | undefined,
+): string {
+  const trimmed = value?.trim() ?? "";
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const parsed = parseTravelNumber(trimmed);
+
+  return parsed !== null && parsed > 0 ? trimmed : "";
+}
+
 type ExpenseInitial = {
   id: string;
   countryId: string;
@@ -126,7 +140,7 @@ export function ExpenseForm({
   );
   const [amount, setAmount] = useState(initial?.transactionAmount ?? "");
   const [actualConvertedAmount, setActualConvertedAmount] = useState(
-    initial?.actualConvertedAmount ?? "",
+    normalizeOptionalActualCharge(initial?.actualConvertedAmount),
   );
   const [members, setMembers] = useState<Member[]>([]);
   const [splitMode, setSplitMode] = useState<SplitMode>(
