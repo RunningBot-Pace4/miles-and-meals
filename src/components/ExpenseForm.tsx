@@ -24,13 +24,8 @@ type ReceiptAnalysis = {
   merchantName: string | null;
   totalAmount: number | null;
   currencyCode: string | null;
-  receiptDate: string | null;
   confidence: "HIGH" | "MEDIUM" | "LOW";
-};
-
-type ReceiptAnalyzeResponse = {
-  receipt?: ReceiptAnalysis;
-  error?: string;
+  rawText: string;
 };
 
 type ReceiptUploadResponse = {
@@ -182,6 +177,8 @@ export function ExpenseForm({
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState("");
   const [receiptScanning, setReceiptScanning] = useState(false);
+  const [receiptScanStatus, setReceiptScanStatus] = useState("");
+  const [receiptScanProgress, setReceiptScanProgress] = useState(0);
   const [receiptResult, setReceiptResult] =
     useState<ReceiptAnalysis | null>(null);
   const [receiptMessage, setReceiptMessage] = useState("");
@@ -325,6 +322,8 @@ export function ExpenseForm({
       setActualConvertedAmount("");
       setReceiptResult(null);
       setReceiptMessage("");
+      setReceiptScanStatus("");
+      setReceiptScanProgress(0);
     }
   }
 
@@ -379,30 +378,26 @@ export function ExpenseForm({
 
   async function analyzeReceipt(file: File) {
     setReceiptScanning(true);
+    setReceiptScanStatus("Preparing receipt");
+    setReceiptScanProgress(0);
     setReceiptMessage("");
     setReceiptResult(null);
     setError("");
 
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("countryId", countryId);
+      const { recognizeReceiptLocally } = await import(
+        "@/lib/receipt-ocr-client"
+      );
 
-      const response = await fetch("/api/receipts/analyze", {
-        method: "POST",
-        body: form,
-      });
+      const detected = await recognizeReceiptLocally(
+        file,
+        currency,
+        ({ status, progress }) => {
+          setReceiptScanStatus(status);
+          setReceiptScanProgress(progress);
+        },
+      );
 
-      const payload =
-        (await response.json().catch(() => ({}))) as ReceiptAnalyzeResponse;
-
-      if (!response.ok || !payload.receipt) {
-        throw new Error(
-          payload.error ?? "Unable to read this receipt.",
-        );
-      }
-
-      const detected = payload.receipt;
       setReceiptResult(detected);
 
       if (detected.merchantName) {
@@ -428,19 +423,28 @@ export function ExpenseForm({
         setCurrency(detected.currencyCode);
       }
 
-      setReceiptMessage(
-        detected.confidence === "LOW"
-          ? "Receipt read with low confidence — please verify the shop name and amount."
-          : "Receipt read. Please verify the detected fields before saving.",
-      );
+      if (!detected.merchantName && detected.totalAmount === null) {
+        setReceiptMessage(
+          "Text was found, but the shop name and final total were not clear. Please enter them manually or try a clearer photo.",
+        );
+      } else if (detected.confidence === "LOW") {
+        setReceiptMessage(
+          "Receipt read with low confidence — please verify the shop name and amount.",
+        );
+      } else {
+        setReceiptMessage(
+          "Receipt read locally. Please verify the detected fields before saving.",
+        );
+      }
     } catch (caught) {
       setReceiptMessage(
         caught instanceof Error
           ? caught.message
-          : "Unable to analyze receipt.",
+          : "Unable to read this receipt on this device.",
       );
     } finally {
       setReceiptScanning(false);
+      setReceiptScanProgress(1);
     }
   }
 
@@ -471,6 +475,8 @@ export function ExpenseForm({
     setReceiptPreviewUrl("");
     setReceiptResult(null);
     setReceiptMessage("");
+    setReceiptScanStatus("");
+    setReceiptScanProgress(0);
   }
 
   async function uploadReceiptPhoto(file: File): Promise<string> {
@@ -913,8 +919,8 @@ export function ExpenseForm({
           <div>
             <h2>Scan receipt</h2>
             <p>
-              Take a clear photo and Miles & Meals will fill the shop name and
-              final amount for you.
+              Take a clear photo. Miles & Meals reads it directly on this
+              device and fills the shop name and final amount.
             </p>
           </div>
         </div>
@@ -934,7 +940,9 @@ export function ExpenseForm({
               <strong>
                 {receiptFile ? "Take another photo" : "Take receipt photo"}
               </strong>
-              <small>Camera or photo library · JPEG / PNG / WebP</small>
+              <small>
+                Free on-device OCR · no OpenAI API key · JPEG / PNG / WebP
+              </small>
             </span>
           </label>
 
@@ -969,9 +977,22 @@ export function ExpenseForm({
           {receiptScanning ? (
             <div className="receipt-ai-status scanning" role="status">
               <span className="mini-spinner" />
-              <div>
-                <strong>Reading receipt…</strong>
-                <small>Finding the shop name and final total.</small>
+              <div className="receipt-ocr-progress-copy">
+                <strong>{receiptScanStatus || "Reading receipt…"}</strong>
+                <small>
+                  {Math.round(receiptScanProgress * 100)}% · First scan can
+                  take longer while the OCR engine downloads.
+                </small>
+                <span className="receipt-ocr-progress-track">
+                  <span
+                    style={{
+                      width: `${Math.max(
+                        4,
+                        Math.round(receiptScanProgress * 100),
+                      )}%`,
+                    }}
+                  />
+                </span>
               </div>
             </div>
           ) : receiptMessage ? (
@@ -986,7 +1007,7 @@ export function ExpenseForm({
               <span>{receiptResult ? "✓" : "!"}</span>
               <div>
                 <strong>
-                  {receiptResult ? "Receipt scanned" : "Could not auto-fill"}
+                  {receiptResult ? "Receipt read" : "Could not auto-fill"}
                 </strong>
                 <small>{receiptMessage}</small>
               </div>
@@ -1015,9 +1036,16 @@ export function ExpenseForm({
             </div>
           ) : null}
 
+          {receiptResult?.rawText ? (
+            <details className="receipt-ocr-text">
+              <summary>View detected receipt text</summary>
+              <pre>{receiptResult.rawText}</pre>
+            </details>
+          ) : null}
+
           <p className="receipt-ai-note">
-            AI can misread receipts. Check Description, Currency and Amount
-            before saving.
+            Local OCR is free but less accurate than an AI vision model.
+            Always check Description, Currency and Amount before saving.
           </p>
         </div>
       </section>
