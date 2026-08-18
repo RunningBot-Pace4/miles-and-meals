@@ -11,15 +11,18 @@ export default async function LocationPage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">LIVE GPS</p>
-          <h1>Find trip members</h1>
+          <h1>Find your travel crew</h1>
           <p className="muted">
-            Location is shared only after the person presses Start Sharing.
+            Share your live position with people assigned to the same country.
           </p>
         </div>
       </div>
 
       {countries.length ? (
-        <LocationTracker countries={countries} />
+        <LocationTracker
+          countries={countries}
+          currentUserId={session.user.id}
+        />
       ) : (
         <section className="empty-card">
           <h2>No country assigned</h2>

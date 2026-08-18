@@ -18,18 +18,36 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await db.insert(locationPings).values({
-      countryId: input.countryId,
-      userId: session.user.id,
-      latitude: input.latitude,
-      longitude: input.longitude,
-      accuracyMeters: input.accuracyMeters ?? null,
-    });
+    const inserted = await db
+      .insert(locationPings)
+      .values({
+        countryId: input.countryId,
+        userId: session.user.id,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        accuracyMeters: input.accuracyMeters ?? null,
+      })
+      .returning({
+        createdAt: locationPings.createdAt,
+      });
 
-    return Response.json({ ok: true }, { status: 201 });
+    return Response.json(
+      {
+        ok: true,
+        location: {
+          userId: session.user.id,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          accuracyMeters: input.accuracyMeters ?? null,
+          createdAt: inserted[0]?.createdAt ?? new Date(),
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unable to save location.";
+
     return Response.json({ error: message }, { status: 400 });
   }
 }

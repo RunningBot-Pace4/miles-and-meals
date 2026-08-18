@@ -1,8 +1,14 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { countryMembers, locationPings, user } from "@/db/schema";
-import { canAccessCountry } from "@/lib/access";
-import { getSession } from "@/lib/session";
+import { locationPings } from "@/db/schema";
+import {
+  canAccessCountry,
+  listCountryMembers,
+} from "@/lib/access";
+import {
+  getSession,
+  isSystemAdmin,
+} from "@/lib/session";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -21,36 +27,55 @@ export async function GET(request: Request) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const rows = await db
-    .select({
-      userId: locationPings.userId,
-      name: user.name,
-      latitude: locationPings.latitude,
-      longitude: locationPings.longitude,
-      accuracyMeters: locationPings.accuracyMeters,
-      createdAt: locationPings.createdAt,
-    })
-    .from(locationPings)
-    .innerJoin(user, eq(user.id, locationPings.userId))
-    .innerJoin(
-      countryMembers,
-      and(
-        eq(countryMembers.countryId, locationPings.countryId),
-        eq(countryMembers.userId, locationPings.userId),
-      ),
-    )
-    .where(eq(locationPings.countryId, countryId))
-    .orderBy(desc(locationPings.createdAt));
+  const members = await listCountryMembers(
+    countryId,
+    isSystemAdmin(session.user.role) ? session.user.id : undefined,
+  );
 
-  const seen = new Set<string>();
-  const locations = rows.filter((row) => {
-    if (seen.has(row.userId)) {
-      return false;
-    }
+  const memberIds = members.map((member) => member.id);
 
-    seen.add(row.userId);
-    return true;
+  const latestRows =
+    memberIds.length === 0
+      ? []
+      : await db
+          .selectDistinctOn([locationPings.userId], {
+            userId: locationPings.userId,
+            latitude: locationPings.latitude,
+            longitude: locationPings.longitude,
+            accuracyMeters: locationPings.accuracyMeters,
+            createdAt: locationPings.createdAt,
+          })
+          .from(locationPings)
+          .where(
+            and(
+              eq(locationPings.countryId, countryId),
+              inArray(locationPings.userId, memberIds),
+            ),
+          )
+          .orderBy(
+            locationPings.userId,
+            desc(locationPings.createdAt),
+          );
+
+  const latestByUser = new Map(
+    latestRows.map((location) => [location.userId, location]),
+  );
+
+  const locations = members.map((member) => {
+    const latest = latestByUser.get(member.id);
+
+    return {
+      userId: member.id,
+      name: member.name,
+      latitude: latest?.latitude ?? null,
+      longitude: latest?.longitude ?? null,
+      accuracyMeters: latest?.accuracyMeters ?? null,
+      createdAt: latest?.createdAt ?? null,
+    };
   });
 
-  return Response.json({ locations });
+  return Response.json({
+    locations,
+    serverTime: new Date().toISOString(),
+  });
 }
