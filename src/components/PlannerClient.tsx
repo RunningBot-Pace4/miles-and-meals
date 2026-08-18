@@ -154,45 +154,54 @@ export function PlannerClient({
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+
     setError("");
     setBusy(true);
-    const form = new FormData(event.currentTarget);
 
-    const response = await fetch("/api/travel-items", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        countryId: String(form.get("countryId") ?? ""),
-        itemType: tab,
-        title: String(form.get("title") ?? ""),
-        itemDate: String(form.get("itemDate") ?? ""),
-        itemTime: String(form.get("itemTime") ?? ""),
-        area: String(form.get("area") ?? ""),
-        subtype: String(form.get("subtype") ?? ""),
-        priority: String(form.get("priority") ?? ""),
-        status: String(form.get("status") ?? ""),
-        estimatedCost: String(form.get("estimatedCost") ?? ""),
-        quantity: String(form.get("quantity") ?? ""),
-        provider: String(form.get("provider") ?? ""),
-        confirmationNo: String(form.get("confirmationNo") ?? ""),
-        linkUrl: String(form.get("linkUrl") ?? ""),
-        notes: String(form.get("notes") ?? ""),
-      }),
-    });
+    try {
+      const response = await fetch("/api/travel-items", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          countryId: String(form.get("countryId") ?? ""),
+          itemType: tab,
+          title: String(form.get("title") ?? ""),
+          itemDate: String(form.get("itemDate") ?? ""),
+          itemTime: String(form.get("itemTime") ?? ""),
+          area: String(form.get("area") ?? ""),
+          subtype: String(form.get("subtype") ?? ""),
+          priority: String(form.get("priority") ?? ""),
+          status: String(form.get("status") ?? ""),
+          estimatedCost: String(form.get("estimatedCost") ?? ""),
+          quantity: String(form.get("quantity") ?? ""),
+          provider: String(form.get("provider") ?? ""),
+          confirmationNo: String(form.get("confirmationNo") ?? ""),
+          linkUrl: String(form.get("linkUrl") ?? ""),
+          notes: String(form.get("notes") ?? ""),
+        }),
+      });
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      setError(payload.error ?? "Unable to add item.");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        throw new Error(payload.error ?? "Unable to add item.");
+      }
+
+      formElement.reset();
+      setShowForm(false);
+      router.refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Unable to add item.",
+      );
+    } finally {
       setBusy(false);
-      return;
     }
-
-    event.currentTarget.reset();
-    setBusy(false);
-    setShowForm(false);
-    router.refresh();
   }
 
   async function remove(id: string) {

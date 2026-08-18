@@ -2,7 +2,7 @@ import Link from "next/link";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney, toNumber } from "@/lib/money";
-import { requirePageSession } from "@/lib/session";
+import { isSystemAdmin, requirePageSession } from "@/lib/session";
 
 type DashboardPageProps = {
   searchParams: Promise<{ country?: string }>;
@@ -52,8 +52,11 @@ export default async function DashboardPage({
   const remaining = budget - summary.total;
   const budgetPercent =
     budget > 0 ? Math.min(100, Math.max(0, (summary.total / budget) * 100)) : 0;
-  const firstName = session.user.name.trim().split(/\s+/)[0] || "traveler";
-  const tripName = selectedCountries[0]?.tripName ?? "Your trips";
+  const admin = isSystemAdmin(session.user.role);
+  const firstName = admin
+    ? "Admin"
+    : session.user.name.trim().split(/\s+/)[0] || "traveler";
+  const tripName = selectedCountries[0]?.tripName ?? "Your journey starts here";
 
   return (
     <div className="stack gap-lg dashboard-page">
@@ -79,7 +82,9 @@ export default async function DashboardPage({
                 ? selectedCountries[0]?.name
                 : countries.length
                   ? `${countries.length} accessible countr${countries.length === 1 ? "y" : "ies"}`
-                  : "Waiting for country access"}
+                  : admin
+                    ? "Create a trip, add a country and bring your crew"
+                    : "Waiting for country access"}
             </p>
           </div>
 
@@ -122,16 +127,63 @@ export default async function DashboardPage({
       </section>
 
       {countries.length === 0 ? (
-        <section className="empty-card empty-card-feature">
-          <div className="empty-icon">⌖</div>
-          <div>
-            <h2>No country assigned yet</h2>
-            <p>
-              An admin needs to assign your account to a country before trip
-              information becomes visible.
-            </p>
-          </div>
-        </section>
+        admin ? (
+          <section className="admin-onboarding">
+            <div className="admin-onboarding-copy">
+              <div className="onboarding-orbit" aria-hidden="true">
+                <span className="orbit-pin">⌖</span>
+                <span className="orbit-dot dot-one" />
+                <span className="orbit-dot dot-two" />
+              </div>
+              <div>
+                <p className="eyebrow">FIRST TRIP SETUP</p>
+                <h2>Build your first adventure</h2>
+                <p className="muted">
+                  Start with a trip, add the countries you will visit, then
+                  assign travelers so everyone only sees the right trip data.
+                </p>
+                <Link className="button primary" href="/admin">
+                  Open Admin setup
+                </Link>
+              </div>
+            </div>
+
+            <div className="onboarding-steps">
+              <article>
+                <span>01</span>
+                <div>
+                  <strong>Create a trip</strong>
+                  <small>Name, dates, base currency and budget</small>
+                </div>
+              </article>
+              <article>
+                <span>02</span>
+                <div>
+                  <strong>Add countries</strong>
+                  <small>Local currency and default exchange rate</small>
+                </div>
+              </article>
+              <article>
+                <span>03</span>
+                <div>
+                  <strong>Assign your crew</strong>
+                  <small>Give each traveler country-level access</small>
+                </div>
+              </article>
+            </div>
+          </section>
+        ) : (
+          <section className="empty-card empty-card-feature">
+            <div className="empty-icon">⌖</div>
+            <div>
+              <h2>No country assigned yet</h2>
+              <p>
+                An admin needs to assign your account to a country before trip
+                information becomes visible.
+              </p>
+            </div>
+          </section>
+        )
       ) : (
         <>
           <section className="stat-grid dashboard-stats">

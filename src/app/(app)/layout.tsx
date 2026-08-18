@@ -1,7 +1,7 @@
+import { AccountMenu } from "@/components/AccountMenu";
 import { BrandLogo } from "@/components/BrandLogo";
 import { MobileNav } from "@/components/MobileNav";
-import { SignOutButton } from "@/components/SignOutButton";
-import { requirePageSession, isSystemAdmin } from "@/lib/session";
+import { isSystemAdmin, requirePageSession } from "@/lib/session";
 
 export default async function AppLayout({
   children,
@@ -15,21 +15,16 @@ export default async function AppLayout({
     <div className="app-shell">
       <header className="topbar">
         <BrandLogo />
-        <div className="topbar-user">
-          <div className="topbar-profile">
-            <span className="profile-dot">
-              {session.user.name.trim().charAt(0).toUpperCase()}
-            </span>
-            <span className="desktop-only">
-              {session.user.name}
-              {admin ? " · Admin" : ""}
-            </span>
-          </div>
-          <SignOutButton />
-        </div>
+        <AccountMenu
+          name={session.user.name}
+          email={session.user.email}
+          isAdmin={admin}
+        />
       </header>
-      <main className="page-container">{children}</main>
+
       <MobileNav />
+
+      <main className="page-container">{children}</main>
     </div>
   );
 }

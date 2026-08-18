@@ -1,184 +1,134 @@
 # Miles & Meals
 
-**This ZIP is the complete application source, including Forgot/Reset Password. It is not a patch.**
+Travel together. Spend smarter.
 
-> Travel together. Spend smarter.
+Mobile-first travel tracker built with Next.js, Better Auth, Neon PostgreSQL,
+Drizzle ORM and Vercel.
 
-**New here? Open `START-HERE.md` first.**  
-For an instant visual preview with no setup, double-click `design-preview.html`.
+## v7 highlights
 
-## Latest mobile UI update
+- Responsive mobile, tablet and desktop layout
+- Mobile bottom navigation and desktop vertical sidebar
+- Richer dashboard and first-trip Admin onboarding
+- Top-right account avatar menu
+- Change Password page
+- Admin password reset for travelers
+- Normal traveler registration page
+- Fixed async form reset crash when creating trips/planner items
+- Branded loading splash and authenticated route skeletons
+- Button-level loading states for Admin forms
 
-- Polished Add Expense flow with large currency/amount controls
-- FX source selector: Default / Cash / Card / Manual
-- Per-expense historical FX preserved
-- Tap-friendly payer avatars
-- Equal / Percentage / Exact split UI with validation summary
-- Redesigned Plan / Places / Meals / Shopping / Bookings tabs
-- Timeline-style itinerary cards and compact travel cards
-- Country filter remains permission-aware
+## Main features
 
-## Brand & UI
-
-- **Primary:** Travel Teal `#0F766E`
-- **Accent:** Meal Amber `#F59E0B`
-- **Background:** Warm Off-White `#FBFAF7`
-- **Logo:** location pin + fork
-- **Mobile navigation:** Home · Plan · Add · Map · More
-- **Design:** rounded travel cards, large outdoor-friendly touch targets, compact financial summaries
-- **App icon:** `public/miles-meals-icon.svg`
-
-
-Mobile-first travel tracker built for Visual Studio 2026, Vercel and Neon PostgreSQL.
-
-## Included
-
-- Better Auth email/password login
-- One active session per account; a new login invalidates the previous device
-- Admin user creation
-- Admin trip and multi-country setup
-- Admin country assignment; members only see assigned countries
-- Dashboard with budget, spending categories, payers and settlement
+- Email/password login and registration
+- One active server-side session per account
+- Admin trip creation and multi-country setup
+- Admin country assignment
+- Normal users only see assigned-country data
+- Dashboard with budget, spending, payer and settlement summaries
 - Expense add/view/edit/delete
-- Per-expense FX rate with Default / Cash Exchange / Credit Card / Manual source
-- Optional actual card/base-currency charge
-- Payer plus Equal / Percentage / Exact Amount split selection
-- Itinerary / Places / Food / Shopping / Bookings planner
-- GPS sharing with per-country authorization
-- MapLibre live member map
-- Mobile bottom navigation
+- Historical per-expense FX rates
+- Equal / Percentage / Exact Amount splits
+- Itinerary / Places / Meals / Shopping / Bookings
+- GPS location sharing with country-level authorization
+- MapLibre member map
 
-## Password recovery
+## Passwords
 
-Miles & Meals includes:
-
-- **Show / Hide password** on the sign-in screen. This only reveals the password currently typed into the browser; stored passwords remain hashed and cannot be displayed.
-- **Forgot password** at `/forgot-password`.
-- **Reset password** at `/reset-password`.
-- Reset links expire after 30 minutes.
-- All existing sessions are revoked after a successful password reset.
-- Password-reset requests are rate-limited.
-
-### Local testing
-
-If `RESEND_API_KEY` and `EMAIL_FROM` are not configured while running locally, submit the Forgot Password form and copy the reset URL printed in the Visual Studio terminal.
-
-### Production email
-
-For deployed password-reset emails, add these environment variables to `.env` locally and to Vercel:
-
-```env
-RESEND_API_KEY=re_your_api_key
-EMAIL_FROM="Miles & Meals <noreply@your-verified-domain.com>"
-```
-
-The sender domain must be configured/verified with your email provider.
+- Users can change their own password from the top-right avatar menu.
+- Admin can reset another user's password from Admin.
+- Forgot Password is Admin-assisted; no email provider/API key is required.
+- Normal users can register at `/register`.
 
 ## Visual Studio 2026
 
-1. Install the Node.js development workload.
-2. Open Visual Studio 2026.
-3. Select **Open a local folder** and choose this repository.
-4. Open the integrated terminal.
+Open this folder directly:
 
-## Local setup
+```text
+File → Open → Folder
+```
+
+Then run:
 
 ```powershell
 Copy-Item .env.example .env
 npm install
 npm run db:push
 npm run seed:admin
+npm run build
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open:
+
+```text
+http://localhost:3000
+```
+
+## Environment
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST/neondb?sslmode=require"
+
+BETTER_AUTH_SECRET="replace-with-a-new-random-secret-at-least-32-characters"
+
+BETTER_AUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+ADMIN_NAME="Travel Admin"
+ADMIN_EMAIL="your-real-email@example.com"
+ADMIN_PASSWORD="ChangeThisPassword123!"
+
+RESET_DATABASE="NO"
+```
+
+For Vercel, change the two app URLs to your real production URL.
 
 ## Neon
 
-Create a Neon project and copy its pooled/serverless connection string into:
+`npm run db:push` creates/updates the required schema.
 
-```env
-DATABASE_URL=postgresql://...
-```
-
-## Authentication secret
-
-Generate a strong secret:
+To intentionally clear all Miles & Meals data:
 
 ```powershell
-openssl rand -base64 32
-```
+$env:RESET_DATABASE="YES"
+npm run db:reset
+Remove-Item Env:RESET_DATABASE
 
-Set it as `BETTER_AUTH_SECRET`.
-
-The admin seed uses:
-
-```env
-ADMIN_NAME=Travel Admin
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=ChangeThisPassword123!
-```
-
-Change the password before using the app with real travel data.
-
-## Vercel deployment
-
-1. Push the source to GitHub.
-2. Import the repository into Vercel.
-3. Add these environment variables in Vercel:
-   - `DATABASE_URL`
-   - `BETTER_AUTH_SECRET`
-   - `BETTER_AUTH_URL=https://your-domain.vercel.app`
-   - `NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app`
-   - `RESEND_API_KEY`
-   - `EMAIL_FROM=Miles & Meals <noreply@your-verified-domain.com>`
-4. Deploy.
-
-Before the first production deploy, run database schema push against the production Neon database:
-
-```powershell
 npm run db:push
+npm run seed:admin
 ```
 
-Seed the first admin using production environment variables from a trusted local machine.
+This is destructive.
 
-## Country privacy model
+## Registration and access
 
-Every server request checks the authenticated user's country access. Normal users do not receive data for countries they are not assigned to. Admins can see all countries.
+A newly registered user is a normal user. Registration does not automatically
+grant trip access.
 
-The same rule is applied to:
-- dashboard
-- planner
-- expenses
-- GPS locations
+Admin must:
 
-## Exchange rate behavior
+1. Create a trip.
+2. Add countries.
+3. Assign users to countries.
 
-`countries.default_exchange_rate` is only a default for new expenses.
+Server-side authorization prevents normal users from reading data for
+unassigned countries.
 
-Every expense stores:
-- transaction currency
-- transaction amount
-- exchange rate used
-- calculated base amount
-- rate source
-- optional actual base/card amount
+## Exchange rates
 
-Changing a country's default exchange rate does not recalculate historical expenses.
+A country's exchange rate is only a default for new expenses. Every expense
+stores the actual rate used for that transaction, so later changes to the
+country default do not alter historical spending.
 
-## GPS limitation
+## GPS
 
-Browser GPS requires HTTPS and explicit permission. Vercel provides HTTPS.
-
-Mobile browsers may pause the website when the phone is locked or the browser is suspended. This source is suitable for live tracking while the web app remains active. True continuous background tracking requires a native mobile companion later.
+Browser geolocation requires HTTPS and user permission. Vercel supplies HTTPS.
+Continuous tracking while the app is fully suspended/closed is a mobile-browser
+limitation and would require a native companion app later.
 
 ## Tests
 
 ```powershell
 npm test
 ```
-
-
-## Better Auth admin API typing
-
-The admin user creation route uses a narrow local type adapter for `auth.api.createUser`. This avoids a Better Auth plugin endpoint inference issue while retaining the documented server API at runtime.
