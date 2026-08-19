@@ -4,7 +4,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 type CountryOption = {
@@ -19,7 +18,6 @@ export function CountryQuickSelect({
   countries: CountryOption[];
   selectedId: string;
 }) {
-  const router = useRouter();
   const [value, setValue] = useState(selectedId);
   const [switching, setSwitching] = useState(false);
 
@@ -44,7 +42,7 @@ export function CountryQuickSelect({
     setValue(nextId);
     setSwitching(true);
 
-    router.push(
+    window.location.assign(
       nextId
         ? `/dashboard?country=${encodeURIComponent(nextId)}`
         : "/dashboard",

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   avatarColors,
   avatarIcons,
@@ -21,7 +20,6 @@ export function ProfileSettingsForm({
   initialColor: AvatarColor;
   initialIcon: AvatarIcon;
 }) {
-  const router = useRouter();
   const [avatarColor, setAvatarColor] = useState<AvatarColor>(initialColor);
   const [avatarIcon, setAvatarIcon] = useState<AvatarIcon>(initialIcon);
   const [busy, setBusy] = useState(false);
@@ -53,7 +51,7 @@ export function ProfileSettingsForm({
       }
 
       setMessage("Profile updated.");
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Unable to update profile.",

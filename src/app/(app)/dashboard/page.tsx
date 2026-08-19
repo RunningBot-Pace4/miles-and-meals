@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { CountryQuickSelect } from "@/components/CountryQuickSelect";
 import { SettlementActionButton } from "@/components/SettlementActionButton";
 import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";

@@ -1,7 +1,6 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
@@ -134,7 +133,6 @@ export function ExpenseForm({
   currentUserId: string;
   initial?: ExpenseInitial;
 }) {
-  const router = useRouter();
   const first =
     countries.find((country) => country.id === initial?.countryId) ??
     countries[0];
@@ -672,8 +670,7 @@ export function ExpenseForm({
         return;
       }
 
-      router.push("/expenses");
-      router.refresh();
+      window.location.assign("/expenses");
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);

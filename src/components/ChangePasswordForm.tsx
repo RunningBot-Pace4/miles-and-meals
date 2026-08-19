@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
@@ -10,7 +9,6 @@ export function ChangePasswordForm({
 }: {
   forceChange?: boolean;
 }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState("");
@@ -69,13 +67,12 @@ export function ChangePasswordForm({
       formElement.reset();
 
       if (forceChange) {
-        router.replace("/dashboard");
-        router.refresh();
+        window.location.replace("/dashboard");
         return;
       }
 
       setMessage("Password changed successfully.");
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error

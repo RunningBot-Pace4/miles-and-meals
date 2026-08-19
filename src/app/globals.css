@@ -10166,3 +10166,81 @@ tr + tr td {
 .app-error-actions .button {
   flex: 1 1 150px;
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v36 — Stronger editorial heading treatment                                */
+/* -------------------------------------------------------------------------- */
+
+.welcome-name {
+  padding: 0.03em 0.18em 0.09em;
+  border-radius: 0.24em;
+  color: #fff8f1;
+  background:
+    linear-gradient(
+      135deg,
+      #c6634f,
+      #d97a62
+    );
+  box-shadow:
+    inset 0 -0.08em 0 rgb(115 56 43 / 12%),
+    0 0.1em 0.28em rgb(120 67 48 / 10%);
+  transform: rotate(-0.8deg);
+}
+
+.welcome-name::after {
+  display: none;
+}
+
+.welcome-tagline strong {
+  padding: 0.06em 0.28em 0.1em;
+  border-radius: 0.38em;
+  line-height: 1;
+}
+
+.tagline-mile {
+  color: #456f77;
+  background: #e6f0f3;
+}
+
+.tagline-meal {
+  color: #0d756b;
+  background: #e4f3ee;
+}
+
+.tagline-memory {
+  color: #9b651f;
+  background: #fff0d4;
+}
+
+.tagline-memory::after {
+  top: -0.72em;
+  right: -0.58em;
+  color: #c6634f;
+}
+
+.travel-title-year {
+  padding: 0.08em 0.28em 0.12em;
+  border: 1px solid rgb(78 127 135 / 14%);
+  border-radius: 0.28em;
+  color: #456f77;
+  background: rgb(230 240 243 / 0.74);
+  font-size: 0.78em;
+  line-height: 1;
+}
+
+.travel-title-note {
+  border-color: rgb(198 99 79 / 14%);
+  color: #a25442;
+  background: rgb(249 228 220 / 0.78);
+}
+
+@media (max-width: 430px) {
+  .welcome-name {
+    padding-inline: 0.15em;
+  }
+
+  .welcome-tagline strong {
+    padding-inline: 0.22em;
+  }
+}

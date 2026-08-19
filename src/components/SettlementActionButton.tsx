@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 type SettlementAction = "MARK_PAID" | "MARK_RECEIVED";
@@ -17,7 +16,6 @@ export function SettlementActionButton({
   action: SettlementAction;
   label: string;
 }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -48,7 +46,7 @@ export function SettlementActionButton({
         return;
       }
 
-      router.refresh();
+      window.location.reload();
     } catch {
       setError("Unable to reach Miles & Meals. Please try again.");
       setBusy(false);

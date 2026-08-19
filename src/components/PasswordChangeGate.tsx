@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 export function PasswordChangeGate({
   required,
@@ -11,14 +11,13 @@ export function PasswordChangeGate({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const passwordPath = "/settings/password";
 
   useEffect(() => {
     if (required && pathname !== passwordPath) {
-      router.replace(`${passwordPath}?required=1`);
+      window.location.replace(`${passwordPath}?required=1`);
     }
-  }, [pathname, required, router]);
+  }, [pathname, required]);
 
   if (required && pathname !== passwordPath) {
     return (

@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarColor, getAvatarSymbol } from "@/lib/avatar";
 import { SavingOverlay } from "@/components/SavingOverlay";
@@ -57,7 +56,6 @@ export function AccountMenu({
   avatarColor,
   avatarIcon,
 }: AccountMenuProps) {
-  const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -99,8 +97,7 @@ export function AccountMenu({
 
     try {
       await authClient.signOut();
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } finally {
       setSigningOut(false);
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { countryCatalog } from "@/lib/country-catalog";
 
@@ -119,7 +118,6 @@ export function AdminForms({
   countries: Country[];
   users: UserOption[];
 }) {
-  const router = useRouter();
   const [busyForm, setBusyForm] = useState<FormKey | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -282,7 +280,7 @@ export function AdminForms({
       formElement.reset();
       afterSuccess?.();
       setMessage(successMessage);
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Request failed.");
     } finally {

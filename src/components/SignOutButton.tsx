@@ -1,12 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function SignOutButton() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function signOut() {
@@ -14,8 +12,7 @@ export function SignOutButton() {
 
     try {
       await authClient.signOut();
-      router.replace("/login");
-      router.refresh();
+      window.location.replace("/login");
     } finally {
       setBusy(false);
     }

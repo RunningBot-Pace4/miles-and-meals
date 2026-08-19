@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { getSession } from "@/lib/session";

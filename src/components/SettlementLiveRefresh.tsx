@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useEffect,
+  useRef,
+} from "react";
 
 const PROBE_TIMEOUT_MS = 3500;
+
+type LiveRefreshPayload = {
+  ok?: boolean;
+  settlementVersion?: string;
+};
 
 export function SettlementLiveRefresh({
   intervalMs = 4000,
@@ -12,13 +19,13 @@ export function SettlementLiveRefresh({
   intervalMs?: number;
   showBadge?: boolean;
 }) {
-  const router = useRouter();
+  const versionRef = useRef<string | null>(null);
 
   useEffect(() => {
     let disposed = false;
     let refreshInFlight = false;
 
-    function canAttemptRefresh(): boolean {
+    function canPoll(): boolean {
       return (
         navigator.onLine &&
         document.visibilityState === "visible" &&
@@ -26,7 +33,9 @@ export function SettlementLiveRefresh({
       );
     }
 
-    async function serverIsReachable(): Promise<boolean> {
+    async function loadVersion(): Promise<
+      string | null
+    > {
       const controller = new AbortController();
       const timer = window.setTimeout(
         () => controller.abort(),
@@ -47,19 +56,26 @@ export function SettlementLiveRefresh({
           },
         );
 
-        return response.ok;
+        if (!response.ok) {
+          return null;
+        }
+
+        const payload =
+          (await response.json()) as LiveRefreshPayload;
+
+        return payload.settlementVersion ?? null;
       } catch {
-        return false;
+        return null;
       } finally {
         window.clearTimeout(timer);
       }
     }
 
-    async function refresh() {
+    async function poll() {
       if (
         disposed ||
         refreshInFlight ||
-        !canAttemptRefresh()
+        !canPoll()
       ) {
         return;
       }
@@ -67,53 +83,60 @@ export function SettlementLiveRefresh({
       refreshInFlight = true;
 
       try {
-        if (!(await serverIsReachable())) {
-          return;
-        }
+        const version = await loadVersion();
 
         if (
           disposed ||
-          !canAttemptRefresh()
+          version === null
         ) {
           return;
         }
 
-        router.refresh();
+        if (versionRef.current === null) {
+          versionRef.current = version;
+          return;
+        }
+
+        if (versionRef.current !== version) {
+          window.location.reload();
+        }
       } finally {
         refreshInFlight = false;
       }
     }
 
+    void poll();
+
     const timer = window.setInterval(
-      () => void refresh(),
+      () => void poll(),
       intervalMs,
     );
 
-    function refreshWhenVisible() {
+    function pollWhenVisible() {
       if (document.visibilityState === "visible") {
-        void refresh();
+        void poll();
       }
     }
 
-    function refreshWhenOnline() {
-      void refresh();
+    function pollWhenOnline() {
+      void poll();
     }
 
-    function refreshWhenFocused() {
-      void refresh();
+    function pollWhenFocused() {
+      void poll();
     }
 
     window.addEventListener(
       "online",
-      refreshWhenOnline,
+      pollWhenOnline,
     );
     window.addEventListener(
       "focus",
-      refreshWhenFocused,
+      pollWhenFocused,
     );
     document.addEventListener(
       "visibilitychange",
-      refreshWhenVisible,
+      pollWhenVisible,
     );
 
     return () => {
@@ -121,18 +144,18 @@ export function SettlementLiveRefresh({
       window.clearInterval(timer);
       window.removeEventListener(
         "online",
-        refreshWhenOnline,
+        pollWhenOnline,
       );
       window.removeEventListener(
         "focus",
-        refreshWhenFocused,
+        pollWhenFocused,
       );
       document.removeEventListener(
         "visibilitychange",
-        refreshWhenVisible,
+        pollWhenVisible,
       );
     };
-  }, [intervalMs, router]);
+  }, [intervalMs]);
 
   if (!showBadge) {
     return null;

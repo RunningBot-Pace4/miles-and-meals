@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { requirePageSession } from "@/lib/session";
 import { getUserPreferences } from "@/lib/user-preferences";

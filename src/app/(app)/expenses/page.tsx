@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { countries, expenseSplits, expenses, user } from "@/db/schema";

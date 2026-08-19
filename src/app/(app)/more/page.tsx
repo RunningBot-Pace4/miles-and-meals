@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { InstallAppCard } from "@/components/InstallAppCard";
 import { isSystemAdmin, requirePageSession } from "@/lib/session";
 

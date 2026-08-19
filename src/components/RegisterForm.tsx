@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function RegisterForm() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,8 +40,7 @@ export function RegisterForm() {
         return;
       }
 
-      router.replace("/dashboard");
-      router.refresh();
+      window.location.replace("/dashboard");
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);

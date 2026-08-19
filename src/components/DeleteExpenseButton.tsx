@@ -1,11 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 export function DeleteExpenseButton({ id }: { id: string }) {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
 
   async function remove() {
@@ -22,7 +20,7 @@ export function DeleteExpenseButton({ id }: { id: string }) {
       return;
     }
 
-    router.refresh();
+    window.location.reload();
   }
 
   return (

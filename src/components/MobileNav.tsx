@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { usePathname } from "next/navigation";
 
 type IconName = "home" | "plan" | "plus" | "map" | "more";

@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 type CountryOption = {
@@ -511,7 +510,6 @@ export function PlannerClient({
   countries: CountryOption[];
   items: PlannerItem[];
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<TabValue>("ITINERARY");
   const [countryFilter, setCountryFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
@@ -609,7 +607,7 @@ export function PlannerClient({
 
       formElement.reset();
       setShowForm(false);
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -657,7 +655,7 @@ export function PlannerClient({
       }
 
       setEditingItem(null);
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -699,7 +697,7 @@ export function PlannerClient({
         setDetailItem(null);
       }
 
-      router.refresh();
+      window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error
