@@ -1,5 +1,8 @@
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { countries } from "@/db/schema";
+import { countries, trips } from "@/db/schema";
+import { getCountryCatalogItem } from "@/lib/country-catalog";
+import { getDailyFxRate } from "@/lib/fx";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createCountrySchema } from "@/lib/validation";
 
@@ -16,21 +19,82 @@ export async function POST(request: Request) {
 
   try {
     const input = createCountrySchema.parse(await request.json());
+    const catalogCountry = getCountryCatalogItem(input.code);
+
+    if (!catalogCountry) {
+      return Response.json(
+        { error: "Choose a country from the country list." },
+        { status: 400 },
+      );
+    }
+
+    const tripRows = await db
+      .select({
+        baseCurrency: trips.baseCurrency,
+      })
+      .from(trips)
+      .where(eq(trips.id, input.tripId))
+      .limit(1);
+
+    const trip = tripRows[0];
+
+    if (!trip) {
+      return Response.json(
+        { error: "Trip not found." },
+        { status: 404 },
+      );
+    }
+
+    let exchangeRate = input.defaultExchangeRate;
+    let fxRateDate: string | null = null;
+    let fxRateProvider = "Manual";
+
+    try {
+      const dailyFx = await getDailyFxRate(
+        catalogCountry.currencyCode,
+        trip.baseCurrency,
+      );
+
+      exchangeRate = dailyFx.rate;
+      fxRateDate = dailyFx.rateDate;
+      fxRateProvider = dailyFx.provider;
+    } catch {
+      // Keep the submitted manual value when the free FX sources are unavailable.
+    }
+
     const created = await db
       .insert(countries)
       .values({
         tripId: input.tripId,
-        name: input.name,
-        code: input.code,
-        currencyCode: input.currencyCode,
-        defaultExchangeRate: input.defaultExchangeRate.toFixed(10),
+        name: catalogCountry.name,
+        code: catalogCountry.code,
+        currencyCode: catalogCountry.currencyCode,
+        defaultExchangeRate: exchangeRate.toFixed(10),
+        fxRateDate,
+        fxRateProvider,
       })
       .returning({ id: countries.id });
 
-    return Response.json({ id: created[0].id }, { status: 201 });
+    return Response.json(
+      {
+        id: created[0].id,
+        country: {
+          name: catalogCountry.name,
+          code: catalogCountry.code,
+          currencyCode: catalogCountry.currencyCode,
+          defaultExchangeRate: exchangeRate,
+          fxRateDate,
+          fxRateProvider,
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unable to create country.";
+      error instanceof Error
+        ? error.message
+        : "Unable to create country.";
+
     return Response.json({ error: message }, { status: 400 });
   }
 }

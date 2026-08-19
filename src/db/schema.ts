@@ -54,6 +54,27 @@ export const session = pgTable(
   ],
 );
 
+export const loginAudits = pgTable(
+  "login_audits",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    signedInAt: timestamp("signed_in_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    index("login_audit_user_time_idx").on(
+      table.userId,
+      table.signedInAt,
+    ),
+  ],
+);
+
 export const account = pgTable(
   "account",
   {
@@ -145,6 +166,8 @@ export const countries = pgTable(
     })
       .default("1")
       .notNull(),
+    fxRateDate: date("fx_rate_date"),
+    fxRateProvider: text("fx_rate_provider"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -333,6 +356,7 @@ export const locationPings = pgTable(
 export const schema = {
   user,
   session,
+  loginAudits,
   account,
   verification,
   userPreferences,

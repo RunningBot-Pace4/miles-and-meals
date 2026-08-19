@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseReceiptText } from "@/lib/receipt-parser";
 
 describe("receipt parser", () => {
-  it("uses the receipt header to identify the merchant", () => {
+  it("combines a split receipt header into the merchant name", () => {
     const parsed = parseReceiptText(
       `
 TAX INVOICE
@@ -20,6 +20,15 @@ HIGHLANDS
 COFFEE
 123 LE LOI STREET
 `,
+      `
+TAX INVOICE
+HIGHLANDS COFFEE
+TOTAL 120.000 VND
+`,
+      `
+SUBTOTAL 120.000
+TOTAL 120.000 VND
+`,
     );
 
     expect(parsed.merchantName).toBe("HIGHLANDS COFFEE");
@@ -27,6 +36,7 @@ COFFEE
       "HIGHLANDS COFFEE",
     );
     expect(parsed.totalAmount).toBe(120000);
+    expect(parsed.totalCandidates).toContain(120000);
     expect(parsed.currencyCode).toBe("VND");
   });
 
@@ -48,6 +58,9 @@ KUALA LUMPUR
     expect(parsed.merchantName).toBe(
       "LITTLE HANOI EGG COFFEE",
     );
+    expect(parsed.merchantCandidates[0]).not.toMatch(
+      /JALAN|KUALA LUMPUR/i,
+    );
   });
 
   it("does not choose subtotal over grand total", () => {
@@ -60,10 +73,64 @@ GRAND TOTAL RM 46.20
 `,
       "MYR",
       80,
+      "EGG COFFEE",
+      `
+EGG COFFEE
+SUBTOTAL 42.00
+GRAND TOTAL RM 46.20
+`,
+      `
+SUBTOTAL 42.00
+SERVICE CHARGE 4.20
+GRAND TOTAL RM 46.20
+`,
     );
 
     expect(parsed.totalAmount).toBe(46.2);
     expect(parsed.currencyCode).toBe("MYR");
+  });
+
+  it("recognizes a common OCR mistake in TOTAL", () => {
+    const parsed = parseReceiptText(
+      `
+CAFE TEST
+SUBTOTAL 100,000
+T0TAL 120,000 VND
+`,
+      "VND",
+      76,
+      "CAFE TEST",
+      "",
+      `
+SUBTOTAL 100,000
+T0TAL 120,000 VND
+`,
+    );
+
+    expect(parsed.totalAmount).toBe(120000);
+  });
+
+  it("uses repeated OCR passes as stronger total evidence", () => {
+    const parsed = parseReceiptText(
+      `
+LOCAL CAFE
+TOTAL 18.50
+`,
+      "SGD",
+      82,
+      "LOCAL CAFE",
+      `
+LOCAL CAFE
+TOTAL 18.50
+`,
+      `
+SUBTOTAL 16.00
+TOTAL 18.50
+`,
+    );
+
+    expect(parsed.totalAmount).toBe(18.5);
+    expect(parsed.totalCandidates[0]).toBe(18.5);
   });
 
   it("handles European-style decimals", () => {

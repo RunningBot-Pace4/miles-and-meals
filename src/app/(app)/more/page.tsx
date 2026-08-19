@@ -51,14 +51,6 @@ export default async function MorePage() {
         </Link>
       </section>
 
-      <section className="info-card">
-        <strong>GPS note</strong>
-        <p>
-          Mobile browsers can suspend web pages while the phone is locked. For
-          continuous background tracking with the app closed, use a future
-          native iOS/Android companion app.
-        </p>
-      </section>
     </div>
   );
 }

@@ -7,8 +7,10 @@ export type OcrProgress = {
 };
 
 type PreparedReceipt = {
-  full: Blob;
-  header: Blob;
+  fullEnhanced: Blob;
+  fullBinary: Blob;
+  headerEnhanced: Blob;
+  bottomBinary: Blob;
 };
 
 function canvasToBlob(
@@ -34,6 +36,206 @@ function canvasToBlob(
   });
 }
 
+function createCanvas(
+  width: number,
+  height: number,
+): {
+  canvas: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
+} {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d", {
+    alpha: false,
+    willReadFrequently: true,
+  });
+
+  if (!context) {
+    throw new Error(
+      "Your browser could not prepare this receipt image.",
+    );
+  }
+
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+
+  return { canvas, context };
+}
+
+function grayscaleAndContrast(
+  image: ImageData,
+): ImageData {
+  const data = image.data;
+
+  for (
+    let index = 0;
+    index < data.length;
+    index += 4
+  ) {
+    const gray =
+      data[index] * 0.299 +
+      data[index + 1] * 0.587 +
+      data[index + 2] * 0.114;
+
+    const contrasted = Math.max(
+      0,
+      Math.min(
+        255,
+        (gray - 128) * 1.42 + 128,
+      ),
+    );
+
+    data[index] = contrasted;
+    data[index + 1] = contrasted;
+    data[index + 2] = contrasted;
+    data[index + 3] = 255;
+  }
+
+  return image;
+}
+
+function otsuThreshold(
+  image: ImageData,
+): number {
+  const histogram = new Array<number>(256).fill(0);
+  const data = image.data;
+  let pixelCount = 0;
+
+  for (
+    let index = 0;
+    index < data.length;
+    index += 4
+  ) {
+    histogram[data[index]] += 1;
+    pixelCount += 1;
+  }
+
+  let totalWeighted = 0;
+
+  for (
+    let value = 0;
+    value < 256;
+    value += 1
+  ) {
+    totalWeighted += value * histogram[value];
+  }
+
+  let backgroundWeight = 0;
+  let backgroundWeighted = 0;
+  let maximumVariance = -1;
+  let threshold = 170;
+
+  for (
+    let value = 0;
+    value < 256;
+    value += 1
+  ) {
+    backgroundWeight += histogram[value];
+
+    if (backgroundWeight === 0) {
+      continue;
+    }
+
+    const foregroundWeight =
+      pixelCount - backgroundWeight;
+
+    if (foregroundWeight === 0) {
+      break;
+    }
+
+    backgroundWeighted +=
+      value * histogram[value];
+
+    const backgroundMean =
+      backgroundWeighted / backgroundWeight;
+    const foregroundMean =
+      (totalWeighted - backgroundWeighted) /
+      foregroundWeight;
+
+    const variance =
+      backgroundWeight *
+      foregroundWeight *
+      Math.pow(
+        backgroundMean - foregroundMean,
+        2,
+      );
+
+    if (variance > maximumVariance) {
+      maximumVariance = variance;
+      threshold = value;
+    }
+  }
+
+  return Math.max(
+    105,
+    Math.min(220, threshold + 8),
+  );
+}
+
+function binaryImage(
+  image: ImageData,
+): ImageData {
+  const threshold = otsuThreshold(image);
+  const data = image.data;
+
+  for (
+    let index = 0;
+    index < data.length;
+    index += 4
+  ) {
+    const value =
+      data[index] < threshold
+        ? 0
+        : 255;
+
+    data[index] = value;
+    data[index + 1] = value;
+    data[index + 2] = value;
+    data[index + 3] = 255;
+  }
+
+  return image;
+}
+
+function cropCanvas(
+  source: HTMLCanvasElement,
+  startRatio: number,
+  heightRatio: number,
+): HTMLCanvasElement {
+  const sourceY = Math.max(
+    0,
+    Math.round(source.height * startRatio),
+  );
+  const cropHeight = Math.max(
+    1,
+    Math.min(
+      source.height - sourceY,
+      Math.round(source.height * heightRatio),
+    ),
+  );
+
+  const { canvas, context } = createCanvas(
+    source.width,
+    cropHeight,
+  );
+
+  context.drawImage(
+    source,
+    0,
+    sourceY,
+    source.width,
+    cropHeight,
+    0,
+    0,
+    source.width,
+    cropHeight,
+  );
+
+  return canvas;
+}
+
 async function preprocessReceiptImage(
   file: File,
 ): Promise<PreparedReceipt> {
@@ -42,9 +244,12 @@ async function preprocessReceiptImage(
   try {
     const maxSide = 2200;
     const scale = Math.min(
-      2,
+      1.9,
       maxSide /
-        Math.max(bitmap.width, bitmap.height),
+        Math.max(
+          bitmap.width,
+          bitmap.height,
+        ),
     );
 
     const width = Math.max(
@@ -56,24 +261,11 @@ async function preprocessReceiptImage(
       Math.round(bitmap.height * scale),
     );
 
-    const canvas =
-      document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
+    const { canvas, context } = createCanvas(
+      width,
+      height,
+    );
 
-    const context = canvas.getContext("2d", {
-      alpha: false,
-      willReadFrequently: true,
-    });
-
-    if (!context) {
-      throw new Error(
-        "Your browser could not prepare this receipt image.",
-      );
-    }
-
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, width, height);
     context.drawImage(
       bitmap,
       0,
@@ -82,85 +274,83 @@ async function preprocessReceiptImage(
       height,
     );
 
-    const image = context.getImageData(
-      0,
-      0,
-      width,
-      height,
-    );
-    const data = image.data;
-
-    for (
-      let index = 0;
-      index < data.length;
-      index += 4
-    ) {
-      const gray =
-        data[index] * 0.299 +
-        data[index + 1] * 0.587 +
-        data[index + 2] * 0.114;
-
-      const contrasted = Math.max(
-        0,
-        Math.min(
-          255,
-          (gray - 128) * 1.34 + 128,
+    const enhancedImage =
+      grayscaleAndContrast(
+        context.getImageData(
+          0,
+          0,
+          width,
+          height,
         ),
       );
 
-      data[index] = contrasted;
-      data[index + 1] = contrasted;
-      data[index + 2] = contrasted;
-      data[index + 3] = 255;
-    }
-
-    context.putImageData(image, 0, 0);
-
-    const headerHeight = Math.max(
-      1,
-      Math.round(height * 0.38),
-    );
-    const headerCanvas =
-      document.createElement("canvas");
-    headerCanvas.width = width;
-    headerCanvas.height = headerHeight;
-
-    const headerContext =
-      headerCanvas.getContext("2d", {
-        alpha: false,
-      });
-
-    if (!headerContext) {
-      throw new Error(
-        "Your browser could not prepare the receipt header.",
-      );
-    }
-
-    headerContext.fillStyle = "#ffffff";
-    headerContext.fillRect(
+    context.putImageData(
+      enhancedImage,
       0,
       0,
-      width,
-      headerHeight,
-    );
-    headerContext.drawImage(
-      canvas,
-      0,
-      0,
-      width,
-      headerHeight,
-      0,
-      0,
-      width,
-      headerHeight,
     );
 
-    const [full, header] = await Promise.all([
-      canvasToBlob(canvas, 0.94),
-      canvasToBlob(headerCanvas, 0.96),
+    const enhancedCanvas = canvas;
+
+    const {
+      canvas: binaryCanvas,
+      context: binaryContext,
+    } = createCanvas(
+      width,
+      height,
+    );
+
+    binaryContext.drawImage(
+      enhancedCanvas,
+      0,
+      0,
+    );
+
+    const binaryData = binaryImage(
+      binaryContext.getImageData(
+        0,
+        0,
+        width,
+        height,
+      ),
+    );
+
+    binaryContext.putImageData(
+      binaryData,
+      0,
+      0,
+    );
+
+    const headerCanvas = cropCanvas(
+      enhancedCanvas,
+      0,
+      0.34,
+    );
+
+    const bottomCanvas = cropCanvas(
+      binaryCanvas,
+      0.52,
+      0.48,
+    );
+
+    const [
+      fullEnhanced,
+      fullBinary,
+      headerEnhanced,
+      bottomBinary,
+    ] = await Promise.all([
+      canvasToBlob(enhancedCanvas, 0.96),
+      canvasToBlob(binaryCanvas, 0.97),
+      canvasToBlob(headerCanvas, 0.97),
+      canvasToBlob(bottomCanvas, 0.97),
     ]);
 
-    return { full, header };
+    return {
+      fullEnhanced,
+      fullBinary,
+      headerEnhanced,
+      bottomBinary,
+    };
   } finally {
     bitmap.close();
   }
@@ -198,21 +388,53 @@ export async function recognizeReceiptLocally(
 ): Promise<ParsedReceipt> {
   const prepared =
     await preprocessReceiptImage(file);
+
   const {
     createWorker,
     OEM,
     PSM,
   } = await import("tesseract.js");
 
-  let phase:
+  type Phase =
     | "FULL"
-    | "HEADER" = "FULL";
+    | "ALT_FULL"
+    | "HEADER"
+    | "BOTTOM";
+
+  let phase: Phase = "FULL";
+
+  const phaseRanges: Record<
+    Phase,
+    { start: number; weight: number; label: string }
+  > = {
+    FULL: {
+      start: 0,
+      weight: 0.34,
+      label: "Reading full receipt",
+    },
+    ALT_FULL: {
+      start: 0.34,
+      weight: 0.24,
+      label: "Checking faint text",
+    },
+    HEADER: {
+      start: 0.58,
+      weight: 0.2,
+      label: "Reading shop header",
+    },
+    BOTTOM: {
+      start: 0.78,
+      weight: 0.22,
+      label: "Finding final total",
+    },
+  };
 
   const worker = await createWorker(
     "eng",
     OEM.LSTM_ONLY,
     {
       logger(message) {
+        const range = phaseRanges[phase];
         const localProgress =
           typeof message.progress === "number"
             ? Math.max(
@@ -224,22 +446,17 @@ export async function recognizeReceiptLocally(
               )
             : 0;
 
-        const progress =
-          phase === "FULL"
-            ? localProgress * 0.72
-            : 0.72 +
-              localProgress * 0.28;
-
         onProgress?.({
           status:
-            phase === "HEADER" &&
             message.status ===
-              "recognizing text"
-              ? "Reading shop header"
+            "recognizing text"
+              ? range.label
               : readableStatus(
                   message.status,
                 ),
-          progress,
+          progress:
+            range.start +
+            localProgress * range.weight,
         });
       },
     },
@@ -253,7 +470,23 @@ export async function recognizeReceiptLocally(
     });
 
     const fullResult =
-      await worker.recognize(prepared.full);
+      await worker.recognize(
+        prepared.fullEnhanced,
+      );
+
+    phase = "ALT_FULL";
+
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      user_defined_dpi: "300",
+      tessedit_pageseg_mode:
+        PSM.SINGLE_BLOCK,
+    });
+
+    const altFullResult =
+      await worker.recognize(
+        prepared.fullBinary,
+      );
 
     phase = "HEADER";
 
@@ -266,19 +499,41 @@ export async function recognizeReceiptLocally(
 
     const headerResult =
       await worker.recognize(
-        prepared.header,
+        prepared.headerEnhanced,
+      );
+
+    phase = "BOTTOM";
+
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      user_defined_dpi: "300",
+      tessedit_pageseg_mode:
+        PSM.SPARSE_TEXT,
+    });
+
+    const bottomResult =
+      await worker.recognize(
+        prepared.bottomBinary,
       );
 
     const confidence =
-      (fullResult.data.confidence +
-        headerResult.data.confidence) /
-      2;
+      fullResult.data.confidence * 0.32 +
+      altFullResult.data.confidence * 0.23 +
+      headerResult.data.confidence * 0.23 +
+      bottomResult.data.confidence * 0.22;
+
+    onProgress?.({
+      status: "Comparing receipt results",
+      progress: 1,
+    });
 
     return parseReceiptText(
       fullResult.data.text,
       fallbackCurrency,
       confidence,
       headerResult.data.text,
+      altFullResult.data.text,
+      bottomResult.data.text,
     );
   } finally {
     await worker.terminate();

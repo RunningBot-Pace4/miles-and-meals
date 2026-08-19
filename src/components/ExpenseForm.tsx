@@ -24,6 +24,7 @@ type ReceiptAnalysis = {
   merchantName: string | null;
   merchantCandidates: string[];
   totalAmount: number | null;
+  totalCandidates: number[];
   currencyCode: string | null;
   confidence: "HIGH" | "MEDIUM" | "LOW";
   rawText: string;
@@ -483,7 +484,7 @@ export function ExpenseForm({
 
       if (!detected.merchantName && detected.totalAmount === null) {
         setReceiptMessage(
-          "Text was found, but the shop name and final total were not clear. Please enter them manually or try a clearer photo.",
+          "The receipt text was read, but the shop or final total is still uncertain. Try one of the suggestions below or enter it manually.",
         );
       } else if (detected.confidence === "LOW") {
         setReceiptMessage(
@@ -1143,6 +1144,38 @@ export function ExpenseForm({
                     {candidate}
                   </button>
                 ))}
+              </div>
+            </div>
+          ) : null}
+
+          {receiptResult?.totalCandidates &&
+          receiptResult.totalCandidates.length > 1 ? (
+            <div className="receipt-shop-suggestions">
+              <small>Total suggestions</small>
+              <div>
+                {receiptResult.totalCandidates.map((candidate) => {
+                  const candidateValue = candidate
+                    .toFixed(2)
+                    .replace(/\.00$/, "");
+
+                  return (
+                    <button
+                      className={
+                        amount === candidateValue
+                          ? "receipt-shop-chip active"
+                          : "receipt-shop-chip"
+                      }
+                      key={candidate.toFixed(2)}
+                      type="button"
+                      onClick={() => setAmount(candidateValue)}
+                    >
+                      {receiptResult.currencyCode ?? currency}{" "}
+                      {candidate.toLocaleString("en-MY", {
+                        maximumFractionDigits: 2,
+                      })}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}

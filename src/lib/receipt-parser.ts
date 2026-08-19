@@ -4,6 +4,7 @@ export type ParsedReceipt = {
   merchantName: string | null;
   merchantCandidates: string[];
   totalAmount: number | null;
+  totalCandidates: number[];
   currencyCode: string | null;
   confidence: ReceiptConfidence;
   rawText: string;
@@ -12,26 +13,31 @@ export type ParsedReceipt = {
 type AmountCandidate = {
   amount: number;
   score: number;
+  source: "FULL" | "ALT_FULL" | "BOTTOM";
 };
 
 type MerchantCandidate = {
   value: string;
   score: number;
+  source: "HEADER" | "FULL" | "ALT_FULL";
 };
 
 const TOTAL_KEYWORDS: Array<[RegExp, number]> = [
-  [/\bGRAND\s+TOTAL\b/, 125],
-  [/\bTOTAL\s+DUE\b/, 120],
-  [/\bAMOUNT\s+DUE\b/, 120],
-  [/\bAMOUNT\s+PAYABLE\b/, 118],
-  [/\bTOTAL\s+AMOUNT\b/, 116],
-  [/\bNET\s+TOTAL\b/, 112],
-  [/\bNET\s+AMOUNT\b/, 110],
-  [/\bTHANH\s+TIEN\b/, 112],
-  [/\bTONG\s+CONG\b/, 112],
-  [/\bTONG\s+TIEN\b/, 110],
-  [/\bTONG\b/, 100],
-  [/\bTOTAL\b/, 104],
+  [/\bGRAND\s+TOTAL\b/, 145],
+  [/\bTOTAL\s+DUE\b/, 140],
+  [/\bAMOUNT\s+DUE\b/, 140],
+  [/\bAMOUNT\s+PAYABLE\b/, 136],
+  [/\bTOTAL\s+AMOUNT\b/, 134],
+  [/\bNET\s+TOTAL\b/, 130],
+  [/\bNET\s+AMOUNT\b/, 128],
+  [/\bTHANH\s+TIEN\b/, 134],
+  [/\bTONG\s+CONG\b/, 134],
+  [/\bTONG\s+TIEN\b/, 132],
+  [/\bPHAI\s+THU\b/, 126],
+  [/\bPAYABLE\b/, 122],
+  [/\bBALANCE\s+DUE\b/, 120],
+  [/\bTONG\b/, 114],
+  [/\bTOTAL\b/, 120],
 ];
 
 const NEGATIVE_TOTAL_KEYWORDS = [
@@ -46,7 +52,9 @@ const NEGATIVE_TOTAL_KEYWORDS = [
   /\bTAX\b/,
   /\bSERVICE\s+CHARGE\b/,
   /\bROUNDING\b/,
-  /\bBALANCE\b/,
+  /\bBALANCE\s+CHANGE\b/,
+  /\bPOINTS?\b/,
+  /\bLOYALTY\b/,
 ];
 
 const STRONG_MERCHANT_WORDS = [
@@ -80,6 +88,8 @@ const STRONG_MERCHANT_WORDS = [
   /\bPTE\.?\s*LTD\.?\b/,
   /\bCO\.?\s*LTD\.?\b/,
   /\bLIMITED\b/,
+  /\bCOMPANY\b/,
+  /\bENTERPRISE\b/,
 ];
 
 const MERCHANT_NOISE = [
@@ -124,6 +134,10 @@ const MERCHANT_NOISE = [
   /\bROC\b/,
   /\bREG(?:ISTRATION)?\s+NO\b/,
   /\bCOMPANY\s+NO\b/,
+  /\bITEM\b/,
+  /\bDESCRIPTION\b/,
+  /\bSERVICE\s+CHARGE\b/,
+  /\bROUNDING\b/,
 ];
 
 const ADDRESS_NOISE = [
@@ -174,6 +188,13 @@ function normalizeSearchText(value: string): string {
     .toUpperCase();
 }
 
+function normalizeTotalLabel(value: string): string {
+  return normalizeSearchText(value)
+    .replace(/0/g, "O")
+    .replace(/[1|]/g, "I")
+    .replace(/5/g, "S");
+}
+
 function cleanLine(value: string): string {
   return value
     .replace(/[^\S\r\n]+/g, " ")
@@ -189,8 +210,43 @@ function cleanMerchant(value: string): string {
     .trim();
 }
 
+function normalizeNumericOcr(value: string): string {
+  const characters = [...value];
+
+  return characters
+    .map((character, index) => {
+      const previous = characters[index - 1] ?? "";
+      const next = characters[index + 1] ?? "";
+      const numericNeighbor =
+        /[\d.,]/.test(previous) ||
+        /[\d.,]/.test(next);
+
+      if (!numericNeighbor) {
+        return character;
+      }
+
+      if (character === "O" || character === "o") {
+        return "0";
+      }
+
+      if (
+        character === "I" ||
+        character === "l"
+      ) {
+        return "1";
+      }
+
+      if (character === "S") {
+        return "5";
+      }
+
+      return character;
+    })
+    .join("");
+}
+
 function parseLocaleAmount(token: string): number | null {
-  let value = token
+  let value = normalizeNumericOcr(token)
     .replace(/[^\d.,\s]/g, "")
     .replace(/\s+/g, "")
     .trim();
@@ -254,9 +310,10 @@ function parseLocaleAmount(token: string): number | null {
 }
 
 function extractNumbers(line: string): number[] {
+  const normalized = normalizeNumericOcr(line);
   const tokens =
-    line.match(
-      /\d{1,3}(?:[.,\s]\d{3})+(?:[.,]\d{2})?|\d+(?:[.,]\d{1,2})?/g,
+    normalized.match(
+      /(?:\d|[OoIl]){1,3}(?:[.,\s](?:\d|[OoIl]){3})+(?:[.,](?:\d|[OoIl]){2})?|(?:\d|[OoIl])+(?:[.,](?:\d|[OoIl]){1,2})?/g,
     ) ?? [];
 
   return tokens
@@ -265,10 +322,12 @@ function extractNumbers(line: string): number[] {
 }
 
 function lineTotalScore(
-  normalizedLine: string,
+  line: string,
   index: number,
   lineCount: number,
+  source: AmountCandidate["source"],
 ): number {
+  const normalizedLine = normalizeTotalLabel(line);
   let score = 0;
 
   for (const [keyword, weight] of TOTAL_KEYWORDS) {
@@ -286,92 +345,154 @@ function lineTotalScore(
       pattern.test(normalizedLine),
     )
   ) {
-    score -= 95;
+    score -= 105;
   }
 
   const positionRatio =
     lineCount > 1 ? index / (lineCount - 1) : 0;
 
-  return score + Math.round(positionRatio * 15);
+  score += Math.round(positionRatio * 18);
+
+  if (source === "BOTTOM") {
+    score += 28;
+  } else if (source === "ALT_FULL") {
+    score += 8;
+  }
+
+  return score;
 }
 
-function findTotal(lines: string[]): AmountCandidate | null {
+function collectTotalCandidates(
+  text: string,
+  source: AmountCandidate["source"],
+): AmountCandidate[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map(cleanLine)
+    .filter(Boolean);
+
   const candidates: AmountCandidate[] = [];
 
   lines.forEach((line, index) => {
-    const normalized = normalizeSearchText(line);
     const score = lineTotalScore(
-      normalized,
+      line,
       index,
       lines.length,
+      source,
     );
 
     if (score <= 0) {
       return;
     }
 
-    for (const amount of extractNumbers(line)) {
-      candidates.push({ amount, score });
-    }
-  });
+    const values = extractNumbers(line);
 
-  if (candidates.length > 0) {
-    candidates.sort(
-      (a, b) =>
-        b.score - a.score ||
-        b.amount - a.amount,
-    );
-
-    return candidates[0];
-  }
-
-  const bottomStart = Math.max(
-    0,
-    Math.floor(lines.length * 0.65),
-  );
-
-  for (
-    let index = bottomStart;
-    index < lines.length;
-    index += 1
-  ) {
-    const line = lines[index];
-    const hasCurrency = CURRENCY_RULES.some(
-      ([, rule]) => rule.test(line),
-    );
-
-    if (!hasCurrency) {
-      continue;
-    }
-
-    for (const amount of extractNumbers(line)) {
+    values.forEach((amount, amountIndex) => {
       candidates.push({
         amount,
-        score: 35 + index,
+        score: score + amountIndex * 2,
+        source,
+      });
+    });
+  });
+
+  if (candidates.length === 0 && source === "BOTTOM") {
+    lines.forEach((line, index) => {
+      const hasCurrency = CURRENCY_RULES.some(
+        ([, rule]) => rule.test(line),
+      );
+
+      if (!hasCurrency) {
+        return;
+      }
+
+      for (const amount of extractNumbers(line)) {
+        candidates.push({
+          amount,
+          score: 62 + index,
+          source,
+        });
+      }
+    });
+  }
+
+  return candidates;
+}
+
+function rankTotals(
+  fullText: string,
+  altFullText: string,
+  bottomText: string,
+): {
+  total: AmountCandidate | null;
+  values: number[];
+} {
+  const all = [
+    ...collectTotalCandidates(fullText, "FULL"),
+    ...collectTotalCandidates(altFullText, "ALT_FULL"),
+    ...collectTotalCandidates(bottomText, "BOTTOM"),
+  ];
+
+  const grouped = new Map<
+    string,
+    { amount: number; score: number; appearances: number }
+  >();
+
+  for (const candidate of all) {
+    const key = candidate.amount.toFixed(2);
+    const existing = grouped.get(key);
+
+    if (existing) {
+      existing.score = Math.max(existing.score, candidate.score);
+      existing.appearances += 1;
+    } else {
+      grouped.set(key, {
+        amount: candidate.amount,
+        score: candidate.score,
+        appearances: 1,
       });
     }
   }
 
-  candidates.sort(
-    (a, b) =>
-      b.score - a.score ||
-      b.amount - a.amount,
-  );
+  const ranked = [...grouped.values()]
+    .map((candidate) => ({
+      ...candidate,
+      score:
+        candidate.score +
+        Math.min(36, (candidate.appearances - 1) * 18),
+    }))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.appearances - a.appearances ||
+        b.amount - a.amount,
+    );
 
-  return candidates[0] ?? null;
+  const best = ranked[0];
+
+  return {
+    total: best
+      ? {
+          amount: best.amount,
+          score: best.score,
+          source: "FULL",
+        }
+      : null,
+    values: ranked.slice(0, 4).map((candidate) => candidate.amount),
+  };
 }
 
 function merchantScore(
   line: string,
   index: number,
-  source: "HEADER" | "FULL",
+  source: MerchantCandidate["source"],
 ): number {
   const cleaned = cleanMerchant(line);
   const normalized = normalizeSearchText(cleaned);
 
   if (
     cleaned.length < 2 ||
-    cleaned.length > 70 ||
+    cleaned.length > 72 ||
     MERCHANT_NOISE.some((pattern) =>
       pattern.test(normalized),
     )
@@ -386,23 +507,37 @@ function merchantScore(
 
   if (
     letters < 2 ||
-    digits > Math.max(4, Math.floor(letters * 0.55))
+    digits > Math.max(4, Math.floor(letters * 0.45))
   ) {
     return -1000;
   }
 
-  let score = source === "HEADER" ? 115 : 72;
+  if (
+    /^\d/.test(cleaned) &&
+    ADDRESS_NOISE.some((pattern) =>
+      pattern.test(normalized),
+    )
+  ) {
+    return -1000;
+  }
+
+  let score =
+    source === "HEADER"
+      ? 132
+      : source === "ALT_FULL"
+        ? 88
+        : 80;
 
   score -= index * (source === "HEADER" ? 5 : 4);
 
   if (index <= 2) {
-    score += 28;
+    score += 30;
   } else if (index <= 5) {
-    score += 14;
+    score += 16;
   }
 
   if (letters >= 5) {
-    score += 8;
+    score += 10;
   }
 
   if (
@@ -410,7 +545,7 @@ function merchantScore(
       pattern.test(normalized),
     )
   ) {
-    score += 32;
+    score += 38;
   }
 
   const alphaCharacters = cleaned.replace(
@@ -422,9 +557,9 @@ function merchantScore(
 
   if (
     alphaCharacters.length >= 3 &&
-    uppercaseCharacters / alphaCharacters.length >= 0.75
+    uppercaseCharacters / alphaCharacters.length >= 0.72
   ) {
-    score += 18;
+    score += 20;
   }
 
   if (
@@ -432,26 +567,32 @@ function merchantScore(
       pattern.test(normalized),
     )
   ) {
-    score -= 42;
+    score -= 50;
   }
 
   if (
-    /@|\.COM\b|\.VN\b|\.MY\b|\.SG\b/i.test(cleaned)
+    /@|\.COM\b|\.VN\b|\.MY\b|\.SG\b|\.TH\b/i.test(cleaned)
   ) {
-    score -= 45;
+    score -= 50;
   }
 
   if (
     /^\d/.test(cleaned) ||
     /\b\d{5,}\b/.test(cleaned)
   ) {
-    score -= 38;
+    score -= 44;
   }
 
   if (
-    /^[A-Z]{1,3}\s*[:#-]?\s*\d+/i.test(cleaned)
+    /^[A-Z]{1,4}\s*[:#-]?\s*\d+/i.test(cleaned)
   ) {
-    score -= 30;
+    score -= 34;
+  }
+
+  if (
+    cleaned.split(/\s+/).length > 8
+  ) {
+    score -= 24;
   }
 
   return score;
@@ -459,31 +600,32 @@ function merchantScore(
 
 function collectMerchantCandidates(
   text: string,
-  source: "HEADER" | "FULL",
+  source: MerchantCandidate["source"],
 ): MerchantCandidate[] {
   const lines = text
     .split(/\r?\n/)
     .map(cleanMerchant)
     .filter(Boolean)
-    .slice(0, source === "HEADER" ? 14 : 20);
+    .slice(0, source === "HEADER" ? 16 : 22);
 
   const candidates: MerchantCandidate[] =
     lines.map((line, index) => ({
       value: line,
       score: merchantScore(line, index, source),
+      source,
     }));
 
   for (
     let index = 0;
-    index < Math.min(lines.length - 1, 7);
+    index < Math.min(lines.length - 1, 8);
     index += 1
   ) {
     const first = lines[index];
     const second = lines[index + 1];
 
     if (
-      first.length > 28 ||
-      second.length > 28
+      first.length > 30 ||
+      second.length > 30
     ) {
       continue;
     }
@@ -493,8 +635,15 @@ function collectMerchantCandidates(
     const hasMerchantWord = STRONG_MERCHANT_WORDS.some(
       (pattern) => pattern.test(normalized),
     );
+    const hasNoise =
+      MERCHANT_NOISE.some(
+        (pattern) => pattern.test(normalized),
+      ) ||
+      ADDRESS_NOISE.some(
+        (pattern) => pattern.test(normalized),
+      );
 
-    if (!hasMerchantWord) {
+    if (!hasMerchantWord || hasNoise) {
       continue;
     }
 
@@ -502,7 +651,8 @@ function collectMerchantCandidates(
       value: combined,
       score:
         merchantScore(first, index, source) +
-        18,
+        24,
+      source,
     });
   }
 
@@ -511,41 +661,55 @@ function collectMerchantCandidates(
   );
 }
 
-function findMerchants(
-  rawText: string,
+function rankMerchants(
+  fullText: string,
+  altFullText: string,
   headerText: string,
 ): {
   merchantName: string | null;
   merchantCandidates: string[];
 } {
   const all = [
-    ...collectMerchantCandidates(
-      headerText,
-      "HEADER",
-    ),
-    ...collectMerchantCandidates(
-      rawText,
-      "FULL",
-    ),
+    ...collectMerchantCandidates(headerText, "HEADER"),
+    ...collectMerchantCandidates(fullText, "FULL"),
+    ...collectMerchantCandidates(altFullText, "ALT_FULL"),
   ];
 
-  const bestByValue = new Map<string, MerchantCandidate>();
+  const grouped = new Map<
+    string,
+    { value: string; score: number; appearances: number }
+  >();
 
   for (const candidate of all) {
     const key = normalizeSearchText(candidate.value);
-    const existing = bestByValue.get(key);
+    const existing = grouped.get(key);
 
-    if (
-      !existing ||
-      candidate.score > existing.score
-    ) {
-      bestByValue.set(key, candidate);
+    if (existing) {
+      existing.score = Math.max(existing.score, candidate.score);
+      existing.appearances += 1;
+    } else {
+      grouped.set(key, {
+        value: candidate.value,
+        score: candidate.score,
+        appearances: 1,
+      });
     }
   }
 
-  const ranked = [...bestByValue.values()]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 4)
+  const ranked = [...grouped.values()]
+    .map((candidate) => ({
+      ...candidate,
+      score:
+        candidate.score +
+        Math.min(40, (candidate.appearances - 1) * 20),
+    }))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        b.appearances - a.appearances ||
+        a.value.length - b.value.length,
+    )
+    .slice(0, 5)
     .map((candidate) => candidate.value);
 
   return {
@@ -576,6 +740,8 @@ function detectCurrency(
 function receiptConfidence(
   merchant: string | null,
   total: AmountCandidate | null,
+  merchantCandidates: string[],
+  totalCandidates: number[],
   ocrConfidence: number,
 ): ReceiptConfidence {
   let score = 0;
@@ -584,21 +750,29 @@ function receiptConfidence(
     score += 1;
   }
 
-  if (total && total.score >= 95) {
+  if (merchantCandidates.length >= 2) {
+    score += 1;
+  }
+
+  if (total && total.score >= 125) {
     score += 2;
   } else if (total) {
     score += 1;
   }
 
-  if (ocrConfidence >= 70) {
+  if (totalCandidates.length >= 1) {
     score += 1;
   }
 
-  if (score >= 4) {
+  if (ocrConfidence >= 72) {
+    score += 1;
+  }
+
+  if (score >= 6) {
     return "HIGH";
   }
 
-  if (score >= 2) {
+  if (score >= 3) {
     return "MEDIUM";
   }
 
@@ -610,32 +784,47 @@ export function parseReceiptText(
   fallbackCurrency: string | null,
   ocrConfidence = 0,
   headerText = "",
+  altFullText = "",
+  bottomText = "",
 ): ParsedReceipt {
-  const lines = rawText
-    .split(/\r?\n/)
-    .map(cleanLine)
-    .filter(Boolean);
-
-  const merchants = findMerchants(
+  const merchants = rankMerchants(
     rawText,
+    altFullText || rawText,
     headerText || rawText,
   );
-  const total = findTotal(lines);
+
+  const totals = rankTotals(
+    rawText,
+    altFullText || rawText,
+    bottomText || rawText,
+  );
+
+  const combinedText = [
+    headerText,
+    rawText,
+    altFullText,
+    bottomText,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   return {
     merchantName: merchants.merchantName,
     merchantCandidates:
       merchants.merchantCandidates,
-    totalAmount: total?.amount ?? null,
+    totalAmount: totals.total?.amount ?? null,
+    totalCandidates: totals.values,
     currencyCode: detectCurrency(
-      `${headerText}\n${rawText}`,
+      combinedText,
       fallbackCurrency,
     ),
     confidence: receiptConfidence(
       merchants.merchantName,
-      total,
+      totals.total,
+      merchants.merchantCandidates,
+      totals.values,
       ocrConfidence,
     ),
-    rawText,
+    rawText: combinedText,
   };
 }

@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
-import { schema, session } from "@/db/schema";
+import { loginAudits, schema, session } from "@/db/schema";
 
 function normalizeBaseUrl(value: string | undefined): string | null {
   const trimmed = value?.trim();
@@ -119,6 +119,14 @@ export const auth = betterAuth({
             .where(eq(session.userId, newSession.userId));
 
           return { data: newSession };
+        },
+        after: async (newSession) => {
+          await db.insert(loginAudits).values({
+            userId: newSession.userId,
+            signedInAt: new Date(),
+            ipAddress: newSession.ipAddress ?? null,
+            userAgent: newSession.userAgent ?? null,
+          });
         },
       },
     },

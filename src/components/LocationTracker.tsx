@@ -936,15 +936,6 @@ export function LocationTracker({
         </div>
       </section>
 
-      <section className="location-privacy-note">
-        <strong>About live tracking</strong>
-        <p>
-          Miles & Meals sends a fresh location about every 15 seconds while
-          this page is actively sharing. Mobile browsers can suspend web pages
-          after the screen is locked or the browser is closed, so this is not
-          an always-on background tracker.
-        </p>
-      </section>
     </div>
   );
 }

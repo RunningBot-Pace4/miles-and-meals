@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { countryCatalog } from "@/lib/country-catalog";
 
 type Trip = {
   id: string;
   name: string;
+  baseCurrency: string;
 };
 
 type Country = {
@@ -19,6 +21,15 @@ type UserOption = {
   id: string;
   name: string;
   email: string;
+};
+
+type FxResponse = {
+  baseCurrency?: string;
+  quoteCurrency?: string;
+  rate?: number;
+  rateDate?: string;
+  provider?: string;
+  error?: string;
 };
 
 type FormKey =
@@ -72,15 +83,21 @@ async function postJson(url: string, body: unknown) {
 
 function SubmitButton({
   active,
+  disabled = false,
   idleLabel,
   busyLabel,
 }: {
   active: boolean;
+  disabled?: boolean;
   idleLabel: string;
   busyLabel: string;
 }) {
   return (
-    <button className="button primary" type="submit" disabled={active}>
+    <button
+      className="button primary"
+      type="submit"
+      disabled={active || disabled}
+    >
       {active ? (
         <>
           <span className="button-spinner" aria-hidden="true" />
@@ -106,6 +123,125 @@ export function AdminForms({
   const [busyForm, setBusyForm] = useState<FormKey | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const initialCountryTripId =
+    trips.length === 1 ? trips[0].id : "";
+  const [countryTripId, setCountryTripId] =
+    useState(initialCountryTripId);
+  const [countryCode, setCountryCode] = useState("");
+  const [fxRate, setFxRate] = useState("");
+  const [fxRateDate, setFxRateDate] = useState("");
+  const [fxProvider, setFxProvider] = useState("");
+  const [fxError, setFxError] = useState("");
+  const [fxBusy, setFxBusy] = useState(false);
+  const [fxRefreshKey, setFxRefreshKey] = useState(0);
+
+  const selectedCatalogCountry = useMemo(
+    () =>
+      countryCatalog.find(
+        (country) => country.code === countryCode,
+      ) ?? null,
+    [countryCode],
+  );
+
+  const selectedCountryTrip = useMemo(
+    () =>
+      trips.find(
+        (trip) => trip.id === countryTripId,
+      ) ?? null,
+    [countryTripId, trips],
+  );
+
+  useEffect(() => {
+    const currency =
+      selectedCatalogCountry?.currencyCode ?? "";
+
+    if (!countryTripId || !currency) {
+      setFxRate("");
+      setFxRateDate("");
+      setFxProvider("");
+      setFxError("");
+      setFxBusy(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadDailyFx() {
+      setFxBusy(true);
+      setFxError("");
+
+      try {
+        const query = new URLSearchParams({
+          tripId: countryTripId,
+          currency,
+        });
+
+        const response = await fetch(
+          `/api/admin/fx?${query.toString()}`,
+          {
+            signal: controller.signal,
+            cache: "no-store",
+          },
+        );
+
+        const payload =
+          (await response.json().catch(() => ({}))) as FxResponse;
+
+        if (!response.ok) {
+          throw new Error(
+            payload.error ??
+              "Unable to load the daily FX rate.",
+          );
+        }
+
+        if (
+          typeof payload.rate !== "number" ||
+          !Number.isFinite(payload.rate) ||
+          payload.rate <= 0
+        ) {
+          throw new Error(
+            "The FX provider returned an invalid rate.",
+          );
+        }
+
+        setFxRate(
+          payload.rate
+            .toFixed(10)
+            .replace(/0+$/, "")
+            .replace(/\.$/, ""),
+        );
+        setFxRateDate(payload.rateDate ?? "");
+        setFxProvider(payload.provider ?? "Daily reference");
+      } catch (caught) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
+        setFxRate("");
+        setFxRateDate("");
+        setFxProvider("");
+        setFxError(
+          caught instanceof Error
+            ? `${caught.message} Enter the rate manually if needed.`
+            : "Unable to load the daily FX rate. Enter it manually.",
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setFxBusy(false);
+        }
+      }
+    }
+
+    void loadDailyFx();
+
+    return () => {
+      controller.abort();
+    };
+  }, [
+    countryTripId,
+    fxRefreshKey,
+    selectedCatalogCountry?.currencyCode,
+  ]);
 
   useEffect(() => {
     if (!message) {
@@ -127,6 +263,7 @@ export function AdminForms({
     url: string,
     map: (form: FormData) => unknown,
     successMessage: string,
+    afterSuccess?: () => void,
   ) {
     event.preventDefault();
 
@@ -143,6 +280,7 @@ export function AdminForms({
       await postJson(url, body);
 
       formElement.reset();
+      afterSuccess?.();
       setMessage(successMessage);
       router.refresh();
     } catch (caught) {
@@ -396,15 +534,26 @@ export function AdminForms({
               "add-country",
               "/api/admin/countries",
               (form) => ({
-                tripId: String(form.get("tripId") ?? ""),
-                name: String(form.get("name") ?? ""),
-                code: String(form.get("code") ?? ""),
-                currencyCode: String(form.get("currencyCode") ?? ""),
-                defaultExchangeRate: String(
-                  form.get("defaultExchangeRate") ?? "1",
-                ),
+                tripId: countryTripId,
+                name: selectedCatalogCountry?.name ?? "",
+                code: selectedCatalogCountry?.code ?? "",
+                currencyCode:
+                  selectedCatalogCountry?.currencyCode ?? "",
+                defaultExchangeRate:
+                  fxRate ||
+                  String(
+                    form.get("defaultExchangeRate") ?? "",
+                  ),
               }),
-              "Country added.",
+              "Country added with its daily FX reference rate.",
+              () => {
+                setCountryCode("");
+                setFxRate("");
+                setFxRateDate("");
+                setFxProvider("");
+                setFxError("");
+                setCountryTripId(initialCountryTripId);
+              },
             )
           }
         >
@@ -421,12 +570,15 @@ export function AdminForms({
             <select
               name="tripId"
               required
-              defaultValue={trips.length === 1 ? trips[0].id : ""}
+              value={countryTripId}
+              onChange={(event) =>
+                setCountryTripId(event.target.value)
+              }
             >
               <option value="">Choose trip</option>
               {trips.map((trip) => (
                 <option value={trip.id} key={trip.id}>
-                  {trip.name}
+                  {trip.name} · Base {trip.baseCurrency}
                 </option>
               ))}
             </select>
@@ -434,21 +586,46 @@ export function AdminForms({
 
           <label>
             Country
-            <input name="name" required placeholder="Vietnam" />
+            <select
+              name="countryCode"
+              required
+              value={countryCode}
+              onChange={(event) =>
+                setCountryCode(event.target.value)
+              }
+            >
+              <option value="">Choose country</option>
+              {countryCatalog.map((country) => (
+                <option
+                  value={country.code}
+                  key={country.code}
+                >
+                  {country.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <div className="two-col">
             <label>
               Code
-              <input name="code" required maxLength={3} placeholder="VN" />
+              <input
+                name="code"
+                value={selectedCatalogCountry?.code ?? ""}
+                readOnly
+                placeholder="Auto"
+              />
             </label>
+
             <label>
               Currency
               <input
                 name="currencyCode"
-                required
-                maxLength={3}
-                placeholder="VND"
+                value={
+                  selectedCatalogCountry?.currencyCode ?? ""
+                }
+                readOnly
+                placeholder="Auto"
               />
             </label>
           </div>
@@ -459,12 +636,72 @@ export function AdminForms({
               name="defaultExchangeRate"
               inputMode="decimal"
               required
-              placeholder="0.000150"
+              value={fxRate}
+              onChange={(event) =>
+                setFxRate(event.target.value)
+              }
+              placeholder={
+                fxBusy
+                  ? "Loading daily FX…"
+                  : "Daily rate or manual fallback"
+              }
             />
           </label>
 
+          <div className="admin-fx-helper">
+            <div>
+              {fxBusy ? (
+                <>
+                  <span
+                    className="button-spinner"
+                    aria-hidden="true"
+                  />
+                  <span>Checking today&apos;s FX rate…</span>
+                </>
+              ) : fxError ? (
+                <span className="error-text">{fxError}</span>
+              ) : fxRate ? (
+                <span>
+                  1 {selectedCatalogCountry?.currencyCode} ={" "}
+                  <strong>
+                    {fxRate}{" "}
+                    {selectedCountryTrip?.baseCurrency}
+                  </strong>
+                  {fxRateDate ? ` · ${fxRateDate}` : ""}
+                  {fxProvider ? ` · ${fxProvider}` : ""}
+                </span>
+              ) : (
+                <span>
+                  Choose a trip and country to load the daily
+                  reference rate.
+                </span>
+              )}
+            </div>
+
+            <button
+              className="button secondary compact-button"
+              type="button"
+              disabled={
+                fxBusy ||
+                !countryTripId ||
+                !selectedCatalogCountry
+              }
+              onClick={() =>
+                setFxRefreshKey((current) => current + 1)
+              }
+            >
+              Refresh FX
+            </button>
+          </div>
+
           <SubmitButton
             active={busyForm === "add-country"}
+            disabled={
+              fxBusy ||
+              !countryTripId ||
+              !selectedCatalogCountry ||
+              !fxRate
+            }
             idleLabel="Add country"
             busyLabel="Adding…"
           />
