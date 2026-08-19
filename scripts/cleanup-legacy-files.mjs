@@ -7,6 +7,12 @@ import path from "node:path";
 const obsoletePaths = [
   "src/app/api/receipts/upload",
   "src/lib/receipt-storage.ts",
+
+  // Legacy password-reset UI from older source overlays.
+  // Current recovery is admin-assisted via /forgot-password.
+  "src/components/ForgotPasswordForm.tsx",
+  "src/components/ResetPasswordForm.tsx",
+  "src/app/reset-password",
 ];
 
 for (const relativePath of obsoletePaths) {

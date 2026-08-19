@@ -20,7 +20,7 @@
     "prebuild": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check",
     "cleanup:legacy": "node ./scripts/cleanup-legacy-files.mjs",
     "pwa:check": "node scripts/validate-pwa.mjs",
-    "navigation:check": "node scripts/validate-navigation.mjs"
+    "navigation:check": "npm run cleanup:legacy && node scripts/validate-navigation.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
