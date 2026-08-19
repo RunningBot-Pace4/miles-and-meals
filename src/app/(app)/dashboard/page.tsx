@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CountryQuickSelect } from "@/components/CountryQuickSelect";
 import { SettlementActionButton } from "@/components/SettlementActionButton";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
@@ -93,23 +94,14 @@ export default async function DashboardPage({
           </div>
 
           {countries.length ? (
-            <form className="country-filter">
-              <select
-                aria-label="Country filter"
-                defaultValue={selectedId}
-                name="country"
-              >
-                <option value="">All countries</option>
-                {countries.map((country) => (
-                  <option value={country.id} key={country.id}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-              <button className="button hero-filter-button" type="submit">
-                View
-              </button>
-            </form>
+            <CountryQuickSelect
+              countries={countries.map((country) => ({
+                id: country.id,
+                name: country.name,
+                tripName: country.tripName,
+              }))}
+              selectedId={selectedId}
+            />
           ) : null}
         </div>
 

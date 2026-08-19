@@ -222,9 +222,10 @@ function PlannerItemForm({
           </select>
         </label>
 
-        <label>
+        <label className="planner-native-field">
           Date
           <input
+            className="planner-native-input"
             name="itemDate"
             type="date"
             defaultValue={initial?.itemDate ?? ""}
@@ -241,9 +242,10 @@ function PlannerItemForm({
           />
         </label>
 
-        <label>
+        <label className="planner-native-field">
           Time
           <input
+            className="planner-native-input"
             name="itemTime"
             type="time"
             defaultValue={initial?.itemTime ?? ""}
