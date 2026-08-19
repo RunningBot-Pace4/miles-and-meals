@@ -1,8 +1,8 @@
 "use client";
 
 import {
+  useEffect,
   useState,
-  useTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
@@ -22,26 +22,35 @@ export function CountryQuickSelect({
 }) {
   const router = useRouter();
   const [value, setValue] = useState(selectedId);
-  const [pending, startTransition] = useTransition();
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    setValue(selectedId);
+    setSwitching(false);
+  }, [selectedId]);
 
   function changeCountry(nextId: string) {
-    setValue(nextId);
+    if (nextId === selectedId) {
+      setValue(nextId);
+      return;
+    }
 
-    startTransition(() => {
-      router.push(
-        nextId
-          ? `/dashboard?country=${encodeURIComponent(nextId)}`
-          : "/dashboard",
-      );
-    });
+    setValue(nextId);
+    setSwitching(true);
+
+    router.push(
+      nextId
+        ? `/dashboard?country=${encodeURIComponent(nextId)}`
+        : "/dashboard",
+    );
   }
 
   return (
     <>
-      {pending ? (
+      {switching ? (
         <SavingOverlay
           title="Switching destination"
-          message="Loading the selected country, budget and trip activity."
+          message="Your dashboard is changing to the selected destination."
         />
       ) : null}
 
@@ -57,7 +66,7 @@ export function CountryQuickSelect({
           onChange={(event) =>
             changeCountry(event.target.value)
           }
-          disabled={pending}
+          disabled={switching}
         >
           <option value="">All countries</option>
           {countries.map((country) => (

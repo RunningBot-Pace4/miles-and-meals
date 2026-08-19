@@ -27,6 +27,8 @@ export async function listAccessibleCountries(currentUser: SessionUser) {
         tripName: trips.name,
         baseCurrency: trips.baseCurrency,
         budget: trips.budget,
+        startDate: trips.startDate,
+        endDate: trips.endDate,
       })
       .from(countries)
       .innerJoin(trips, eq(countries.tripId, trips.id))
@@ -44,6 +46,8 @@ export async function listAccessibleCountries(currentUser: SessionUser) {
       tripName: trips.name,
       baseCurrency: trips.baseCurrency,
       budget: trips.budget,
+      startDate: trips.startDate,
+      endDate: trips.endDate,
     })
     .from(countryMembers)
     .innerJoin(countries, eq(countryMembers.countryId, countries.id))

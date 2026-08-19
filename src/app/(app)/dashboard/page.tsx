@@ -20,6 +20,34 @@ const categoryIcons: Record<string, string> = {
   Other: "•",
 };
 
+function formatTripDateRange(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+): string {
+  if (!startDate && !endDate) {
+    return "Dates not set";
+  }
+
+  const formatter = new Intl.DateTimeFormat("en-MY", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  function format(value: string): string {
+    const [year, month, day] = value.split("-").map(Number);
+    return formatter.format(
+      new Date(year, month - 1, day),
+    );
+  }
+
+  if (startDate && endDate) {
+    return `${format(startDate)} – ${format(endDate)}`;
+  }
+
+  return format(startDate ?? endDate ?? "");
+}
+
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
@@ -56,8 +84,43 @@ export default async function DashboardPage({
     budget > 0 ? Math.min(100, Math.max(0, (summary.total / budget) * 100)) : 0;
   const admin = isSystemAdmin(session.user.role);
   const displayName = session.user.name.trim() || "Traveler";
-  const tripName = selectedCountries[0]?.tripName ?? "Your journey starts here";
-  const me = summary.people.find((person) => person.userId === session.user.id);
+  const selectedCountry =
+    selectedId ? selectedCountries[0] : null;
+  const uniqueTripIds = new Set(
+    selectedCountries.map((country) => country.tripId),
+  );
+  const singleTrip =
+    uniqueTripIds.size === 1
+      ? selectedCountries[0]
+      : null;
+  const heroDestination =
+    selectedCountry?.name ??
+    (singleTrip
+      ? singleTrip.tripName
+      : "All destinations");
+  const heroCode =
+    selectedCountry?.code ??
+    (selectedCountries.length === 1
+      ? selectedCountries[0]?.code
+      : "ALL");
+  const tripDateLabel =
+    singleTrip || selectedCountry
+      ? formatTripDateRange(
+          (selectedCountry ?? singleTrip)?.startDate,
+          (selectedCountry ?? singleTrip)?.endDate,
+        )
+      : "Multiple trip dates";
+  const heroSecondary =
+    selectedCountry
+      ? selectedCountry.tripName
+      : selectedCountries.length
+        ? `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"} ready`
+        : admin
+          ? "Create a trip, add a country and bring your crew"
+          : "Waiting for country access";
+  const me = summary.people.find(
+    (person) => person.userId === session.user.id,
+  );
 
   return (
     <div className="stack gap-lg dashboard-page">
@@ -77,20 +140,54 @@ export default async function DashboardPage({
         </Link>
       </section>
 
-      <section className="hero-card dashboard-hero">
+      <section className="hero-card dashboard-hero dashboard-travel-hero">
+        <div
+          className="travel-boarding-stamp"
+          aria-hidden="true"
+        >
+          <small>BOARDING</small>
+          <strong>{heroCode}</strong>
+        </div>
+
         <div className="hero-main">
-          <div>
-            <p className="eyebrow">CURRENT TRIP</p>
-            <h2>{tripName}</h2>
-            <p className="muted-on-dark">
-              {selectedId
-                ? selectedCountries[0]?.name
-                : countries.length
-                  ? `${countries.length} accessible countr${countries.length === 1 ? "y" : "ies"}`
-                  : admin
-                    ? "Create a trip, add a country and bring your crew"
-                    : "Waiting for country access"}
+          <div className="travel-destination-block">
+            <p className="eyebrow travel-eyebrow">
+              <span aria-hidden="true">✦</span>
+              CURRENT JOURNEY
             </p>
+
+            <div className="travel-destination-heading">
+              <div>
+                <small className="travel-destination-label">
+                  {selectedCountry
+                    ? "Destination"
+                    : "Trip"}
+                </small>
+                <h2>{heroDestination}</h2>
+                <p className="muted-on-dark">
+                  {heroSecondary}
+                </p>
+              </div>
+
+              <span className="travel-country-code">
+                {heroCode}
+              </span>
+            </div>
+
+            {countries.length ? (
+              <div className="travel-hero-meta">
+                <span>
+                  <b aria-hidden="true">◷</b>
+                  {tripDateLabel}
+                </span>
+                <span>
+                  <b aria-hidden="true">⌖</b>
+                  {selectedCountry
+                    ? `${selectedCountry.currencyCode} local currency`
+                    : `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"}`}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {countries.length ? (
@@ -106,23 +203,50 @@ export default async function DashboardPage({
         </div>
 
         {countries.length ? (
-          <div className="hero-budget">
+          <div className="hero-budget travel-wallet-card">
+            <div className="travel-wallet-title">
+              <span className="travel-wallet-icon" aria-hidden="true">
+                ◈
+              </span>
+              <div>
+                <small>TRIP WALLET</small>
+                <strong>{baseCurrency}</strong>
+              </div>
+            </div>
+
             <div className="hero-budget-row">
               <span>Trip spend</span>
-              <strong>{formatMoney(summary.total, baseCurrency)}</strong>
+              <strong>
+                {formatMoney(summary.total, baseCurrency)}
+              </strong>
             </div>
+
             <div
               className="budget-track"
               aria-label={`${budgetPercent.toFixed(0)}% of budget used`}
             >
               <span style={{ width: `${budgetPercent}%` }} />
             </div>
+
             <div className="hero-budget-foot">
               <span>{budgetPercent.toFixed(0)}% used</span>
-              <span>Budget {formatMoney(budget, baseCurrency)}</span>
+              <span>
+                Budget {formatMoney(budget, baseCurrency)}
+              </span>
             </div>
           </div>
         ) : null}
+
+        <div
+          className="travel-route-decoration"
+          aria-hidden="true"
+        >
+          <span className="travel-route-dot start" />
+          <span className="travel-route-line" />
+          <span className="travel-route-plane">✈</span>
+          <span className="travel-route-line second" />
+          <span className="travel-route-dot end" />
+        </div>
       </section>
 
       {countries.length === 0 ? (
@@ -185,25 +309,55 @@ export default async function DashboardPage({
         )
       ) : (
         <>
-          <section className="stat-grid dashboard-stats">
-            <article className="stat-card featured">
-              <span>Spent</span>
-              <strong>{formatMoney(summary.total, baseCurrency)}</strong>
-              <small>Across selected countries</small>
+          <section
+            className="stat-grid dashboard-stats travel-stat-grid"
+            aria-label="Trip wallet summary"
+          >
+            <article className="stat-card travel-stat spent">
+              <span className="travel-stat-icon" aria-hidden="true">
+                ↗
+              </span>
+              <div>
+                <span>Spent</span>
+                <strong>
+                  {formatMoney(summary.total, baseCurrency)}
+                </strong>
+                <small>What the trip has used</small>
+              </div>
             </article>
-            <article className="stat-card">
-              <span>Budget</span>
-              <strong>{formatMoney(budget, baseCurrency)}</strong>
-              <small>Planned trip total</small>
+
+            <article className="stat-card travel-stat budget">
+              <span className="travel-stat-icon" aria-hidden="true">
+                ◫
+              </span>
+              <div>
+                <span>Budget</span>
+                <strong>{formatMoney(budget, baseCurrency)}</strong>
+                <small>Your travel wallet</small>
+              </div>
             </article>
+
             <article
-              className={remaining < 0 ? "stat-card danger" : "stat-card success"}
+              className={
+                remaining < 0
+                  ? "stat-card travel-stat remaining danger"
+                  : "stat-card travel-stat remaining success"
+              }
             >
-              <span>Remaining</span>
-              <strong>{formatMoney(remaining, baseCurrency)}</strong>
-              <small>
-                {remaining < 0 ? "Over planned budget" : "Available to spend"}
-              </small>
+              <span className="travel-stat-icon" aria-hidden="true">
+                ✦
+              </span>
+              <div>
+                <span>Remaining</span>
+                <strong>
+                  {formatMoney(remaining, baseCurrency)}
+                </strong>
+                <small>
+                  {remaining < 0
+                    ? "Over planned budget"
+                    : "Ready for the next stop"}
+                </small>
+              </div>
             </article>
           </section>
 
@@ -228,23 +382,58 @@ export default async function DashboardPage({
             </section>
           ) : null}
 
-          <section className="quick-grid" aria-label="Quick actions">
-            <Link className="quick-action" href="/planner">
-              <span className="quick-action-icon">▣</span>
-              <span>
-                <strong>Today&apos;s plan</strong>
-                <small>Itinerary, food &amp; places</small>
-              </span>
-              <span className="quick-arrow">›</span>
-            </Link>
-            <Link className="quick-action" href="/settlements">
-              <span className="quick-action-icon amber">✓</span>
-              <span>
-                <strong>Settle up</strong>
-                <small>See who has paid and who is waiting</small>
-              </span>
-              <span className="quick-arrow">›</span>
-            </Link>
+          <section
+            className="dashboard-travel-shortcuts"
+            aria-labelledby="travel-shortcuts-title"
+          >
+            <div className="travel-section-heading">
+              <div>
+                <p className="eyebrow">TRAVEL SHORTCUTS</p>
+                <h2 id="travel-shortcuts-title">Where next?</h2>
+              </div>
+              <span>Eat · Play · Sleep · Share</span>
+            </div>
+
+            <div className="quick-grid travel-quick-grid">
+              <Link className="quick-action travel-quick plan" href="/planner">
+                <span className="quick-action-icon">⌁</span>
+                <span>
+                  <strong>Explore the plan</strong>
+                  <small>Itinerary, food &amp; places</small>
+                </span>
+                <span className="quick-arrow">›</span>
+              </Link>
+
+              <Link className="quick-action travel-quick map" href="/location">
+                <span className="quick-action-icon">⌖</span>
+                <span>
+                  <strong>Find the crew</strong>
+                  <small>See shared live locations</small>
+                </span>
+                <span className="quick-arrow">›</span>
+              </Link>
+
+              <Link className="quick-action travel-quick wallet" href="/expenses">
+                <span className="quick-action-icon">▤</span>
+                <span>
+                  <strong>Trip wallet</strong>
+                  <small>Receipts, spending &amp; shares</small>
+                </span>
+                <span className="quick-arrow">›</span>
+              </Link>
+
+              <Link
+                className="quick-action travel-quick settle"
+                href="/settlements"
+              >
+                <span className="quick-action-icon">✓</span>
+                <span>
+                  <strong>Settle up</strong>
+                  <small>Who paid and who is waiting</small>
+                </span>
+                <span className="quick-arrow">›</span>
+              </Link>
+            </div>
           </section>
 
           <section className="content-grid">

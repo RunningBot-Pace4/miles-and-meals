@@ -4,8 +4,8 @@
   "description": "Travel together. Spend smarter.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#fbfaf7",
-  "theme_color": "#0f766e",
+  "background_color": "#f7f4ec",
+  "theme_color": "#0d7c74",
   "icons": [
     {
       "src": "/miles-meals-icon.svg",
