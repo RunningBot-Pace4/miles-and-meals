@@ -95,10 +95,9 @@ export default async function DashboardPage({
       ? selectedCountries[0]
       : null;
   const heroDestination =
-    selectedCountry?.name ??
-    (singleTrip
-      ? singleTrip.tripName
-      : "All destinations");
+    selectedCountry?.tripName ??
+    singleTrip?.tripName ??
+    "All trips";
   const heroCode =
     selectedCountry?.code ??
     (selectedCountries.length === 1
@@ -113,7 +112,7 @@ export default async function DashboardPage({
       : "Multiple trip dates";
   const heroSecondary =
     selectedCountry
-      ? selectedCountry.tripName
+      ? selectedCountry.name
       : selectedCountries.length
         ? `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"} ready`
         : admin
@@ -168,7 +167,7 @@ export default async function DashboardPage({
                     ? "Destination"
                     : "Trip"}
                 </small>
-                <h2>{heroDestination}</h2>
+                <h2 className="travel-title-gradient">{heroDestination}</h2>
                 <p className="muted-on-dark">
                   {heroSecondary}
                 </p>

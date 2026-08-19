@@ -9339,3 +9339,119 @@ tr + tr td {
     font-size: 0.64rem;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v31 — One-line colorful travel headings                                   */
+/* -------------------------------------------------------------------------- */
+
+.travel-title-gradient,
+.welcome-user {
+  width: fit-content;
+  max-width: 100%;
+  color: #0d746b !important;
+  background:
+    linear-gradient(
+      90deg,
+      #0d746b 0%,
+      #238d83 34%,
+      #bd5b46 68%,
+      #b97821 100%
+    );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.travel-title-gradient {
+  margin: 0 0 0.25rem !important;
+  overflow-wrap: normal !important;
+  word-break: normal;
+  font-size:
+    clamp(
+      1.9rem,
+      3.3vw,
+      3.25rem
+    ) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.055em;
+}
+
+.welcome-user {
+  font-size:
+    clamp(
+      1.7rem,
+      3.6vw,
+      3rem
+    );
+}
+
+.welcome-gradient {
+  background:
+    linear-gradient(
+      90deg,
+      #238d83 0%,
+      #0d746b 28%,
+      #bd5b46 64%,
+      #b97821 100%
+    );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 820px) {
+  .dashboard-travel-hero .hero-main {
+    grid-template-columns:
+      minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .dashboard-travel-hero .travel-destination-block {
+    width: 100%;
+    padding-right: 4.5rem;
+  }
+
+  .dashboard-travel-hero .destination-switcher {
+    width: min(100%, 520px);
+  }
+
+  .travel-title-gradient {
+    max-width: none;
+    white-space: nowrap;
+  }
+
+  .welcome-user {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 819px) {
+  .travel-title-gradient,
+  .welcome-user {
+    width: auto;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 430px) {
+  .travel-title-gradient {
+    font-size:
+      clamp(
+        1.65rem,
+        8.4vw,
+        2.15rem
+      ) !important;
+    line-height: 1.06 !important;
+  }
+
+  .welcome-user {
+    font-size:
+      clamp(
+        1.55rem,
+        8vw,
+        2rem
+      );
+    line-height: 1.06;
+  }
+}
