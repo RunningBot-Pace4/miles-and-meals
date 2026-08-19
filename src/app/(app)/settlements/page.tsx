@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SettlementActionButton } from "@/components/SettlementActionButton";
+import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney } from "@/lib/money";
@@ -51,12 +52,12 @@ export default async function SettlementsPage({
         <section className="panel settle-filter-panel">
           <form className="settle-country-filter">
             <label>
-              Country
+              Trip
               <select defaultValue={selectedId} name="country">
-                <option value="">All countries</option>
+                <option value="">All trips</option>
                 {countries.map((country) => (
                   <option value={country.id} key={country.id}>
-                    {country.tripName} · {country.name}
+                    {country.tripName}
                   </option>
                 ))}
               </select>
@@ -103,6 +104,7 @@ export default async function SettlementsPage({
             <p className="eyebrow">CURRENT STATUS</p>
             <h2>Waiting &amp; payment sent</h2>
           </div>
+          <SettlementLiveRefresh />
         </div>
 
         <div className="settlement-status-list">

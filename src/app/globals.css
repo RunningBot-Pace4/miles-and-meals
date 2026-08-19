@@ -9186,3 +9186,156 @@ tr + tr td {
     transition: none;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v30 — Desktop shell repair, hero contrast, settlement live status          */
+/* -------------------------------------------------------------------------- */
+
+.dashboard-travel-hero .hero-budget-row,
+.dashboard-travel-hero .hero-budget-row span,
+.dashboard-travel-hero .hero-budget-row strong,
+.dashboard-travel-hero .hero-budget-foot,
+.dashboard-travel-hero .hero-budget-foot span {
+  color: #28473f !important;
+}
+
+.dashboard-travel-hero .hero-budget-row span,
+.dashboard-travel-hero .hero-budget-foot {
+  font-weight: 750;
+}
+
+.dashboard-travel-hero .budget-track {
+  background: rgb(126 93 50 / 15%);
+}
+
+.dashboard-travel-hero .budget-track > span {
+  background:
+    linear-gradient(
+      90deg,
+      #d99538,
+      #efad58
+    );
+}
+
+.dashboard-travel-hero .travel-eyebrow,
+.dashboard-travel-hero .travel-destination-label {
+  color: #835a25 !important;
+}
+
+.dashboard-travel-hero .muted-on-dark {
+  color: #675847 !important;
+}
+
+.dashboard-travel-hero .travel-hero-meta > span {
+  color: #655748 !important;
+}
+
+.dashboard-travel-hero .destination-switcher-label {
+  color: #765329 !important;
+}
+
+.dashboard-travel-hero .destination-switcher-label > span {
+  color: #b66f1f;
+}
+
+.settlement-live-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-height: 30px;
+  padding: 0.36rem 0.58rem;
+  border: 1px solid rgb(18 120 111 / 14%);
+  border-radius: 999px;
+  color: var(--primary);
+  background: #edf8f4;
+  font-size: 0.68rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.settlement-live-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22a06b;
+  box-shadow: 0 0 0 4px rgb(34 160 107 / 10%);
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    width: min(100%, 1440px);
+    margin-inline: auto;
+    padding:
+      2rem
+      1.5rem
+      3rem
+      238px;
+  }
+
+  .mobile-nav {
+    top: 96px;
+    right: auto;
+    bottom: auto;
+    left:
+      max(
+        1.5rem,
+        calc(50% - 720px + 1.5rem)
+      );
+    width: 194px;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(52px, auto);
+    align-content: start;
+    gap: 0.35rem;
+    padding: 0.65rem;
+    border-radius: 24px;
+  }
+
+  .mobile-nav .nav-item {
+    min-height: 52px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    place-items: center start;
+    align-content: center;
+    gap: 0.65rem;
+    padding: 0 0.75rem;
+  }
+
+  .mobile-nav .nav-action {
+    color: white;
+    background:
+      linear-gradient(
+        135deg,
+        #12786f,
+        #2f8f86
+      );
+  }
+
+  .mobile-nav .nav-action .nav-icon {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    border: 0;
+    border-radius: 9px;
+    color: white;
+    background: rgb(255 255 255 / 14%);
+  }
+
+  .mobile-nav .nav-action > span:last-child {
+    color: white;
+  }
+
+  .dashboard-page {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 719px) {
+  .settlement-live-badge {
+    min-height: 28px;
+    font-size: 0.64rem;
+  }
+}

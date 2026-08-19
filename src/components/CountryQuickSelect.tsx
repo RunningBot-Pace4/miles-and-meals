@@ -9,7 +9,6 @@ import { SavingOverlay } from "@/components/SavingOverlay";
 
 type CountryOption = {
   id: string;
-  name: string;
   tripName: string;
 };
 
@@ -57,24 +56,24 @@ export function CountryQuickSelect({
       <label className="destination-switcher">
         <span className="destination-switcher-label">
           <span aria-hidden="true">⌖</span>
-          Destination
+          Trip
         </span>
 
         <select
-          aria-label="Change dashboard country"
+          aria-label="Change dashboard trip"
           value={value}
           onChange={(event) =>
             changeCountry(event.target.value)
           }
           disabled={switching}
         >
-          <option value="">All countries</option>
+          <option value="">All trips</option>
           {countries.map((country) => (
             <option
               value={country.id}
               key={country.id}
             >
-              {country.name} · {country.tripName}
+              {country.tripName}
             </option>
           ))}
         </select>

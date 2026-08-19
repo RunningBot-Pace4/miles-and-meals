@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CountryQuickSelect } from "@/components/CountryQuickSelect";
 import { SettlementActionButton } from "@/components/SettlementActionButton";
+import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney, toNumber } from "@/lib/money";
@@ -124,6 +125,10 @@ export default async function DashboardPage({
 
   return (
     <div className="stack gap-lg dashboard-page">
+      <SettlementLiveRefresh
+        intervalMs={6000}
+        showBadge={false}
+      />
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">YOUR TRAVEL COMPANION</p>
@@ -194,7 +199,6 @@ export default async function DashboardPage({
             <CountryQuickSelect
               countries={countries.map((country) => ({
                 id: country.id,
-                name: country.name,
                 tripName: country.tripName,
               }))}
               selectedId={selectedId}
