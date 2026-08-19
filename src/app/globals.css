@@ -8317,3 +8317,872 @@ body[data-action-loading="true"]
     transition: none;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v29 — Style 3 mixed cards + warm travel theme                              */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  --bg: #f7f2e8;
+  --surface: #fffdf9;
+  --surface-2: #f8f3ea;
+  --surface-3: #f3efe6;
+  --text: #203934;
+  --muted: #7a776f;
+  --primary: #12786f;
+  --primary-2: #2f8f86;
+  --primary-soft: #e7f4ef;
+  --accent: #efad58;
+  --accent-2: #d78c35;
+  --accent-soft: #fff0d4;
+  --sky-soft: #ecf5f7;
+  --coral-soft: #f9e4dc;
+  --border: #e5ddd1;
+  --danger: #b93b2c;
+  --danger-soft: #fae6e0;
+  --success: #157a59;
+  --success-soft: #e5f5ee;
+  --ink-deep: #213632;
+  --travel-ink: #1d3a36;
+  --shadow: 0 18px 46px rgb(80 62 38 / 10%);
+  --radius: 22px;
+}
+
+html {
+  background:
+    radial-gradient(circle at top right, rgb(239 173 88 / 15%), transparent 32%),
+    linear-gradient(180deg, #fbf7ef 0%, #f7f2e8 42%, #f2f6f1 100%);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 2%, rgb(18 120 111 / 7%), transparent 24%),
+    radial-gradient(circle at 88% 3%, rgb(239 173 88 / 11%), transparent 26%),
+    linear-gradient(180deg, #fbf7ef 0%, #f7f2e8 42%, #f2f6f1 100%);
+  color: var(--text);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 0 48%,
+      rgb(255 255 255 / 0.15) 49%,
+      transparent 50%
+    );
+  background-size: 26px 26px;
+  opacity: 0.18;
+}
+
+.app-shell {
+  min-height: 100svh;
+  background: transparent;
+}
+
+.topbar {
+  height: 68px;
+  padding:
+    max(0.75rem, env(safe-area-inset-top))
+    1rem
+    0.75rem;
+  border-bottom: 1px solid rgb(229 221 209 / 0.9);
+  background: rgb(251 247 239 / 0.84);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgb(79 62 38 / 6%);
+}
+
+.page-container {
+  width: min(100%, 1120px);
+  padding: 1.05rem 1rem 6.8rem;
+}
+
+.page-heading,
+.panel-title,
+.section-heading {
+  color: var(--travel-ink);
+}
+
+.eyebrow {
+  color: var(--accent-2);
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+a {
+  color: inherit;
+}
+
+.button {
+  border-color: #dfd6c8;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgb(67 62 54 / 6%);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgb(67 62 54 / 10%);
+}
+
+.button.primary {
+  border-color: rgb(18 120 111 / 18%);
+  background:
+    linear-gradient(
+      135deg,
+      #12786f 0%,
+      #2f8f86 100%
+    );
+  color: #fff;
+}
+
+.button.secondary,
+.button.ghost,
+.button.tertiary {
+  background: #fffdf9;
+}
+
+.button.secondary:hover,
+.button.ghost:hover,
+.button.tertiary:hover {
+  border-color: rgb(18 120 111 / 18%);
+  background: #fffaf4;
+}
+
+input,
+select,
+textarea {
+  border-color: #e2d9cb;
+  border-radius: 16px;
+  background: #fffdf9;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 3px 10px rgb(73 63 49 / 3%);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgb(18 120 111 / 42%);
+  box-shadow:
+    0 0 0 4px rgb(18 120 111 / 10%),
+    0 8px 18px rgb(73 63 49 / 6%);
+}
+
+label,
+.field-label,
+.form-grid label,
+.form-field label {
+  color: var(--travel-ink);
+  font-weight: 700;
+}
+
+.card,
+.panel,
+.info-card,
+.skeleton-panel,
+.expense-card,
+.plan-card,
+.location-card,
+.country-summary-card,
+.admin-form-card,
+.admin-country-card,
+.user-access-card,
+.login-activity-card,
+.settle-summary-card,
+.member-split-card,
+.summary-card,
+.trip-country-card,
+.empty-state,
+.empty-card,
+.modal-card,
+.drawer-card {
+  border-color: var(--border);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.98),
+      rgb(255 252 247 / 0.98)
+    );
+  box-shadow: 0 10px 28px rgb(89 73 46 / 7%);
+}
+
+.panel {
+  overflow: hidden;
+}
+
+.panel-title::before,
+.dashboard-panel .panel-title::before,
+.people-ledger-panel .panel-title::before,
+.settlement-panel .panel-title::before {
+  background:
+    linear-gradient(
+      180deg,
+      var(--primary),
+      var(--accent)
+    );
+}
+
+/* Brand ------------------------------------------------------------------- */
+
+.brand-logo {
+  gap: 0.78rem;
+}
+
+.brand-logo-mark {
+  border: 1px solid rgb(18 120 111 / 10%);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      180deg,
+      #e6f4ef,
+      #dff0ea
+    );
+  box-shadow: 0 10px 18px rgb(18 120 111 / 12%);
+}
+
+.brand-logo-copy strong,
+.brand-logo-copy b {
+  color: var(--travel-ink);
+}
+
+.brand-logo-copy small {
+  color: var(--muted);
+}
+
+.account-menu-button,
+.account-button {
+  border-color: #e5ddd1;
+  border-radius: 18px;
+  background: rgb(255 253 249 / 0.86);
+  box-shadow: 0 8px 20px rgb(77 63 40 / 7%);
+}
+
+.account-avatar,
+.account-avatar-badge {
+  background:
+    linear-gradient(
+      180deg,
+      #fff2d9,
+      #fbe2b4
+    );
+  color: #9b6823;
+}
+
+.account-popover,
+.account-menu-list {
+  border-color: #e5ddd1;
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.97),
+      rgb(255 250 243 / 0.97)
+    );
+  box-shadow: 0 18px 40px rgb(76 63 40 / 12%);
+}
+
+/* Mobile bottom nav -------------------------------------------------------- */
+
+.mobile-nav {
+  left: max(0.65rem, env(safe-area-inset-left));
+  right: max(0.65rem, env(safe-area-inset-right));
+  bottom: max(0.7rem, env(safe-area-inset-bottom));
+  padding: 0.5rem;
+  border: 1px solid rgb(229 221 209 / 0.94);
+  border-radius: 26px;
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.94),
+      rgb(255 249 241 / 0.94)
+    );
+  box-shadow: 0 18px 42px rgb(76 63 40 / 13%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.mobile-nav a,
+.mobile-nav-link {
+  border-radius: 16px;
+  color: #72817c;
+}
+
+.mobile-nav a.active,
+.mobile-nav-link.active {
+  background:
+    linear-gradient(
+      180deg,
+      #ebf7f3,
+      #e3f4ef
+    );
+  color: var(--primary);
+}
+
+.mobile-nav a.action,
+.mobile-nav-link.action {
+  color: #fff;
+}
+
+.mobile-nav a.action .nav-icon,
+.mobile-nav-link.action .nav-icon {
+  background:
+    linear-gradient(
+      135deg,
+      #12786f,
+      #2f8f86
+    );
+  color: #fff;
+  box-shadow: 0 12px 22px rgb(18 120 111 / 24%);
+}
+
+/* Dashboard: hero + mixed cards ------------------------------------------- */
+
+.dashboard-travel-hero,
+.hero-card.dashboard-travel-hero {
+  position: relative;
+  isolation: isolate;
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid #e2d6c4;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 82% 14%, rgb(255 255 255 / 0.34), transparent 16%),
+    radial-gradient(circle at 18% 100%, rgb(255 255 255 / 0.23), transparent 28%),
+    linear-gradient(135deg, #f8dfb6 0%, #f3cf8f 100%);
+  color: #594531;
+  box-shadow:
+    0 18px 42px rgb(98 71 43 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 0.48);
+}
+
+.dashboard-travel-hero::before {
+  border-color: rgb(126 88 37 / 10%);
+  box-shadow:
+    0 0 0 38px rgb(255 255 255 / 14%),
+    0 0 0 76px rgb(255 255 255 / 8%);
+}
+
+.dashboard-travel-hero::after {
+  opacity: 0.14;
+  background:
+    linear-gradient(
+      135deg,
+      transparent 42%,
+      rgb(127 92 47 / 70%) 43% 45%,
+      transparent 46%
+    );
+}
+
+.travel-boarding-stamp {
+  border: 1px dashed rgb(114 82 40 / 32%);
+  background: rgb(255 252 245 / 0.38);
+  color: rgb(109 80 43 / 74%);
+}
+
+.travel-boarding-stamp strong {
+  color: #6f4e28;
+}
+
+.dashboard-travel-hero .eyebrow,
+.travel-eyebrow,
+.travel-destination-label,
+.travel-wallet-title small {
+  color: #8f6129 !important;
+}
+
+.dashboard-travel-hero h1,
+.dashboard-travel-hero h2,
+.dashboard-travel-hero strong,
+.travel-wallet-title strong,
+.travel-destination-heading h2 {
+  color: #23453f !important;
+}
+
+.dashboard-travel-hero p,
+.dashboard-travel-hero small,
+.dashboard-travel-hero .muted,
+.travel-hero-meta > span,
+.travel-wallet-card {
+  color: #735f4d;
+}
+
+.travel-country-code {
+  border-color: rgb(128 87 31 / 16%);
+  background: rgb(255 252 246 / 0.44);
+  color: #8b5f24;
+}
+
+.travel-hero-meta > span {
+  border-color: rgb(132 101 63 / 10%);
+  background: rgb(255 253 248 / 0.34);
+}
+
+.dashboard-travel-hero .destination-switcher select {
+  border-color: rgb(195 160 112 / 44%);
+  background:
+    linear-gradient(
+      180deg,
+      #fffdf8,
+      #fff7ea
+    );
+  box-shadow: 0 10px 24px rgb(118 88 53 / 10%);
+}
+
+.travel-wallet-card {
+  border-color: rgb(132 101 63 / 12%);
+  background:
+    linear-gradient(
+      180deg,
+      rgb(255 254 251 / 0.58),
+      rgb(255 248 237 / 0.52)
+    );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.travel-wallet-icon {
+  color: #82541d;
+  background: #fff1d6;
+}
+
+.travel-route-line {
+  border-top-color: rgb(122 92 52 / 26%);
+}
+
+.travel-route-dot {
+  border-color: #c98f3b;
+  background: #ffe8bf;
+}
+
+.travel-route-dot.end {
+  background: #e6f4ef;
+}
+
+.travel-route-plane {
+  color: #9b6823;
+}
+
+.travel-stat-grid {
+  gap: 0.75rem;
+}
+
+.travel-stat {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgb(85 68 47 / 6%);
+}
+
+.travel-stat.spent {
+  background:
+    linear-gradient(
+      180deg,
+      #eef8f4,
+      #e7f4ef
+    );
+}
+
+.travel-stat.budget {
+  background:
+    linear-gradient(
+      180deg,
+      #fff6e4,
+      #ffefcf
+    );
+}
+
+.travel-stat.remaining.success {
+  background:
+    linear-gradient(
+      180deg,
+      #eef5f6,
+      #e6f0f2
+    );
+}
+
+.travel-stat.remaining.danger {
+  background:
+    linear-gradient(
+      180deg,
+      #fff1ed,
+      #fde4dc
+    );
+}
+
+.travel-stat .travel-stat-icon {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+.travel-stat > div > span {
+  color: #6c716b;
+}
+
+.travel-stat > div > strong {
+  color: var(--travel-ink);
+}
+
+.travel-stat > div > small {
+  color: #857e74;
+}
+
+.dashboard-travel-shortcuts {
+  gap: 0.85rem;
+}
+
+.travel-section-heading > span {
+  color: #9a7d56;
+}
+
+.travel-quick {
+  border: 1px solid #e7dfd6;
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fffaf3
+    );
+  box-shadow: 0 8px 20px rgb(78 67 53 / 6%);
+}
+
+.travel-quick::after {
+  border-color: rgb(18 120 111 / 12%);
+}
+
+.travel-quick:hover {
+  border-color: rgb(18 120 111 / 18%);
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fff8ef
+    );
+  box-shadow: 0 12px 24px rgb(78 67 53 / 10%);
+}
+
+.travel-quick strong {
+  color: var(--travel-ink);
+}
+
+.travel-quick small {
+  color: #807c74;
+}
+
+.travel-quick.plan .quick-action-icon {
+  background: #e7f4ef;
+  color: var(--primary);
+}
+
+.travel-quick.map .quick-action-icon {
+  background: #e8f0f4;
+  color: #4f7b82;
+}
+
+.travel-quick.wallet .quick-action-icon {
+  background: #fff0d4;
+  color: #a46b21;
+}
+
+.travel-quick.settle .quick-action-icon {
+  background: #f9e4dc;
+  color: #b55d47;
+}
+
+.dashboard-panel,
+.people-ledger-panel,
+.settlement-panel {
+  border-color: var(--border);
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fffaf4
+    );
+  box-shadow: 0 10px 26px rgb(86 72 52 / 7%);
+}
+
+.dashboard-panel .panel-title,
+.people-ledger-panel .panel-title,
+.settlement-panel .panel-title {
+  align-items: center;
+}
+
+.people-ledger-item,
+.settlement-status-item,
+.expense-card,
+.plan-list-item,
+.location-member-card,
+.summary-row {
+  border-color: #efe6d8;
+}
+
+/* Tables / admin ----------------------------------------------------------- */
+
+table {
+  overflow: hidden;
+  border-collapse: collapse;
+  border-radius: 18px;
+  background: #fffdf9;
+}
+
+th {
+  color: #7b6f62;
+  background: #fbf4e8;
+}
+
+td {
+  background: rgb(255 255 255 / 0.84);
+}
+
+tr + tr td {
+  border-top-color: #efe4d5;
+}
+
+.admin-form-card,
+.admin-country-card,
+.admin-country-list.travel,
+.user-access-card,
+.login-activity-card {
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fff8f0
+    );
+}
+
+.admin-country-card.active,
+.country-filter button.active,
+.country-tab.active {
+  border-color: rgb(18 120 111 / 16%);
+  background:
+    linear-gradient(
+      180deg,
+      #ecf7f3,
+      #e5f3ee
+    );
+}
+
+/* Expenses / planner / settlements ---------------------------------------- */
+
+.expense-card,
+.plan-card,
+.settlement-summary-card,
+.settle-summary-card,
+.member-split-card {
+  border-color: #e7dece;
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fffaf4
+    );
+}
+
+.member-split-card.selected,
+.choice-chip.selected,
+.toggle-pill.active {
+  border-color: rgb(18 120 111 / 18%);
+  background:
+    linear-gradient(
+      180deg,
+      #ebf7f3,
+      #e3f4ef
+    );
+}
+
+.badge,
+.status-badge,
+.inline-badge,
+.tag {
+  border-color: rgb(18 120 111 / 12%);
+  background: #eef8f4;
+  color: var(--primary);
+}
+
+.badge.warning,
+.status-badge.warning,
+.inline-badge.warning {
+  border-color: rgb(239 173 88 / 12%);
+  background: #fff5e4;
+  color: #a1681d;
+}
+
+.badge.danger,
+.status-badge.danger,
+.inline-badge.danger {
+  border-color: rgb(185 59 44 / 12%);
+  background: #fde9e4;
+  color: var(--danger);
+}
+
+/* Loading overlay ---------------------------------------------------------- */
+
+.trip-loading-overlay {
+  background: rgb(247 242 232 / 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.trip-loading-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #eadfcf;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 86% 14%, rgb(239 173 88 / 16%), transparent 18%),
+    radial-gradient(circle at 18% 100%, rgb(18 120 111 / 12%), transparent 22%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.9), rgb(255 249 241 / 0.92));
+  box-shadow: 0 20px 48px rgb(77 63 40 / 16%);
+}
+
+.trip-loading-panel::before {
+  content: "";
+  position: absolute;
+  inset: auto -20px -55px auto;
+  width: 170px;
+  height: 170px;
+  border: 1px dashed rgb(18 120 111 / 14%);
+  border-radius: 50%;
+}
+
+.trip-loading-logo {
+  width: 74px;
+  height: 74px;
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      180deg,
+      #e6f4ef,
+      #dff0ea
+    );
+  box-shadow: 0 16px 26px rgb(18 120 111 / 14%);
+}
+
+.trip-loading-copy h2 {
+  color: var(--travel-ink);
+}
+
+.trip-loading-copy p,
+.trip-loading-foot,
+.trip-loading-foot small {
+  color: #786f64;
+}
+
+.trip-loading-pulse {
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgb(239 173 88 / 34%);
+}
+
+/* Home generic cards if older selectors still appear ---------------------- */
+
+.hero-card {
+  box-shadow: 0 16px 34px rgb(79 65 43 / 8%);
+}
+
+.stat-card {
+  border-color: var(--border);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      #fffefb,
+      #fffaf4
+    );
+  box-shadow: 0 8px 18px rgb(79 65 43 / 6%);
+}
+
+.stat-card.featured {
+  background:
+    linear-gradient(
+      180deg,
+      #eef8f4,
+      #e5f3ee
+    );
+}
+
+.stat-card.success {
+  background:
+    linear-gradient(
+      180deg,
+      #eef5f6,
+      #e6f0f2
+    );
+}
+
+.stat-card.danger {
+  background:
+    linear-gradient(
+      180deg,
+      #fff1ed,
+      #fde4dc
+    );
+}
+
+.quick-action {
+  border-color: var(--border);
+  border-radius: 18px;
+}
+
+.country-filter button,
+.filter-pill,
+.segmented-control button {
+  border-color: var(--border);
+  border-radius: 999px;
+  background: #fffdf9;
+}
+
+.country-filter button.active,
+.filter-pill.active,
+.segmented-control button.active {
+  background: #ecf7f3;
+  color: var(--primary);
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    height: 64px;
+  }
+
+  .page-container {
+    padding-bottom: 7rem;
+  }
+
+  .dashboard-travel-hero,
+  .hero-card.dashboard-travel-hero {
+    border-radius: 24px;
+  }
+
+  .mobile-nav {
+    border-radius: 24px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .travel-quick,
+  .mobile-nav a,
+  .mobile-nav-link {
+    transition: none;
+  }
+}
