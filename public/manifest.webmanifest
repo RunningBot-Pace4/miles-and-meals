@@ -8,10 +8,50 @@
   "theme_color": "#12786f",
   "icons": [
     {
+      "src": "/miles-meals-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/miles-meals-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/miles-meals-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    }
+  ],
+  "id": "/",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "Add expense",
+      "short_name": "Add expense",
+      "description": "Add a new trip expense",
+      "url": "/expenses/new?source=shortcut"
+    },
+    {
+      "name": "Plan",
+      "short_name": "Plan",
+      "description": "Open the trip planner",
+      "url": "/planner?source=shortcut"
+    },
+    {
+      "name": "Map",
+      "short_name": "Map",
+      "description": "Open shared trip locations",
+      "url": "/location?source=shortcut"
+    },
+    {
+      "name": "Settle Up",
+      "short_name": "Settle Up",
+      "description": "Open balances and settlements",
+      "url": "/settlements?source=shortcut"
     }
   ]
 }

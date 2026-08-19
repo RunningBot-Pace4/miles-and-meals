@@ -21,6 +21,34 @@ const categoryIcons: Record<string, string> = {
   Other: "•",
 };
 
+function ColorfulWords({
+  text,
+  className,
+}: {
+  text: string;
+  className: string;
+}) {
+  const words = text.trim().split(/\s+/);
+
+  return (
+    <span
+      className={`${className} word-color-heading`}
+      aria-label={text}
+    >
+      {words.map((word, index) => (
+        <span
+          className="heading-word"
+          aria-hidden="true"
+          key={`${word}-${index}`}
+        >
+          {word}
+          {index < words.length - 1 ? " " : ""}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function formatTripDateRange(
   startDate: string | null | undefined,
   endDate: string | null | undefined,
@@ -132,10 +160,14 @@ export default async function DashboardPage({
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">YOUR TRAVEL COMPANION</p>
           <h1 className="dashboard-welcome-title">
-            <span className="welcome-user">Welcome back, {displayName}.</span>
-            <span className="welcome-gradient">
-              Make every mile, meal &amp; memory count.
-            </span>
+            <ColorfulWords
+              className="welcome-user"
+              text={`Welcome back, ${displayName}.`}
+            />
+            <ColorfulWords
+              className="welcome-gradient welcome-tagline-colors"
+              text="Make every mile, meal & memory count."
+            />
           </h1>
         </div>
         <Link className="button primary dashboard-add" href="/expenses/new">
@@ -167,7 +199,12 @@ export default async function DashboardPage({
                     ? "Destination"
                     : "Trip"}
                 </small>
-                <h2 className="travel-title-gradient">{heroDestination}</h2>
+                <h2 className="travel-title-wrap">
+                  <ColorfulWords
+                    className="travel-title-gradient"
+                    text={heroDestination}
+                  />
+                </h2>
                 <p className="muted-on-dark">
                   {heroSecondary}
                 </p>

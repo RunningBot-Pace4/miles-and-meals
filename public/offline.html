@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#12786f">
+  <title>Offline · Miles & Meals</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      background: #f7f2e8;
+      color: #203934;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      padding:
+        max(1.25rem, env(safe-area-inset-top))
+        max(1.25rem, env(safe-area-inset-right))
+        max(1.25rem, env(safe-area-inset-bottom))
+        max(1.25rem, env(safe-area-inset-left));
+      background:
+        radial-gradient(
+          circle at 86% 8%,
+          rgb(239 173 88 / 20%),
+          transparent 25rem
+        ),
+        radial-gradient(
+          circle at 12% 92%,
+          rgb(18 120 111 / 13%),
+          transparent 28rem
+        ),
+        linear-gradient(
+          180deg,
+          #fbf7ef,
+          #f7f2e8
+        );
+    }
+
+    main {
+      width: min(100%, 430px);
+      overflow: hidden;
+      border: 1px solid #e5d9c9;
+      border-radius: 30px;
+      background: rgb(255 253 249 / 0.95);
+      box-shadow: 0 24px 70px rgb(76 61 39 / 14%);
+    }
+
+    .hero {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: 1rem;
+      padding: 2rem 1.5rem 1.5rem;
+      text-align: center;
+      background:
+        radial-gradient(
+          circle at 88% 8%,
+          rgb(239 173 88 / 22%),
+          transparent 38%
+        ),
+        linear-gradient(
+          180deg,
+          #fffdf8,
+          #fff8ed
+        );
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -65px;
+      bottom: -82px;
+      width: 170px;
+      height: 170px;
+      border: 1px dashed rgb(18 120 111 / 14%);
+      border-radius: 50%;
+    }
+
+    .logo {
+      width: 84px;
+      height: 84px;
+      display: grid;
+      place-items: center;
+      border-radius: 24px;
+      background: #e7f4ef;
+      box-shadow: 0 16px 30px rgb(18 120 111 / 14%);
+    }
+
+    .logo img {
+      width: 64px;
+      height: 64px;
+      display: block;
+      border-radius: 16px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: #a56a21;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      color: #203934;
+      font-size: clamp(1.8rem, 8vw, 2.3rem);
+      letter-spacing: -0.055em;
+      line-height: 1;
+    }
+
+    .intro {
+      margin: 0;
+      color: #746f67;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .details {
+      display: grid;
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+
+    .offline-note {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 0.75rem;
+      align-items: start;
+      padding: 0.9rem;
+      border: 1px solid #e2dbd0;
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .offline-icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: #12786f;
+      background: #e7f4ef;
+      font-weight: 900;
+    }
+
+    .offline-note strong {
+      display: block;
+      margin-bottom: 0.18rem;
+      color: #203934;
+    }
+
+    .offline-note p {
+      margin: 0;
+      color: #7a776f;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    button {
+      width: 100%;
+      min-height: 50px;
+      border: 0;
+      border-radius: 16px;
+      color: white;
+      background:
+        linear-gradient(
+          135deg,
+          #12786f,
+          #2f8f86
+        );
+      box-shadow: 0 12px 22px rgb(18 120 111 / 20%);
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .status {
+      margin: 0;
+      color: #7a776f;
+      font-size: 0.72rem;
+      text-align: center;
+    }
+
+    .status.online {
+      color: #157a59;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <div class="logo">
+        <img
+          src="/miles-meals-icon-192.png"
+          alt=""
+          width="64"
+          height="64"
+        >
+      </div>
+      <p class="eyebrow">Miles & Meals</p>
+      <h1>You’re offline</h1>
+      <p class="intro">
+        Miles & Meals cannot reach the trip server right now.
+        Reconnect to load balances, locations, plans and expenses.
+      </p>
+    </section>
+
+    <section class="details">
+      <div class="offline-note">
+        <span class="offline-icon" aria-hidden="true">⌁</span>
+        <div>
+          <strong>Your private trip data stays online-only</strong>
+          <p>
+            This offline shell does not save authenticated trip pages
+            or payment details into a shared page cache.
+          </p>
+        </div>
+      </div>
+
+      <button type="button" id="retry">
+        Try again
+      </button>
+
+      <p class="status" id="status" role="status">
+        Waiting for a connection…
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const retry = document.getElementById("retry");
+    const status = document.getElementById("status");
+
+    function updateStatus() {
+      if (navigator.onLine) {
+        status.textContent = "Connection restored. Reloading…";
+        status.classList.add("online");
+        window.location.reload();
+        return;
+      }
+
+      status.textContent = "Still offline. We’ll retry when your connection returns.";
+      status.classList.remove("online");
+    }
+
+    retry.addEventListener("click", () => {
+      status.textContent = "Checking connection…";
+      window.location.reload();
+    });
+
+    window.addEventListener("online", updateStatus);
+    window.addEventListener("offline", updateStatus);
+  </script>
+</body>
+</html>

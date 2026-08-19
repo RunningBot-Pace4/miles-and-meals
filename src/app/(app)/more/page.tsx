@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { InstallAppCard } from "@/components/InstallAppCard";
 import { isSystemAdmin, requirePageSession } from "@/lib/session";
 
 export default async function MorePage() {
@@ -51,6 +52,7 @@ export default async function MorePage() {
         </Link>
       </section>
 
+      <InstallAppCard />
     </div>
   );
 }
