@@ -6114,3 +6114,185 @@ svg {
     animation: none;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v24 — Eat / Play / Sleep loader + planner detail viewer                    */
+/* -------------------------------------------------------------------------- */
+
+.trip-loading-route + .trip-loading-foot {
+  margin-top: 0.15rem;
+}
+
+.planner-detail-button {
+  min-height: 36px;
+  padding: 0.35rem 0.72rem;
+  border: 1px solid rgb(15 118 110 / 18%);
+  border-radius: 10px;
+  color: var(--ink-deep);
+  background: white;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.planner-detail-button:hover {
+  border-color: rgb(15 118 110 / 38%);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.planner-detail-backdrop {
+  position: fixed;
+  z-index: 1350;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding:
+    max(0.8rem, env(safe-area-inset-top))
+    max(0.8rem, env(safe-area-inset-right))
+    max(0.8rem, env(safe-area-inset-bottom))
+    max(0.8rem, env(safe-area-inset-left));
+  background: rgb(6 31 28 / 54%);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.planner-detail-modal {
+  width: min(100%, 680px);
+  max-height: min(88svh, 860px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 24px;
+  background: white;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 24%);
+}
+
+.planner-detail-header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.planner-detail-header > div {
+  min-width: 0;
+}
+
+.planner-detail-header h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.planner-detail-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.planner-detail-body {
+  min-height: 0;
+  display: grid;
+  gap: 1rem;
+  overflow: auto;
+  padding: 1rem;
+  background:
+    radial-gradient(
+      circle at 100% 0,
+      rgb(245 158 11 / 8%),
+      transparent 30%
+    ),
+    white;
+}
+
+.planner-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.planner-detail-row,
+.planner-detail-block {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.planner-detail-row small,
+.planner-detail-block > small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.055em;
+}
+
+.planner-detail-row strong,
+.planner-detail-block p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-deep);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.planner-detail-link {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.25rem;
+}
+
+.planner-detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.85rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  background: white;
+}
+
+@media (max-width: 639px) {
+  .planner-detail-backdrop {
+    place-items: end center;
+    padding:
+      max(0.55rem, env(safe-area-inset-top))
+      max(0.55rem, env(safe-area-inset-right))
+      max(0.55rem, env(safe-area-inset-bottom))
+      max(0.55rem, env(safe-area-inset-left));
+  }
+
+  .planner-detail-modal {
+    width: 100%;
+    max-height: calc(100svh - 1.1rem);
+    border-radius: 22px 22px 18px 18px;
+  }
+
+  .planner-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .planner-detail-footer .button {
+    width: 100%;
+  }
+
+  .planner-detail-button,
+  .planner-edit-button {
+    flex: 1 1 auto;
+  }
+}

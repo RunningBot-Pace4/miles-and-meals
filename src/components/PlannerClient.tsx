@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
@@ -105,6 +105,21 @@ function formatDate(value: string | null): string {
     weekday: "short",
     day: "numeric",
     month: "short",
+  }).format(new Date(year, month - 1, day));
+}
+
+function formatFullDate(value: string | null): string {
+  if (!value) {
+    return "—";
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  return new Intl.DateTimeFormat("en-MY", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   }).format(new Date(year, month - 1, day));
 }
 
@@ -376,6 +391,117 @@ function PlannerItemForm({
   );
 }
 
+function PlannerDetailsModal({
+  item,
+  countryName,
+  onClose,
+}: {
+  item: PlannerItem;
+  countryName: string;
+  onClose: () => void;
+}) {
+  const tabInfo = tabs.find(
+    ([value]) => value === item.itemType,
+  );
+
+  const details = [
+    ["Section", tabInfo?.[1] ?? item.itemType],
+    ["Country", countryName],
+    ["Date", formatFullDate(item.itemDate)],
+    ["Time", item.itemTime || "—"],
+    ["City / area", item.area || "—"],
+    ["Type", item.subtype || "—"],
+    ["Status", item.status || "—"],
+    ["Priority", item.priority || "Normal"],
+    ["Estimated cost", item.estimatedCost || "—"],
+    ["Quantity", item.quantity || "—"],
+    ["Provider", item.provider || "—"],
+    ["Confirmation no.", item.confirmationNo || "—"],
+    ["Proposed by", item.proposedByName ?? "Traveler"],
+  ] as const;
+
+  return (
+    <div
+      className="planner-detail-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        className="planner-detail-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="planner-detail-title"
+      >
+        <header className="planner-detail-header">
+          <div>
+            <p className="eyebrow">
+              {tabInfo?.[1] ?? "PLAN"}
+            </p>
+            <h2 id="planner-detail-title">
+              {item.title}
+            </h2>
+          </div>
+
+          <button
+            className="planner-detail-close"
+            type="button"
+            aria-label="Close plan details"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="planner-detail-body">
+          <div className="planner-detail-grid">
+            {details.map(([label, value]) => (
+              <div className="planner-detail-row" key={label}>
+                <small>{label}</small>
+                <strong>{value}</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="planner-detail-block">
+            <small>Notes</small>
+            <p>{item.notes || "—"}</p>
+          </div>
+
+          <div className="planner-detail-block">
+            <small>Map / booking link</small>
+            {item.linkUrl ? (
+              <a
+                className="button secondary planner-detail-link"
+                href={item.linkUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open link ↗
+              </a>
+            ) : (
+              <p>—</p>
+            )}
+          </div>
+        </div>
+
+        <footer className="planner-detail-footer">
+          <button
+            className="button primary"
+            type="button"
+            onClick={onClose}
+          >
+            Done
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
 export function PlannerClient({
   countries,
   items,
@@ -388,6 +514,7 @@ export function PlannerClient({
   const [countryFilter, setCountryFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
+  const [detailItem, setDetailItem] = useState<PlannerItem | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
@@ -428,6 +555,28 @@ export function PlannerClient({
     countryFilter === "ALL"
       ? (countries[0]?.id ?? "")
       : countryFilter;
+
+  useEffect(() => {
+    if (!detailItem) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setDetailItem(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [detailItem]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -544,6 +693,10 @@ export function PlannerClient({
         setEditingItem(null);
       }
 
+      if (detailItem?.id === id) {
+        setDetailItem(null);
+      }
+
       router.refresh();
     } catch (caught) {
       setError(
@@ -558,6 +711,7 @@ export function PlannerClient({
 
   function startEdit(item: PlannerItem) {
     setShowForm(false);
+    setDetailItem(null);
     setError("");
     setEditingItem(item);
 
@@ -575,6 +729,7 @@ export function PlannerClient({
     setTab(nextTab);
     setShowForm(false);
     setEditingItem(null);
+    setDetailItem(null);
     setError("");
   }
 
@@ -647,6 +802,7 @@ export function PlannerClient({
             onChange={(event) => {
               setCountryFilter(event.target.value);
               setEditingItem(null);
+              setDetailItem(null);
               setError("");
             }}
           >
@@ -816,6 +972,14 @@ export function PlannerClient({
 
                   <div className="planner-card-buttons">
                     <button
+                      className="planner-detail-button"
+                      onClick={() => setDetailItem(item)}
+                      type="button"
+                    >
+                      View details
+                    </button>
+
+                    <button
                       className="planner-edit-button"
                       onClick={() => startEdit(item)}
                       type="button"
@@ -860,6 +1024,16 @@ export function PlannerClient({
           </article>
         ) : null}
       </section>
+
+      {detailItem ? (
+        <PlannerDetailsModal
+          item={detailItem}
+          countryName={
+            countryById.get(detailItem.countryId) ?? "Trip"
+          }
+          onClose={() => setDetailItem(null)}
+        />
+      ) : null}
     </div>
   );
 }

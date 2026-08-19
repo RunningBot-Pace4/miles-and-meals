@@ -1,12 +1,14 @@
 import { BrandLogo } from "@/components/BrandLogo";
 
 export function BrandedLoadingScreen({
-  title = "Preparing your trip...",
-  message = "Plans, expenses and balances are syncing.",
+  title,
+  message,
 }: {
   title?: string;
   message?: string;
 }) {
+  const showCopy = Boolean(title || message);
+
   return (
     <div
       className="trip-loading-overlay"
@@ -24,22 +26,24 @@ export function BrandedLoadingScreen({
 
           <span className="trip-loading-stop active">
             <i>1</i>
-            <small>Plan</small>
+            <small>Eat</small>
           </span>
           <span className="trip-loading-stop">
             <i>2</i>
-            <small>Spend</small>
+            <small>Play</small>
           </span>
           <span className="trip-loading-stop">
             <i>3</i>
-            <small>Share</small>
+            <small>Sleep</small>
           </span>
         </div>
 
-        <div className="trip-loading-copy">
-          <h2>{title}</h2>
-          <p>{message}</p>
-        </div>
+        {showCopy ? (
+          <div className="trip-loading-copy">
+            {title ? <h2>{title}</h2> : null}
+            {message ? <p>{message}</p> : null}
+          </div>
+        ) : null}
 
         <div className="trip-loading-foot">
           <span className="trip-loading-pulse" />
