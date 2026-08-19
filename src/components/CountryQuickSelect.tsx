@@ -34,6 +34,13 @@ export function CountryQuickSelect({
       return;
     }
 
+    if (!navigator.onLine) {
+      setValue(selectedId);
+      setSwitching(false);
+      window.location.assign("/offline.html");
+      return;
+    }
+
     setValue(nextId);
     setSwitching(true);
 

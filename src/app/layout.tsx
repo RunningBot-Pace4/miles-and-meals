@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/globals.css";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
+import { OfflineNavigationGuard } from "@/components/OfflineNavigationGuard";
 import { PwaLaunchDismiss } from "@/components/PwaLaunchDismiss";
 import { PwaRegister } from "@/components/PwaRegister";
 
@@ -114,6 +115,7 @@ export default function RootLayout({
         {children}
 
         <NetworkStatusBanner />
+        <OfflineNavigationGuard />
         <PwaRegister />
         <PwaLaunchDismiss />
       </body>

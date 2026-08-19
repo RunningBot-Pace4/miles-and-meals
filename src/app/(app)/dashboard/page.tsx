@@ -21,30 +21,28 @@ const categoryIcons: Record<string, string> = {
   Other: "•",
 };
 
-function ColorfulWords({
+function StyledTripTitle({
   text,
-  className,
 }: {
   text: string;
-  className: string;
 }) {
-  const words = text.trim().split(/\s+/);
+  const match = text.match(
+    /^(.*?)(?:\s+(\d{4}))?(?:\s+(\(.+\)))?$/,
+  );
+
+  const name = match?.[1]?.trim() || text;
+  const year = match?.[2] ?? "";
+  const note = match?.[3] ?? "";
 
   return (
-    <span
-      className={`${className} word-color-heading`}
-      aria-label={text}
-    >
-      {words.map((word, index) => (
-        <span
-          className="heading-word"
-          aria-hidden="true"
-          key={`${word}-${index}`}
-        >
-          {word}
-          {index < words.length - 1 ? " " : ""}
-        </span>
-      ))}
+    <span className="travel-title-editorial" aria-label={text}>
+      <span className="travel-title-name">{name}</span>
+      {year ? (
+        <span className="travel-title-year">{year}</span>
+      ) : null}
+      {note ? (
+        <span className="travel-title-note">{note}</span>
+      ) : null}
     </span>
   );
 }
@@ -160,14 +158,24 @@ export default async function DashboardPage({
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">YOUR TRAVEL COMPANION</p>
           <h1 className="dashboard-welcome-title">
-            <ColorfulWords
-              className="welcome-user"
-              text={`Welcome back, ${displayName}.`}
-            />
-            <ColorfulWords
-              className="welcome-gradient welcome-tagline-colors"
-              text="Make every mile, meal & memory count."
-            />
+            <span className="welcome-editorial">
+              <span className="welcome-prefix">
+                Welcome back,
+              </span>{" "}
+              <span className="welcome-name">
+                {displayName}.
+              </span>
+            </span>
+            <span className="welcome-tagline">
+              Make every{" "}
+              <strong className="tagline-mile">mile</strong>,{" "}
+              <strong className="tagline-meal">meal</strong>{" "}
+              &amp;{" "}
+              <strong className="tagline-memory">
+                memory
+              </strong>{" "}
+              count.
+            </span>
           </h1>
         </div>
         <Link className="button primary dashboard-add" href="/expenses/new">
@@ -200,10 +208,7 @@ export default async function DashboardPage({
                     : "Trip"}
                 </small>
                 <h2 className="travel-title-wrap">
-                  <ColorfulWords
-                    className="travel-title-gradient"
-                    text={heroDestination}
-                  />
+                  <StyledTripTitle text={heroDestination} />
                 </h2>
                 <p className="muted-on-dark">
                   {heroSecondary}
