@@ -7,6 +7,15 @@ const DISMISS_ANIMATION_MS = 260;
 
 export function PwaLaunchDismiss() {
   useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        "mnm:pwa-launch-seen",
+        "1",
+      );
+    } catch {
+      // Session storage is optional.
+    }
+
     const splash = document.getElementById(
       "pwa-launch-screen",
     );

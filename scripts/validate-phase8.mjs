@@ -268,6 +268,99 @@ for (const marker of [
   }
 }
 
+const settlementActionButton = read(
+  "src/components/SettlementActionButton.tsx",
+);
+const settlementEngine = read(
+  "src/lib/settlement.ts",
+);
+const settlementPage = read(
+  "src/app/(app)/settlements/page.tsx",
+);
+const settlementTest = read(
+  "tests/settlement.test.ts",
+);
+const adminOverviewV43 = read(
+  "src/components/AdminOverview.tsx",
+);
+const adminTripEditRoute = read(
+  "src/app/api/admin/trips/[id]/route.ts",
+);
+const adminCountryEditRoute = read(
+  "src/app/api/admin/countries/[id]/route.ts",
+);
+const rootLayoutV43 = read(
+  "src/app/layout.tsx",
+);
+
+if (
+  settlementActionButton.includes(
+    "SavingOverlay",
+  )
+) {
+  fail(
+    "Settlement actions must use quiet inline refresh, not a full-screen SavingOverlay.",
+  );
+}
+
+if (
+  !settlementEngine.includes(
+    "Historical payments stay attached to the same two people",
+  ) ||
+  !settlementTest.includes(
+    "keeps payment history intuitive after an expense split is edited",
+  )
+) {
+  fail(
+    "Settlement edit-after-payment reconciliation regression coverage is missing.",
+  );
+}
+
+if (
+  !settlementPage.includes(
+    "Total received",
+  ) ||
+  !settlementPage.includes(
+    "Balance check",
+  ) ||
+  !settlementPage.includes(
+    "Confirmed balance",
+  )
+) {
+  fail(
+    "Settlement received/share/balance visibility is missing.",
+  );
+}
+
+if (
+  !adminOverviewV43.includes(
+    "Edit trip",
+  ) ||
+  !adminOverviewV43.includes(
+    "Edit country FX",
+  ) ||
+  !adminTripEditRoute.includes(
+    "updateTripSchema",
+  ) ||
+  !adminCountryEditRoute.includes(
+    "updateCountrySchema",
+  )
+) {
+  fail(
+    "Edit-after-create Admin configuration is missing.",
+  );
+}
+
+if (
+  !rootLayoutV43.includes(
+    "mnm:pwa-launch-seen",
+  )
+) {
+  fail(
+    "Quiet hard refresh must suppress the repeated PWA launch screen.",
+  );
+}
+
 const settlementRefreshComponent = read(
   "src/components/SettlementLiveRefresh.tsx",
 );

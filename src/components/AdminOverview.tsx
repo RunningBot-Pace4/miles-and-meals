@@ -35,6 +35,22 @@ type AdminCountryOverview = {
   assignedCount: number;
 };
 
+type AdminTripOverview = {
+  id: string;
+  name: string;
+  baseCurrency: string;
+  budget: string;
+  startDate: string | null;
+  endDate: string | null;
+};
+
+type TripEditDraft = {
+  name: string;
+  budget: string;
+  startDate: string;
+  endDate: string;
+};
+
 type UserType = "user" | "admin";
 
 function initials(name: string): string {
@@ -133,14 +149,20 @@ function normalizeUserType(
 export function AdminOverview({
   users,
   countries,
+  trips,
   currentUserId,
 }: {
   users: AdminUserOverview[];
   countries: AdminCountryOverview[];
+  trips: AdminTripOverview[];
   currentUserId: string;
 }) {
   const [query, setQuery] =
     useState("");
+  const [
+    showTrips,
+    setShowTrips,
+  ] = useState(true);
   const [
     showCountries,
     setShowCountries,
@@ -161,6 +183,46 @@ export function AdminOverview({
     actionError,
     setActionError,
   ] = useState("");
+  const [
+    editBusyKey,
+    setEditBusyKey,
+  ] = useState<string | null>(
+    null,
+  );
+  const [
+    tripDrafts,
+    setTripDrafts,
+  ] = useState<
+    Record<string, TripEditDraft>
+  >(() =>
+    Object.fromEntries(
+      trips.map((trip) => [
+        trip.id,
+        {
+          name: trip.name,
+          budget: trip.budget,
+          startDate:
+            trip.startDate ?? "",
+          endDate:
+            trip.endDate ?? "",
+        },
+      ]),
+    ),
+  );
+  const [
+    countryFxDrafts,
+    setCountryFxDrafts,
+  ] = useState<Record<string, string>>(
+    () =>
+      Object.fromEntries(
+        countries.map(
+          (country) => [
+            country.id,
+            country.defaultExchangeRate,
+          ],
+        ),
+      ),
+  );
   const [
     roleDrafts,
     setRoleDrafts,
@@ -451,6 +513,119 @@ export function AdminOverview({
     }
   }
 
+  async function saveTrip(
+    trip: AdminTripOverview,
+  ) {
+    const draft =
+      tripDrafts[trip.id];
+
+    if (!draft) {
+      return;
+    }
+
+    setActionError("");
+    setEditBusyKey(
+      `trip:${trip.id}`,
+    );
+
+    try {
+      const response = await fetch(
+        `/api/admin/trips/${trip.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify(
+            draft,
+          ),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to update trip.",
+        );
+      }
+
+      window.location.reload();
+    } catch (caught) {
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to update trip.",
+      );
+      setEditBusyKey(null);
+    }
+  }
+
+  async function saveCountryFx(
+    country: AdminCountryOverview,
+  ) {
+    const value =
+      countryFxDrafts[
+        country.id
+      ] ?? "";
+
+    setActionError("");
+    setEditBusyKey(
+      `country:${country.id}`,
+    );
+
+    try {
+      const response = await fetch(
+        `/api/admin/countries/${country.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            defaultExchangeRate:
+              value,
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to update country FX.",
+        );
+      }
+
+      window.location.reload();
+    } catch (caught) {
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to update country FX.",
+      );
+      setEditBusyKey(null);
+    }
+  }
+
   return (
     <div className="stack gap-lg">
       {roleBusyUserId ? (
@@ -462,6 +637,11 @@ export function AdminOverview({
         <SavingOverlay
           title="Updating country access"
           message="Saving this traveler’s destination access."
+        />
+      ) : editBusyKey ? (
+        <SavingOverlay
+          title="Saving Admin changes"
+          message="Updating the trip configuration."
         />
       ) : null}
 
@@ -921,6 +1101,276 @@ export function AdminOverview({
           className="admin-overview-toggle"
           type="button"
           aria-expanded={
+            showTrips
+          }
+          onClick={() =>
+            setShowTrips(
+              (current) =>
+                !current,
+            )
+          }
+        >
+          <div>
+            <p className="eyebrow">
+              TRIPS
+            </p>
+            <h2>
+              Configured trips
+            </h2>
+          </div>
+
+          <span>
+            {trips.length}{" "}
+            {trips.length === 1
+              ? "trip"
+              : "trips"}{" "}
+            ·{" "}
+            {showTrips
+              ? "Hide"
+              : "Show"}
+          </span>
+        </button>
+
+        {showTrips ? (
+          trips.length > 0 ? (
+            <div className="admin-trip-edit-list">
+              {trips.map((trip) => {
+                const draft =
+                  tripDrafts[
+                    trip.id
+                  ] ?? {
+                    name:
+                      trip.name,
+                    budget:
+                      trip.budget,
+                    startDate:
+                      trip.startDate ??
+                      "",
+                    endDate:
+                      trip.endDate ??
+                      "",
+                  };
+
+                return (
+                  <article
+                    className="admin-trip-edit-card"
+                    key={trip.id}
+                  >
+                    <div className="admin-trip-edit-head">
+                      <div>
+                        <span
+                          className="admin-form-icon"
+                          aria-hidden="true"
+                        >
+                          ✦
+                        </span>
+                        <div>
+                          <strong>
+                            {trip.name}
+                          </strong>
+                          <small>
+                            Base currency{" "}
+                            {
+                              trip.baseCurrency
+                            }
+                          </small>
+                        </div>
+                      </div>
+
+                      <span className="admin-status-pill active">
+                        Editable
+                      </span>
+                    </div>
+
+                    <details className="admin-config-edit">
+                      <summary>
+                        Edit trip
+                      </summary>
+
+                      <div className="admin-config-edit-body">
+                        <label>
+                          <span>
+                            Trip name
+                          </span>
+                          <input
+                            value={
+                              draft.name
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setTripDrafts(
+                                (
+                                  current,
+                                ) => ({
+                                  ...current,
+                                  [trip.id]:
+                                    {
+                                      ...draft,
+                                      name:
+                                        event
+                                          .target
+                                          .value,
+                                    },
+                                }),
+                              )
+                            }
+                          />
+                        </label>
+
+                        <div className="two-col">
+                          <label>
+                            <span>
+                              Budget
+                            </span>
+                            <input
+                              inputMode="decimal"
+                              value={
+                                draft.budget
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                setTripDrafts(
+                                  (
+                                    current,
+                                  ) => ({
+                                    ...current,
+                                    [trip.id]:
+                                      {
+                                        ...draft,
+                                        budget:
+                                          event
+                                            .target
+                                            .value,
+                                      },
+                                  }),
+                                )
+                              }
+                            />
+                          </label>
+
+                          <label>
+                            <span>
+                              Base currency
+                            </span>
+                            <input
+                              value={
+                                trip.baseCurrency
+                              }
+                              readOnly
+                            />
+                          </label>
+                        </div>
+
+                        <div className="two-col">
+                          <label>
+                            <span>
+                              Start
+                            </span>
+                            <input
+                              type="date"
+                              value={
+                                draft.startDate
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                setTripDrafts(
+                                  (
+                                    current,
+                                  ) => ({
+                                    ...current,
+                                    [trip.id]:
+                                      {
+                                        ...draft,
+                                        startDate:
+                                          event
+                                            .target
+                                            .value,
+                                      },
+                                  }),
+                                )
+                              }
+                            />
+                          </label>
+
+                          <label>
+                            <span>
+                              End
+                            </span>
+                            <input
+                              type="date"
+                              value={
+                                draft.endDate
+                              }
+                              onChange={(
+                                event,
+                              ) =>
+                                setTripDrafts(
+                                  (
+                                    current,
+                                  ) => ({
+                                    ...current,
+                                    [trip.id]:
+                                      {
+                                        ...draft,
+                                        endDate:
+                                          event
+                                            .target
+                                            .value,
+                                      },
+                                  }),
+                                )
+                              }
+                            />
+                          </label>
+                        </div>
+
+                        <p className="admin-config-note">
+                          Base currency stays locked after creation so historical expenses keep the same accounting basis.
+                        </p>
+
+                        <button
+                          className="button primary"
+                          type="button"
+                          data-requires-online="true"
+                          disabled={
+                            editBusyKey !==
+                            null
+                          }
+                          onClick={() =>
+                            void saveTrip(
+                              trip,
+                            )
+                          }
+                        >
+                          Save trip changes
+                        </button>
+                      </div>
+                    </details>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="empty-card">
+              <h3>
+                No trips yet
+              </h3>
+              <p>
+                Create the first trip below.
+              </p>
+            </div>
+          )
+        ) : null}
+      </section>
+
+      <section className="panel admin-overview-section">
+        <button
+          className="admin-overview-toggle"
+          type="button"
+          aria-expanded={
             showCountries
           }
           onClick={() =>
@@ -1048,6 +1498,65 @@ export function AdminOverview({
                           : ""}
                       </strong>
                     </div>
+
+                    <details className="admin-config-edit country">
+                      <summary>
+                        Edit country FX
+                      </summary>
+
+                      <div className="admin-config-edit-body">
+                        <label>
+                          <span>
+                            1 {country.currencyCode} = ? {country.baseCurrency}
+                          </span>
+                          <input
+                            inputMode="decimal"
+                            value={
+                              countryFxDrafts[
+                                country.id
+                              ] ??
+                              country.defaultExchangeRate
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              setCountryFxDrafts(
+                                (
+                                  current,
+                                ) => ({
+                                  ...current,
+                                  [country.id]:
+                                    event
+                                      .target
+                                      .value,
+                                }),
+                              )
+                            }
+                          />
+                        </label>
+
+                        <p className="admin-config-note">
+                          Saving here becomes a manual override for future expenses. Existing expenses keep their stored historical FX.
+                        </p>
+
+                        <button
+                          className="button secondary"
+                          type="button"
+                          data-requires-online="true"
+                          disabled={
+                            editBusyKey !==
+                            null
+                          }
+                          onClick={() =>
+                            void saveCountryFx(
+                              country,
+                            )
+                          }
+                        >
+                          Save FX
+                        </button>
+                      </div>
+                    </details>
                   </article>
                 ),
               )}

@@ -33,6 +33,9 @@ export default async function AdminPage() {
         id: trips.id,
         name: trips.name,
         baseCurrency: trips.baseCurrency,
+        budget: trips.budget,
+        startDate: trips.startDate,
+        endDate: trips.endDate,
       })
       .from(trips)
       .orderBy(trips.name),
@@ -213,6 +216,7 @@ export default async function AdminPage() {
       <AdminOverview
         users={userOverview}
         countries={countryOverview}
+        trips={tripRows}
         currentUserId={currentSession.user.id}
       />
 

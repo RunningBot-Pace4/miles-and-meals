@@ -51,8 +51,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (sessionStorage.getItem("mnm:pwa-launch-seen") === "1") {
+                  document.documentElement.dataset.pwaWarm = "true";
+                }
+              } catch {}
+            `,
+          }}
+        />
         <link
           rel="apple-touch-startup-image"
           href="/apple-splash-750x1334.png"

@@ -24,6 +24,10 @@ export type PersonExpenseSummary = {
   awaitingConfirmation: number;
   settledPaid: number;
   settledReceived: number;
+  totalSettlementPaid: number;
+  totalSettlementReceived: number;
+  confirmedBalance: number;
+  ledgerBalance: number;
 };
 
 export async function buildExpenseSummary(countryIds: string[]) {
@@ -52,7 +56,12 @@ export async function buildExpenseSummary(countryIds: string[]) {
 
   const expenseIds = rows.map((row) => row.id);
   const userRows = await db.select({ id: user.id, name: user.name }).from(user);
-  const names = new Map(userRows.map((row) => [row.id, row.name]));
+  const names = new Map<string, string>(
+    userRows.map((row) => [
+      row.id,
+      row.name,
+    ]),
+  );
 
   const categories = new Map<string, number>();
   const paid = new Map<string, number>();
@@ -120,34 +129,58 @@ export async function buildExpenseSummary(countryIds: string[]) {
       const paidAmount = paid.get(userId) ?? 0;
       const shareAmount = owed.get(userId) ?? 0;
 
+      const toPay = waitingTransfers
+        .filter((row) => row.fromUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+      const waitingToReceive = waitingTransfers
+        .filter((row) => row.toUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+      const paymentSent = pendingSettlements
+        .filter((row) => row.fromUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+      const awaitingConfirmation = pendingSettlements
+        .filter((row) => row.toUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+      const settledPaid = settledSettlements
+        .filter((row) => row.fromUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+      const settledReceived = settledSettlements
+        .filter((row) => row.toUserId === userId)
+        .reduce((sum, row) => sum + row.amount, 0);
+
+      const totalSettlementPaid =
+        settledPaid + paymentSent;
+      const totalSettlementReceived =
+        settledReceived + awaitingConfirmation;
+      const confirmedBalance =
+        paidAmount +
+        settledPaid -
+        shareAmount -
+        settledReceived;
+      const ledgerBalance =
+        paidAmount +
+        totalSettlementPaid -
+        shareAmount -
+        totalSettlementReceived;
+
       return {
         userId,
         name: names.get(userId) ?? "Traveler",
         paid: paidAmount,
         share: shareAmount,
         balanceBeforeSettlement: paidAmount - shareAmount,
-        toPay: waitingTransfers
-          .filter((row) => row.fromUserId === userId)
-          .reduce((sum, row) => sum + row.amount, 0),
+        toPay,
         toReceive:
-          waitingTransfers
-            .filter((row) => row.toUserId === userId)
-            .reduce((sum, row) => sum + row.amount, 0) +
-          pendingSettlements
-            .filter((row) => row.toUserId === userId)
-            .reduce((sum, row) => sum + row.amount, 0),
-        paymentSent: pendingSettlements
-          .filter((row) => row.fromUserId === userId)
-          .reduce((sum, row) => sum + row.amount, 0),
-        awaitingConfirmation: pendingSettlements
-          .filter((row) => row.toUserId === userId)
-          .reduce((sum, row) => sum + row.amount, 0),
-        settledPaid: settledSettlements
-          .filter((row) => row.fromUserId === userId)
-          .reduce((sum, row) => sum + row.amount, 0),
-        settledReceived: settledSettlements
-          .filter((row) => row.toUserId === userId)
-          .reduce((sum, row) => sum + row.amount, 0),
+          waitingToReceive +
+          awaitingConfirmation,
+        paymentSent,
+        awaitingConfirmation,
+        settledPaid,
+        settledReceived,
+        totalSettlementPaid,
+        totalSettlementReceived,
+        confirmedBalance,
+        ledgerBalance,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name));

@@ -10,6 +10,13 @@ export const createTripSchema = z.object({
   endDate: z.string().optional().default(""),
 });
 
+export const updateTripSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  budget: z.coerce.number().min(0).max(1_000_000_000),
+  startDate: z.string().optional().default(""),
+  endDate: z.string().optional().default(""),
+});
+
 export const createCountrySchema = z.object({
   tripId: uuidSchema,
   name: z.string().trim().min(2).max(120),
@@ -18,6 +25,10 @@ export const createCountrySchema = z.object({
   defaultExchangeRate: z.coerce.number().positive().max(1_000_000),
   fxRateDate: z.string().trim().max(20).optional().default(""),
   fxRateProvider: z.string().trim().max(120).optional().default("Manual"),
+});
+
+export const updateCountrySchema = z.object({
+  defaultExchangeRate: z.coerce.number().positive().max(1_000_000),
 });
 
 export const assignmentSchema = z.object({
