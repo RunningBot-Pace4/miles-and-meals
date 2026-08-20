@@ -6,6 +6,9 @@ type SettlementAction =
   | "MARK_PAID"
   | "MARK_RECEIVED";
 
+export const SETTLEMENT_UPDATED_EVENT =
+  "mnm:settlement-updated";
+
 export function SettlementActionButton({
   countryId,
   counterpartyUserId,
@@ -57,16 +60,12 @@ export function SettlementActionButton({
         );
       }
 
-      try {
-        sessionStorage.setItem(
-          "mnm:pwa-launch-seen",
-          "1",
-        );
-      } catch {
-        // Session storage is optional.
-      }
-
-      window.location.reload();
+      window.dispatchEvent(
+        new CustomEvent(
+          SETTLEMENT_UPDATED_EVENT,
+        ),
+      );
+      setBusy(false);
     } catch (caught) {
       setError(
         caught instanceof Error

@@ -95,7 +95,7 @@ export default async function ExpensesPage() {
       <SettlementLiveRefresh
         intervalMs={8000}
         showBadge={false}
-        channels={["expense", "settlement"]}
+        channels={["expense"]}
       />
       <div className="page-heading">
         <div>

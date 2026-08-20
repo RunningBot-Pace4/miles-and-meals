@@ -11101,3 +11101,67 @@ body {
 .person-ledger-balance.pay strong {
   color: #a65f3e;
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v44 — In-place live settlement workspace                                  */
+/* -------------------------------------------------------------------------- */
+
+.live-settlement-workspace {
+  min-width: 0;
+}
+
+.settlement-live-sync-state {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.34rem 0.58rem;
+  border: 1px solid rgb(18 120 111 / 12%);
+  border-radius: 999px;
+  color: #58716c;
+  background: rgb(235 247 242 / 72%);
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
+.settlement-live-sync-state i {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #15966f;
+  box-shadow:
+    0 0 0 4px rgb(21 150 111 / 9%);
+}
+
+.settlement-live-sync-state.error {
+  color: #9a641f;
+  border-color: rgb(189 124 39 / 15%);
+  background: #fff7e8;
+}
+
+.settlement-live-sync-state.error i {
+  background: #d29a42;
+  box-shadow:
+    0 0 0 4px rgb(210 154 66 / 10%);
+}
+
+.dashboard-page
+  .content-grid
+  > :only-child {
+  grid-column: 1 / -1;
+}
+
+.dashboard-page
+  .live-settlement-workspace
+  .people-ledger-panel {
+  margin-top: 0.1rem;
+}
+
+@media (max-width: 560px) {
+  .settlement-live-sync-state {
+    font-size: 0.62rem;
+  }
+}

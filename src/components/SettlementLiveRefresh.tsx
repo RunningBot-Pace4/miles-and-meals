@@ -121,7 +121,7 @@ export function SettlementLiveRefresh({
           return;
         }
 
-        let changed = false;
+        const changedChannels: LiveRefreshChannel[] = [];
 
         for (const channel of activeChannels) {
           const next = payloadVersion(
@@ -142,12 +142,28 @@ export function SettlementLiveRefresh({
           }
 
           if (previous !== next) {
-            changed = true;
-            break;
+            versionsRef.current[channel] = next;
+            changedChannels.push(channel);
           }
         }
 
-        if (changed && canPoll()) {
+        if (
+          changedChannels.includes("settlement")
+        ) {
+          window.dispatchEvent(
+            new CustomEvent(
+              "mnm:settlement-updated",
+            ),
+          );
+        }
+
+        if (
+          changedChannels.some(
+            (channel) =>
+              channel !== "settlement",
+          ) &&
+          canPoll()
+        ) {
           window.location.reload();
         }
       } finally {

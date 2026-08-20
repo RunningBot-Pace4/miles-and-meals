@@ -274,11 +274,20 @@ const settlementActionButton = read(
 const settlementEngine = read(
   "src/lib/settlement.ts",
 );
-const settlementPage = read(
-  "src/app/(app)/settlements/page.tsx",
-);
 const settlementTest = read(
   "tests/settlement.test.ts",
+);
+const liveSettlementWorkspace = read(
+  "src/components/LiveSettlementWorkspace.tsx",
+);
+const settlementSummaryRoute = read(
+  "src/app/api/settlements/summary/route.ts",
+);
+const dashboardPageV44 = read(
+  "src/app/(app)/dashboard/page.tsx",
+);
+const settlementPageV44 = read(
+  "src/app/(app)/settlements/page.tsx",
 );
 const adminOverviewV43 = read(
   "src/components/AdminOverview.tsx",
@@ -289,17 +298,33 @@ const adminTripEditRoute = read(
 const adminCountryEditRoute = read(
   "src/app/api/admin/countries/[id]/route.ts",
 );
-const rootLayoutV43 = read(
-  "src/app/layout.tsx",
-);
 
 if (
   settlementActionButton.includes(
     "SavingOverlay",
+  ) ||
+  settlementActionButton.includes(
+    "window.location.reload()",
   )
 ) {
   fail(
-    "Settlement actions must use quiet inline refresh, not a full-screen SavingOverlay.",
+    "Settlement actions must update in place without a full-screen loader or page reload.",
+  );
+}
+
+if (
+  !settlementActionButton.includes(
+    "mnm:settlement-updated",
+  ) ||
+  !liveSettlementWorkspace.includes(
+    "POLL_INTERVAL_MS = 4000",
+  ) ||
+  !liveSettlementWorkspace.includes(
+    "SETTLEMENT_UPDATED_EVENT",
+  )
+) {
+  fail(
+    "Settlement actions must trigger immediate in-place refresh and keep 4-second live polling.",
   );
 }
 
@@ -316,19 +341,49 @@ if (
   );
 }
 
+for (const marker of [
+  "Everyone&apos;s trip money",
+  "Total received",
+  "Settlement paid",
+  "Personal share",
+  "Still receive",
+  "Still pay",
+  "Confirmed balance",
+]) {
+  if (
+    !liveSettlementWorkspace.includes(
+      marker,
+    )
+  ) {
+    fail(
+      `Live settlement workspace missing: ${marker}`,
+    );
+  }
+}
+
 if (
-  !settlementPage.includes(
-    "Total received",
+  !dashboardPageV44.includes(
+    'variant="dashboard"',
   ) ||
-  !settlementPage.includes(
-    "Balance check",
-  ) ||
-  !settlementPage.includes(
-    "Confirmed balance",
+  !settlementPageV44.includes(
+    'variant="settlements"',
   )
 ) {
   fail(
-    "Settlement received/share/balance visibility is missing.",
+    "Home and Settle Up must both use the live trip-money workspace.",
+  );
+}
+
+if (
+  !settlementSummaryRoute.includes(
+    "listAccessibleCountries",
+  ) ||
+  !settlementSummaryRoute.includes(
+    "buildExpenseSummary",
+  )
+) {
+  fail(
+    "Live settlement summary API must enforce country access and use the canonical ledger.",
   );
 }
 
@@ -348,43 +403,6 @@ if (
 ) {
   fail(
     "Edit-after-create Admin configuration is missing.",
-  );
-}
-
-if (
-  !rootLayoutV43.includes(
-    "mnm:pwa-launch-seen",
-  )
-) {
-  fail(
-    "Quiet hard refresh must suppress the repeated PWA launch screen.",
-  );
-}
-
-const settlementRefreshComponent = read(
-  "src/components/SettlementLiveRefresh.tsx",
-);
-const settlementsPage = read(
-  "src/app/(app)/settlements/page.tsx",
-);
-
-if (
-  !settlementRefreshComponent.includes(
-    "intervalMs = 4000",
-  )
-) {
-  fail(
-    "Settlement auto-refresh must remain at its existing 4-second default.",
-  );
-}
-
-if (
-  !settlementsPage.includes(
-    "<SettlementLiveRefresh />",
-  )
-) {
-  fail(
-    "Settle Up must keep automatic refresh enabled.",
   );
 }
 
