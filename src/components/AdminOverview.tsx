@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { SavingOverlay } from "@/components/SavingOverlay";
 
 type AdminUserOverview = {
   id: string;
@@ -84,15 +85,48 @@ function formatFx(value: string): string {
   });
 }
 
+type UserType = "user" | "admin";
+
+function normalizeUserType(
+  role: string,
+): UserType {
+  return role
+    .split(",")
+    .map((value) =>
+      value.trim().toLowerCase(),
+    )
+    .includes("admin")
+    ? "admin"
+    : "user";
+}
+
 export function AdminOverview({
   users,
   countries,
+  currentUserId,
 }: {
   users: AdminUserOverview[];
   countries: AdminCountryOverview[];
+  currentUserId: string;
 }) {
   const [query, setQuery] = useState("");
   const [showCountries, setShowCountries] = useState(true);
+  const [roleBusyUserId, setRoleBusyUserId] =
+    useState<string | null>(null);
+  const [roleError, setRoleError] =
+    useState("");
+  const [roleDrafts, setRoleDrafts] =
+    useState<Record<string, UserType>>(
+      () =>
+        Object.fromEntries(
+          users.map((member) => [
+            member.id,
+            normalizeUserType(
+              member.role,
+            ),
+          ]),
+        ),
+    );
 
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -132,8 +166,86 @@ export function AdminOverview({
     (member) => member.countries.length > 0,
   ).length;
 
+  async function saveUserType(
+    member: AdminUserOverview,
+  ) {
+    const role =
+      roleDrafts[member.id] ??
+      normalizeUserType(member.role);
+
+    if (
+      member.id === currentUserId &&
+      role !== "admin"
+    ) {
+      setRoleError(
+        "You cannot remove your own Admin access.",
+      );
+      return;
+    }
+
+    setRoleError("");
+    setRoleBusyUserId(member.id);
+
+    try {
+      const response = await fetch(
+        "/api/admin/users/role",
+        {
+          method: "POST",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            userId: member.id,
+            role,
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(() => ({}))) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to update user type.",
+        );
+      }
+
+      window.location.reload();
+    } catch (caught) {
+      setRoleError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to update user type.",
+      );
+      setRoleBusyUserId(null);
+    }
+  }
+
   return (
     <div className="stack gap-lg">
+      {roleBusyUserId ? (
+        <SavingOverlay
+          title="Updating user type"
+          message="Applying the new access level securely."
+        />
+      ) : null}
+
+      {roleError ? (
+        <div
+          className="form-notice error-text"
+          role="alert"
+        >
+          <span>!</span>
+          {roleError}
+        </div>
+      ) : null}
+
       <section className="panel admin-traveler-hub">
         <div className="admin-traveler-hero">
           <div className="admin-traveler-hero-copy">
@@ -257,8 +369,14 @@ export function AdminOverview({
               <div className="admin-user-expanded">
                 <div className="admin-user-meta simplified">
                   <div>
-                    <small>Role</small>
-                    <strong>{member.role}</strong>
+                    <small>User type</small>
+                    <strong>
+                      {normalizeUserType(
+                        member.role,
+                      ) === "admin"
+                        ? "Admin"
+                        : "Traveler"}
+                    </strong>
                   </div>
                   <div>
                     <small>Account created</small>
@@ -266,6 +384,75 @@ export function AdminOverview({
                       {formatDateTime(member.createdAt)}
                     </strong>
                   </div>
+                </div>
+
+                <div className="admin-user-type-control">
+                  <label>
+                    <span>Change user type</span>
+                    <select
+                      value={
+                        roleDrafts[member.id] ??
+                        normalizeUserType(
+                          member.role,
+                        )
+                      }
+                      disabled={
+                        member.id ===
+                        currentUserId
+                      }
+                      onChange={(event) =>
+                        setRoleDrafts(
+                          (current) => ({
+                            ...current,
+                            [member.id]:
+                              event.target
+                                .value as UserType,
+                          }),
+                        )
+                      }
+                    >
+                      <option value="user">
+                        Traveler
+                      </option>
+                      <option value="admin">
+                        Admin
+                      </option>
+                    </select>
+                  </label>
+
+                  <button
+                    className="button secondary"
+                    type="button"
+                    data-requires-online="true"
+                    disabled={
+                      roleBusyUserId !== null ||
+                      member.id ===
+                        currentUserId ||
+                      (
+                        roleDrafts[member.id] ??
+                        normalizeUserType(
+                          member.role,
+                        )
+                      ) ===
+                        normalizeUserType(
+                          member.role,
+                        )
+                    }
+                    onClick={() =>
+                      void saveUserType(
+                        member,
+                      )
+                    }
+                  >
+                    Save type
+                  </button>
+
+                  <p className="admin-user-type-note">
+                    {member.id ===
+                    currentUserId
+                      ? "Your own Admin type is locked here to prevent accidental loss of Admin access."
+                      : "Traveler access follows assigned countries. Admin can access all Admin tools and destinations."}
+                  </p>
                 </div>
 
                 <div className="admin-assignment-block">

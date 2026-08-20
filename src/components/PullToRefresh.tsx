@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 
+const ACTIVATION_DISTANCE = 14;
 const TRIGGER_DISTANCE = 74;
 const MAX_DISTANCE = 118;
 
@@ -40,28 +41,34 @@ function hasUnsavedFormChanges(): boolean {
           );
         }
 
-        if (
-          element.type === "file"
-        ) {
+        if (element.type === "file") {
           return (
             element.files !== null &&
             element.files.length > 0
           );
         }
 
-        return element.value !== element.defaultValue;
+        return (
+          element.value !==
+          element.defaultValue
+        );
       }
 
       if (
         element instanceof HTMLTextAreaElement
       ) {
-        return element.value !== element.defaultValue;
+        return (
+          element.value !==
+          element.defaultValue
+        );
       }
 
       if (
         element instanceof HTMLSelectElement
       ) {
-        return Array.from(element.options).some(
+        return Array.from(
+          element.options,
+        ).some(
           (option) =>
             option.selected !==
             option.defaultSelected,
@@ -80,7 +87,7 @@ function shouldIgnoreTarget(
     return false;
   }
 
-  return Boolean(
+  if (
     target.closest(
       [
         "input",
@@ -90,23 +97,69 @@ function shouldIgnoreTarget(
         "[contenteditable='true']",
         "[data-pull-refresh-ignore='true']",
       ].join(","),
-    ),
+    )
+  ) {
+    return true;
+  }
+
+  let element: Element | null = target;
+
+  while (
+    element &&
+    element !== document.body
+  ) {
+    if (
+      element instanceof HTMLElement &&
+      element.scrollHeight >
+        element.clientHeight + 2
+    ) {
+      const overflowY =
+        window.getComputedStyle(
+          element,
+        ).overflowY;
+
+      if (
+        overflowY === "auto" ||
+        overflowY === "scroll"
+      ) {
+        return true;
+      }
+    }
+
+    element = element.parentElement;
+  }
+
+  return false;
+}
+
+function pageIsAtTop(): boolean {
+  return (
+    window.scrollY <= 0 &&
+    document.documentElement.scrollTop <= 0
   );
 }
 
 export function PullToRefresh() {
-  const startYRef = useRef<number | null>(null);
+  const startXRef =
+    useRef<number | null>(null);
+  const startYRef =
+    useRef<number | null>(null);
   const activeRef = useRef(false);
+  const engagedRef = useRef(false);
   const distanceRef = useRef(0);
   const refreshingRef = useRef(false);
-  const [distance, setDistance] = useState(0);
+
+  const [distance, setDistance] =
+    useState(0);
   const [state, setState] =
     useState<PullState>("IDLE");
 
   useEffect(() => {
     function reset() {
+      startXRef.current = null;
       startYRef.current = null;
       activeRef.current = false;
+      engagedRef.current = false;
       distanceRef.current = 0;
 
       if (!refreshingRef.current) {
@@ -115,59 +168,96 @@ export function PullToRefresh() {
       }
     }
 
-    function touchStart(event: TouchEvent) {
+    function touchStart(
+      event: TouchEvent,
+    ) {
       if (
         event.touches.length !== 1 ||
-        window.scrollY > 0 ||
-        document.documentElement.scrollTop > 0 ||
-        document.body.dataset.actionLoading === "true" ||
+        !pageIsAtTop() ||
+        document.body.dataset
+          .actionLoading === "true" ||
         shouldIgnoreTarget(event.target)
       ) {
         reset();
         return;
       }
 
-      startYRef.current =
-        event.touches[0]?.clientY ?? null;
-      activeRef.current =
-        startYRef.current !== null;
+      const touch = event.touches[0];
+
+      if (!touch) {
+        reset();
+        return;
+      }
+
+      startXRef.current = touch.clientX;
+      startYRef.current = touch.clientY;
+      activeRef.current = true;
+      engagedRef.current = false;
     }
 
-    function touchMove(event: TouchEvent) {
+    function touchMove(
+      event: TouchEvent,
+    ) {
       if (
         !activeRef.current ||
+        startXRef.current === null ||
         startYRef.current === null ||
         event.touches.length !== 1
       ) {
         return;
       }
 
-      const currentY =
-        event.touches[0]?.clientY ??
-        startYRef.current;
-      const rawDistance =
-        currentY - startYRef.current;
+      const touch = event.touches[0];
 
-      if (rawDistance <= 0) {
-        reset();
+      if (!touch) {
         return;
       }
 
+      const deltaX =
+        touch.clientX - startXRef.current;
+      const deltaY =
+        touch.clientY - startYRef.current;
+
       if (
-        window.scrollY > 0 ||
-        document.documentElement.scrollTop > 0
+        Math.abs(deltaX) >
+          Math.abs(deltaY) &&
+        Math.abs(deltaX) >
+          ACTIVATION_DISTANCE
       ) {
         reset();
         return;
       }
 
-      event.preventDefault();
+      if (deltaY <= 0) {
+        reset();
+        return;
+      }
 
-      const resisted =
-        Math.min(
-          MAX_DISTANCE,
-          rawDistance * 0.58,
-        );
+      if (!pageIsAtTop()) {
+        reset();
+        return;
+      }
+
+      if (
+        !engagedRef.current &&
+        deltaY < ACTIVATION_DISTANCE
+      ) {
+        return;
+      }
+
+      engagedRef.current = true;
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      const resisted = Math.min(
+        MAX_DISTANCE,
+        (
+          deltaY -
+          ACTIVATION_DISTANCE
+        ) * 0.58,
+      );
 
       distanceRef.current = resisted;
       setDistance(resisted);
@@ -179,7 +269,10 @@ export function PullToRefresh() {
     }
 
     function touchEnd() {
-      if (!activeRef.current) {
+      if (
+        !activeRef.current ||
+        !engagedRef.current
+      ) {
         reset();
         return;
       }
@@ -188,8 +281,10 @@ export function PullToRefresh() {
         distanceRef.current >=
         TRIGGER_DISTANCE;
 
+      startXRef.current = null;
       startYRef.current = null;
       activeRef.current = false;
+      engagedRef.current = false;
 
       if (!shouldRefresh) {
         setDistance(0);
@@ -248,12 +343,10 @@ export function PullToRefresh() {
       refreshingRef.current = true;
       setState("REFRESHING");
       setDistance(TRIGGER_DISTANCE);
-      document.body.dataset.actionLoading =
-        "true";
 
       window.setTimeout(() => {
         window.location.reload();
-      }, 280);
+      }, 240);
     }
 
     document.addEventListener(
@@ -305,8 +398,7 @@ export function PullToRefresh() {
     };
   }, []);
 
-  const visible =
-    state !== "IDLE";
+  const visible = state !== "IDLE";
 
   return (
     <div
@@ -338,6 +430,7 @@ export function PullToRefresh() {
               ? "!"
               : "↓"}
       </span>
+
       <strong>
         {state === "READY"
           ? "Release to refresh"

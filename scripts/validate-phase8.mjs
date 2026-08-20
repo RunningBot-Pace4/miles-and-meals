@@ -67,6 +67,74 @@ for (const table of [
   }
 }
 
+const pullToRefresh = read(
+  "src/components/PullToRefresh.tsx",
+);
+const globalCss = read(
+  "src/app/globals.css",
+);
+const profileSettings = read(
+  "src/components/ProfileSettingsForm.tsx",
+);
+const profileRoute = read(
+  "src/app/api/account/profile/route.ts",
+);
+const adminOverview = read(
+  "src/components/AdminOverview.tsx",
+);
+const adminRoleRoute = read(
+  "src/app/api/admin/users/role/route.ts",
+);
+
+if (
+  !pullToRefresh.includes(
+    "ACTIVATION_DISTANCE",
+  ) ||
+  pullToRefresh.includes(
+    'document.body.dataset.actionLoading =',
+  )
+) {
+  fail(
+    "Pull-to-refresh must preserve native scrolling and must not leave a global loading lock.",
+  );
+}
+
+if (
+  globalCss.includes(
+    'body[data-action-loading="true"] {\n  overflow: hidden !important;',
+  )
+) {
+  fail(
+    "Global CSS must not permanently freeze scrolling from a stale action-loading flag.",
+  );
+}
+
+if (
+  !profileSettings.includes(
+    "User name",
+  ) ||
+  !profileRoute.includes(
+    "name: input.name",
+  )
+) {
+  fail(
+    "Profile user-name editing is missing.",
+  );
+}
+
+if (
+  !adminOverview.includes(
+    "Change user type",
+  ) ||
+  !adminRoleRoute.includes(
+    "adminUserRoleSchema",
+  )
+) {
+  fail(
+    "Admin user-type assignment is missing.",
+  );
+}
+
 const notificationSettings = read(
   "src/components/NotificationSettings.tsx",
 );

@@ -213,6 +213,7 @@ export default async function AdminPage() {
       <AdminOverview
         users={userOverview}
         countries={countryOverview}
+        currentUserId={currentSession.user.id}
       />
 
       <AdminForms

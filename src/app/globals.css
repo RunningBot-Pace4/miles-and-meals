@@ -7667,15 +7667,8 @@ input[type="time"]::-webkit-datetime-edit {
   cursor: progress;
 }
 
-body[data-action-loading="true"] {
-  overflow: hidden !important;
-}
-
-body[data-action-loading="true"]
-  > *:not(.trip-loading-overlay):not(script):not(style) {
-  pointer-events: none !important;
-  user-select: none !important;
-}
+/* SavingOverlay itself owns scroll/pointer locking.
+   Do not globally freeze the page from a stale data attribute. */
 
 /* Home: boarding-pass hero ------------------------------------------------- */
 
@@ -10252,7 +10245,16 @@ tr + tr td {
 
 html,
 body {
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: auto;
+}
+
+html {
+  overflow-y: auto;
+}
+
+body {
+  overflow-y: visible;
+  touch-action: auto;
 }
 
 /* Pull to refresh ---------------------------------------------------------- */
@@ -10760,5 +10762,66 @@ body {
 @keyframes phase8-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/* v41 — Scroll safety + profile/admin user type controls                    */
+/* -------------------------------------------------------------------------- */
+
+.profile-name-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.profile-name-field small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.admin-user-type-control {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.admin-user-type-control label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-user-type-control label > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.admin-user-type-control select {
+  min-height: 44px;
+}
+
+.admin-user-type-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 560px) {
+  .admin-user-type-control {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-user-type-control .button {
+    width: 100%;
   }
 }

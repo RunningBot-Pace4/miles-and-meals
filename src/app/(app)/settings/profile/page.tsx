@@ -14,7 +14,7 @@ export default async function ProfileSettingsPage() {
           <p className="eyebrow">YOUR PROFILE</p>
           <h1>Make it yours</h1>
           <p className="muted">
-            Pick an avatar and color that are easy to spot during the trip.
+            Update your name, avatar and color so your travel crew can spot you easily.
           </p>
         </div>
         <Link className="button secondary" href="/dashboard">

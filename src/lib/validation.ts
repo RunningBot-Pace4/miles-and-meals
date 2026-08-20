@@ -27,6 +27,7 @@ export const createUserSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email(),
   password: z.string().min(12).max(128),
+  role: z.enum(["user", "admin"]).default("user"),
 });
 
 export const resetUserPasswordSchema = z.object({
@@ -34,7 +35,13 @@ export const resetUserPasswordSchema = z.object({
   newPassword: z.string().min(12).max(128),
 });
 
+export const adminUserRoleSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(["user", "admin"]),
+});
+
 export const profilePreferencesSchema = z.object({
+  name: z.string().trim().min(2).max(100),
   avatarColor: z.enum([
     "teal",
     "amber",

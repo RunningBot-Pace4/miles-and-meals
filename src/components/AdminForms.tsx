@@ -333,8 +333,9 @@ export function AdminForms({
                 name: String(form.get("name") ?? ""),
                 email: String(form.get("email") ?? ""),
                 password: String(form.get("password") ?? ""),
+                role: String(form.get("role") ?? "user"),
               }),
-              "Traveler created with a temporary password. They must set their own password after signing in.",
+              "Person created with the selected user type and a temporary password.",
             )
           }
         >
@@ -370,6 +371,22 @@ export function AdminForms({
               maxLength={128}
               required
             />
+          </label>
+
+          <label>
+            User type
+            <select
+              name="role"
+              defaultValue="user"
+              required
+            >
+              <option value="user">
+                Traveler
+              </option>
+              <option value="admin">
+                Admin
+              </option>
+            </select>
           </label>
 
           <SubmitButton

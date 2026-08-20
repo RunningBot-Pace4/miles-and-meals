@@ -15,7 +15,7 @@ type AdminCreateUserInput = {
     name: string;
     email: string;
     password: string;
-    role: string;
+    role: "user" | "admin";
   };
 };
 
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
         name: input.name,
         email: input.email,
         password: input.password,
-        role: "user",
+        role: input.role,
       },
     });
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         action: "CREATED",
         entityType: "USER",
         entityId: createdRows[0].id,
-        summary: `${session.user.name} created traveler account ${input.email}.`,
+        summary: `${session.user.name} created ${input.role} account ${input.email}.`,
       });
     }
 
