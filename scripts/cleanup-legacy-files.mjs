@@ -6,6 +6,7 @@ import path from "node:path";
 
 const obsoletePaths = [
   "src/app/api/receipts/upload",
+  "src/app/api/receipts/analyze",
   "src/lib/receipt-storage.ts",
 
   // Legacy password-reset UI from older source overlays.

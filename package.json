@@ -24,7 +24,7 @@
     "push:keys": "node scripts/generate-vapid-keys.mjs",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium webkit",
-    "phase8:check": "node scripts/validate-phase8.mjs"
+    "phase8:check": "npm run cleanup:legacy && node scripts/validate-phase8.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
