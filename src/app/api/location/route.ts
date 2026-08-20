@@ -1,10 +1,15 @@
 import { db } from "@/db";
 import { locationPings } from "@/db/schema";
 import { canAccessCountry } from "@/lib/access";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { locationSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {

@@ -1,8 +1,13 @@
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { profilePreferencesSchema } from "@/lib/validation";
 import { saveAvatarPreferences } from "@/lib/user-preferences";
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {

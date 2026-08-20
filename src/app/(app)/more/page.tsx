@@ -25,10 +25,16 @@ export default async function MorePage() {
           <strong>{session.user.email}</strong>
         </div>
         {admin ? (
-          <Link className="menu-row link-row" href="/admin">
-            <span>Admin: people, trips & countries</span>
-            <span>›</span>
-          </Link>
+          <>
+            <Link className="menu-row link-row" href="/admin">
+              <span>Admin: people, trips & countries</span>
+              <span>›</span>
+            </Link>
+            <Link className="menu-row link-row" href="/admin/health">
+              <span>Admin: app health</span>
+              <span>›</span>
+            </Link>
+          </>
         ) : null}
         <Link className="menu-row link-row" href="/settings/profile">
           <span>Profile & avatar</span>
@@ -36,6 +42,18 @@ export default async function MorePage() {
         </Link>
         <Link className="menu-row link-row" href="/settings/password">
           <span>Change password</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settings/notifications">
+          <span>Notifications</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/activity">
+          <span>Trip activity</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/export">
+          <span>Export trip data</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/planner">

@@ -168,3 +168,30 @@ Meals calculates the current amount from the expense ledger:
 
 `SENT` and `SETTLED` repayments are applied to the ledger so the same balance is
 not offered twice. Each country keeps its own settlement ledger.
+
+
+## Phase 8 Free Edition
+
+v38 adds mobile pull-to-refresh, connection-restored UX, live Expense/Planner
+sync, unchanged automatic Settle Up refresh, PWA update prompts, VAPID Web
+Push, notification preferences, activity history, JSON/CSV export, Admin health,
+Neon client-error logging, same-origin mutation checks and Playwright E2E
+coverage.
+
+See `PHASE8-FREE-COMPLETE.md`.
+
+This release adds database tables. Run:
+
+```bash
+npm install
+npm run db:push
+npm run phase8:check
+npm test
+npm run build
+```
+
+Optional Web Push setup:
+
+```bash
+npm run push:keys
+```

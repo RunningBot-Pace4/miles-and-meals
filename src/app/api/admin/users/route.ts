@@ -2,7 +2,9 @@ import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema";
+import { recordActivity } from "@/lib/activity";
 import { auth } from "@/lib/auth";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createUserSchema } from "@/lib/validation";
 import { setMustChangePassword } from "@/lib/user-preferences";
@@ -26,6 +28,10 @@ function getAdminApi(): AdminCreateUserApi {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -57,6 +63,14 @@ export async function POST(request: Request) {
 
     if (createdRows[0]) {
       await setMustChangePassword(createdRows[0].id, true);
+
+      await recordActivity({
+        actorUserId: session.user.id,
+        action: "CREATED",
+        entityType: "USER",
+        entityId: createdRows[0].id,
+        summary: `${session.user.name} created traveler account ${input.email}.`,
+      });
     }
 
     return Response.json({ user: created }, { status: 201 });

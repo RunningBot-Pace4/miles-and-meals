@@ -1,9 +1,14 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
-import { canAccessCountry, listAccessibleCountries } from "@/lib/access";
+import { canAccessCountry, getCountryWithTrip, listAccessibleCountries } from "@/lib/access";
+import { recordActivity } from "@/lib/activity";
+import { sendPushToCountry } from "@/lib/push";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { travelItemSchema } from "@/lib/validation";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   const session = await getSession();
@@ -50,6 +55,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -95,6 +104,33 @@ export async function POST(request: Request) {
         createdBy: session.user.id,
       })
       .returning({ id: travelItems.id });
+
+    const country = await getCountryWithTrip(input.countryId);
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "CREATED",
+      entityType: "PLANNER",
+      entityId: created[0].id,
+      tripId: country?.tripId ?? null,
+      countryId: input.countryId,
+      summary: `${session.user.name} added planner item: ${input.title}`,
+      metadata: {
+        itemType: input.itemType,
+      },
+    });
+
+    await sendPushToCountry(
+      input.countryId,
+      session.user.id,
+      "PLANNER",
+      {
+        title: "Trip plan updated",
+        body: `${session.user.name} added ${input.title}.`,
+        url: "/planner",
+        tag: `planner-${created[0].id}`,
+      },
+    );
 
     return Response.json({ id: created[0].id }, { status: 201 });
   } catch (error) {

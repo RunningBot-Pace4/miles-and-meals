@@ -7,9 +7,14 @@ import {
   listAccessibleCountries,
   listCountryMembers,
 } from "@/lib/access";
+import { recordActivity } from "@/lib/activity";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
+import { sendPushToCountry } from "@/lib/push";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { expenseSchema } from "@/lib/validation";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   const session = await getSession();
@@ -35,6 +40,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -133,6 +142,33 @@ export async function POST(request: Request) {
           ...split,
         }),
       ),
+    );
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "CREATED",
+      entityType: "EXPENSE",
+      entityId: inserted[0].id,
+      tripId: country.tripId,
+      countryId: input.countryId,
+      summary: `${session.user.name} added expense: ${input.description}`,
+      metadata: {
+        category: input.category,
+        amount: input.transactionAmount,
+        currency: input.transactionCurrency,
+      },
+    });
+
+    await sendPushToCountry(
+      input.countryId,
+      session.user.id,
+      "EXPENSES",
+      {
+        title: "New trip expense",
+        body: `${session.user.name} added ${input.transactionCurrency} ${input.transactionAmount.toFixed(2)} · ${input.description}`,
+        url: "/expenses",
+        tag: `expense-${inserted[0].id}`,
+      },
     );
 
     return Response.json({ id: inserted[0].id }, { status: 201 });

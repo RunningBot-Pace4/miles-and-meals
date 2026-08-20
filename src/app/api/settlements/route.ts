@@ -2,11 +2,20 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { settlements } from "@/db/schema";
 import { canAccessCountry } from "@/lib/access";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
+import { recordActivity } from "@/lib/activity";
+import { sendPushToUsers } from "@/lib/push";
 import { buildCountrySettlementLedger } from "@/lib/settlement-ledger";
 import { settlementActionSchema } from "@/lib/validation";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -78,6 +87,27 @@ export async function POST(request: Request) {
         })
         .returning({ id: settlements.id });
 
+      await recordActivity({
+        actorUserId: session.user.id,
+        action: "MARKED_PAID",
+        entityType: "SETTLEMENT",
+        entityId: inserted[0]?.id ?? null,
+        tripId: ledger.tripId,
+        countryId: ledger.countryId,
+        summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
+      });
+
+      await sendPushToUsers(
+        [input.counterpartyUserId],
+        "PAYMENTS",
+        {
+          title: "Payment marked as paid",
+          body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
+          url: "/settlements",
+          tag: `settlement-${inserted[0]?.id ?? "sent"}`,
+        },
+      );
+
       return Response.json({
         ok: true,
         settlementId: inserted[0]?.id,
@@ -106,6 +136,27 @@ export async function POST(request: Request) {
             eq(settlements.status, "SENT"),
           ),
         );
+
+      await recordActivity({
+        actorUserId: session.user.id,
+        action: "CONFIRMED_RECEIVED",
+        entityType: "SETTLEMENT",
+        entityId: pending.id,
+        tripId: ledger.tripId,
+        countryId: ledger.countryId,
+        summary: `${session.user.name} confirmed payment received.`,
+      });
+
+      await sendPushToUsers(
+        [input.counterpartyUserId],
+        "PAYMENTS",
+        {
+          title: "Payment confirmed",
+          body: `${session.user.name} confirmed your payment was received.`,
+          url: "/settlements",
+          tag: `settlement-${pending.id}`,
+        },
+      );
 
       return Response.json({
         ok: true,
@@ -147,6 +198,27 @@ export async function POST(request: Request) {
         confirmedAt: now,
       })
       .returning({ id: settlements.id });
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "MARKED_RECEIVED",
+      entityType: "SETTLEMENT",
+      entityId: inserted[0]?.id ?? null,
+      tripId: ledger.tripId,
+      countryId: ledger.countryId,
+      summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received.`,
+    });
+
+    await sendPushToUsers(
+      [input.counterpartyUserId],
+      "PAYMENTS",
+      {
+        title: "Payment received",
+        body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received.`,
+        url: "/settlements",
+        tag: `settlement-${inserted[0]?.id ?? "received"}`,
+      },
+    );
 
     return Response.json({
       ok: true,

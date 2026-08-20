@@ -17,10 +17,14 @@
     "test": "vitest run",
     "db:reset": "tsx scripts/reset-db.ts",
     "predev": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs",
-    "prebuild": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check",
+    "prebuild": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check && npm run phase8:check",
     "cleanup:legacy": "node ./scripts/cleanup-legacy-files.mjs",
     "pwa:check": "node scripts/validate-pwa.mjs",
-    "navigation:check": "npm run cleanup:legacy && node scripts/validate-navigation.mjs"
+    "navigation:check": "npm run cleanup:legacy && node scripts/validate-navigation.mjs",
+    "push:keys": "node scripts/generate-vapid-keys.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium webkit",
+    "phase8:check": "node scripts/validate-phase8.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",
@@ -31,7 +35,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.0.0",
-    "tesseract.js": "7.0.0"
+    "tesseract.js": "7.0.0",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -41,6 +46,8 @@
     "drizzle-kit": "^0.31.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
+    "vitest": "^3.2.0",
+    "@types/web-push": "3.6.4",
+    "@playwright/test": "1.62.1"
   }
 }

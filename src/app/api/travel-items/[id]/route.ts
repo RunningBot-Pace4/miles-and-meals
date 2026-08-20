@@ -1,9 +1,14 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems } from "@/db/schema";
-import { canAccessCountry } from "@/lib/access";
+import { canAccessCountry, getCountryWithTrip } from "@/lib/access";
+import { recordActivity } from "@/lib/activity";
+import { sendPushToCountry } from "@/lib/push";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { travelItemSchema } from "@/lib/validation";
+
+export const runtime = "nodejs";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -23,6 +28,10 @@ async function getExistingItem(id: string) {
 }
 
 export async function PATCH(request: Request, context: Context) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -83,6 +92,33 @@ export async function PATCH(request: Request, context: Context) {
       })
       .where(eq(travelItems.id, id));
 
+    const country = await getCountryWithTrip(input.countryId);
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "UPDATED",
+      entityType: "PLANNER",
+      entityId: id,
+      tripId: country?.tripId ?? null,
+      countryId: input.countryId,
+      summary: `${session.user.name} updated planner item: ${input.title}`,
+      metadata: {
+        itemType: input.itemType,
+      },
+    });
+
+    await sendPushToCountry(
+      input.countryId,
+      session.user.id,
+      "PLANNER",
+      {
+        title: "Trip plan changed",
+        body: `${session.user.name} updated ${input.title}.`,
+        url: "/planner",
+        tag: `planner-${id}`,
+      },
+    );
+
     return Response.json({ ok: true });
   } catch (error) {
     const message =
@@ -92,7 +128,11 @@ export async function PATCH(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_request: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -110,7 +150,31 @@ export async function DELETE(_request: Request, context: Context) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const country = await getCountryWithTrip(existing.countryId);
+
   await db.delete(travelItems).where(eq(travelItems.id, id));
+
+  await recordActivity({
+    actorUserId: session.user.id,
+    action: "DELETED",
+    entityType: "PLANNER",
+    entityId: id,
+    tripId: country?.tripId ?? null,
+    countryId: existing.countryId,
+    summary: `${session.user.name} deleted a planner item.`,
+  });
+
+  await sendPushToCountry(
+    existing.countryId,
+    session.user.id,
+    "PLANNER",
+    {
+      title: "Trip plan changed",
+      body: `${session.user.name} removed a planner item.`,
+      url: "/planner",
+      tag: `planner-${id}`,
+    },
+  );
 
   return Response.json({ ok: true });
 }

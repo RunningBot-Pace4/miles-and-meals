@@ -6,9 +6,14 @@ import {
   getCountryWithTrip,
   listCountryMembers,
 } from "@/lib/access";
+import { recordActivity } from "@/lib/activity";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
+import { sendPushToCountry } from "@/lib/push";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { expenseSchema } from "@/lib/validation";
+
+export const runtime = "nodejs";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -25,6 +30,10 @@ async function getExisting(id: string) {
 }
 
 export async function PUT(request: Request, context: Context) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -129,6 +138,28 @@ export async function PUT(request: Request, context: Context) {
       ),
     );
 
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "UPDATED",
+      entityType: "EXPENSE",
+      entityId: id,
+      tripId: country.tripId,
+      countryId: input.countryId,
+      summary: `${session.user.name} updated expense: ${input.description}`,
+    });
+
+    await sendPushToCountry(
+      input.countryId,
+      session.user.id,
+      "EXPENSES",
+      {
+        title: "Expense updated",
+        body: `${session.user.name} updated ${input.description}.`,
+        url: "/expenses",
+        tag: `expense-${id}`,
+      },
+    );
+
     return Response.json({ ok: true });
   } catch (error) {
     const message =
@@ -137,7 +168,11 @@ export async function PUT(request: Request, context: Context) {
   }
 }
 
-export async function DELETE(_request: Request, context: Context) {
+export async function DELETE(request: Request, context: Context) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -156,6 +191,28 @@ export async function DELETE(_request: Request, context: Context) {
   }
 
   await db.delete(expenses).where(eq(expenses.id, id));
+
+  await recordActivity({
+    actorUserId: session.user.id,
+    action: "DELETED",
+    entityType: "EXPENSE",
+    entityId: id,
+    tripId: existing.tripId,
+    countryId: existing.countryId,
+    summary: `${session.user.name} deleted expense: ${existing.description}`,
+  });
+
+  await sendPushToCountry(
+    existing.countryId,
+    session.user.id,
+    "EXPENSES",
+    {
+      title: "Expense removed",
+      body: `${session.user.name} removed ${existing.description}.`,
+      url: "/expenses",
+      tag: `expense-${id}`,
+    },
+  );
 
   return Response.json({ ok: true });
 }

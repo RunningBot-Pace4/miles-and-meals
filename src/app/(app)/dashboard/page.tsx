@@ -151,8 +151,9 @@ export default async function DashboardPage({
   return (
     <div className="stack gap-lg dashboard-page">
       <SettlementLiveRefresh
-        intervalMs={6000}
+        intervalMs={8000}
         showBadge={false}
+        channels={["settlement", "expense", "planner"]}
       />
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">

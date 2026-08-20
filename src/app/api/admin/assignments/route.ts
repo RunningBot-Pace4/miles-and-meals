@@ -2,10 +2,16 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { countries, countryMembers } from "@/db/schema";
 import { ensureTripMember } from "@/lib/access";
+import { recordActivity } from "@/lib/activity";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { assignmentSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -38,6 +44,16 @@ export async function POST(request: Request) {
       })
       .onConflictDoNothing();
 
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "ASSIGNED",
+      entityType: "USER",
+      entityId: input.userId,
+      tripId: countryRows[0].tripId,
+      countryId: input.countryId,
+      summary: `${session.user.name} assigned a traveler to a country.`,
+    });
+
     return Response.json({ ok: true });
   } catch (error) {
     const message =
@@ -47,6 +63,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -67,6 +87,15 @@ export async function DELETE(request: Request) {
           eq(countryMembers.userId, input.userId),
         ),
       );
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "UNASSIGNED",
+      entityType: "USER",
+      entityId: input.userId,
+      countryId: input.countryId,
+      summary: `${session.user.name} removed a traveler from a country.`,
+    });
 
     return Response.json({ ok: true });
   } catch (error) {

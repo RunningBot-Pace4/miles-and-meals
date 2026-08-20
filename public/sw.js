@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v36";
+const CACHE_NAME = "miles-meals-static-v38";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -14,7 +14,13 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting()),
+      .then(() => {
+        if (!self.registration.active) {
+          return self.skipWaiting();
+        }
+
+        return undefined;
+      }),
   );
 });
 
@@ -35,6 +41,12 @@ self.addEventListener("activate", (event) => {
         : Promise.resolve(),
     ]).then(() => self.clients.claim()),
   );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    event.waitUntil(self.skipWaiting());
+  }
 });
 
 async function getOfflineShell() {
@@ -120,3 +132,132 @@ self.addEventListener("fetch", (event) => {
   // Authenticated app/API requests remain network-only by design.
   event.respondWith(fetch(request));
 });
+
+function parsePushPayload(event) {
+  if (!event.data) {
+    return {
+      title: "Miles & Meals",
+      body: "Your trip has a new update.",
+      url: "/dashboard",
+      tag: "miles-meals",
+    };
+  }
+
+  try {
+    return event.data.json();
+  } catch {
+    return {
+      title: "Miles & Meals",
+      body: event.data.text(),
+      url: "/dashboard",
+      tag: "miles-meals",
+    };
+  }
+}
+
+async function setBadge() {
+  if (
+    "setAppBadge" in self.navigator &&
+    typeof self.navigator.setAppBadge === "function"
+  ) {
+    try {
+      await self.navigator.setAppBadge(1);
+    } catch {
+      // Badge support varies by browser/platform.
+    }
+  }
+}
+
+async function clearBadge() {
+  if (
+    "clearAppBadge" in self.navigator &&
+    typeof self.navigator.clearAppBadge === "function"
+  ) {
+    try {
+      await self.navigator.clearAppBadge();
+    } catch {
+      // Badge support varies by browser/platform.
+    }
+  }
+}
+
+self.addEventListener("push", (event) => {
+  const payload = parsePushPayload(event);
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(
+        payload.title || "Miles & Meals",
+        {
+          body:
+            payload.body ||
+            "Your trip has a new update.",
+          icon: "/miles-meals-icon-192.png",
+          badge: "/miles-meals-icon-192.png",
+          tag:
+            payload.tag ||
+            "miles-meals-update",
+          data: {
+            url:
+              payload.url ||
+              "/dashboard",
+          },
+        },
+      ),
+      setBadge(),
+    ]),
+  );
+});
+
+self.addEventListener(
+  "notificationclick",
+  (event) => {
+    event.notification.close();
+
+    const destination =
+      event.notification.data?.url ||
+      "/dashboard";
+
+    event.waitUntil(
+      Promise.all([
+        clearBadge(),
+        self.clients
+          .matchAll({
+            type: "window",
+            includeUncontrolled: true,
+          })
+          .then(async (clients) => {
+            const absoluteUrl = new URL(
+              destination,
+              self.location.origin,
+            ).href;
+
+            for (const client of clients) {
+              if (
+                "focus" in client &&
+                client.url.startsWith(
+                  self.location.origin,
+                )
+              ) {
+                await client.focus();
+
+                if ("navigate" in client) {
+                  await client.navigate(
+                    absoluteUrl,
+                  );
+                }
+
+                return;
+              }
+            }
+
+            if (self.clients.openWindow) {
+              await self.clients.openWindow(
+                absoluteUrl,
+              );
+            }
+          }),
+      ]),
+    );
+  },
+);

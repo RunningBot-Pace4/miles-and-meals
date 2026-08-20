@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/globals.css";
+import { ClientErrorReporter } from "@/components/ClientErrorReporter";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
 import { OfflineNavigationGuard } from "@/components/OfflineNavigationGuard";
+import { OnlineActionGuard } from "@/components/OnlineActionGuard";
 import { PwaLaunchDismiss } from "@/components/PwaLaunchDismiss";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import { PwaRegister } from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
@@ -115,7 +118,10 @@ export default function RootLayout({
         {children}
 
         <NetworkStatusBanner />
+        <PullToRefresh />
         <OfflineNavigationGuard />
+        <OnlineActionGuard />
+        <ClientErrorReporter />
         <PwaRegister />
         <PwaLaunchDismiss />
       </body>

@@ -1,12 +1,18 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { countries, trips } from "@/db/schema";
+import { recordActivity } from "@/lib/activity";
 import { getCountryCatalogItem } from "@/lib/country-catalog";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getDailyFxRate } from "@/lib/fx";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createCountrySchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -74,6 +80,16 @@ export async function POST(request: Request) {
         fxRateProvider,
       })
       .returning({ id: countries.id });
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "CREATED",
+      entityType: "COUNTRY",
+      entityId: created[0].id,
+      tripId: input.tripId,
+      countryId: created[0].id,
+      summary: `${session.user.name} added ${catalogCountry.name}.`,
+    });
 
     return Response.json(
       {

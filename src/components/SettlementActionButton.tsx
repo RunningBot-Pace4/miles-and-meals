@@ -74,6 +74,7 @@ export function SettlementActionButton({
               : "button settlement-action-button settlement-action-secondary"
           }
           disabled={busy}
+          data-requires-online="true"
           onClick={runAction}
           type="button"
         >

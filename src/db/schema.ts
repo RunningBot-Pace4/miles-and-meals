@@ -122,6 +122,70 @@ export const userPreferences = pgTable("user_preferences", {
     .notNull(),
 });
 
+export const notificationPreferences = pgTable(
+  "notification_preferences",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    paymentsEnabled: boolean("payments_enabled").default(true).notNull(),
+    expensesEnabled: boolean("expenses_enabled").default(true).notNull(),
+    plannerEnabled: boolean("planner_enabled").default(true).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("push_subscription_endpoint_uq").on(table.endpoint),
+    index("push_subscription_user_idx").on(table.userId),
+  ],
+);
+
+export const appErrors = pgTable(
+  "app_errors",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    route: text("route"),
+    message: text("message").notNull(),
+    stack: text("stack"),
+    digest: text("digest"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("app_error_time_idx").on(table.createdAt),
+    index("app_error_user_time_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const trips = pgTable("trips", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
@@ -188,6 +252,44 @@ export const countryMembers = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [primaryKey({ columns: [table.countryId, table.userId] })],
+);
+
+export const activityLogs = pgTable(
+  "activity_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    actorUserId: text("actor_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    action: text("action").notNull(),
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id"),
+    tripId: uuid("trip_id").references(() => trips.id, {
+      onDelete: "cascade",
+    }),
+    countryId: uuid("country_id").references(() => countries.id, {
+      onDelete: "cascade",
+    }),
+    summary: text("summary").notNull(),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("activity_country_time_idx").on(
+      table.countryId,
+      table.createdAt,
+    ),
+    index("activity_trip_time_idx").on(
+      table.tripId,
+      table.createdAt,
+    ),
+    index("activity_actor_time_idx").on(
+      table.actorUserId,
+      table.createdAt,
+    ),
+  ],
 );
 
 export const expenses = pgTable(
@@ -360,6 +462,10 @@ export const schema = {
   account,
   verification,
   userPreferences,
+  notificationPreferences,
+  pushSubscriptions,
+  activityLogs,
+  appErrors,
   trips,
   tripMembers,
   countries,

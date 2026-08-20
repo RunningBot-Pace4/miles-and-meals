@@ -2,28 +2,62 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
 } from "react";
 
 const PROBE_TIMEOUT_MS = 3500;
 
+export type LiveRefreshChannel =
+  | "settlement"
+  | "expense"
+  | "planner";
+
 type LiveRefreshPayload = {
-  ok?: boolean;
   settlementVersion?: string;
+  expenseVersion?: string;
+  plannerVersion?: string;
 };
+
+function payloadVersion(
+  payload: LiveRefreshPayload,
+  channel: LiveRefreshChannel,
+): string | null {
+  if (channel === "settlement") {
+    return payload.settlementVersion ?? null;
+  }
+
+  if (channel === "expense") {
+    return payload.expenseVersion ?? null;
+  }
+
+  return payload.plannerVersion ?? null;
+}
 
 export function SettlementLiveRefresh({
   intervalMs = 4000,
   showBadge = true,
+  channels = ["settlement"],
 }: {
   intervalMs?: number;
   showBadge?: boolean;
+  channels?: LiveRefreshChannel[];
 }) {
-  const versionRef = useRef<string | null>(null);
+  const versionsRef = useRef<
+    Partial<Record<LiveRefreshChannel, string>>
+  >({});
+  const channelKey = useMemo(
+    () => [...channels].sort().join(","),
+    [channels],
+  );
 
   useEffect(() => {
+    const activeChannels = channelKey
+      .split(",")
+      .filter(Boolean) as LiveRefreshChannel[];
+
     let disposed = false;
-    let refreshInFlight = false;
+    let pollInFlight = false;
 
     function canPoll(): boolean {
       return (
@@ -33,9 +67,8 @@ export function SettlementLiveRefresh({
       );
     }
 
-    async function loadVersion(): Promise<
-      string | null
-    > {
+    async function loadVersions():
+      Promise<LiveRefreshPayload | null> {
       const controller = new AbortController();
       const timer = window.setTimeout(
         () => controller.abort(),
@@ -60,10 +93,9 @@ export function SettlementLiveRefresh({
           return null;
         }
 
-        const payload =
-          (await response.json()) as LiveRefreshPayload;
-
-        return payload.settlementVersion ?? null;
+        return (
+          (await response.json()) as LiveRefreshPayload
+        );
       } catch {
         return null;
       } finally {
@@ -74,34 +106,52 @@ export function SettlementLiveRefresh({
     async function poll() {
       if (
         disposed ||
-        refreshInFlight ||
+        pollInFlight ||
         !canPoll()
       ) {
         return;
       }
 
-      refreshInFlight = true;
+      pollInFlight = true;
 
       try {
-        const version = await loadVersion();
+        const payload = await loadVersions();
 
-        if (
-          disposed ||
-          version === null
-        ) {
+        if (!payload || disposed) {
           return;
         }
 
-        if (versionRef.current === null) {
-          versionRef.current = version;
-          return;
+        let changed = false;
+
+        for (const channel of activeChannels) {
+          const next = payloadVersion(
+            payload,
+            channel,
+          );
+
+          if (next === null) {
+            continue;
+          }
+
+          const previous =
+            versionsRef.current[channel];
+
+          if (previous === undefined) {
+            versionsRef.current[channel] = next;
+            continue;
+          }
+
+          if (previous !== next) {
+            changed = true;
+            break;
+          }
         }
 
-        if (versionRef.current !== version) {
+        if (changed && canPoll()) {
           window.location.reload();
         }
       } finally {
-        refreshInFlight = false;
+        pollInFlight = false;
       }
     }
 
@@ -155,7 +205,7 @@ export function SettlementLiveRefresh({
         pollWhenVisible,
       );
     };
-  }, [intervalMs]);
+  }, [channelKey, intervalMs]);
 
   if (!showBadge) {
     return null;
@@ -164,7 +214,7 @@ export function SettlementLiveRefresh({
   return (
     <span
       className="settlement-live-badge"
-      title="Settlement status updates automatically while this page is online."
+      title="Shared trip data updates automatically while this page is online."
     >
       <i aria-hidden="true" />
       Live updates

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { countries, expenseSplits, expenses, user } from "@/db/schema";
 import { DeleteExpenseButton } from "@/components/DeleteExpenseButton";
 import { ReceiptViewerButton } from "@/components/ReceiptViewerButton";
+import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";
 import { listAccessibleCountries } from "@/lib/access";
 import { effectiveConvertedAmount, formatMoney, toNumber } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
@@ -91,6 +92,11 @@ export default async function ExpensesPage() {
 
   return (
     <div className="stack gap-lg">
+      <SettlementLiveRefresh
+        intervalMs={8000}
+        showBadge={false}
+        channels={["expense", "settlement"]}
+      />
       <div className="page-heading">
         <div>
           <p className="eyebrow">MONEY</p>

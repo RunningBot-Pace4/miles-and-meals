@@ -1,6 +1,8 @@
 import { db } from "@/db";
 import { session } from "@/db/schema";
+import { recordActivity } from "@/lib/activity";
 import { auth } from "@/lib/auth";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { resetUserPasswordSchema } from "@/lib/validation";
 import { setMustChangePassword } from "@/lib/user-preferences";
@@ -23,6 +25,10 @@ function getAdminApi(): SetUserPasswordApi {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const currentSession = await getSession();
 
   if (!currentSession) {
@@ -46,6 +52,14 @@ export async function POST(request: Request) {
 
     await setMustChangePassword(input.userId, true);
     await db.delete(session).where(eq(session.userId, input.userId));
+
+    await recordActivity({
+      actorUserId: currentSession.user.id,
+      action: "RESET_PASSWORD",
+      entityType: "USER",
+      entityId: input.userId,
+      summary: `${currentSession.user.name} issued a temporary password.`,
+    });
 
     return Response.json({
       ok: true,

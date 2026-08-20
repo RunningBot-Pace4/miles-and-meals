@@ -1,10 +1,16 @@
 import { db } from "@/db";
 import { and, eq, sql } from "drizzle-orm";
 import { tripMembers, trips } from "@/db/schema";
+import { recordActivity } from "@/lib/activity";
+import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createTripSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
   const session = await getSession();
 
   if (!session) {
@@ -53,6 +59,15 @@ export async function POST(request: Request) {
       tripId: created[0].id,
       userId: session.user.id,
       role: "ADMIN",
+    });
+
+    await recordActivity({
+      actorUserId: session.user.id,
+      action: "CREATED",
+      entityType: "TRIP",
+      entityId: created[0].id,
+      tripId: created[0].id,
+      summary: `${session.user.name} created trip ${input.name}.`,
     });
 
     return Response.json({ id: created[0].id }, { status: 201 });
