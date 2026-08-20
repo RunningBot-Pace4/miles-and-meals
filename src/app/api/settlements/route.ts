@@ -104,6 +104,7 @@ export async function POST(request: Request) {
           title: "Payment marked as paid",
           body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
           url: "/settlements",
+          countryId: ledger.countryId,
           tag: `settlement-${inserted[0]?.id ?? "sent"}`,
         },
       );
@@ -154,6 +155,7 @@ export async function POST(request: Request) {
           title: "Payment confirmed",
           body: `${session.user.name} confirmed your payment was received.`,
           url: "/settlements",
+          countryId: ledger.countryId,
           tag: `settlement-${pending.id}`,
         },
       );
@@ -216,6 +218,7 @@ export async function POST(request: Request) {
         title: "Payment received",
         body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received.`,
         url: "/settlements",
+        countryId: ledger.countryId,
         tag: `settlement-${inserted[0]?.id ?? "received"}`,
       },
     );

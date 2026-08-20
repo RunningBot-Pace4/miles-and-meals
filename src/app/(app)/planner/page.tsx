@@ -2,7 +2,6 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
 import { PlannerClient } from "@/components/PlannerClient";
-import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";
 import { listAccessibleCountries } from "@/lib/access";
 import { requirePageSession } from "@/lib/session";
 
@@ -43,11 +42,6 @@ export default async function PlannerPage() {
 
   return (
     <div className="stack gap-lg">
-      <SettlementLiveRefresh
-        intervalMs={8000}
-        showBadge={false}
-        channels={["planner"]}
-      />
       <div className="page-heading planner-page-heading">
         <div>
           <p className="eyebrow">MILES & MEALS</p>

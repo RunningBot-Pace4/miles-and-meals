@@ -3,29 +3,56 @@
 import { useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
-export function DeleteExpenseButton({ id }: { id: string }) {
-  const [busy, setBusy] = useState(false);
+export function DeleteExpenseButton({
+  id,
+  quiet = false,
+}: {
+  id: string;
+  quiet?: boolean;
+}) {
+  const [busy, setBusy] =
+    useState(false);
 
   async function remove() {
-    if (!window.confirm("Delete this expense?")) {
+    if (
+      !window.confirm(
+        "Delete this expense?",
+      )
+    ) {
       return;
     }
 
     setBusy(true);
-    const response = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
 
-    if (!response.ok) {
-      window.alert("Unable to delete expense.");
+    try {
+      const response = await fetch(
+        `/api/expenses/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error();
+      }
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "mnm:expense-updated",
+        ),
+      );
       setBusy(false);
-      return;
+    } catch {
+      window.alert(
+        "Unable to delete expense.",
+      );
+      setBusy(false);
     }
-
-    window.location.reload();
   }
 
   return (
     <>
-      {busy ? (
+      {busy && !quiet ? (
         <SavingOverlay
           title="Removing expense"
           message="Updating trip totals and traveler balances."
@@ -38,7 +65,9 @@ export function DeleteExpenseButton({ id }: { id: string }) {
         onClick={remove}
         type="button"
       >
-        Delete
+        {busy
+          ? "Removing…"
+          : "Delete"}
       </button>
     </>
   );

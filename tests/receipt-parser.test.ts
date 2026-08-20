@@ -38,6 +38,16 @@ TOTAL 120.000 VND
     expect(parsed.totalAmount).toBe(120000);
     expect(parsed.totalCandidates).toContain(120000);
     expect(parsed.currencyCode).toBe("VND");
+    expect(
+      ["HIGH", "MEDIUM", "LOW"],
+    ).toContain(
+      parsed.merchantConfidence,
+    );
+    expect(
+      ["HIGH", "MEDIUM", "LOW"],
+    ).toContain(
+      parsed.totalConfidence,
+    );
   });
 
   it("prefers a merchant-like header over an address", () => {
@@ -144,6 +154,21 @@ TOTAL EUR 1.234,56
     );
 
     expect(parsed.totalAmount).toBe(1234.56);
+  });
+
+  it("flags missing receipt fields with low confidence", () => {
+    const parsed = parseReceiptText(
+      "THANK YOU",
+      "MYR",
+      22,
+    );
+
+    expect(
+      parsed.merchantConfidence,
+    ).toBe("LOW");
+    expect(
+      parsed.totalConfidence,
+    ).toBe("LOW");
   });
 
   it("handles dot thousands on VND receipts", () => {

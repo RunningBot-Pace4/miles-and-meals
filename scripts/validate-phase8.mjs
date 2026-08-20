@@ -46,6 +46,24 @@ const requiredFiles = [
   "src/lib/request-security.ts",
   "playwright.config.ts",
   "e2e/public-pwa.spec.ts",
+  "e2e/two-user-settlement.spec.ts",
+  "src/components/LiveExpensesWorkspace.tsx",
+  "src/components/LiveDashboardFinance.tsx",
+  "src/components/NotificationCenter.tsx",
+  "src/components/AdminBackupRestore.tsx",
+  "src/lib/draft-storage.ts",
+  "src/lib/expense-live.ts",
+  "src/lib/health.ts",
+  "src/lib/performance.ts",
+  "src/app/api/expenses/live/route.ts",
+  "src/app/api/dashboard/finance/route.ts",
+  "src/app/api/notifications/test/route.ts",
+  "src/app/api/notifications/inbox/route.ts",
+  "src/app/api/admin/users/status/route.ts",
+  "src/app/api/admin/assignments/bulk/route.ts",
+  "src/app/api/admin/backup/route.ts",
+  "src/app/(app)/notifications/page.tsx",
+  "src/app/(app)/admin/backup/page.tsx",
 ];
 
 for (const file of requiredFiles) {
@@ -59,6 +77,8 @@ const schema = read(
 for (const table of [
   "notificationPreferences",
   "pushSubscriptions",
+  "notifications",
+  "apiMetrics",
   "activityLogs",
   "appErrors",
 ]) {
@@ -403,6 +423,211 @@ if (
 ) {
   fail(
     "Edit-after-create Admin configuration is missing.",
+  );
+}
+
+const liveExpenses = read(
+  "src/components/LiveExpensesWorkspace.tsx",
+);
+const plannerClientV45 = read(
+  "src/components/PlannerClient.tsx",
+);
+const expensePageV45 = read(
+  "src/app/(app)/expenses/page.tsx",
+);
+const plannerPageV45 = read(
+  "src/app/(app)/planner/page.tsx",
+);
+const expenseFormV45 = read(
+  "src/components/ExpenseForm.tsx",
+);
+const receiptParserV45 = read(
+  "src/lib/receipt-parser.ts",
+);
+const notificationCenterV45 = read(
+  "src/components/NotificationCenter.tsx",
+);
+const notificationSettingsV45 = read(
+  "src/components/NotificationSettings.tsx",
+);
+const pushV45 = read(
+  "src/lib/push.ts",
+);
+const adminStatusV45 = read(
+  "src/app/api/admin/users/status/route.ts",
+);
+const adminBulkAccessV45 = read(
+  "src/app/api/admin/assignments/bulk/route.ts",
+);
+const adminBackupV45 = read(
+  "src/app/api/admin/backup/route.ts",
+);
+const healthV45 = read(
+  "src/lib/health.ts",
+);
+const adminHealthV45 = read(
+  "src/app/(app)/admin/health/page.tsx",
+);
+const twoUserE2EV45 = read(
+  "e2e/two-user-settlement.spec.ts",
+);
+
+if (
+  liveExpenses.includes(
+    "window.location.reload",
+  ) ||
+  plannerClientV45.includes(
+    "window.location.reload",
+  ) ||
+  expensePageV45.includes(
+    "SettlementLiveRefresh",
+  ) ||
+  plannerPageV45.includes(
+    "SettlementLiveRefresh",
+  )
+) {
+  fail(
+    "Expense and Planner collaboration must update in place without full-page live refresh.",
+  );
+}
+
+if (
+  !liveExpenses.includes(
+    "POLL_INTERVAL_MS = 8000",
+  ) ||
+  !plannerClientV45.includes(
+    "setItemsState",
+  ) ||
+  !plannerClientV45.includes(
+    "8000",
+  )
+) {
+  fail(
+    "Expense and Planner in-place live polling is missing.",
+  );
+}
+
+if (
+  !expenseFormV45.includes(
+    "Unsaved expense found",
+  ) ||
+  !expenseFormV45.includes(
+    "restoreExpenseDraft",
+  ) ||
+  !plannerClientV45.includes(
+    "Unsaved planner draft found",
+  ) ||
+  !plannerClientV45.includes(
+    "restoreDraft",
+  )
+) {
+  fail(
+    "Expense and Planner draft recovery is missing.",
+  );
+}
+
+if (
+  !receiptParserV45.includes(
+    "merchantConfidence",
+  ) ||
+  !receiptParserV45.includes(
+    "totalConfidence",
+  ) ||
+  !expenseFormV45.includes(
+    "Shop confidence",
+  ) ||
+  !expenseFormV45.includes(
+    "Total confidence",
+  )
+) {
+  fail(
+    "Receipt OCR field-level confidence indicators are missing.",
+  );
+}
+
+if (
+  !notificationSettingsV45.includes(
+    "Send test notification",
+  ) ||
+  !notificationCenterV45.includes(
+    "Mark all read",
+  ) ||
+  !pushV45.includes(
+    "recordInAppNotifications",
+  )
+) {
+  fail(
+    "Test notification and in-app notification center are missing.",
+  );
+}
+
+if (
+  !adminOverview.includes(
+    "Disable user",
+  ) ||
+  !adminOverview.includes(
+    "Select all",
+  ) ||
+  !adminOverview.includes(
+    "Clear all",
+  ) ||
+  !adminStatusV45.includes(
+    "banned: input.disabled",
+  ) ||
+  !adminBulkAccessV45.includes(
+    "countryIds",
+  )
+) {
+  fail(
+    "Admin disable/reactivate and bulk country access controls are missing.",
+  );
+}
+
+if (
+  !adminBackupV45.includes(
+    "RESTORE TRAVEL DATA",
+  ) ||
+  !adminBackupV45.includes(
+    "DELETE FROM trips",
+  ) ||
+  adminBackupV45.includes(
+    "DELETE FROM user",
+  ) ||
+  !adminBackupV45.includes(
+    "loginDataPreserved",
+  )
+) {
+  fail(
+    "Controlled travel backup restore must preserve login tables.",
+  );
+}
+
+if (
+  !healthV45.includes(
+    "runConsistencyChecks",
+  ) ||
+  !healthV45.includes(
+    "loadPerformanceSnapshot",
+  ) ||
+  !adminHealthV45.includes(
+    "DATABASE CONSISTENCY",
+  ) ||
+  !adminHealthV45.includes(
+    "PERFORMANCE",
+  )
+) {
+  fail(
+    "Database consistency and free performance diagnostics are missing.",
+  );
+}
+
+if (
+  !twoUserE2EV45.includes(
+    "Mark Paid and Confirm Received update in place without page reload",
+  )
+) {
+  fail(
+    "Two-user settlement E2E coverage is missing.",
   );
 }
 

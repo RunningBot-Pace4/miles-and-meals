@@ -174,6 +174,12 @@ export function AdminOverview({
     null,
   );
   const [
+    statusBusyUserId,
+    setStatusBusyUserId,
+  ] = useState<string | null>(
+    null,
+  );
+  const [
     assignmentBusyKey,
     setAssignmentBusyKey,
   ] = useState<string | null>(
@@ -423,6 +429,151 @@ export function AdminOverview({
     }
   }
 
+  async function setAccountDisabled(
+    member: AdminUserOverview,
+    disabled: boolean,
+  ) {
+    if (
+      member.id === currentUserId &&
+      disabled
+    ) {
+      setActionError(
+        "You cannot disable your own Admin account.",
+      );
+      return;
+    }
+
+    const message = disabled
+      ? `Disable ${member.name}? Their active session will be signed out immediately.`
+      : `Reactivate ${member.name}? They can sign in again immediately.`;
+
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    setActionError("");
+    setStatusBusyUserId(
+      member.id,
+    );
+
+    try {
+      const response = await fetch(
+        "/api/admin/users/status",
+        {
+          method: "POST",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            userId: member.id,
+            disabled,
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to update account status.",
+        );
+      }
+
+      window.location.reload();
+    } catch (caught) {
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to update account status.",
+      );
+      setStatusBusyUserId(null);
+    }
+  }
+
+  async function setAllCountryAccess(
+    member: AdminUserOverview,
+    assignAll: boolean,
+  ) {
+    const countryIds = assignAll
+      ? countries.map(
+          (country) =>
+            country.id,
+        )
+      : [];
+
+    if (
+      assignAll &&
+      countryIds.length === 0
+    ) {
+      return;
+    }
+
+    setActionError("");
+    setAssignmentBusyKey(
+      `${member.id}:ALL`,
+    );
+
+    try {
+      const response = await fetch(
+        "/api/admin/assignments/bulk",
+        {
+          method: "POST",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            userId: member.id,
+            countryIds,
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+          countryIds?: string[];
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to update country access.",
+        );
+      }
+
+      setAssignmentDrafts(
+        (current) => ({
+          ...current,
+          [member.id]:
+            payload.countryIds ??
+            countryIds,
+        }),
+      );
+    } catch (caught) {
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to update country access.",
+      );
+    } finally {
+      setAssignmentBusyKey(null);
+    }
+  }
+
   async function setCountryAccess(
     member: AdminUserOverview,
     countryId: string,
@@ -632,6 +783,11 @@ export function AdminOverview({
         <SavingOverlay
           title="Updating user type"
           message="Applying the new account type securely."
+        />
+      ) : statusBusyUserId ? (
+        <SavingOverlay
+          title="Updating account status"
+          message="Applying the account access change securely."
         />
       ) : assignmentBusyKey ? (
         <SavingOverlay
@@ -937,6 +1093,59 @@ export function AdminOverview({
                       </p>
                     </div>
 
+                    <div className="admin-account-status-control">
+                      <div>
+                        <small>
+                          Account status
+                        </small>
+                        <strong
+                          className={
+                            member.banned
+                              ? "admin-account-disabled"
+                              : "admin-account-active"
+                          }
+                        >
+                          {member.banned
+                            ? "Disabled"
+                            : "Active"}
+                        </strong>
+                        <span>
+                          {member.banned
+                            ? "Sign-in is blocked until an Admin reactivates this account."
+                            : "Account can sign in normally."}
+                        </span>
+                      </div>
+
+                      <button
+                        className={
+                          member.banned
+                            ? "button secondary"
+                            : "button danger"
+                        }
+                        type="button"
+                        data-requires-online="true"
+                        disabled={
+                          statusBusyUserId !==
+                            null ||
+                          (
+                            member.id ===
+                              currentUserId &&
+                            !member.banned
+                          )
+                        }
+                        onClick={() =>
+                          void setAccountDisabled(
+                            member,
+                            !member.banned,
+                          )
+                        }
+                      >
+                        {member.banned
+                          ? "Reactivate user"
+                          : "Disable user"}
+                      </button>
+                    </div>
+
                     <div className="admin-assignment-block">
                       <div className="admin-access-heading">
                         <small>
@@ -961,6 +1170,46 @@ export function AdminOverview({
                             selected
                           </strong>
                         </summary>
+
+                        <div className="admin-country-access-bulk">
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={
+                              assignmentBusyKey !==
+                              null ||
+                              countries.length ===
+                                0
+                            }
+                            onClick={() =>
+                              void setAllCountryAccess(
+                                member,
+                                true,
+                              )
+                            }
+                          >
+                            Select all
+                          </button>
+
+                          <button
+                            type="button"
+                            className="text-button"
+                            disabled={
+                              assignmentBusyKey !==
+                              null ||
+                              assignedIds.size ===
+                                0
+                            }
+                            onClick={() =>
+                              void setAllCountryAccess(
+                                member,
+                                false,
+                              )
+                            }
+                          >
+                            Clear all
+                          </button>
+                        </div>
 
                         <div className="admin-country-access-options">
                           {countries.length >

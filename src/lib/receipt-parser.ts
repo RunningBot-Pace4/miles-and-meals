@@ -7,6 +7,8 @@ export type ParsedReceipt = {
   totalCandidates: number[];
   currencyCode: string | null;
   confidence: ReceiptConfidence;
+  merchantConfidence: ReceiptConfidence;
+  totalConfidence: ReceiptConfidence;
   rawText: string;
 };
 
@@ -668,6 +670,8 @@ function rankMerchants(
 ): {
   merchantName: string | null;
   merchantCandidates: string[];
+  topScore: number | null;
+  scoreGap: number;
 } {
   const all = [
     ...collectMerchantCandidates(headerText, "HEADER"),
@@ -709,12 +713,25 @@ function rankMerchants(
         b.appearances - a.appearances ||
         a.value.length - b.value.length,
     )
-    .slice(0, 5)
-    .map((candidate) => candidate.value);
+    .slice(0, 5);
 
   return {
-    merchantName: ranked[0] ?? null,
-    merchantCandidates: ranked,
+    merchantName:
+      ranked[0]?.value ?? null,
+    merchantCandidates:
+      ranked.map(
+        (candidate) =>
+          candidate.value,
+      ),
+    topScore:
+      ranked[0]?.score ?? null,
+    scoreGap:
+      ranked.length >= 2
+        ? ranked[0].score -
+          ranked[1].score
+        : ranked[0]
+          ? 100
+          : 0,
   };
 }
 
@@ -735,6 +752,59 @@ function detectCurrency(
     /^[A-Z]{3}$/.test(fallback)
     ? fallback
     : null;
+}
+
+function merchantFieldConfidence(
+  merchant: string | null,
+  topScore: number | null,
+  scoreGap: number,
+  ocrConfidence: number,
+): ReceiptConfidence {
+  if (!merchant || topScore === null) {
+    return "LOW";
+  }
+
+  if (
+    topScore >= 150 &&
+    scoreGap >= 16 &&
+    ocrConfidence >= 65
+  ) {
+    return "HIGH";
+  }
+
+  if (
+    topScore >= 90 &&
+    ocrConfidence >= 45
+  ) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
+}
+
+function totalFieldConfidence(
+  total: AmountCandidate | null,
+  ocrConfidence: number,
+): ReceiptConfidence {
+  if (!total) {
+    return "LOW";
+  }
+
+  if (
+    total.score >= 145 &&
+    ocrConfidence >= 65
+  ) {
+    return "HIGH";
+  }
+
+  if (
+    total.score >= 105 &&
+    ocrConfidence >= 45
+  ) {
+    return "MEDIUM";
+  }
+
+  return "LOW";
 }
 
 function receiptConfidence(
@@ -825,6 +895,18 @@ export function parseReceiptText(
       totals.values,
       ocrConfidence,
     ),
+    merchantConfidence:
+      merchantFieldConfidence(
+        merchants.merchantName,
+        merchants.topScore,
+        merchants.scoreGap,
+        ocrConfidence,
+      ),
+    totalConfidence:
+      totalFieldConfidence(
+        totals.total,
+        ocrConfidence,
+      ),
     rawText: combinedText,
   };
 }

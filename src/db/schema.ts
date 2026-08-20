@@ -3,6 +3,7 @@ import {
   date,
   doublePrecision,
   index,
+  integer,
   numeric,
   pgTable,
   primaryKey,
@@ -161,6 +162,30 @@ export const pushSubscriptions = pgTable(
   ],
 );
 
+export const apiMetrics = pgTable(
+  "api_metrics",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    route: text("route").notNull(),
+    method: text("method").notNull(),
+    durationMs: integer("duration_ms").notNull(),
+    statusCode: integer("status_code").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("api_metric_time_idx").on(table.createdAt),
+    index("api_metric_route_time_idx").on(
+      table.route,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const appErrors = pgTable(
   "app_errors",
   {
@@ -252,6 +277,37 @@ export const countryMembers = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [primaryKey({ columns: [table.countryId, table.userId] })],
+);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    category: text("category").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    url: text("url").default("/dashboard").notNull(),
+    countryId: uuid("country_id").references(() => countries.id, {
+      onDelete: "cascade",
+    }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("notification_user_time_idx").on(
+      table.userId,
+      table.createdAt,
+    ),
+    index("notification_user_read_idx").on(
+      table.userId,
+      table.readAt,
+    ),
+  ],
 );
 
 export const activityLogs = pgTable(
@@ -464,6 +520,8 @@ export const schema = {
   userPreferences,
   notificationPreferences,
   pushSubscriptions,
+  notifications,
+  apiMetrics,
   activityLogs,
   appErrors,
   trips,

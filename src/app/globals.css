@@ -11165,3 +11165,524 @@ body {
     font-size: 0.62rem;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v45 — Free enhancement pack: drafts, inbox, admin safety, backup, health   */
+/* -------------------------------------------------------------------------- */
+
+/* Draft recovery ---------------------------------------------------------- */
+
+.draft-recovery-banner {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 0.8rem;
+  align-items: center;
+  margin-bottom: 0.9rem;
+  padding: 0.85rem;
+  border: 1px solid rgb(239 173 88 / 30%);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      #fff9ec,
+      #fff4dc
+    );
+  box-shadow:
+    0 10px 24px rgb(87 67 34 / 7%);
+}
+
+.draft-recovery-banner > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.draft-recovery-banner strong {
+  color: #765023;
+  font-size: 0.8rem;
+}
+
+.draft-recovery-banner small {
+  color: #8a7254;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.draft-recovery-banner > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.draft-recovery-banner .button {
+  min-height: 39px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.69rem;
+}
+
+/* Receipt confidence ------------------------------------------------------ */
+
+.receipt-confidence {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 0.22rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  letter-spacing: 0.035em;
+}
+
+.receipt-confidence.high {
+  color: #157a59;
+  background: #e8f7ee;
+}
+
+.receipt-confidence.medium {
+  color: #95611f;
+  background: #fff0d4;
+}
+
+.receipt-confidence.low {
+  color: #ae5548;
+  background: #fae6e1;
+}
+
+/* Notification center ----------------------------------------------------- */
+
+.notification-center-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fffdf9;
+}
+
+.notification-center-toolbar > div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.notification-center-toolbar strong {
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+
+.notification-center-toolbar span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.notification-center-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.notification-center-item {
+  display: grid;
+  grid-template-columns:
+    42px
+    minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fffdf9;
+}
+
+.notification-center-item.unread {
+  border-color: rgb(18 120 111 / 24%);
+  background:
+    linear-gradient(
+      145deg,
+      #f6fcf9,
+      #fffdf9
+    );
+  box-shadow:
+    0 10px 24px rgb(18 120 111 / 7%);
+}
+
+.notification-center-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-weight: 900;
+}
+
+.notification-center-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.notification-center-copy > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.notification-center-copy > div:first-child > strong {
+  color: var(--travel-ink);
+  font-size: 0.8rem;
+}
+
+.notification-center-copy > div:first-child > span {
+  padding: 0.18rem 0.38rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary);
+  font-size: 0.56rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.notification-center-copy p {
+  margin: 0;
+  color: #5f625e;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.notification-center-copy small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.notification-center-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.28rem;
+}
+
+.notification-center-actions .button {
+  min-height: 36px;
+  padding: 0.4rem 0.62rem;
+  font-size: 0.66rem;
+}
+
+.text-button {
+  border: 0;
+  padding: 0.35rem 0.2rem;
+  color: var(--primary);
+  background: transparent;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Admin account safety ---------------------------------------------------- */
+
+.admin-account-status-control {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto;
+  gap: 0.8rem;
+  align-items: center;
+  margin-top: 0.8rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fbfaf7;
+}
+
+.admin-account-status-control > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.admin-account-status-control small,
+.admin-account-status-control span {
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.45;
+}
+
+.admin-account-active {
+  color: #157a59;
+}
+
+.admin-account-disabled {
+  color: #b45245;
+}
+
+.button.danger {
+  color: #fff;
+  border-color: #b95e50;
+  background:
+    linear-gradient(
+      135deg,
+      #b95e50,
+      #cb7463
+    );
+}
+
+.admin-country-access-bulk {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  background: #fbfaf7;
+}
+
+/* Backup / restore -------------------------------------------------------- */
+
+.admin-backup-grid {
+  align-items: stretch;
+}
+
+.admin-backup-card {
+  min-height: 245px;
+  display: grid;
+  grid-template-rows:
+    auto
+    1fr
+    auto;
+  gap: 0.9rem;
+}
+
+.admin-backup-card h2 {
+  margin: 0.25rem 0 0.35rem;
+}
+
+.admin-backup-card p {
+  margin: 0;
+}
+
+.admin-backup-file {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--travel-ink);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.backup-preview {
+  display: grid;
+  gap: 1rem;
+}
+
+.backup-preview.valid {
+  border-color: rgb(21 122 89 / 20%);
+}
+
+.backup-preview.invalid {
+  border-color: rgb(180 82 69 / 22%);
+}
+
+.backup-count-grid,
+.performance-summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(110px, 1fr)
+    );
+  gap: 0.6rem;
+}
+
+.backup-count-grid > div,
+.performance-summary-grid > div {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.72rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fbfaf7;
+}
+
+.backup-count-grid span,
+.performance-summary-grid span {
+  color: var(--muted);
+  font-size: 0.61rem;
+  text-transform: capitalize;
+}
+
+.backup-count-grid strong,
+.performance-summary-grid strong {
+  color: var(--travel-ink);
+  font-size: 1rem;
+}
+
+.backup-message-list {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+}
+
+.backup-message-list p {
+  margin: 0;
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.backup-message-list.warning {
+  color: #855a24;
+  background: #fff5df;
+}
+
+.backup-message-list.error {
+  color: #a14d42;
+  background: #fae9e5;
+}
+
+.backup-restore-confirm {
+  display: grid;
+  gap: 0.7rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.backup-restore-confirm label {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.backup-restore-confirm small {
+  color: var(--muted);
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+/* Health / diagnostics ---------------------------------------------------- */
+
+.health-consistency-ok,
+.health-consistency-row {
+  display: grid;
+  grid-template-columns:
+    38px
+    minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+
+.health-consistency-ok > span,
+.health-consistency-row > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+.health-consistency-ok > span {
+  color: #157a59;
+  background: #e8f7ee;
+}
+
+.health-consistency-ok div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.health-consistency-ok strong {
+  color: var(--travel-ink);
+}
+
+.health-consistency-ok small {
+  color: var(--muted);
+}
+
+.health-consistency-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.health-consistency-row {
+  padding: 0.7rem;
+  border: 1px solid rgb(180 82 69 / 16%);
+  border-radius: 14px;
+  background: #fff7f4;
+}
+
+.health-consistency-row > span {
+  color: #a14d42;
+  background: #fae4df;
+}
+
+.health-consistency-row strong {
+  color: #873f37;
+  font-size: 0.72rem;
+}
+
+.health-consistency-row p {
+  margin: 0.15rem 0 0;
+  color: #796966;
+  font-size: 0.67rem;
+  line-height: 1.45;
+}
+
+.performance-route-list {
+  display: grid;
+  margin-top: 0.8rem;
+}
+
+.performance-route-list article {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.58rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.performance-route-list article:last-child {
+  border-bottom: 0;
+}
+
+.performance-route-list strong {
+  color: var(--travel-ink);
+  font-size: 0.69rem;
+  overflow-wrap: anywhere;
+}
+
+.performance-route-list span {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+/* Live collaboration ------------------------------------------------------ */
+
+.dashboard-live-categories {
+  margin-top: 0;
+}
+
+@media (max-width: 620px) {
+  .draft-recovery-banner,
+  .admin-account-status-control {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .draft-recovery-banner > div:last-child {
+    width: 100%;
+  }
+
+  .draft-recovery-banner .button,
+  .admin-account-status-control .button {
+    width: 100%;
+  }
+
+  .notification-center-toolbar {
+    align-items: stretch;
+  }
+
+  .notification-center-toolbar .button {
+    min-width: 0;
+  }
+}

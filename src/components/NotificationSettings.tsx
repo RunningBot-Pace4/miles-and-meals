@@ -271,6 +271,54 @@ export function NotificationSettings() {
     }
   }
 
+  async function sendTestNotification() {
+    setBusy(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(
+        "/api/notifications/test",
+        {
+          method: "POST",
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(() => ({}))) as {
+          error?: string;
+          delivered?: number;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to send test notification.",
+        );
+      }
+
+      setMessage(
+        `Test notification sent to ${
+          payload.delivered ?? 1
+        } subscribed device${
+          (payload.delivered ?? 1) === 1
+            ? ""
+            : "s"
+        }.`,
+      );
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to send test notification.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function disablePush() {
     setBusy(true);
     setError("");
@@ -378,14 +426,26 @@ export function NotificationSettings() {
 
           <div className="form-actions notification-actions">
             {subscribed ? (
-              <button
-                className="button secondary"
-                type="button"
-                onClick={disablePush}
-                disabled={busy}
-              >
-                Disable on this device
-              </button>
+              <>
+                <button
+                  className="button primary"
+                  type="button"
+                  onClick={
+                    sendTestNotification
+                  }
+                  disabled={busy}
+                >
+                  Send test notification
+                </button>
+                <button
+                  className="button secondary"
+                  type="button"
+                  onClick={disablePush}
+                  disabled={busy}
+                >
+                  Disable on this device
+                </button>
+              </>
             ) : (
               <button
                 className="button primary"

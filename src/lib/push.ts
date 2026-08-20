@@ -4,6 +4,7 @@ import { db } from "@/db";
 import {
   countryMembers,
   notificationPreferences,
+  notifications,
   pushSubscriptions,
 } from "@/db/schema";
 
@@ -17,6 +18,7 @@ export type PushPayload = {
   body: string;
   url: string;
   tag?: string;
+  countryId?: string | null;
 };
 
 type PushConfiguration = {
@@ -72,7 +74,15 @@ async function enabledUserIds(
       ),
     );
 
-  const preferences = new Map(
+  const preferences = new Map<
+    string,
+    {
+      userId: string;
+      paymentsEnabled: boolean;
+      expensesEnabled: boolean;
+      plannerEnabled: boolean;
+    }
+  >(
     rows.map((row) => [
       row.userId,
       row,
@@ -98,6 +108,34 @@ async function enabledUserIds(
       return preference.plannerEnabled;
     }),
   );
+}
+
+async function recordInAppNotifications(
+  userIds: string[],
+  category: NotificationCategory,
+  payload: PushPayload,
+): Promise<void> {
+  const uniqueIds = [...new Set(userIds)];
+
+  if (uniqueIds.length === 0) {
+    return;
+  }
+
+  try {
+    await db.insert(notifications).values(
+      uniqueIds.map((userId) => ({
+        userId,
+        category,
+        title: payload.title,
+        body: payload.body,
+        url: payload.url,
+        countryId:
+          payload.countryId ?? null,
+      })),
+    );
+  } catch {
+    // In-app history is best-effort and must never block the trip action.
+  }
 }
 
 async function removeExpiredSubscription(
@@ -132,18 +170,24 @@ export async function sendPushToUsers(
   payload: PushPayload,
 ): Promise<void> {
   try {
-    const configuration = getConfiguration();
-
-    if (!configuration) {
-      return;
-    }
-
     const enabled = await enabledUserIds(
       userIds,
       category,
     );
 
     if (enabled.size === 0) {
+      return;
+    }
+
+    await recordInAppNotifications(
+      [...enabled],
+      category,
+      payload,
+    );
+
+    const configuration = getConfiguration();
+
+    if (!configuration) {
       return;
     }
 
@@ -231,6 +275,117 @@ export async function sendPushToUsers(
   }
 }
 
+export async function sendTestPushToUser(
+  userId: string,
+): Promise<{
+  configured: boolean;
+  delivered: number;
+  expired: number;
+}> {
+  const configuration = getConfiguration();
+
+  if (!configuration) {
+    return {
+      configured: false,
+      delivered: 0,
+      expired: 0,
+    };
+  }
+
+  const subscriptions = await db
+    .select({
+      id: pushSubscriptions.id,
+      endpoint: pushSubscriptions.endpoint,
+      p256dh: pushSubscriptions.p256dh,
+      auth: pushSubscriptions.auth,
+    })
+    .from(pushSubscriptions)
+    .where(
+      eq(
+        pushSubscriptions.userId,
+        userId,
+      ),
+    );
+
+  if (subscriptions.length === 0) {
+    return {
+      configured: true,
+      delivered: 0,
+      expired: 0,
+    };
+  }
+
+  webpush.setVapidDetails(
+    configuration.subject,
+    configuration.publicKey,
+    configuration.privateKey,
+  );
+
+  const message = JSON.stringify({
+    title: "Miles & Meals",
+    body:
+      "Notifications are working on this device.",
+    url: "/notifications",
+    tag: "miles-meals-test",
+  });
+
+  let delivered = 0;
+  let expired = 0;
+
+  await Promise.all(
+    subscriptions.map(async (subscription) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint:
+              subscription.endpoint,
+            keys: {
+              p256dh:
+                subscription.p256dh,
+              auth: subscription.auth,
+            },
+          },
+          message,
+          {
+            TTL: 60,
+            urgency: "high",
+          },
+        );
+        delivered += 1;
+      } catch (error) {
+        const statusCode =
+          typeof error === "object" &&
+          error !== null &&
+          "statusCode" in error
+            ? Number(
+                (
+                  error as {
+                    statusCode?: unknown;
+                  }
+                ).statusCode,
+              )
+            : 0;
+
+        if (
+          statusCode === 404 ||
+          statusCode === 410
+        ) {
+          expired += 1;
+          await removeExpiredSubscription(
+            subscription.id,
+          );
+        }
+      }
+    }),
+  );
+
+  return {
+    configured: true,
+    delivered,
+    expired,
+  };
+}
+
 export async function sendPushToCountry(
   countryId: string,
   actorUserId: string,
@@ -246,6 +401,9 @@ export async function sendPushToCountry(
       (userId) => userId !== actorUserId,
     ),
     category,
-    payload,
+    {
+      ...payload,
+      countryId,
+    },
   );
 }

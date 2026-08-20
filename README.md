@@ -195,3 +195,26 @@ Optional Web Push setup:
 ```bash
 npm run push:keys
 ```
+
+
+## v45 Free Enhancement Pack
+
+v45 adds in-place Expense/Planner/Home collaboration, local draft recovery,
+test Web Push, an in-app Notification Center, Admin disable/reactivate controls,
+Select All/Clear All country access, controlled travel backup/restore, database
+consistency checks, free API performance diagnostics and field-level receipt OCR
+confidence.
+
+See `V45-FREE-ENHANCEMENT-PACK.md`.
+
+This release adds `notifications` and `api_metrics`, so run:
+
+```bash
+npm install
+npm run db:push
+npm run phase8:check
+npm test
+npm run build
+```
+
+Do not use `db:reset`.

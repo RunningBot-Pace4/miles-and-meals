@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { appErrors } from "@/db/schema";
 import {
+  loadPerformanceSnapshot,
+  runConsistencyChecks,
+} from "@/lib/health";
+import {
   isSystemAdmin,
   requirePageSession,
 } from "@/lib/session";
@@ -65,15 +69,34 @@ export default async function AdminHealthPage() {
     redirect("/dashboard");
   }
 
-  const database = await checkDatabase();
-  const recentErrors =
-    await loadRecentErrors();
+  const [
+    database,
+    recentErrors,
+    consistency,
+    performance,
+  ] = await Promise.all([
+    checkDatabase(),
+    loadRecentErrors(),
+    runConsistencyChecks(),
+    loadPerformanceSnapshot(),
+  ]);
 
   const checks = [
     {
       name: "Database",
       ok: database.ok,
       detail: database.message,
+    },
+    {
+      name: "Data consistency",
+      ok: consistency.ok,
+      detail: consistency.ok
+        ? "Trip, country, expense split and membership relationships are consistent."
+        : `${consistency.issues.reduce(
+            (sum, issue) =>
+              sum + issue.count,
+            0,
+          )} consistency issue(s) need review.`,
     },
     {
       name: "Authentication",
@@ -137,6 +160,165 @@ export default async function AdminHealthPage() {
             </div>
           </article>
         ))}
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">
+              DATABASE CONSISTENCY
+            </p>
+            <h2>
+              Travel data checks
+            </h2>
+          </div>
+        </div>
+
+        {consistency.ok ? (
+          <div className="health-consistency-ok">
+            <span aria-hidden="true">
+              ✓
+            </span>
+            <div>
+              <strong>
+                No consistency problems found
+              </strong>
+              <small>
+                Expenses, splits, trip links and country memberships passed the scan.
+              </small>
+            </div>
+          </div>
+        ) : (
+          <div className="health-consistency-list">
+            {consistency.issues.map(
+              (issue) => (
+                <article
+                  className="health-consistency-row"
+                  key={
+                    issue.type
+                  }
+                >
+                  <span>
+                    !
+                  </span>
+                  <div>
+                    <strong>
+                      {
+                        issue.type
+                      }{" "}
+                      ·{" "}
+                      {
+                        issue.count
+                      }
+                    </strong>
+                    <p>
+                      {
+                        issue.detail
+                      }
+                    </p>
+                  </div>
+                </article>
+              ),
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <div>
+            <p className="eyebrow">
+              PERFORMANCE
+            </p>
+            <h2>
+              Live API diagnostics
+            </h2>
+          </div>
+        </div>
+
+        <div className="performance-summary-grid">
+          <div>
+            <span>Samples</span>
+            <strong>
+              {
+                performance.samples
+              }
+            </strong>
+          </div>
+          <div>
+            <span>Average</span>
+            <strong>
+              {
+                performance.averageMs
+              }
+              ms
+            </strong>
+          </div>
+          <div>
+            <span>P95</span>
+            <strong>
+              {
+                performance.p95Ms
+              }
+              ms
+            </strong>
+          </div>
+          <div>
+            <span>
+              ≥1.5s
+            </span>
+            <strong>
+              {
+                performance.slowRequests
+              }
+            </strong>
+          </div>
+        </div>
+
+        {performance.routes.length ? (
+          <div className="performance-route-list">
+            {performance.routes
+              .slice(0, 8)
+              .map(
+                (route) => (
+                  <article
+                    key={
+                      route.route
+                    }
+                  >
+                    <strong>
+                      {
+                        route.route
+                      }
+                    </strong>
+                    <span>
+                      Avg{" "}
+                      {
+                        route.averageMs
+                      }
+                      ms · P95{" "}
+                      {
+                        route.p95Ms
+                      }
+                      ms · Max{" "}
+                      {
+                        route.maxMs
+                      }
+                      ms ·{" "}
+                      {
+                        route.samples
+                      }{" "}
+                      samples
+                    </span>
+                  </article>
+                ),
+              )}
+          </div>
+        ) : (
+          <p className="muted">
+            No live API performance samples yet. They appear automatically as the app is used.
+          </p>
+        )}
       </section>
 
       <section className="panel">

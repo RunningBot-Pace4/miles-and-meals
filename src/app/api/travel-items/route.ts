@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
 import { canAccessCountry, getCountryWithTrip, listAccessibleCountries } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
+import { recordApiMetric } from "@/lib/performance";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
@@ -11,9 +12,18 @@ import { travelItemSchema } from "@/lib/validation";
 export const runtime = "nodejs";
 
 export async function GET() {
+  const started = Date.now();
   const session = await getSession();
 
   if (!session) {
+    await recordApiMetric({
+      userId: null,
+      route: "/api/travel-items",
+      method: "GET",
+      durationMs: Date.now() - started,
+      statusCode: 401,
+    });
+
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -21,6 +31,14 @@ export async function GET() {
   const ids = countries.map((country) => country.id);
 
   if (ids.length === 0) {
+    await recordApiMetric({
+      userId: session.user.id,
+      route: "/api/travel-items",
+      method: "GET",
+      durationMs: Date.now() - started,
+      statusCode: 200,
+    });
+
     return Response.json({ items: [] });
   }
 
@@ -50,6 +68,14 @@ export async function GET() {
     .leftJoin(user, eq(travelItems.createdBy, user.id))
     .where(inArray(travelItems.countryId, ids))
     .orderBy(desc(travelItems.itemDate), desc(travelItems.createdAt));
+
+  await recordApiMetric({
+    userId: session.user.id,
+    route: "/api/travel-items",
+    method: "GET",
+    durationMs: Date.now() - started,
+    statusCode: 200,
+  });
 
   return Response.json({ items });
 }

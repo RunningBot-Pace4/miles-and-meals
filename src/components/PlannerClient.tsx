@@ -1,7 +1,22 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import {
+  applyFormStrings,
+  clearDraft,
+  draftKey,
+  formDataStrings,
+  readDraft,
+  writeDraft,
+} from "@/lib/draft-storage";
 
 type CountryOption = {
   id: string;
@@ -170,6 +185,7 @@ function PlannerItemForm({
   initial,
   busy,
   error,
+  draftStorageKey,
   onSubmit,
   onCancel,
 }: {
@@ -179,17 +195,124 @@ function PlannerItemForm({
   initial?: PlannerItem;
   busy: boolean;
   error: string;
+  draftStorageKey: string;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }) {
   const meta = tabMeta[itemType];
   const editing = Boolean(initial);
+  const formRef =
+    useRef<HTMLFormElement>(null);
+  const [draftState, setDraftState] =
+    useState<
+      "CHECKING" | "PENDING" | "ACTIVE"
+    >("CHECKING");
+  const [draftSavedAt, setDraftSavedAt] =
+    useState<string | null>(null);
+
+  useEffect(() => {
+    const stored =
+      readDraft<Record<string, string>>(
+        draftStorageKey,
+      );
+
+    if (stored) {
+      setDraftSavedAt(
+        stored.savedAt,
+      );
+      setDraftState("PENDING");
+      return;
+    }
+
+    setDraftState("ACTIVE");
+  }, [draftStorageKey]);
+
+  function saveDraftFromForm() {
+    if (
+      draftState !== "ACTIVE" ||
+      !formRef.current
+    ) {
+      return;
+    }
+
+    writeDraft(
+      draftStorageKey,
+      formDataStrings(
+        formRef.current,
+      ),
+    );
+  }
+
+  function restoreDraft() {
+    const stored =
+      readDraft<Record<string, string>>(
+        draftStorageKey,
+      );
+
+    if (
+      stored &&
+      formRef.current
+    ) {
+      applyFormStrings(
+        formRef.current,
+        stored.data,
+      );
+    }
+
+    setDraftState("ACTIVE");
+  }
+
+  function discardDraft() {
+    clearDraft(
+      draftStorageKey,
+    );
+    setDraftSavedAt(null);
+    setDraftState("ACTIVE");
+  }
 
   return (
     <form
+      ref={formRef}
       className={editing ? "planner-edit-form" : "planner-add-form"}
       onSubmit={onSubmit}
+      onInput={saveDraftFromForm}
+      onChange={saveDraftFromForm}
     >
+      {draftState === "PENDING" ? (
+        <div className="draft-recovery-banner">
+          <div>
+            <strong>
+              Unsaved planner draft found
+            </strong>
+            <small>
+              {draftSavedAt
+                ? `Saved ${new Date(
+                    draftSavedAt,
+                  ).toLocaleString(
+                    "en-MY",
+                  )}`
+                : "A previous unfinished form is available."}
+            </small>
+          </div>
+
+          <div>
+            <button
+              className="button primary"
+              type="button"
+              onClick={restoreDraft}
+            >
+              Restore
+            </button>
+            <button
+              className="button secondary"
+              type="button"
+              onClick={discardDraft}
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="section-heading">
         <span className="section-number amber">
           {editing ? "✎" : "＋"}
@@ -511,6 +634,8 @@ export function PlannerClient({
   countries: CountryOption[];
   items: PlannerItem[];
 }) {
+  const [itemsState, setItemsState] =
+    useState<PlannerItem[]>(items);
   const [tab, setTab] = useState<TabValue>("ITINERARY");
   const [countryFilter, setCountryFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
@@ -523,7 +648,7 @@ export function PlannerClient({
   const meta = tabMeta[tab];
 
   const visible = useMemo(() => {
-    return items
+    return itemsState
       .filter(
         (item) =>
           item.itemType === tab &&
@@ -542,7 +667,7 @@ export function PlannerClient({
           b.itemTime ?? "99:99",
         );
       });
-  }, [countryFilter, items, tab]);
+  }, [countryFilter, itemsState, tab]);
 
   const countryById = useMemo(
     () =>
@@ -551,6 +676,86 @@ export function PlannerClient({
       ),
     [countries],
   );
+
+  const refreshItems =
+    useCallback(async () => {
+      if (
+        !navigator.onLine ||
+        document.visibilityState !==
+          "visible"
+      ) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/travel-items?t=${Date.now()}`,
+          {
+            cache: "no-store",
+          },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload =
+          (await response.json()) as {
+          items: PlannerItem[];
+        };
+
+        setItemsState(
+          payload.items,
+        );
+      } catch {
+        // Keep the current planner visible if a background sync fails.
+      }
+    }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(
+      () => void refreshItems(),
+      8000,
+    );
+
+    function refreshWhenVisible() {
+      if (
+        document.visibilityState ===
+        "visible"
+      ) {
+        void refreshItems();
+      }
+    }
+
+    window.addEventListener(
+      "online",
+      refreshWhenVisible,
+    );
+    window.addEventListener(
+      "focus",
+      refreshWhenVisible,
+    );
+    document.addEventListener(
+      "visibilitychange",
+      refreshWhenVisible,
+    );
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener(
+        "online",
+        refreshWhenVisible,
+      );
+      window.removeEventListener(
+        "focus",
+        refreshWhenVisible,
+      );
+      document.removeEventListener(
+        "visibilitychange",
+        refreshWhenVisible,
+      );
+    };
+  }, [refreshItems]);
 
   const defaultCountryId =
     countryFilter === "ALL"
@@ -606,9 +811,15 @@ export function PlannerClient({
         throw new Error(payload.error ?? "Unable to add item.");
       }
 
+      clearDraft(
+        draftKey(
+          "planner",
+          `new:${tab}`,
+        ),
+      );
       formElement.reset();
       setShowForm(false);
-      window.location.reload();
+      await refreshItems();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -655,8 +866,14 @@ export function PlannerClient({
         throw new Error(payload.error ?? "Unable to update item.");
       }
 
+      clearDraft(
+        draftKey(
+          "planner",
+          `edit:${editingItem.id}`,
+        ),
+      );
       setEditingItem(null);
-      window.location.reload();
+      await refreshItems();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -698,7 +915,13 @@ export function PlannerClient({
         setDetailItem(null);
       }
 
-      window.location.reload();
+      clearDraft(
+        draftKey(
+          "planner",
+          `edit:${id}`,
+        ),
+      );
+      await refreshItems();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -828,6 +1051,10 @@ export function PlannerClient({
           defaultCountryId={defaultCountryId}
           busy={busy}
           error={error}
+          draftStorageKey={draftKey(
+            "planner",
+            `new:${tab}`,
+          )}
           onSubmit={add}
           onCancel={() => {
             setShowForm(false);
@@ -845,6 +1072,10 @@ export function PlannerClient({
             initial={editingItem}
             busy={busy}
             error={error}
+            draftStorageKey={draftKey(
+              "planner",
+              `edit:${editingItem.id}`,
+            )}
             onSubmit={saveEdit}
             onCancel={() => {
               setEditingItem(null);

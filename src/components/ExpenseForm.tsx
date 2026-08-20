@@ -1,7 +1,20 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import {
+  clearDraft,
+  draftKey,
+  readDraft,
+  writeDraft,
+} from "@/lib/draft-storage";
 import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
 
@@ -27,6 +40,8 @@ type ReceiptAnalysis = {
   totalCandidates: number[];
   currencyCode: string | null;
   confidence: "HIGH" | "MEDIUM" | "LOW";
+  merchantConfidence: "HIGH" | "MEDIUM" | "LOW";
+  totalConfidence: "HIGH" | "MEDIUM" | "LOW";
   rawText: string;
 };
 
@@ -65,6 +80,25 @@ type ExpenseInitial = {
   notes: string | null;
   splitUserIds: string[];
   splitValues: Record<string, string>;
+};
+
+type ExpenseDraft = {
+  countryId: string;
+  expenseDate: string;
+  category: string;
+  currency: string;
+  rate: string;
+  rateType: RateType;
+  amount: string;
+  actualConvertedAmount: string;
+  splitMode: SplitMode;
+  splitUserIds: string[];
+  splitValues: Record<string, string>;
+  paidByUserId: string;
+  description: string;
+  receiptUrl: string;
+  paymentMethod: string;
+  notes: string;
 };
 
 const categories = [
@@ -177,6 +211,15 @@ export function ExpenseForm({
   const [description, setDescription] = useState(
     initial?.description ?? "",
   );
+  const [expenseDate, setExpenseDate] = useState(
+    initial?.expenseDate ?? localDateString(),
+  );
+  const [paymentMethod, setPaymentMethod] = useState(
+    initial?.paymentMethod ?? "",
+  );
+  const [notes, setNotes] = useState(
+    initial?.notes ?? "",
+  );
   const [receiptUrl, setReceiptUrl] = useState(
     initial?.receiptUrl ?? "",
   );
@@ -190,6 +233,23 @@ export function ExpenseForm({
   const [receiptMessage, setReceiptMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const expenseDraftKey = draftKey(
+    "expense",
+    initial
+      ? `edit:${initial.id}`
+      : "new",
+  );
+  const [draftState, setDraftState] =
+    useState<
+      "CHECKING" | "PENDING" | "ACTIVE"
+    >("CHECKING");
+  const [draftSavedAt, setDraftSavedAt] =
+    useState<string | null>(null);
+  const [draftDirty, setDraftDirty] =
+    useState(false);
+  const preserveMembersRef =
+    useRef(false);
 
   const currentCountry = countries.find(
     (country) => country.id === countryId,
@@ -279,6 +339,167 @@ export function ExpenseForm({
   ]);
 
   useEffect(() => {
+    const stored =
+      readDraft<ExpenseDraft>(
+        expenseDraftKey,
+      );
+
+    if (stored) {
+      setDraftSavedAt(
+        stored.savedAt,
+      );
+      setDraftState("PENDING");
+      return;
+    }
+
+    setDraftState("ACTIVE");
+  }, [expenseDraftKey]);
+
+  useEffect(() => {
+    if (
+      draftState !== "ACTIVE" ||
+      !draftDirty ||
+      busy ||
+      receiptScanning
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => {
+        writeDraft<ExpenseDraft>(
+          expenseDraftKey,
+          {
+            countryId,
+            expenseDate,
+            category,
+            currency,
+            rate,
+            rateType,
+            amount,
+            actualConvertedAmount,
+            splitMode,
+            splitUserIds,
+            splitValues,
+            paidByUserId,
+            description,
+            receiptUrl:
+              receiptUrl.startsWith(
+                "data:image/",
+              )
+                ? "__KEEP_EXISTING_RECEIPT__"
+                : receiptUrl,
+            paymentMethod,
+            notes,
+          },
+        );
+      },
+      350,
+    );
+
+    return () =>
+      window.clearTimeout(timer);
+  }, [
+    actualConvertedAmount,
+    amount,
+    busy,
+    category,
+    countryId,
+    currency,
+    description,
+    draftDirty,
+    draftState,
+    expenseDate,
+    expenseDraftKey,
+    notes,
+    paidByUserId,
+    paymentMethod,
+    rate,
+    rateType,
+    receiptScanning,
+    receiptUrl,
+    splitMode,
+    splitUserIds,
+    splitValues,
+  ]);
+
+  function restoreExpenseDraft() {
+    const stored =
+      readDraft<ExpenseDraft>(
+        expenseDraftKey,
+      );
+
+    if (!stored) {
+      setDraftState("ACTIVE");
+      return;
+    }
+
+    const draft = stored.data;
+    const countryChanged =
+      draft.countryId !== countryId;
+
+    if (countryChanged) {
+      preserveMembersRef.current =
+        true;
+    }
+
+    setCountryId(draft.countryId);
+    setExpenseDate(
+      draft.expenseDate,
+    );
+    setCategory(draft.category);
+    setCurrency(draft.currency);
+    setRate(draft.rate);
+    setRateType(draft.rateType);
+    setAmount(draft.amount);
+    setActualConvertedAmount(
+      draft.actualConvertedAmount,
+    );
+    setSplitMode(
+      draft.splitMode,
+    );
+    setSplitUserIds(
+      draft.splitUserIds,
+    );
+    setSplitValues(
+      draft.splitValues,
+    );
+    setPaidByUserId(
+      draft.paidByUserId,
+    );
+    setDescription(
+      draft.description,
+    );
+    setReceiptUrl(
+      draft.receiptUrl ===
+        "__KEEP_EXISTING_RECEIPT__"
+        ? initial?.receiptUrl ??
+            receiptUrl
+        : draft.receiptUrl,
+    );
+    setPaymentMethod(
+      draft.paymentMethod,
+    );
+    setNotes(draft.notes);
+    setDraftDirty(true);
+    setDraftState("ACTIVE");
+
+    if (!countryChanged) {
+      preserveMembersRef.current =
+        false;
+    }
+  }
+
+  function discardExpenseDraft() {
+    clearDraft(
+      expenseDraftKey,
+    );
+    setDraftSavedAt(null);
+    setDraftDirty(false);
+    setDraftState("ACTIVE");
+  }
+
+  useEffect(() => {
     return () => {
       if (receiptPreviewUrl) {
         URL.revokeObjectURL(receiptPreviewUrl);
@@ -305,6 +526,12 @@ export function ExpenseForm({
 
       const payload = (await response.json()) as { members: Member[] };
       setMembers(payload.members);
+
+      if (preserveMembersRef.current) {
+        preserveMembersRef.current =
+          false;
+        return;
+      }
 
       if (!initial || countryId !== initial.countryId) {
         const loggedInUserIsAvailable = payload.members.some(
@@ -613,7 +840,6 @@ export function ExpenseForm({
     }
 
     setBusy(true);
-    const form = new FormData(event.currentTarget);
     let finalReceiptUrl = receiptUrl.trim();
 
     try {
@@ -633,7 +859,7 @@ export function ExpenseForm({
 
     const body = {
       countryId,
-      expenseDate: String(form.get("expenseDate") ?? ""),
+      expenseDate,
       category,
       description,
       transactionCurrency: currency,
@@ -645,9 +871,9 @@ export function ExpenseForm({
           ? parsedActual
           : "",
       paidByUserId,
-      paymentMethod: String(form.get("paymentMethod") ?? ""),
+      paymentMethod,
       receiptUrl: finalReceiptUrl,
-      notes: String(form.get("notes") ?? ""),
+      notes,
       splitMode,
       splits: parsedSplits,
     };
@@ -671,6 +897,9 @@ export function ExpenseForm({
         return;
       }
 
+      clearDraft(
+        expenseDraftKey,
+      );
       window.location.assign("/expenses");
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
@@ -704,7 +933,60 @@ export function ExpenseForm({
           }
         />
       ) : null}
-      <form className="expense-editor" onSubmit={submit}>
+      <form
+        className="expense-editor"
+        onSubmit={submit}
+        onInput={() =>
+          setDraftDirty(true)
+        }
+        onChange={() =>
+          setDraftDirty(true)
+        }
+        onClickCapture={() =>
+          setDraftDirty(true)
+        }
+      >
+        {draftState === "PENDING" ? (
+          <div className="draft-recovery-banner expense-draft">
+            <div>
+              <strong>
+                Unsaved expense found
+              </strong>
+              <small>
+                {draftSavedAt
+                  ? `Saved ${new Date(
+                      draftSavedAt,
+                    ).toLocaleString(
+                      "en-MY",
+                    )}`
+                  : "A previous unfinished expense is available."}
+                {" "}Receipt photos must be reattached if they were not saved yet.
+              </small>
+            </div>
+
+            <div>
+              <button
+                className="button primary"
+                type="button"
+                onClick={
+                  restoreExpenseDraft
+                }
+              >
+                Restore draft
+              </button>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={
+                  discardExpenseDraft
+                }
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <header className="expense-editor-hero">
           <div className="expense-editor-title">
             <p className="eyebrow">MILES &amp; MEALS · EXPENSES</p>
@@ -778,7 +1060,12 @@ export function ExpenseForm({
               name="expenseDate"
               type="date"
               required
-              defaultValue={initial?.expenseDate ?? localDateString()}
+              value={expenseDate}
+              onChange={(event) =>
+                setExpenseDate(
+                  event.target.value,
+                )
+              }
             />
           </label>
         </div>
@@ -1117,8 +1404,40 @@ export function ExpenseForm({
                 </strong>
               </div>
               <div>
-                <small>Confidence</small>
-                <strong>{receiptResult.confidence}</strong>
+                <small>
+                  Shop confidence
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.merchantConfidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.merchantConfidence
+                  }
+                </strong>
+              </div>
+              <div>
+                <small>
+                  Total confidence
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.totalConfidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.totalConfidence
+                  }
+                </strong>
+              </div>
+              <div>
+                <small>
+                  Overall OCR
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.confidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.confidence
+                  }
+                </strong>
               </div>
             </div>
           ) : null}
@@ -1203,7 +1522,12 @@ export function ExpenseForm({
             Payment method
             <input
               name="paymentMethod"
-              defaultValue={initial?.paymentMethod ?? ""}
+              value={paymentMethod}
+              onChange={(event) =>
+                setPaymentMethod(
+                  event.target.value,
+                )
+              }
               placeholder="Maybank Visa / Cash / Wise"
             />
           </label>
@@ -1234,7 +1558,12 @@ export function ExpenseForm({
           Notes
           <textarea
             name="notes"
-            defaultValue={initial?.notes ?? ""}
+            value={notes}
+            onChange={(event) =>
+              setNotes(
+                event.target.value,
+              )
+            }
             rows={3}
             placeholder="Optional note"
           />

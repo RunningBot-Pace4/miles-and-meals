@@ -1,10 +1,49 @@
+import {
+  and,
+  eq,
+  isNull,
+} from "drizzle-orm";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { InstallAppCard } from "@/components/InstallAppCard";
+import { db } from "@/db";
+import { notifications } from "@/db/schema";
 import { isSystemAdmin, requirePageSession } from "@/lib/session";
+
+async function loadUnreadNotificationCount(
+  userId: string,
+): Promise<number> {
+  try {
+    const rows =
+      await db
+        .select({
+          id: notifications.id,
+        })
+        .from(notifications)
+        .where(
+          and(
+            eq(
+              notifications.userId,
+              userId,
+            ),
+            isNull(
+              notifications.readAt,
+            ),
+          ),
+        );
+
+    return rows.length;
+  } catch {
+    return 0;
+  }
+}
 
 export default async function MorePage() {
   const session = await requirePageSession();
   const admin = isSystemAdmin(session.user.role);
+  const unreadNotificationCount =
+    await loadUnreadNotificationCount(
+      session.user.id,
+    );
 
   return (
     <div className="stack gap-lg">
@@ -34,6 +73,10 @@ export default async function MorePage() {
               <span>Admin: app health</span>
               <span>›</span>
             </Link>
+            <Link className="menu-row link-row" href="/admin/backup">
+              <span>Admin: backup & restore</span>
+              <span>›</span>
+            </Link>
           </>
         ) : null}
         <Link className="menu-row link-row" href="/settings/profile">
@@ -44,8 +87,17 @@ export default async function MorePage() {
           <span>Change password</span>
           <span>›</span>
         </Link>
+        <Link className="menu-row link-row" href="/notifications">
+          <span>
+            Notification center
+            {unreadNotificationCount > 0
+              ? ` · ${unreadNotificationCount} new`
+              : ""}
+          </span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/settings/notifications">
-          <span>Notifications</span>
+          <span>Notification settings</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/activity">

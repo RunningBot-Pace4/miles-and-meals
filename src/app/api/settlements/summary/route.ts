@@ -1,14 +1,23 @@
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
-import {
-  getSession,
-} from "@/lib/session";
+import { recordApiMetric } from "@/lib/performance";
+import { getSession } from "@/lib/session";
 import { serializeSettlementLiveData } from "@/lib/settlement-live";
 
 export async function GET(request: Request) {
+  const started = Date.now();
   const session = await getSession();
 
   if (!session) {
+    await recordApiMetric({
+      userId: null,
+      route: "/api/settlements/summary",
+      method: "GET",
+      durationMs:
+        Date.now() - started,
+      statusCode: 401,
+    });
+
     return Response.json(
       { error: "Unauthorized" },
       {
@@ -36,6 +45,15 @@ export async function GET(request: Request) {
         requestedCountryId,
     )
   ) {
+    await recordApiMetric({
+      userId: session.user.id,
+      route: "/api/settlements/summary",
+      method: "GET",
+      durationMs:
+        Date.now() - started,
+      statusCode: 403,
+    });
+
     return Response.json(
       { error: "Country not accessible." },
       {
@@ -67,11 +85,23 @@ export async function GET(request: Request) {
     selectedCountries[0]
       ?.baseCurrency ?? "MYR";
 
-  return Response.json(
+  const data =
     serializeSettlementLiveData(
       summary,
       baseCurrency,
-    ),
+    );
+
+  await recordApiMetric({
+    userId: session.user.id,
+    route: "/api/settlements/summary",
+    method: "GET",
+    durationMs:
+      Date.now() - started,
+    statusCode: 200,
+  });
+
+  return Response.json(
+    data,
     {
       headers: {
         "cache-control": "no-store",

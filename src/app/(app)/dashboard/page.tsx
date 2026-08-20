@@ -1,7 +1,7 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { CountryQuickSelect } from "@/components/CountryQuickSelect";
+import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
-import { SettlementLiveRefresh } from "@/components/SettlementLiveRefresh";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney, toNumber } from "@/lib/money";
@@ -10,16 +10,6 @@ import { serializeSettlementLiveData } from "@/lib/settlement-live";
 
 type DashboardPageProps = {
   searchParams: Promise<{ country?: string }>;
-};
-
-const categoryIcons: Record<string, string> = {
-  Food: "🥢",
-  Flights: "✈",
-  Hotel: "⌂",
-  Transport: "↗",
-  Attractions: "◎",
-  Shopping: "◇",
-  Other: "•",
 };
 
 function StyledTripTitle({
@@ -154,14 +144,16 @@ export default async function DashboardPage({
       summary,
       baseCurrency,
     );
+  const financeLiveData = {
+    total: summary.total,
+    categories: summary.categories,
+    budget,
+    remaining,
+    baseCurrency,
+  };
 
   return (
     <div className="stack gap-lg dashboard-page">
-      <SettlementLiveRefresh
-        intervalMs={8000}
-        showBadge={false}
-        channels={["expense", "planner"]}
-      />
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">YOUR TRAVEL COMPANION</p>
@@ -362,57 +354,13 @@ export default async function DashboardPage({
         )
       ) : (
         <>
-          <section
-            className="stat-grid dashboard-stats travel-stat-grid"
-            aria-label="Trip wallet summary"
-          >
-            <article className="stat-card travel-stat spent">
-              <span className="travel-stat-icon" aria-hidden="true">
-                ↗
-              </span>
-              <div>
-                <span>Spent</span>
-                <strong>
-                  {formatMoney(summary.total, baseCurrency)}
-                </strong>
-                <small>What the trip has used</small>
-              </div>
-            </article>
+          <LiveDashboardFinance
+            initialData={
+              financeLiveData
+            }
+            countryId={selectedId}
+          />
 
-            <article className="stat-card travel-stat budget">
-              <span className="travel-stat-icon" aria-hidden="true">
-                ◫
-              </span>
-              <div>
-                <span>Budget</span>
-                <strong>{formatMoney(budget, baseCurrency)}</strong>
-                <small>Your travel wallet</small>
-              </div>
-            </article>
-
-            <article
-              className={
-                remaining < 0
-                  ? "stat-card travel-stat remaining danger"
-                  : "stat-card travel-stat remaining success"
-              }
-            >
-              <span className="travel-stat-icon" aria-hidden="true">
-                ✦
-              </span>
-              <div>
-                <span>Remaining</span>
-                <strong>
-                  {formatMoney(remaining, baseCurrency)}
-                </strong>
-                <small>
-                  {remaining < 0
-                    ? "Over planned budget"
-                    : "Ready for the next stop"}
-                </small>
-              </div>
-            </article>
-          </section>
 
           <LiveSettlementWorkspace
             initialData={
@@ -480,50 +428,7 @@ export default async function DashboardPage({
             </div>
           </section>
 
-          <section className="content-grid">
-            <article className="panel dashboard-panel">
-              <div className="panel-title">
-                <div>
-                  <p className="eyebrow">SPENDING</p>
-                  <h2>By category</h2>
-                </div>
-                <Link className="panel-link" href="/expenses">
-                  View all
-                </Link>
-              </div>
-              <div className="category-list">
-                {summary.categories.length ? (
-                  summary.categories.map((item) => {
-                    const percentage =
-                      summary.total > 0
-                        ? Math.min(100, (item.amount / summary.total) * 100)
-                        : 0;
 
-                    return (
-                      <div className="category-row" key={item.category}>
-                        <span className="category-icon">
-                          {categoryIcons[item.category] ?? "•"}
-                        </span>
-                        <div className="category-copy">
-                          <div>
-                            <span>{item.category}</span>
-                            <strong>{formatMoney(item.amount, baseCurrency)}</strong>
-                          </div>
-                          <span className="category-track">
-                            <span style={{ width: `${percentage}%` }} />
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <p className="muted">No expenses yet.</p>
-                )}
-              </div>
-            </article>
-
-
-          </section>
 
         </>
       )}
