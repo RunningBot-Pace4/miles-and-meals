@@ -121,6 +121,7 @@ const requiredFiles = [
   "src/components/NumericInputGuard.tsx",
   "src/lib/numeric-input.ts",
   "tests/numeric-input.test.ts",
+  "src/app/api/trips/[id]/countries/bulk/route.ts",
 ];
 
 for (const file of requiredFiles) {
@@ -967,13 +968,10 @@ if (
   ) ||
   !tripManagerV47.includes(
     "travelers · Manage",
-  ) ||
-  !tripManagerV47.includes(
-    "open\n                >",
   )
 ) {
   fail(
-    "Newly added country management must be visible without looking missing.",
+    "Trip Owner country management affordance is missing.",
   );
 }
 
@@ -1010,6 +1008,73 @@ if (
 ) {
   fail(
     "Configured Countries must display the trip name.",
+  );
+}
+
+const notificationCenterV48 = read(
+  "src/components/NotificationCenter.tsx",
+);
+const tripManagerV48 = read(
+  "src/components/TripManager.tsx",
+);
+const bulkCountryRouteV48 = read(
+  "src/app/api/trips/[id]/countries/bulk/route.ts",
+);
+const validationV48 = read(
+  "src/lib/validation.ts",
+);
+
+if (
+  !notificationCenterV48.includes(
+    "selectedNotification",
+  ) ||
+  !notificationCenterV48.includes(
+    "notification-detail-dialog",
+  ) ||
+  !notificationCenterV48.includes(
+    "Open related screen",
+  ) ||
+  notificationCenterV48.includes(
+    "openNotification(",
+  )
+) {
+  fail(
+    "Notification items must open details before navigating to the related screen.",
+  );
+}
+
+if (
+  !tripManagerV48.includes(
+    "Add destination countries",
+  ) ||
+  !tripManagerV48.includes(
+    "pendingCountries",
+  ) ||
+  !tripManagerV48.includes(
+    "Add to list",
+  ) ||
+  !tripManagerV48.includes(
+    "addPendingCountries",
+  ) ||
+  !bulkCountryRouteV48.includes(
+    "createCountriesBulkSchema",
+  ) ||
+  !validationV48.includes(
+    "createCountriesBulkSchema",
+  )
+) {
+  fail(
+    "Trip Owner multi-country queue/bulk add is missing.",
+  );
+}
+
+if (
+  tripManagerV48.includes(
+    'className="owner-country-card"\n                  key={\n                    country.id\n                  }\n                  open'
+  )
+) {
+  fail(
+    "Trip Owner destination cards must be collapsed by default.",
   );
 }
 

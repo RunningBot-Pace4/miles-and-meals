@@ -12316,3 +12316,323 @@ body {
     flex-direction: column;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v48 — Notification details + multi-country owner trips                    */
+/* -------------------------------------------------------------------------- */
+
+/* Notification detail-first UX ------------------------------------------- */
+
+.notification-center-item {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.notification-center-item-main {
+  width: 100%;
+  display: grid;
+  grid-template-columns:
+    42px
+    minmax(0, 1fr)
+    auto;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.9rem;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notification-center-item-main:hover {
+  background: rgb(18 120 111 / 3%);
+}
+
+.notification-center-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.notification-center-title-row > strong {
+  color: var(--travel-ink);
+  font-size: 0.8rem;
+}
+
+.notification-new-badge {
+  padding: 0.18rem 0.38rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--primary);
+  font-size: 0.56rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.notification-center-body-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #5f625e;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.notification-center-chevron {
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.notification-center-quick-action {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0.9rem 0.65rem;
+}
+
+.notification-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(19 31 29 / 48%);
+  backdrop-filter: blur(8px);
+}
+
+.notification-detail-dialog {
+  width: min(540px, 100%);
+  max-height: min(80svh, 720px);
+  display: grid;
+  grid-template-rows:
+    auto
+    minmax(0, 1fr)
+    auto;
+  overflow: hidden;
+  border: 1px solid rgb(18 120 111 / 16%);
+  border-radius: 24px;
+  background: #fffdf9;
+  box-shadow:
+    0 30px 80px rgb(20 37 33 / 24%);
+}
+
+.notification-detail-header {
+  display: grid;
+  grid-template-columns:
+    46px
+    minmax(0, 1fr)
+    auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.notification-detail-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.notification-detail-header h2 {
+  margin: 0.18rem 0 0;
+  color: var(--travel-ink);
+  font-size: 1.05rem;
+}
+
+.notification-detail-close {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  background: #f6f2ea;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.notification-detail-body {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.notification-detail-body > p {
+  margin: 0;
+  color: #515854;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.notification-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.notification-detail-actions {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1.4fr);
+  gap: 0.6rem;
+  padding: 0.9rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  background: #fbfaf7;
+}
+
+/* Multi-country queue ----------------------------------------------------- */
+
+.owner-country-queue-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.owner-country-queue-form label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.owner-country-queue-hint {
+  margin: 0;
+  padding: 0.72rem;
+  border: 1px dashed rgb(18 120 111 / 20%);
+  border-radius: 14px;
+  color: var(--muted);
+  background: #f7fbf9;
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
+.owner-country-pending-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.2rem;
+}
+
+.owner-country-pending-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.owner-country-pending-heading strong {
+  color: var(--travel-ink);
+  font-size: 0.72rem;
+}
+
+.owner-country-pending-heading span {
+  color: var(--primary);
+  font-size: 0.63rem;
+  font-weight: 800;
+}
+
+.owner-country-pending-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(150px, 220px)
+    auto;
+  gap: 0.6rem;
+  align-items: end;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fffdf9;
+}
+
+.owner-country-pending-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.owner-country-pending-row > div strong {
+  color: var(--travel-ink);
+  font-size: 0.7rem;
+}
+
+.owner-country-pending-row > div small {
+  color: var(--muted);
+  font-size: 0.6rem;
+}
+
+.owner-country-pending-row label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.owner-country-pending-row label > span {
+  color: var(--muted);
+  font-size: 0.59rem;
+  font-weight: 750;
+}
+
+.owner-country-pending-row .text-danger {
+  min-height: 42px;
+}
+
+/* Country cards intentionally stay compact until Manage is opened. */
+
+.owner-country-card:not([open]) > summary {
+  min-height: 70px;
+}
+
+.owner-country-card[open] > summary {
+  border-bottom: 1px solid var(--border);
+  background: #fbfaf7;
+}
+
+@media (max-width: 640px) {
+  .notification-detail-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .notification-detail-dialog {
+    width: 100%;
+    max-height: 86svh;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .notification-detail-actions {
+    grid-template-columns:
+      minmax(0, 1fr);
+  }
+
+  .notification-detail-actions .button {
+    width: 100%;
+  }
+
+  .owner-country-pending-row {
+    grid-template-columns:
+      minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .owner-country-pending-row .text-danger {
+    justify-self: start;
+    min-height: auto;
+  }
+}

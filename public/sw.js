@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v47";
+const CACHE_NAME = "miles-meals-static-v48";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [

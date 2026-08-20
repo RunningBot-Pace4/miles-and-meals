@@ -257,3 +257,17 @@ and prevents non-admin travelers from receiving other users' email addresses.
 No new v47 database migration is required beyond v46's `trip_budgets`.
 
 See `V47-NUMERIC-COUNTRY-PRIVACY-FIXES.md`.
+
+
+## v48 Notification Details + Multi-Country Trip Owner
+
+v48 changes Notification Center to a detail-first flow: tap a notification to
+open a dialog/mobile bottom sheet, then optionally open the related screen.
+
+Trip Owners can queue multiple countries with individual FX values and add them
+as one batch. Existing destination cards are collapsed by default to keep long
+trips compact.
+
+No new v48 database migration is required.
+
+See `V48-NOTIFICATION-DETAILS-MULTI-COUNTRY-COLLAPSE.md`.

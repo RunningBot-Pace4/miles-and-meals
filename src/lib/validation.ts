@@ -27,6 +27,17 @@ export const createCountrySchema = z.object({
   fxRateProvider: z.string().trim().max(120).optional().default("Manual"),
 });
 
+export const createCountriesBulkSchema = z.object({
+  countries: z
+    .array(
+      createCountrySchema.omit({
+        tripId: true,
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
 export const updateCountrySchema = z.object({
   defaultExchangeRate: z.coerce.number().positive().max(1_000_000),
 });

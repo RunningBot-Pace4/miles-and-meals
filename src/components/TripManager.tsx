@@ -26,6 +26,15 @@ type ManagedCountry = {
   memberIds: string[];
 };
 
+type PendingCountry = {
+  code: string;
+  name: string;
+  currencyCode: string;
+  defaultExchangeRate: string;
+  fxRateDate: string;
+  fxRateProvider: string;
+};
+
 type ManagedTrip = {
   id: string;
   name: string;
@@ -130,6 +139,10 @@ function ManagedTripCard({
   const [error, setError] =
     useState("");
   const [
+    pendingCountries,
+    setPendingCountries,
+  ] = useState<PendingCountry[]>([]);
+  const [
     assignments,
     setAssignments,
   ] = useState<
@@ -177,22 +190,27 @@ function ManagedTripCard({
 
   const availableCountries =
     useMemo(() => {
-      const existing =
-        new Set(
-          trip.countries.map(
+      const unavailable =
+        new Set([
+          ...trip.countries.map(
             (country) =>
               country.code,
           ),
-        );
+          ...pendingCountries.map(
+            (country) =>
+              country.code,
+          ),
+        ]);
 
       return countryCatalog.filter(
         (country) =>
-          !existing.has(
+          !unavailable.has(
             country.code,
           ),
       );
     }, [
       countryCatalog,
+      pendingCountries,
       trip.countries,
     ]);
 
@@ -343,7 +361,7 @@ function ManagedTripCard({
     }
   }
 
-  async function addCountry(
+  function queueCountry(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
@@ -358,19 +376,15 @@ function ManagedTripCard({
       return;
     }
 
-    setBusy("country");
     setError("");
-
-    try {
-      await mutation(
-        `/api/trips/${trip.id}/countries`,
-        "POST",
+    setPendingCountries(
+      (current) => [
+        ...current,
         {
-          tripId: trip.id,
-          name:
-            selectedCountry.name,
           code:
             selectedCountry.code,
+          name:
+            selectedCountry.name,
           currencyCode:
             selectedCountry.currencyCode,
           defaultExchangeRate:
@@ -381,14 +395,124 @@ function ManagedTripCard({
             fxProvider ||
             "Manual",
         },
+      ],
+    );
+
+    setCountryCode("");
+    setFxRate("");
+    setFxDate("");
+    setFxProvider("");
+    setFxBusy(false);
+  }
+
+  function removePendingCountry(
+    code: string,
+  ) {
+    setPendingCountries(
+      (current) =>
+        current.filter(
+          (country) =>
+            country.code !== code,
+        ),
+    );
+  }
+
+  function updatePendingFx(
+    code: string,
+    value: string,
+  ) {
+    setPendingCountries(
+      (current) =>
+        current.map(
+          (country) =>
+            country.code === code
+              ? {
+                  ...country,
+                  defaultExchangeRate:
+                    value,
+                  fxRateDate: "",
+                  fxRateProvider:
+                    "Manual override",
+                }
+              : country,
+        ),
+    );
+  }
+
+  async function addPendingCountries() {
+    if (
+      pendingCountries.length === 0
+    ) {
+      return;
+    }
+
+    const invalid =
+      pendingCountries.find(
+        (country) =>
+          !country.defaultExchangeRate.trim(),
       );
+
+    if (invalid) {
+      setError(
+        `Enter an FX rate for ${invalid.name}.`,
+      );
+      return;
+    }
+
+    setBusy("countries");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/trips/${trip.id}/countries/bulk`,
+        {
+          method: "POST",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            countries:
+              pendingCountries.map(
+                (country) => ({
+                  name:
+                    country.name,
+                  code:
+                    country.code,
+                  currencyCode:
+                    country.currencyCode,
+                  defaultExchangeRate:
+                    country.defaultExchangeRate,
+                  fxRateDate:
+                    country.fxRateDate,
+                  fxRateProvider:
+                    country.fxRateProvider,
+                }),
+              ),
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as ApiPayload;
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to add destination countries.",
+        );
+      }
 
       window.location.reload();
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : "Unable to add country.",
+          : "Unable to add destination countries.",
       );
       setBusy(null);
     }
@@ -486,7 +610,7 @@ function ManagedTripCard({
   return (
     <article className="panel owner-trip-card">
       {busy === "trip" ||
-      busy === "country" ? (
+      busy === "countries" ? (
         <SavingOverlay
           title="Updating your trip"
           message="Saving the trip setup securely."
@@ -618,150 +742,257 @@ function ManagedTripCard({
 
       <details className="owner-trip-section">
         <summary>
-          Add destination country
+          Add destination countries
         </summary>
 
-        <form
-          className="owner-trip-section-body"
-          onSubmit={
-            addCountry
-          }
-        >
-          <label>
-            Country
-            <select
-              value={
-                countryCode
-              }
-              required
-              onChange={(
-                event,
-              ) =>
-                chooseCountry(
-                  event.target
-                    .value,
-                )
+        <div className="owner-trip-section-body">
+          <form
+            className="owner-country-queue-form"
+            onSubmit={
+              queueCountry
+            }
+          >
+            <label>
+              Country
+              <select
+                value={
+                  countryCode
+                }
+                required
+                onChange={(
+                  event,
+                ) =>
+                  chooseCountry(
+                    event.target
+                      .value,
+                  )
+                }
+              >
+                <option value="">
+                  Choose country
+                </option>
+                {availableCountries.map(
+                  (country) => (
+                    <option
+                      key={
+                        country.code
+                      }
+                      value={
+                        country.code
+                      }
+                    >
+                      {
+                        country.name
+                      }
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+
+            {selectedCountry ? (
+              <>
+                <div className="two-col">
+                  <label>
+                    Currency
+                    <input
+                      value={
+                        selectedCountry.currencyCode
+                      }
+                      readOnly
+                    />
+                  </label>
+
+                  <label>
+                    Trip base
+                    <input
+                      value={
+                        trip.baseCurrency
+                      }
+                      readOnly
+                    />
+                  </label>
+                </div>
+
+                <label>
+                  1{" "}
+                  {
+                    selectedCountry.currencyCode
+                  }{" "}
+                  = ?{" "}
+                  {
+                    trip.baseCurrency
+                  }
+                  <input
+                    inputMode="decimal"
+                    data-numeric-input="decimal"
+                    required
+                    value={
+                      fxRate
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      manualFx(
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder={
+                      fxBusy
+                        ? "Loading daily FX…"
+                        : "Daily FX or manual value"
+                    }
+                  />
+                </label>
+
+                <div className="admin-fx-helper">
+                  <span>
+                    {fxBusy
+                      ? "Checking today's FX…"
+                      : fxRate
+                        ? `${fxProvider || "Manual"}${fxDate ? ` · ${fxDate}` : ""}`
+                        : "Enter a valid FX rate."}
+                  </span>
+
+                  <button
+                    className="button secondary compact-button"
+                    type="button"
+                    disabled={
+                      fxBusy
+                    }
+                    onClick={() =>
+                      void loadFx(
+                        selectedCountry,
+                      )
+                    }
+                  >
+                    Refresh FX
+                  </button>
+                </div>
+              </>
+            ) : null}
+
+            <button
+              className="button secondary"
+              type="submit"
+              disabled={
+                busy !== null ||
+                fxBusy ||
+                !selectedCountry ||
+                !fxRate
               }
             >
-              <option value="">
-                Choose country
-              </option>
-              {availableCountries.map(
+              Add to list
+            </button>
+          </form>
+
+          {pendingCountries.length ? (
+            <div className="owner-country-pending-list">
+              <div className="owner-country-pending-heading">
+                <strong>
+                  Ready to add
+                </strong>
+                <span>
+                  {
+                    pendingCountries.length
+                  }{" "}
+                  {pendingCountries.length ===
+                  1
+                    ? "country"
+                    : "countries"}
+                </span>
+              </div>
+
+              {pendingCountries.map(
                 (country) => (
-                  <option
+                  <article
+                    className="owner-country-pending-row"
                     key={
                       country.code
                     }
-                    value={
-                      country.code
-                    }
                   >
-                    {
-                      country.name
-                    }
-                  </option>
+                    <div>
+                      <strong>
+                        {
+                          country.name
+                        }
+                      </strong>
+                      <small>
+                        {
+                          country.currencyCode
+                        }{" "}
+                        →{" "}
+                        {
+                          trip.baseCurrency
+                        }
+                      </small>
+                    </div>
+
+                    <label>
+                      <span>
+                        FX
+                      </span>
+                      <input
+                        inputMode="decimal"
+                        data-numeric-input="decimal"
+                        value={
+                          country.defaultExchangeRate
+                        }
+                        onChange={(
+                          event,
+                        ) =>
+                          updatePendingFx(
+                            country.code,
+                            event.target
+                              .value,
+                          )
+                        }
+                      />
+                    </label>
+
+                    <button
+                      className="text-danger"
+                      type="button"
+                      onClick={() =>
+                        removePendingCountry(
+                          country.code,
+                        )
+                      }
+                    >
+                      Remove
+                    </button>
+                  </article>
                 ),
               )}
-            </select>
-          </label>
 
-          {selectedCountry ? (
-            <>
-              <div className="two-col">
-                <label>
-                  Currency
-                  <input
-                    value={
-                      selectedCountry.currencyCode
-                    }
-                    readOnly
-                  />
-                </label>
-
-                <label>
-                  Trip base
-                  <input
-                    value={
-                      trip.baseCurrency
-                    }
-                    readOnly
-                  />
-                </label>
-              </div>
-
-              <label>
-                1{" "}
-                {
-                  selectedCountry.currencyCode
-                }{" "}
-                = ?{" "}
-                {
-                  trip.baseCurrency
+              <button
+                className="button primary"
+                type="button"
+                data-requires-online="true"
+                disabled={
+                  busy !== null
                 }
-                <input
-                  inputMode="decimal"
-              data-numeric-input="decimal"
-                  required
-                  value={
-                    fxRate
-                  }
-                  onChange={(
-                    event,
-                  ) =>
-                    manualFx(
-                      event.target
-                        .value,
-                    )
-                  }
-                  placeholder={
-                    fxBusy
-                      ? "Loading daily FX…"
-                      : "Daily FX or manual value"
-                  }
-                />
-              </label>
-
-              <div className="admin-fx-helper">
-                <span>
-                  {fxBusy
-                    ? "Checking today's FX…"
-                    : fxRate
-                      ? `${fxProvider || "Manual"}${fxDate ? ` · ${fxDate}` : ""}`
-                      : "Enter a valid FX rate."}
-                </span>
-
-                <button
-                  className="button secondary compact-button"
-                  type="button"
-                  disabled={
-                    fxBusy
-                  }
-                  onClick={() =>
-                    void loadFx(
-                      selectedCountry,
-                    )
-                  }
-                >
-                  Refresh FX
-                </button>
-              </div>
-            </>
-          ) : null}
-
-          <button
-            className="button primary"
-            type="submit"
-            data-requires-online="true"
-            disabled={
-              busy !== null ||
-              fxBusy ||
-              !selectedCountry ||
-              !fxRate
-            }
-          >
-            Add country
-          </button>
-        </form>
+                onClick={() =>
+                  void addPendingCountries()
+                }
+              >
+                Add{" "}
+                {
+                  pendingCountries.length
+                }{" "}
+                {pendingCountries.length ===
+                1
+                  ? "country"
+                  : "countries"}
+              </button>
+            </div>
+          ) : (
+            <p className="owner-country-queue-hint">
+              Choose a country, confirm its FX, then add it to the list. Repeat for every destination before saving the batch.
+            </p>
+          )}
+        </div>
       </details>
 
       <div className="owner-country-list">
@@ -782,7 +1013,6 @@ function ManagedTripCard({
                   key={
                     country.id
                   }
-                  open
                 >
                   <summary>
                     <span>

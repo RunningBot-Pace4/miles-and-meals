@@ -39,6 +39,24 @@ function categoryIcon(
   return "•";
 }
 
+function categoryLabel(
+  category: string,
+): string {
+  if (category === "PAYMENTS") {
+    return "Payment";
+  }
+
+  if (category === "EXPENSES") {
+    return "Expense";
+  }
+
+  if (category === "PLANNER") {
+    return "Planner";
+  }
+
+  return "Trip update";
+}
+
 function formatTime(
   value: string,
 ): string {
@@ -64,6 +82,12 @@ export function NotificationCenter({
     useState<string | null>(null);
   const [error, setError] =
     useState("");
+  const [
+    selectedNotification,
+    setSelectedNotification,
+  ] = useState<NotificationItem | null>(
+    null,
+  );
 
   const reload = useCallback(
     async () => {
@@ -85,6 +109,22 @@ export function NotificationCenter({
         setItems(payload.items);
         setUnreadCount(
           payload.unreadCount,
+        );
+
+        setSelectedNotification(
+          (current) => {
+            if (!current) {
+              return null;
+            }
+
+            return (
+              payload.items.find(
+                (item) =>
+                  item.id ===
+                  current.id,
+              ) ?? current
+            );
+          },
         );
       } catch {
         // The existing inbox remains usable if a background refresh fails.
@@ -130,11 +170,47 @@ export function NotificationCenter({
     };
   }, [reload]);
 
+  useEffect(() => {
+    if (!selectedNotification) {
+      return;
+    }
+
+    const previousOverflow =
+      document.body.style.overflow;
+
+    document.body.style.overflow =
+      "hidden";
+
+    function closeOnEscape(
+      event: KeyboardEvent,
+    ) {
+      if (event.key === "Escape") {
+        setSelectedNotification(
+          null,
+        );
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      closeOnEscape,
+    );
+
+    return () => {
+      document.body.style.overflow =
+        previousOverflow;
+      window.removeEventListener(
+        "keydown",
+        closeOnEscape,
+      );
+    };
+  }, [selectedNotification]);
+
   async function markRead(
     item: NotificationItem,
-  ) {
+  ): Promise<boolean> {
     if (item.readAt) {
-      return;
+      return true;
     }
 
     setBusyId(item.id);
@@ -172,6 +248,16 @@ export function NotificationCenter({
             : entry,
         ),
       );
+      setSelectedNotification(
+        (current) =>
+          current?.id ===
+          item.id
+            ? {
+                ...current,
+                readAt: now,
+              }
+            : current,
+      );
       setUnreadCount((count) =>
         Math.max(0, count - 1),
       );
@@ -181,22 +267,33 @@ export function NotificationCenter({
           "mnm:notifications-updated",
         ),
       );
+
+      return true;
     } catch {
       setError(
         "Unable to update notification status.",
       );
+      return false;
     } finally {
       setBusyId(null);
     }
   }
 
-  async function openNotification(
+  function viewDetails(
     item: NotificationItem,
   ) {
-    if (!item.readAt) {
-      await markRead(item);
-    }
+    setSelectedNotification(
+      item,
+    );
 
+    if (!item.readAt) {
+      void markRead(item);
+    }
+  }
+
+  function openRelatedScreen(
+    item: NotificationItem,
+  ) {
     window.location.assign(
       item.url,
     );
@@ -239,6 +336,17 @@ export function NotificationCenter({
             entry.readAt ?? now,
         })),
       );
+      setSelectedNotification(
+        (current) =>
+          current
+            ? {
+                ...current,
+                readAt:
+                  current.readAt ??
+                  now,
+              }
+            : null,
+      );
       setUnreadCount(0);
 
       window.dispatchEvent(
@@ -262,9 +370,7 @@ export function NotificationCenter({
           <strong>
             {unreadCount}
           </strong>
-          <span>
-            unread
-          </span>
+          <span>unread</span>
         </div>
 
         <button
@@ -302,73 +408,77 @@ export function NotificationCenter({
               }
               key={item.id}
             >
-              <span
-                className="notification-center-icon"
-                aria-hidden="true"
+              <button
+                type="button"
+                className="notification-center-item-main"
+                onClick={() =>
+                  viewDetails(
+                    item,
+                  )
+                }
               >
-                {categoryIcon(
-                  item.category,
-                )}
-              </span>
-
-              <div className="notification-center-copy">
-                <div>
-                  <strong>
-                    {item.title}
-                  </strong>
-                  {!item.readAt ? (
-                    <span>
-                      New
-                    </span>
-                  ) : null}
-                </div>
-
-                <p>{item.body}</p>
-                <small>
-                  {formatTime(
-                    item.createdAt,
+                <span
+                  className="notification-center-icon"
+                  aria-hidden="true"
+                >
+                  {categoryIcon(
+                    item.category,
                   )}
-                </small>
+                </span>
 
-                <div className="notification-center-actions">
+                <span className="notification-center-copy">
+                  <span className="notification-center-title-row">
+                    <strong>
+                      {item.title}
+                    </strong>
+
+                    {!item.readAt ? (
+                      <span className="notification-new-badge">
+                        New
+                      </span>
+                    ) : null}
+                  </span>
+
+                  <span className="notification-center-body-preview">
+                    {item.body}
+                  </span>
+
+                  <small>
+                    {formatTime(
+                      item.createdAt,
+                    )}
+                  </small>
+                </span>
+
+                <span
+                  className="notification-center-chevron"
+                  aria-hidden="true"
+                >
+                  ›
+                </span>
+              </button>
+
+              {!item.readAt ? (
+                <div className="notification-center-quick-action">
                   <button
                     type="button"
-                    className="button secondary"
+                    className="text-button"
                     disabled={
-                      busyId !==
-                      null
+                      busyId !== null
                     }
                     onClick={() =>
-                      void openNotification(
+                      void markRead(
                         item,
                       )
                     }
                   >
-                    Open
+                    {busyId ===
+                    item.id
+                      ? "Updating…"
+                      : "Mark read"}
                   </button>
-
-                  {!item.readAt ? (
-                    <button
-                      type="button"
-                      className="text-button"
-                      disabled={
-                        busyId !==
-                        null
-                      }
-                      onClick={() =>
-                        void markRead(
-                          item,
-                        )
-                      }
-                    >
-                      {busyId ===
-                      item.id
-                        ? "Updating…"
-                        : "Mark read"}
-                    </button>
-                  ) : null}
                 </div>
-              </div>
+              ) : null}
             </article>
           ))
         ) : (
@@ -382,6 +492,114 @@ export function NotificationCenter({
           </article>
         )}
       </section>
+
+      {selectedNotification ? (
+        <div
+          className="notification-detail-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setSelectedNotification(
+                null,
+              );
+            }
+          }}
+        >
+          <section
+            className="notification-detail-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notification-detail-title"
+          >
+            <header className="notification-detail-header">
+              <span
+                className="notification-detail-icon"
+                aria-hidden="true"
+              >
+                {categoryIcon(
+                  selectedNotification.category,
+                )}
+              </span>
+
+              <div>
+                <p className="eyebrow">
+                  {categoryLabel(
+                    selectedNotification.category,
+                  )}
+                </p>
+                <h2 id="notification-detail-title">
+                  {
+                    selectedNotification.title
+                  }
+                </h2>
+              </div>
+
+              <button
+                className="notification-detail-close"
+                type="button"
+                aria-label="Close notification details"
+                onClick={() =>
+                  setSelectedNotification(
+                    null,
+                  )
+                }
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="notification-detail-body">
+              <p>
+                {
+                  selectedNotification.body
+                }
+              </p>
+
+              <div className="notification-detail-meta">
+                <span>
+                  {formatTime(
+                    selectedNotification.createdAt,
+                  )}
+                </span>
+                <span>
+                  {selectedNotification.readAt
+                    ? "Read"
+                    : "Marking as read…"}
+                </span>
+              </div>
+            </div>
+
+            <footer className="notification-detail-actions">
+              <button
+                className="button secondary"
+                type="button"
+                onClick={() =>
+                  setSelectedNotification(
+                    null,
+                  )
+                }
+              >
+                Close
+              </button>
+
+              <button
+                className="button primary"
+                type="button"
+                onClick={() =>
+                  openRelatedScreen(
+                    selectedNotification,
+                  )
+                }
+              >
+                Open related screen
+              </button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
