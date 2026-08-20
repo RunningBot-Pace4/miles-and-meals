@@ -1,4 +1,7 @@
 import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
+import {
   loadExpenseLiveData,
 } from "@/lib/expense-live";
 import { getSession } from "@/lib/session";
@@ -30,9 +33,14 @@ export async function GET(
     return response;
   }
 
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
   const data =
     await loadExpenseLiveData(
       session.user,
+      activeTrip.tripId,
     );
 
   await recordApiMetric({

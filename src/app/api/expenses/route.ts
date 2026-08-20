@@ -2,9 +2,11 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { expenseSplits, expenses } from "@/db/schema";
 import {
-  canAccessCountry,
+  getActiveTripContext,
+  isCountryInActiveTrip,
+} from "@/lib/active-trip";
+import {
   getCountryWithTrip,
-  listAccessibleCountries,
   listCountryMembers,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
@@ -23,8 +25,15 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const allowed = await listAccessibleCountries(session.user);
-  const ids = allowed.map((country) => country.id);
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+  const ids =
+    activeTrip.countries.map(
+      (country) =>
+        country.id,
+    );
 
   if (ids.length === 0) {
     return Response.json({ expenses: [] });
@@ -53,7 +62,7 @@ export async function POST(request: Request) {
   try {
     const input = expenseSchema.parse(await request.json());
 
-    if (!(await canAccessCountry(session.user, input.countryId))) {
+    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 

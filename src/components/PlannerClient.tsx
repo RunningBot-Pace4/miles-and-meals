@@ -339,7 +339,7 @@ function PlannerItemForm({
           >
             {countries.map((country) => (
               <option value={country.id} key={country.id}>
-                {country.tripName} · {country.name}
+                {country.name}
               </option>
             ))}
           </select>
@@ -1032,10 +1032,12 @@ export function PlannerClient({
               setError("");
             }}
           >
-            <option value="ALL">All my countries</option>
+            <option value="ALL">
+              All destinations in this trip
+            </option>
             {countries.map((country) => (
               <option value={country.id} key={country.id}>
-                {country.tripName} · {country.name}
+                {country.name}
               </option>
             ))}
           </select>

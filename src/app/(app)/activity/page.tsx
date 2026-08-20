@@ -1,3 +1,6 @@
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { listActivityForUser } from "@/lib/activity";
 import { requirePageSession } from "@/lib/session";
 
@@ -42,10 +45,20 @@ function iconForEntity(entityType: string): string {
 
 export default async function ActivityPage() {
   const session = await requirePageSession();
-  const activity = await listActivityForUser(
-    session.user,
-    120,
-  );
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+  const activity =
+    await listActivityForUser(
+      session.user,
+      120,
+      activeTrip.tripId,
+      activeTrip.countries.map(
+        (country) =>
+          country.id,
+      ),
+    );
 
   return (
     <div className="stack gap-lg activity-page">
@@ -54,8 +67,8 @@ export default async function ActivityPage() {
           <p className="eyebrow">PHASE 8 · HISTORY</p>
           <h1>Trip activity</h1>
           <p className="muted">
-            See important shared changes across expenses,
-            plans, settlements and Admin actions you can access.
+            See shared changes for the active trip across expenses,
+            plans and settlements.
           </p>
         </div>
       </div>

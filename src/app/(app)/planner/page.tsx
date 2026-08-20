@@ -2,13 +2,24 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
 import { PlannerClient } from "@/components/PlannerClient";
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { requirePageSession } from "@/lib/session";
 
 export default async function PlannerPage() {
   const session = await requirePageSession();
-  const countries = await listAccessibleCountries(session.user);
-  const ids = countries.map((country) => country.id);
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+  const countries =
+    activeTrip.countries;
+  const ids =
+    countries.map(
+      (country) =>
+        country.id,
+    );
 
   const items =
     ids.length === 0

@@ -1,7 +1,13 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
-import { canAccessCountry, getCountryWithTrip, listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+  isCountryInActiveTrip,
+} from "@/lib/active-trip";
+import {
+  getCountryWithTrip,
+} from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
 import { recordApiMetric } from "@/lib/performance";
 import { sendPushToCountry } from "@/lib/push";
@@ -27,8 +33,15 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const countries = await listAccessibleCountries(session.user);
-  const ids = countries.map((country) => country.id);
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+  const ids =
+    activeTrip.countries.map(
+      (country) =>
+        country.id,
+    );
 
   if (ids.length === 0) {
     await recordApiMetric({
@@ -94,7 +107,7 @@ export async function POST(request: Request) {
   try {
     const input = travelItemSchema.parse(await request.json());
 
-    if (!(await canAccessCountry(session.user, input.countryId))) {
+    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 

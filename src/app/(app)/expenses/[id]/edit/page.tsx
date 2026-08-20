@@ -3,7 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { expenseSplits, expenses } from "@/db/schema";
 import { ExpenseForm } from "@/components/ExpenseForm";
-import { canAccessCountry, listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { effectiveConvertedAmount } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
 
@@ -17,7 +19,19 @@ export default async function EditExpensePage({ params }: Props) {
   const rows = await db.select().from(expenses).where(eq(expenses.id, id)).limit(1);
   const expense = rows[0];
 
-  if (!expense || !(await canAccessCountry(session.user, expense.countryId))) {
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+
+  if (
+    !expense ||
+    !activeTrip.countries.some(
+      (country) =>
+        country.id ===
+        expense.countryId,
+    )
+  ) {
     notFound();
   }
 
@@ -55,7 +69,8 @@ export default async function EditExpensePage({ params }: Props) {
     }),
   );
 
-  const countries = await listAccessibleCountries(session.user);
+  const countries =
+    activeTrip.countries;
 
   return (
       <ExpenseForm

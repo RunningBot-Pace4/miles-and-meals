@@ -38,35 +38,44 @@ export type TripBudgetSummary = {
 
 export async function listMissingTripBudgets(
   userId: string,
+  tripId = "",
 ): Promise<MissingTripBudget[]> {
   try {
-    const accessibleTrips = await db
-      .selectDistinct({
-        tripId: trips.id,
-        tripName: trips.name,
-        baseCurrency:
-          trips.baseCurrency,
-      })
-      .from(countryMembers)
-      .innerJoin(
-        countries,
-        eq(
-          countryMembers.countryId,
-          countries.id,
-        ),
-      )
-      .innerJoin(
-        trips,
-        eq(
-          countries.tripId,
-          trips.id,
-        ),
-      )
-      .where(
-        eq(
-          countryMembers.userId,
-          userId,
-        ),
+    const accessibleTrips =
+      (
+        await db
+          .selectDistinct({
+            tripId: trips.id,
+            tripName: trips.name,
+            baseCurrency:
+              trips.baseCurrency,
+          })
+          .from(countryMembers)
+          .innerJoin(
+            countries,
+            eq(
+              countryMembers.countryId,
+              countries.id,
+            ),
+          )
+          .innerJoin(
+            trips,
+            eq(
+              countries.tripId,
+              trips.id,
+            ),
+          )
+          .where(
+            eq(
+              countryMembers.userId,
+              userId,
+            ),
+          )
+      ).filter(
+        (trip) =>
+          !tripId ||
+          trip.tripId ===
+            tripId,
       );
 
     if (

@@ -53,11 +53,20 @@ export type ExpenseLiveData = {
 
 export async function loadExpenseLiveData(
   currentUser: SessionUser,
+  tripId = "",
 ): Promise<ExpenseLiveData> {
-  const allowedCountries =
+  const allCountries =
     await listAccessibleCountries(
       currentUser,
     );
+  const allowedCountries =
+    tripId
+      ? allCountries.filter(
+          (country) =>
+            country.tripId ===
+            tripId,
+        )
+      : allCountries;
   const countryIds =
     allowedCountries.map(
       (country) => country.id,

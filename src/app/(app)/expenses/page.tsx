@@ -1,14 +1,22 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveExpensesWorkspace } from "@/components/LiveExpensesWorkspace";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { loadExpenseLiveData } from "@/lib/expense-live";
 import { requirePageSession } from "@/lib/session";
 
 export default async function ExpensesPage() {
   const session =
     await requirePageSession();
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
   const initialData =
     await loadExpenseLiveData(
       session.user,
+      activeTrip.tripId,
     );
 
   return (
@@ -19,10 +27,10 @@ export default async function ExpensesPage() {
             MONEY
           </p>
           <h1>
-            All trip expenses
+            Trip expenses
           </h1>
           <p className="muted">
-            See every accessible expense, who paid, and the stored FX amount.
+            See expenses for the active trip, who paid, and the stored FX amount.
           </p>
         </div>
 

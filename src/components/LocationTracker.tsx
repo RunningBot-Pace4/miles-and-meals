@@ -723,7 +723,7 @@ export function LocationTracker({
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id}>
-                  {country.tripName} · {country.name}
+                  {country.name}
                 </option>
               ))}
             </select>

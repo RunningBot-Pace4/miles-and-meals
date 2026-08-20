@@ -1,4 +1,9 @@
-import { desc, eq, inArray, or } from "drizzle-orm";
+import {
+  desc,
+  eq,
+  inArray,
+  or,
+} from "drizzle-orm";
 import { db } from "@/db";
 import {
   activityLogs,
@@ -44,6 +49,8 @@ export async function recordActivity(
 export async function listActivityForUser(
   currentUser: SessionUser,
   limit = 100,
+  activeTripId = "",
+  activeCountryIds: string[] = [],
 ) {
   const baseSelect = db
     .select({
@@ -64,6 +71,36 @@ export async function listActivityForUser(
       user,
       eq(activityLogs.actorUserId, user.id),
     );
+
+  if (activeTripId) {
+    const activeScope =
+      activeCountryIds.length
+        ? or(
+            eq(
+              activityLogs.tripId,
+              activeTripId,
+            ),
+            inArray(
+              activityLogs.countryId,
+              activeCountryIds,
+            ),
+          )
+        : eq(
+            activityLogs.tripId,
+            activeTripId,
+          );
+
+    return baseSelect
+      .where(
+        activeScope,
+      )
+      .orderBy(
+        desc(
+          activityLogs.createdAt,
+        ),
+      )
+      .limit(limit);
+  }
 
   const accessible = await listAccessibleCountries(
     currentUser,

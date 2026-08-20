@@ -1,6 +1,8 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { requirePageSession } from "@/lib/session";
 import { serializeSettlementLiveData } from "@/lib/settlement-live";
@@ -16,10 +18,12 @@ export default async function SettlementsPage({
 }: SettlementsPageProps) {
   const session =
     await requirePageSession();
-  const countries =
-    await listAccessibleCountries(
+  const activeTrip =
+    await getActiveTripContext(
       session.user,
     );
+  const countries =
+    activeTrip.countries;
   const query = await searchParams;
 
   const selectedId =
@@ -93,7 +97,7 @@ export default async function SettlementsPage({
                 name="country"
               >
                 <option value="">
-                  All trips
+                  All destinations
                 </option>
                 {countries.map(
                   (country) => (
@@ -105,10 +109,7 @@ export default async function SettlementsPage({
                         country.id
                       }
                     >
-                      {
-                        country.tripName
-                      }{" "}
-                      · {country.name}
+                      {country.name}
                     </option>
                   ),
                 )}

@@ -1,4 +1,6 @@
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { recordApiMetric } from "@/lib/performance";
 import { getSession } from "@/lib/session";
@@ -34,10 +36,12 @@ export async function GET(
     );
   }
 
-  const countries =
-    await listAccessibleCountries(
+  const activeTrip =
+    await getActiveTripContext(
       session.user,
     );
+  const countries =
+    activeTrip.countries;
   const url = new URL(
     request.url,
   );
@@ -86,11 +90,8 @@ export async function GET(
 
   if (
     requestedTripId &&
-    !countries.some(
-      (country) =>
-        country.tripId ===
-        requestedTripId,
-    )
+    requestedTripId !==
+      activeTrip.tripId
   ) {
     await recordApiMetric({
       userId:
@@ -125,13 +126,7 @@ export async function GET(
             country.id ===
             requestedCountryId,
         )
-      : requestedTripId
-        ? countries.filter(
-            (country) =>
-              country.tripId ===
-              requestedTripId,
-          )
-        : countries;
+      : countries;
 
   const summary =
     await buildExpenseSummary(

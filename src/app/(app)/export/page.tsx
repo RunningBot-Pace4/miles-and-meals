@@ -11,8 +11,8 @@ export default async function ExportPage() {
           <p className="eyebrow">PHASE 8 · BACKUP</p>
           <h1>Export trip data</h1>
           <p className="muted">
-            Download the countries you can access,
-            including expenses, planner items and settlements.
+            Download the active trip,
+            including its accessible destinations, expenses, planner items and settlements.
           </p>
         </div>
       </div>
@@ -60,8 +60,7 @@ export default async function ExportPage() {
       <section className="info-card">
         <strong>Access-safe export</strong>
         <p>
-          The export only contains countries your signed-in account is
-          currently allowed to view.
+          The export only contains destinations you can access inside the active trip selected from Home.
         </p>
       </section>
     </div>

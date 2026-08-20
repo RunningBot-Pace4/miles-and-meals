@@ -1,4 +1,6 @@
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { recordApiMetric } from "@/lib/performance";
 import { getSession } from "@/lib/session";
@@ -30,10 +32,12 @@ export async function GET(
     );
   }
 
-  const countries =
-    await listAccessibleCountries(
+  const activeTrip =
+    await getActiveTripContext(
       session.user,
     );
+  const countries =
+    activeTrip.countries;
   const url = new URL(
     request.url,
   );
@@ -42,19 +46,10 @@ export async function GET(
       "trip",
     ) ?? "";
 
-  const tripIds =
-    new Set(
-      countries.map(
-        (country) =>
-          country.tripId,
-      ),
-    );
-
   if (
     !requestedTripId ||
-    !tripIds.has(
-      requestedTripId,
-    )
+    requestedTripId !==
+      activeTrip.tripId
   ) {
     await recordApiMetric({
       userId:
@@ -70,7 +65,7 @@ export async function GET(
     return Response.json(
       {
         error:
-          "Trip is not accessible.",
+          "Trip is not active.",
       },
       { status: 403 },
     );

@@ -2,7 +2,9 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { TripQuickSelect } from "@/components/TripQuickSelect";
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
 import { formatMoney } from "@/lib/money";
 import {
@@ -13,13 +15,6 @@ import { serializeSettlementLiveData } from "@/lib/settlement-live";
 import {
   loadTripBudgetSummary,
 } from "@/lib/trip-budget";
-
-type DashboardPageProps = {
-  searchParams: Promise<{
-    trip?: string;
-    country?: string;
-  }>;
-};
 
 function StyledTripTitle({
   text,
@@ -123,102 +118,25 @@ function formatTripDateRange(
   );
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: DashboardPageProps) {
+export default async function DashboardPage() {
   const session =
     await requirePageSession();
-  const countries =
-    await listAccessibleCountries(
+  const activeTrip =
+    await getActiveTripContext(
       session.user,
     );
-  const query =
-    await searchParams;
-
-  const tripMap =
-    new Map<
-      string,
-      {
-        id: string;
-        name: string;
-        baseCurrency: string;
-        startDate:
-          | string
-          | null;
-        endDate:
-          | string
-          | null;
-      }
-    >();
-
-  for (const country of countries) {
-    if (
-      !tripMap.has(
-        country.tripId,
-      )
-    ) {
-      tripMap.set(
-        country.tripId,
-        {
-          id: country.tripId,
-          name:
-            country.tripName,
-          baseCurrency:
-            country.baseCurrency,
-          startDate:
-            country.startDate,
-          endDate:
-            country.endDate,
-        },
-      );
-    }
-  }
-
-  const tripOptions = [
-    ...tripMap.values(),
-  ].sort(
-    (left, right) =>
-      left.name.localeCompare(
-        right.name,
-      ),
-  );
-
-  const legacyCountryTripId =
-    query.country
-      ? countries.find(
-          (country) =>
-            country.id ===
-            query.country,
-        )?.tripId
-      : undefined;
-
+  const tripOptions =
+    activeTrip.trips;
   const requestedTripId =
-    query.trip &&
-    tripMap.has(query.trip)
-      ? query.trip
-      : legacyCountryTripId &&
-          tripMap.has(
-            legacyCountryTripId,
-          )
-        ? legacyCountryTripId
-        : tripOptions[0]?.id ??
-          "";
-
+    activeTrip.tripId;
   const selectedTrip =
-    requestedTripId
-      ? tripMap.get(
-          requestedTripId,
-        ) ?? null
-      : null;
-
+    tripOptions.find(
+      (trip) =>
+        trip.id ===
+        requestedTripId,
+    ) ?? null;
   const selectedCountries =
-    requestedTripId
-      ? countries.filter(
-          (country) =>
-            country.tripId ===
-            requestedTripId,
-        )
-      : [];
+    activeTrip.countries;
 
   const countryIds =
     selectedCountries.map(

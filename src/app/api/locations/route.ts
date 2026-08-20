@@ -2,9 +2,11 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { locationPings } from "@/db/schema";
 import {
-  canAccessCountry,
   listCountryMembers,
 } from "@/lib/access";
+import {
+  isCountryInActiveTrip,
+} from "@/lib/active-trip";
 import {
   getSession,
   isSystemAdmin,
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "countryId is required." }, { status: 400 });
   }
 
-  if (!(await canAccessCountry(session.user, countryId))) {
+  if (!(await isCountryInActiveTrip(session.user, countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

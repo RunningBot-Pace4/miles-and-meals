@@ -28,7 +28,7 @@ export function TripQuickSelect({
     setSwitching(false);
   }, [selectedId]);
 
-  function changeTrip(
+  async function changeTrip(
     nextId: string,
   ) {
     if (
@@ -47,11 +47,55 @@ export function TripQuickSelect({
 
     setValue(nextId);
     setSwitching(true);
-    window.location.assign(
-      `/dashboard?trip=${encodeURIComponent(
-        nextId,
-      )}`,
-    );
+
+    try {
+      const response =
+        await fetch(
+          "/api/active-trip",
+          {
+            method: "POST",
+            headers: {
+              "content-type":
+                "application/json",
+            },
+            body:
+              JSON.stringify({
+                tripId:
+                  nextId,
+              }),
+          },
+        );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to switch trip.",
+        );
+      }
+
+      window.location.assign(
+        "/dashboard",
+      );
+    } catch (error) {
+      setValue(
+        selectedId,
+      );
+      setSwitching(false);
+      window.alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to switch trip.",
+      );
+    }
   }
 
   return (
@@ -82,7 +126,7 @@ export function TripQuickSelect({
           onChange={(
             event,
           ) =>
-            changeTrip(
+            void changeTrip(
               event.target
                 .value,
             )

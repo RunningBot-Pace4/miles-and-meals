@@ -13,7 +13,9 @@ import {
   tripBudgets,
   user,
 } from "@/db/schema";
-import { listAccessibleCountries } from "@/lib/access";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
 import { getSession } from "@/lib/session";
 
 function csvCell(value: unknown): string {
@@ -58,8 +60,12 @@ export async function GET(request: Request) {
       ? "csv"
       : "json";
 
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
   const allowed =
-    await listAccessibleCountries(session.user);
+    activeTrip.countries;
   const countryIds = allowed.map(
     (country) => country.id,
   );

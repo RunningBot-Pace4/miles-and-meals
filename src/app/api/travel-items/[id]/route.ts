@@ -1,7 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems } from "@/db/schema";
-import { canAccessCountry, getCountryWithTrip } from "@/lib/access";
+import {
+  isCountryInActiveTrip,
+} from "@/lib/active-trip";
+import {
+  getCountryWithTrip,
+} from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
@@ -46,13 +51,13 @@ export async function PATCH(request: Request, context: Context) {
       return Response.json({ error: "Not found." }, { status: 404 });
     }
 
-    if (!(await canAccessCountry(session.user, existing.countryId))) {
+    if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const input = travelItemSchema.parse(await request.json());
 
-    if (!(await canAccessCountry(session.user, input.countryId))) {
+    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json(
         { error: "You do not have access to the selected country." },
         { status: 403 },
@@ -146,7 +151,7 @@ export async function DELETE(request: Request, context: Context) {
     return Response.json({ error: "Not found." }, { status: 404 });
   }
 
-  if (!(await canAccessCountry(session.user, existing.countryId))) {
+  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

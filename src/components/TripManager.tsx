@@ -188,31 +188,28 @@ function ManagedTripCard({
         countryCode,
     );
 
-  const availableCountries =
-    useMemo(() => {
-      const unavailable =
-        new Set([
-          ...trip.countries.map(
+  const existingCountryCodes =
+    useMemo(
+      () =>
+        new Set(
+          trip.countries.map(
             (country) =>
               country.code,
           ),
-          ...pendingCountries.map(
+        ),
+      [trip.countries],
+    );
+  const queuedCountryCodes =
+    useMemo(
+      () =>
+        new Set(
+          pendingCountries.map(
             (country) =>
               country.code,
           ),
-        ]);
-
-      return countryCatalog.filter(
-        (country) =>
-          !unavailable.has(
-            country.code,
-          ),
-      );
-    }, [
-      countryCatalog,
-      pendingCountries,
-      trip.countries,
-    ]);
+        ),
+      [pendingCountries],
+    );
 
   async function loadFx(
     catalogCountry: CountryCatalogItem,
@@ -771,21 +768,41 @@ function ManagedTripCard({
                 <option value="">
                   Choose country
                 </option>
-                {availableCountries.map(
-                  (country) => (
-                    <option
-                      key={
-                        country.code
-                      }
-                      value={
-                        country.code
-                      }
-                    >
-                      {
-                        country.name
-                      }
-                    </option>
-                  ),
+                {countryCatalog.map(
+                  (country) => {
+                    const added =
+                      existingCountryCodes.has(
+                        country.code,
+                      );
+                    const queued =
+                      queuedCountryCodes.has(
+                        country.code,
+                      );
+
+                    return (
+                      <option
+                        key={
+                          country.code
+                        }
+                        value={
+                          country.code
+                        }
+                        disabled={
+                          added ||
+                          queued
+                        }
+                      >
+                        {
+                          country.name
+                        }
+                        {added
+                          ? " · Added"
+                          : queued
+                            ? " · Queued"
+                            : ""}
+                      </option>
+                    );
+                  },
                 )}
               </select>
             </label>
@@ -1574,7 +1591,7 @@ export function TripManager({
             </label>
 
             <label>
-              First destination
+              Destination
               <select
                 value={
                   createCountryCode

@@ -122,6 +122,8 @@ const requiredFiles = [
   "src/lib/numeric-input.ts",
   "tests/numeric-input.test.ts",
   "src/app/api/trips/[id]/countries/bulk/route.ts",
+  "src/lib/active-trip.ts",
+  "src/app/api/active-trip/route.ts",
 ];
 
 for (const file of requiredFiles) {
@@ -299,11 +301,11 @@ if (
     "tripName: string",
   ) ||
   !expenseForm.includes(
-    "{country.tripName} · {country.name}",
+    "{country.name}",
   )
 ) {
   fail(
-    "Expense country selector must show Trip Name and Country.",
+    "Expense destination selector must render countries inside the active trip.",
   );
 }
 
@@ -455,14 +457,14 @@ if (
 
 if (
   !settlementSummaryRoute.includes(
-    "listAccessibleCountries",
+    "getActiveTripContext",
   ) ||
   !settlementSummaryRoute.includes(
     "buildExpenseSummary",
   )
 ) {
   fail(
-    "Live settlement summary API must enforce country access and use the canonical ledger.",
+    "Live settlement summary API must enforce active-trip access and use the canonical ledger.",
   );
 }
 
@@ -945,7 +947,7 @@ if (
 
 if (
   !tripManagerV47.includes(
-    "First destination",
+    "Destination",
   ) ||
   !tripManagerV47.includes(
     "selectedCreateCountry",
@@ -1075,6 +1077,147 @@ if (
 ) {
   fail(
     "Trip Owner destination cards must be collapsed by default.",
+  );
+}
+
+const activeTripV49 = read(
+  "src/lib/active-trip.ts",
+);
+const activeTripRouteV49 = read(
+  "src/app/api/active-trip/route.ts",
+);
+const tripQuickSelectV49 = read(
+  "src/components/TripQuickSelect.tsx",
+);
+const dashboardV49 = read(
+  "src/app/(app)/dashboard/page.tsx",
+);
+const plannerPageV49 = read(
+  "src/app/(app)/planner/page.tsx",
+);
+const plannerClientV49 = read(
+  "src/components/PlannerClient.tsx",
+);
+const expensesPageV49 = read(
+  "src/app/(app)/expenses/page.tsx",
+);
+const newExpensePageV49 = read(
+  "src/app/(app)/expenses/new/page.tsx",
+);
+const settlementsPageV49 = read(
+  "src/app/(app)/settlements/page.tsx",
+);
+const locationPageV49 = read(
+  "src/app/(app)/location/page.tsx",
+);
+const tripManagerV49 = read(
+  "src/components/TripManager.tsx",
+);
+
+if (
+  !activeTripV49.includes(
+    "ACTIVE_TRIP_COOKIE",
+  ) ||
+  !activeTripV49.includes(
+    "getActiveTripContext",
+  ) ||
+  !activeTripV49.includes(
+    "isCountryInActiveTrip",
+  ) ||
+  !activeTripRouteV49.includes(
+    "response.cookies.set",
+  ) ||
+  !activeTripRouteV49.includes(
+    "isTrustedMutationRequest",
+  )
+) {
+  fail(
+    "Validated app-wide active trip persistence is missing.",
+  );
+}
+
+if (
+  !tripQuickSelectV49.includes(
+    '"/api/active-trip"',
+  ) ||
+  !tripQuickSelectV49.includes(
+    'window.location.assign(\n        "/dashboard"',
+  ) ||
+  dashboardV49.includes(
+    "searchParams"
+  )
+) {
+  fail(
+    "Home trip selection must persist globally instead of using page-only query state.",
+  );
+}
+
+for (
+  const [label, source]
+  of [
+    ["Planner", plannerPageV49],
+    ["Expenses", expensesPageV49],
+    ["New Expense", newExpensePageV49],
+    ["Settlements", settlementsPageV49],
+    ["Location", locationPageV49],
+  ]
+) {
+  if (
+    !source.includes(
+      "getActiveTripContext",
+    )
+  ) {
+    fail(
+      `${label} must follow the active trip selected on Home.`,
+    );
+  }
+}
+
+if (
+  plannerClientV49.includes(
+    "{country.tripName} · {country.name}",
+  ) ||
+  !plannerClientV49.includes(
+    "All destinations in this trip",
+  )
+) {
+  fail(
+    "Planner must not offer another trip while adding or filtering items.",
+  );
+}
+
+if (
+  !tripManagerV49.includes(
+    "existingCountryCodes",
+  ) ||
+  !tripManagerV49.includes(
+    "queuedCountryCodes",
+  ) ||
+  !tripManagerV49.includes(
+    '" · Added"'
+  ) ||
+  !tripManagerV49.includes(
+    '" · Queued"'
+  ) ||
+  !tripManagerV49.includes(
+    "disabled={"
+  )
+) {
+  fail(
+    "Trip Owner country dropdown must keep existing/queued countries visible but disabled.",
+  );
+}
+
+if (
+  tripManagerV49.includes(
+    "First destination"
+  ) ||
+  !tripManagerV49.includes(
+    "Destination"
+  )
+) {
+  fail(
+    "Create Trip destination label must be Destination.",
   );
 }
 

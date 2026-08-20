@@ -271,3 +271,18 @@ trips compact.
 No new v48 database migration is required.
 
 See `V48-NOTIFICATION-DETAILS-MULTI-COUNTRY-COLLAPSE.md`.
+
+
+## v49 Active Trip Sync
+
+The Home trip selector is now the global active travel context. Expenses,
+Planner, Location, Settle Up, Activity and user Export follow that trip rather
+than mixing data from all assigned trips.
+
+Planner can only add/edit items inside the active trip. Existing/queued
+countries remain visible but disabled in the Trip Owner destination selector.
+`First destination` is renamed to `Destination`.
+
+No new v49 database migration is required.
+
+See `V49-ACTIVE-TRIP-SYNC.md`.

@@ -2,7 +2,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { expenseSplits, expenses } from "@/db/schema";
 import {
-  canAccessCountry,
+  isCountryInActiveTrip,
+} from "@/lib/active-trip";
+import {
   getCountryWithTrip,
   listCountryMembers,
 } from "@/lib/access";
@@ -47,14 +49,14 @@ export async function PUT(request: Request, context: Context) {
     return Response.json({ error: "Expense not found." }, { status: 404 });
   }
 
-  if (!(await canAccessCountry(session.user, existing.countryId))) {
+  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   try {
     const input = expenseSchema.parse(await request.json());
 
-    if (!(await canAccessCountry(session.user, input.countryId))) {
+    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -186,7 +188,7 @@ export async function DELETE(request: Request, context: Context) {
     return Response.json({ error: "Expense not found." }, { status: 404 });
   }
 
-  if (!(await canAccessCountry(session.user, existing.countryId))) {
+  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
