@@ -102,33 +102,28 @@ export default async function AdminPage() {
       .orderBy(trips.name, countries.name),
   ]);
 
-  const seenTripNames = new Set<string>();
-  const tripRows = rawTripRows.filter((trip) => {
-    const normalizedName = trip.name
-      .trim()
-      .toLocaleLowerCase();
+  const tripRows =
+    rawTripRows;
 
-    if (seenTripNames.has(normalizedName)) {
-      return false;
-    }
+  const loginByUser =
+    new Map<string, Date>(
+      latestLoginRows.map(
+        (row) => [
+          row.userId,
+          row.signedInAt,
+        ],
+      ),
+    );
 
-    seenTripNames.add(normalizedName);
-    return true;
-  });
-
-  const loginByUser = new Map(
-    latestLoginRows.map((row) => [
-      row.userId,
-      row.signedInAt,
-    ]),
-  );
-
-  const activeSessionByUser = new Map(
-    activeSessionRows.map((row) => [
-      row.userId,
-      row.createdAt,
-    ]),
-  );
+  const activeSessionByUser =
+    new Map<string, Date>(
+      activeSessionRows.map(
+        (row) => [
+          row.userId,
+          row.createdAt,
+        ],
+      ),
+    );
 
   const assignmentsByUser = new Map<
     string,

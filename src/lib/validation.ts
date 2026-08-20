@@ -193,31 +193,29 @@ export const selfServiceTripSchema = z.object({
     .string()
     .optional()
     .default(""),
-  firstCountry: z
-    .object({
-      code: z
-        .string()
-        .trim()
-        .length(2)
-        .transform((value) =>
-          value.toUpperCase(),
-        ),
-      defaultExchangeRate: z.coerce
-        .number()
-        .positive()
-        .max(1_000_000_000),
-      fxRateDate: z
-        .string()
-        .optional()
-        .default(""),
-      fxRateProvider: z
-        .string()
-        .trim()
-        .max(120)
-        .optional()
-        .default(""),
-    })
-    .optional(),
+  firstCountry: z.object({
+    code: z
+      .string()
+      .trim()
+      .length(2)
+      .transform((value) =>
+        value.toUpperCase(),
+      ),
+    defaultExchangeRate: z.coerce
+      .number()
+      .positive()
+      .max(1_000_000_000),
+    fxRateDate: z
+      .string()
+      .optional()
+      .default(""),
+    fxRateProvider: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .default(""),
+  }),
 });
 
 export const selfServiceTripUpdateSchema = z.object({
@@ -259,4 +257,13 @@ export const publicFxQuerySchema = z.object({
     .transform((value) =>
       value.toUpperCase(),
     ),
+});
+
+
+export const deleteTripSchema = z.object({
+  confirmationName: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120),
 });

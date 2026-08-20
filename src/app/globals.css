@@ -12636,3 +12636,160 @@ body {
     min-height: auto;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* v50 — compact destination management + Admin-only trip deletion           */
+/* -------------------------------------------------------------------------- */
+
+.owner-destinations-section {
+  display: grid;
+  gap: 0.8rem;
+  padding-top: 0.15rem;
+}
+
+.owner-destinations-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.15rem 0.1rem;
+}
+
+.owner-destinations-toolbar > div {
+  min-width: 0;
+}
+
+.owner-destinations-toolbar h3 {
+  margin: 0.1rem 0 0;
+  color: var(--travel-ink);
+  font-size: 0.95rem;
+}
+
+.owner-destination-editor {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.9rem;
+  border: 1px solid rgb(18 120 111 / 14%);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      145deg,
+      rgb(242 249 246 / 92%),
+      rgb(255 253 249 / 96%)
+    );
+}
+
+.owner-destination-editor-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.owner-destination-editor-heading > div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.owner-destination-editor-heading strong {
+  color: var(--travel-ink);
+  font-size: 0.76rem;
+}
+
+.owner-destination-editor-heading small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.admin-danger-zone {
+  margin-top: 0.65rem;
+  border: 1px solid rgb(190 66 54 / 24%);
+  border-radius: 15px;
+  overflow: clip;
+  background: rgb(255 248 246 / 92%);
+}
+
+.admin-danger-zone > summary {
+  cursor: pointer;
+  padding: 0.72rem 0.8rem;
+  color: #a53e34;
+  font-size: 0.7rem;
+  font-weight: 850;
+  list-style-position: inside;
+}
+
+.admin-danger-zone[open] > summary {
+  border-bottom: 1px solid rgb(190 66 54 / 18%);
+  background: rgb(190 66 54 / 5%);
+}
+
+.admin-danger-zone-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.admin-danger-zone-body > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-danger-zone-body strong {
+  color: #8e332c;
+  font-size: 0.72rem;
+}
+
+.admin-danger-zone-body p {
+  margin: 0;
+  color: #795b57;
+  font-size: 0.63rem;
+  line-height: 1.55;
+}
+
+.admin-danger-zone-body label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-danger-zone-body label > span {
+  color: #795b57;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.admin-danger-zone-body label b {
+  color: #8e332c;
+}
+
+.button.danger {
+  border-color: #b94c40;
+  color: #fff;
+  background: #b94c40;
+}
+
+.button.danger:hover:not(:disabled) {
+  background: #a43f35;
+}
+
+.button.danger:disabled {
+  border-color: #dbc9c5;
+  color: #9e8985;
+  background: #eee5e2;
+}
+
+@media (max-width: 640px) {
+  .owner-destinations-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .owner-destinations-toolbar .button {
+    width: 100%;
+  }
+
+  .owner-destination-editor {
+    padding: 0.75rem;
+  }
+}

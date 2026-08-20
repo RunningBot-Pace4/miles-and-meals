@@ -960,7 +960,7 @@ if (
   )
 ) {
   fail(
-    "Create Trip must support an optional first destination directly.",
+    "Create Trip must include its destination directly.",
   );
 }
 
@@ -1045,40 +1045,11 @@ if (
   );
 }
 
-if (
-  !tripManagerV48.includes(
-    "Add destination countries",
-  ) ||
-  !tripManagerV48.includes(
-    "pendingCountries",
-  ) ||
-  !tripManagerV48.includes(
-    "Add to list",
-  ) ||
-  !tripManagerV48.includes(
-    "addPendingCountries",
-  ) ||
-  !bulkCountryRouteV48.includes(
-    "createCountriesBulkSchema",
-  ) ||
-  !validationV48.includes(
-    "createCountriesBulkSchema",
-  )
-) {
-  fail(
-    "Trip Owner multi-country queue/bulk add is missing.",
-  );
-}
-
-if (
-  tripManagerV48.includes(
-    'className="owner-country-card"\n                  key={\n                    country.id\n                  }\n                  open'
-  )
-) {
-  fail(
-    "Trip Owner destination cards must be collapsed by default.",
-  );
-}
+// v48 introduced multi-country queues, but v51 intentionally removes them.
+// Keep only the Notification Center regression from that release.
+void tripManagerV48;
+void bulkCountryRouteV48;
+void validationV48;
 
 const activeTripV49 = read(
   "src/lib/active-trip.ts",
@@ -1187,24 +1158,18 @@ if (
 }
 
 if (
-  !tripManagerV49.includes(
+  tripManagerV49.includes(
     "existingCountryCodes",
   ) ||
-  !tripManagerV49.includes(
+  tripManagerV49.includes(
     "queuedCountryCodes",
   ) ||
-  !tripManagerV49.includes(
-    '" · Added"'
-  ) ||
-  !tripManagerV49.includes(
-    '" · Queued"'
-  ) ||
-  !tripManagerV49.includes(
-    "disabled={"
+  tripManagerV49.includes(
+    "+ Add destination",
   )
 ) {
   fail(
-    "Trip Owner country dropdown must keep existing/queued countries visible but disabled.",
+    "Trip Owner must not be able to add or queue another destination country.",
   );
 }
 
@@ -1218,6 +1183,137 @@ if (
 ) {
   fail(
     "Create Trip destination label must be Destination.",
+  );
+}
+
+const tripManagerV50 = read(
+  "src/components/TripManager.tsx",
+);
+const adminOverviewV50 = read(
+  "src/components/AdminOverview.tsx",
+);
+const adminTripRouteV50 = read(
+  "src/app/api/admin/trips/[id]/route.ts",
+);
+const adminPageV50 = read(
+  "src/app/(app)/admin/page.tsx",
+);
+const validationV50 = read(
+  "src/lib/validation.ts",
+);
+
+const ownerCountryRouteV51 = read(
+  "src/app/api/trips/[id]/countries/route.ts",
+);
+const ownerBulkCountryRouteV51 = read(
+  "src/app/api/trips/[id]/countries/bulk/route.ts",
+);
+const selfServiceTripRouteV51 = read(
+  "src/app/api/trips/route.ts",
+);
+const adminCountryRouteV51 = read(
+  "src/app/api/admin/countries/route.ts",
+);
+
+if (
+  tripManagerV50.includes(
+    "+ Add destination",
+  ) ||
+  tripManagerV50.includes(
+    "Add another destination",
+  ) ||
+  tripManagerV50.includes(
+    "pendingCountries",
+  ) ||
+  !tripManagerV50.includes(
+    "DESTINATION COUNTRY",
+  ) ||
+  !tripManagerV50.includes(
+    "cannot be changed or replaced",
+  ) ||
+  !tripManagerV50.includes(
+    "required",
+  )
+) {
+  fail(
+    "Trip Owner must create exactly one destination and see it as locked afterward.",
+  );
+}
+
+if (
+  !ownerCountryRouteV51.includes(
+    "Destination country is locked after trip creation",
+  ) ||
+  !ownerBulkCountryRouteV51.includes(
+    "Multiple destination countries are not supported",
+  ) ||
+  !selfServiceTripRouteV51.includes(
+    "input.firstCountry.code",
+  ) ||
+  !adminCountryRouteV51.includes(
+    "A trip can only have one destination country",
+  )
+) {
+  fail(
+    "Single-country enforcement must exist in both owner and Admin APIs.",
+  );
+}
+
+if (
+  !adminTripRouteV50.includes(
+    "export async function DELETE",
+  ) ||
+  !adminTripRouteV50.includes(
+    "isSystemAdmin",
+  ) ||
+  !adminTripRouteV50.includes(
+    "confirmationName !==\n      existing.name",
+  ) ||
+  !validationV50.includes(
+    "deleteTripSchema",
+  )
+) {
+  fail(
+    "Permanent trip deletion must be System Admin-only and require the exact trip name.",
+  );
+}
+
+if (
+  !adminOverviewV50.includes(
+    "admin-danger-zone",
+  ) ||
+  !adminOverviewV50.includes(
+    "Delete trip permanently",
+  ) ||
+  !adminOverviewV50.includes(
+    "deleteTripConfirmations",
+  )
+) {
+  fail(
+    "Admin trip UI must include the protected delete danger zone.",
+  );
+}
+
+if (
+  tripManagerV50.includes(
+    "Delete trip permanently",
+  ) ||
+  tripManagerV50.includes(
+    "/api/admin/trips/"
+  )
+) {
+  fail(
+    "Trip Owners must not receive a trip deletion control.",
+  );
+}
+
+if (
+  adminPageV50.includes(
+    "seenTripNames"
+  )
+) {
+  fail(
+    "Admin must see every trip so same-name trips can still be managed or deleted safely.",
   );
 }
 

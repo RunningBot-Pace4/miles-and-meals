@@ -10,7 +10,10 @@ import {
   getSession,
   isSystemAdmin,
 } from "@/lib/session";
-import { updateTripSchema } from "@/lib/validation";
+import {
+  deleteTripSchema,
+  updateTripSchema,
+} from "@/lib/validation";
 
 type Context = {
   params: Promise<{
@@ -104,6 +107,120 @@ export async function PATCH(
           error instanceof Error
             ? error.message
             : "Unable to update trip.",
+      },
+      { status: 400 },
+    );
+  }
+}
+
+
+export async function DELETE(
+  request: Request,
+  context: Context,
+) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
+  const session = await getSession();
+
+  if (!session) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  if (!isSystemAdmin(session.user.role)) {
+    return Response.json(
+      { error: "Forbidden" },
+      { status: 403 },
+    );
+  }
+
+  const { id } = await context.params;
+
+  try {
+    const input =
+      deleteTripSchema.parse(
+        await request.json(),
+      );
+
+    const existingRows = await db
+      .select({
+        id: trips.id,
+        name: trips.name,
+        baseCurrency:
+          trips.baseCurrency,
+      })
+      .from(trips)
+      .where(
+        eq(
+          trips.id,
+          id,
+        ),
+      )
+      .limit(1);
+
+    const existing =
+      existingRows[0];
+
+    if (!existing) {
+      return Response.json(
+        { error: "Trip not found." },
+        { status: 404 },
+      );
+    }
+
+    if (
+      input.confirmationName !==
+      existing.name
+    ) {
+      return Response.json(
+        {
+          error:
+            "Trip name confirmation does not match exactly.",
+        },
+        { status: 400 },
+      );
+    }
+
+    await db
+      .delete(trips)
+      .where(
+        eq(
+          trips.id,
+          id,
+        ),
+      );
+
+    await recordActivity({
+      actorUserId:
+        session.user.id,
+      action: "DELETED",
+      entityType: "TRIP",
+      entityId: id,
+      summary:
+        `${session.user.name} permanently deleted trip ${existing.name}.`,
+      metadata: {
+        deletedTripId: id,
+        deletedTripName:
+          existing.name,
+        baseCurrency:
+          existing.baseCurrency,
+      },
+    });
+
+    return Response.json({
+      ok: true,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to delete trip.",
       },
       { status: 400 },
     );

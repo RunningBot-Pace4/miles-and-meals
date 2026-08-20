@@ -196,6 +196,12 @@ export function AdminOverview({
     null,
   );
   const [
+    deleteTripConfirmations,
+    setDeleteTripConfirmations,
+  ] = useState<
+    Record<string, string>
+  >({});
+  const [
     tripDrafts,
     setTripDrafts,
   ] = useState<
@@ -716,6 +722,81 @@ export function AdminOverview({
         caught instanceof Error
           ? caught.message
           : "Unable to update trip.",
+      );
+      setEditBusyKey(null);
+    }
+  }
+
+  async function deleteTrip(
+    trip: AdminTripOverview,
+  ) {
+    const confirmation =
+      deleteTripConfirmations[
+        trip.id
+      ]?.trim() ?? "";
+
+    if (
+      confirmation !==
+      trip.name
+    ) {
+      setActionError(
+        `Type "${trip.name}" exactly before deleting this trip.`,
+      );
+      return;
+    }
+
+    const confirmed =
+      window.confirm(
+        `Permanently delete "${trip.name}"? This removes its destinations, expenses, splits, settlements, planner items, location history and personal trip budgets. User accounts and login data are not deleted.`,
+      );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setActionError("");
+    setEditBusyKey(
+      `delete:${trip.id}`,
+    );
+
+    try {
+      const response = await fetch(
+        `/api/admin/trips/${trip.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "content-type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            confirmationName:
+              confirmation,
+          }),
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to delete trip.",
+        );
+      }
+
+      window.location.reload();
+    } catch (caught) {
+      setActionError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to delete trip.",
       );
       setEditBusyKey(null);
     }
@@ -1566,6 +1647,86 @@ export function AdminOverview({
                           }
                         >
                           Save trip changes
+                        </button>
+                      </div>
+                    </details>
+
+                    <details className="admin-danger-zone">
+                      <summary>
+                        Delete trip
+                      </summary>
+
+                      <div className="admin-danger-zone-body">
+                        <div>
+                          <strong>
+                            System Admin only
+                          </strong>
+                          <p>
+                            Permanently removes this trip and its destinations, expenses, splits, settlements, planner items, location history and personal trip budgets. User accounts, passwords and login history remain.
+                          </p>
+                        </div>
+
+                        <label>
+                          <span>
+                            Type{" "}
+                            <b>
+                              {trip.name}
+                            </b>{" "}
+                            to confirm
+                          </span>
+                          <input
+                            value={
+                              deleteTripConfirmations[
+                                trip.id
+                              ] ?? ""
+                            }
+                            autoComplete="off"
+                            onChange={(
+                              event,
+                            ) =>
+                              setDeleteTripConfirmations(
+                                (
+                                  current,
+                                ) => ({
+                                  ...current,
+                                  [trip.id]:
+                                    event
+                                      .target
+                                      .value,
+                                }),
+                              )
+                            }
+                            placeholder={
+                              trip.name
+                            }
+                          />
+                        </label>
+
+                        <button
+                          className="button danger"
+                          type="button"
+                          data-requires-online="true"
+                          disabled={
+                            editBusyKey !==
+                              null ||
+                            (
+                              deleteTripConfirmations[
+                                trip.id
+                              ]?.trim() ??
+                              ""
+                            ) !==
+                              trip.name
+                          }
+                          onClick={() =>
+                            void deleteTrip(
+                              trip,
+                            )
+                          }
+                        >
+                          {editBusyKey ===
+                          `delete:${trip.id}`
+                            ? "Deleting…"
+                            : "Delete trip permanently"}
                         </button>
                       </div>
                     </details>

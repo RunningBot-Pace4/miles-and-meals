@@ -286,3 +286,37 @@ countries remain visible but disabled in the Trip Owner destination selector.
 No new v49 database migration is required.
 
 See `V49-ACTIVE-TRIP-SYNC.md`.
+
+
+## v50 Compact Destinations + Admin-Only Trip Delete
+
+Trip Owner cards now show existing destinations first. The add-destination
+editor stays hidden until `+ Add destination` is selected, while multi-country
+batch add remains available.
+
+Permanent trip deletion is now available only to System Admin and requires
+exact trip-name confirmation plus a second confirmation. Trip Owner pages do
+not contain a delete control.
+
+No new v50 database migration is required.
+
+See `V50-COMPACT-DESTINATIONS-ADMIN-DELETE.md`.
+
+
+## v51 Single-Country Trips + Admin-Only Delete
+
+Each trip now has exactly one destination country. The destination is required
+during self-service trip creation and becomes read-only immediately after the
+trip is created. Trip Owners can still manage the destination FX rate and
+traveler access, but they cannot add, replace or queue another country.
+
+Owner country-add APIs and the old bulk-country endpoint now reject additional
+destinations. The System Admin country endpoint also refuses a second country;
+it remains available only to repair older trips that have no destination.
+
+Trip deletion remains System Admin-only with exact trip-name confirmation and
+a second confirmation.
+
+No new database migration is required.
+
+See `V51-SINGLE-COUNTRY-TRIPS.md`.

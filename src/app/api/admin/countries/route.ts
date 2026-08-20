@@ -50,15 +50,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const exchangeRate =
-      input.defaultExchangeRate;
+    const existingDestination = await db
+      .select({ id: countries.id })
+      .from(countries)
+      .where(eq(countries.tripId, input.tripId))
+      .limit(1);
+
+    if (existingDestination[0]) {
+      return Response.json(
+        {
+          error:
+            "A trip can only have one destination country. The existing destination is locked.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const exchangeRate = input.defaultExchangeRate;
     const fxRateDate =
       input.fxRateProvider === "Manual override"
         ? null
         : input.fxRateDate || null;
-    const fxRateProvider =
-      input.fxRateProvider ||
-      "Manual";
+    const fxRateProvider = input.fxRateProvider || "Manual";
 
     const created = await db
       .insert(countries)
@@ -80,7 +93,7 @@ export async function POST(request: Request) {
       entityId: created[0].id,
       tripId: input.tripId,
       countryId: created[0].id,
-      summary: `${session.user.name} added ${catalogCountry.name}.`,
+      summary: `${session.user.name} set ${catalogCountry.name} as the trip destination.`,
     });
 
     return Response.json(
@@ -101,7 +114,7 @@ export async function POST(request: Request) {
     const message =
       error instanceof Error
         ? error.message
-        : "Unable to create country.";
+        : "Unable to set destination country.";
 
     return Response.json({ error: message }, { status: 400 });
   }

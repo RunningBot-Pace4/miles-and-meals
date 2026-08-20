@@ -13,24 +13,13 @@ import {
 } from "@/lib/trip-management";
 
 export default async function TripsPage() {
-  const session =
-    await requirePageSession();
+  const session = await requirePageSession();
 
-  const [
-    managedTrips,
-    joinedTrips,
-    users,
-  ] = await Promise.all([
-    listManagedTrips(
-      session.user,
-    ),
-    listJoinedTrips(
-      session.user.id,
-    ),
+  const [managedTrips, joinedTrips, users] = await Promise.all([
+    listManagedTrips(session.user),
+    listJoinedTrips(session.user.id),
     listActiveUsersForTripManagement(
-      isSystemAdmin(
-        session.user.role,
-      ),
+      isSystemAdmin(session.user.role),
     ),
   ]);
 
@@ -38,32 +27,22 @@ export default async function TripsPage() {
     <div className="stack gap-lg">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">
-            MY TRIPS
-          </p>
-          <h1>
-            Create &amp; manage trips
-          </h1>
+          <p className="eyebrow">MY TRIPS</p>
+          <h1>Create &amp; manage trips</h1>
           <p className="muted">
-            Create a trip without a System Admin. The creator becomes Trip Owner and controls destinations and traveler access for that trip only.
+            Create a trip without a System Admin. The creator becomes
+            Trip Owner, selects one destination country during creation,
+            and manages traveler access for that trip.
           </p>
         </div>
       </div>
 
       <TripManager
-        managedTrips={
-          managedTrips
-        }
-        joinedTrips={
-          joinedTrips
-        }
+        managedTrips={managedTrips}
+        joinedTrips={joinedTrips}
         users={users}
-        countryCatalog={
-          countryCatalog
-        }
-        currentUserId={
-          session.user.id
-        }
+        countryCatalog={countryCatalog}
+        currentUserId={session.user.id}
       />
     </div>
   );
