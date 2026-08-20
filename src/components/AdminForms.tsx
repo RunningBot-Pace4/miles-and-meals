@@ -712,6 +712,7 @@ export function AdminForms({
             <input
               name="defaultExchangeRate"
               inputMode="decimal"
+              data-numeric-input="decimal"
               required
               value={fxRate}
               onChange={(event) =>

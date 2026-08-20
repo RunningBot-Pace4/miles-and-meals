@@ -182,6 +182,31 @@ export const selfServiceTripSchema = z.object({
     .string()
     .optional()
     .default(""),
+  firstCountry: z
+    .object({
+      code: z
+        .string()
+        .trim()
+        .length(2)
+        .transform((value) =>
+          value.toUpperCase(),
+        ),
+      defaultExchangeRate: z.coerce
+        .number()
+        .positive()
+        .max(1_000_000_000),
+      fxRateDate: z
+        .string()
+        .optional()
+        .default(""),
+      fxRateProvider: z
+        .string()
+        .trim()
+        .max(120)
+        .optional()
+        .default(""),
+    })
+    .optional(),
 });
 
 export const selfServiceTripUpdateSchema = z.object({

@@ -267,6 +267,7 @@ export function TripBudgetForm({
                   </b>
                   <input
                     inputMode="decimal"
+              data-numeric-input="decimal"
                     min="0.01"
                     step="0.01"
                     required
@@ -298,15 +299,6 @@ export function TripBudgetForm({
               </label>
             ),
           )}
-        </div>
-
-        <div className="budget-privacy-note">
-          <strong>
-            Your personal target
-          </strong>
-          <small>
-            The group dashboard uses the combined total, while your own wallet tracks your personal budget against your personal expense share.
-          </small>
         </div>
 
         {message ? (

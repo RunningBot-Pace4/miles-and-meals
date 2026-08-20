@@ -21,7 +21,7 @@ import {
 export type TripManagerUser = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
 };
 
 export type ManagedTrip = {
@@ -292,14 +292,36 @@ export async function listManagedTrips(
     );
 }
 
-export async function listActiveUsersForTripManagement(): Promise<
-  TripManagerUser[]
-> {
+export async function listActiveUsersForTripManagement(
+  includeEmail: boolean,
+): Promise<TripManagerUser[]> {
+  if (includeEmail) {
+    const rows = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        banned: user.banned,
+      })
+      .from(user)
+      .orderBy(user.name);
+
+    return rows
+      .filter(
+        (row) =>
+          !row.banned,
+      )
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+      }));
+  }
+
   const rows = await db
     .select({
       id: user.id,
       name: user.name,
-      email: user.email,
       banned: user.banned,
     })
     .from(user)
@@ -313,7 +335,6 @@ export async function listActiveUsersForTripManagement(): Promise<
     .map((row) => ({
       id: row.id,
       name: row.name,
-      email: row.email,
     }));
 }
 

@@ -2,7 +2,10 @@ import { TripManager } from "@/components/TripManager";
 import {
   countryCatalog,
 } from "@/lib/country-catalog";
-import { requirePageSession } from "@/lib/session";
+import {
+  isSystemAdmin,
+  requirePageSession,
+} from "@/lib/session";
 import {
   listActiveUsersForTripManagement,
   listJoinedTrips,
@@ -24,7 +27,11 @@ export default async function TripsPage() {
     listJoinedTrips(
       session.user.id,
     ),
-    listActiveUsersForTripManagement(),
+    listActiveUsersForTripManagement(
+      isSystemAdmin(
+        session.user.role,
+      ),
+    ),
   ]);
 
   return (

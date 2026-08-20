@@ -11943,7 +11943,6 @@ body {
   font-weight: 800;
 }
 
-.budget-privacy-note,
 .budget-draft-note {
   display: grid;
   gap: 0.18rem;
@@ -11951,18 +11950,11 @@ body {
   border-radius: 15px;
 }
 
-.budget-privacy-note {
-  border: 1px solid rgb(18 120 111 / 12%);
-  background: #f3faf7;
-}
-
-.budget-privacy-note strong,
 .budget-draft-note strong {
   color: var(--travel-ink);
   font-size: 0.72rem;
 }
 
-.budget-privacy-note small,
 .budget-draft-note small {
   color: var(--muted);
   font-size: 0.65rem;

@@ -3,6 +3,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/globals.css";
 import { ClientErrorReporter } from "@/components/ClientErrorReporter";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
+import { NumericInputGuard } from "@/components/NumericInputGuard";
 import { OfflineNavigationGuard } from "@/components/OfflineNavigationGuard";
 import { OnlineActionGuard } from "@/components/OnlineActionGuard";
 import { PwaLaunchDismiss } from "@/components/PwaLaunchDismiss";
@@ -129,6 +130,7 @@ export default function RootLayout({
         {children}
 
         <NetworkStatusBanner />
+        <NumericInputGuard />
         <PullToRefresh />
         <OfflineNavigationGuard />
         <OnlineActionGuard />

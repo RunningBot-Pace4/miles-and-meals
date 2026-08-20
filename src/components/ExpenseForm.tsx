@@ -30,7 +30,6 @@ type CountryOption = {
 type Member = {
   id: string;
   name: string;
-  email: string;
 };
 
 type ReceiptAnalysis = {
@@ -1114,6 +1113,7 @@ export function ExpenseForm({
             Amount
             <input
               inputMode="decimal"
+              data-numeric-input="decimal"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               required
@@ -1157,6 +1157,7 @@ export function ExpenseForm({
             1 {currency || "CUR"} =
             <input
               inputMode="decimal"
+              data-numeric-input="decimal"
               value={isBaseCurrency ? "1" : rate}
               onChange={(event) => {
                 if (!isBaseCurrency) {
@@ -1194,6 +1195,7 @@ export function ExpenseForm({
             Actual card charge in {currentCountry?.baseCurrency ?? "MYR"}
             <input
               inputMode="decimal"
+              data-numeric-input="decimal"
               value={actualConvertedAmount}
               onChange={(event) => setActualConvertedAmount(event.target.value)}
               placeholder={`Optional — e.g. ${converted.toFixed(2)}`}
@@ -1276,6 +1278,7 @@ export function ExpenseForm({
                     </span>
                     <input
                       inputMode="decimal"
+              data-numeric-input="decimal"
                       value={splitValues[member.id] ?? ""}
                       onChange={(event) =>
                         setSplitValues((values) => ({

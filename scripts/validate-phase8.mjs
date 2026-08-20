@@ -8,6 +8,44 @@ function fail(message) {
   failures.push(message);
 }
 
+function listFilesRecursively(
+  directory,
+) {
+  const files = [];
+
+  for (
+    const entry of
+      fs.readdirSync(
+        directory,
+        {
+          withFileTypes: true,
+        },
+      )
+  ) {
+    const absolutePath =
+      path.join(
+        directory,
+        entry.name,
+      );
+
+    if (
+      entry.isDirectory()
+    ) {
+      files.push(
+        ...listFilesRecursively(
+          absolutePath,
+        ),
+      );
+    } else {
+      files.push(
+        absolutePath,
+      );
+    }
+  }
+
+  return files;
+}
+
 function read(relativePath) {
   const absolutePath = path.join(
     root,
@@ -80,6 +118,9 @@ const requiredFiles = [
   "src/app/api/budgets/route.ts",
   "src/app/api/notifications/unread/route.ts",
   "tests/v46-budget-owner.test.ts",
+  "src/components/NumericInputGuard.tsx",
+  "src/lib/numeric-input.ts",
+  "tests/numeric-input.test.ts",
 ];
 
 for (const file of requiredFiles) {
@@ -798,6 +839,177 @@ if (
 ) {
   fail(
     "v46 budget and Trip Owner regression tests are missing.",
+  );
+}
+
+const numericGuardV47 = read(
+  "src/components/NumericInputGuard.tsx",
+);
+const numericInputV47 = read(
+  "src/lib/numeric-input.ts",
+);
+const rootLayoutV47 = read(
+  "src/app/layout.tsx",
+);
+const tripManagerV47 = read(
+  "src/components/TripManager.tsx",
+);
+const tripRouteV47 = read(
+  "src/app/api/trips/route.ts",
+);
+const tripPageV47 = read(
+  "src/app/(app)/trips/page.tsx",
+);
+const accessV47 = read(
+  "src/lib/access.ts",
+);
+const tripManagementV47 = read(
+  "src/lib/trip-management.ts",
+);
+const budgetFormV47 = read(
+  "src/components/TripBudgetForm.tsx",
+);
+const adminOverviewV47 = read(
+  "src/components/AdminOverview.tsx",
+);
+const numericTestsV47 = read(
+  "tests/numeric-input.test.ts",
+);
+
+if (
+  !rootLayoutV47.includes(
+    "NumericInputGuard",
+  ) ||
+  !numericGuardV47.includes(
+    "beforeinput",
+  ) ||
+  !numericInputV47.includes(
+    "sanitizePositiveDecimalInput",
+  ) ||
+  !numericTestsV47.includes(
+    "removes alphabetic characters",
+  )
+) {
+  fail(
+    "Project-wide numeric input protection is missing.",
+  );
+}
+
+const numericInputFiles =
+  listFilesRecursively(
+    path.join(root, "src"),
+  ).filter((filePath) =>
+  /\.(tsx?)$/.test(filePath),
+);
+
+for (
+  const filePath of
+    numericInputFiles
+) {
+  const source =
+    fs.readFileSync(
+      filePath,
+      "utf8",
+    );
+
+  if (
+    /inputMode="(?:decimal|numeric)"/.test(
+      source,
+    ) &&
+    !source.includes(
+      'data-numeric-input="decimal"',
+    )
+  ) {
+    fail(
+      `Numeric field missing project-wide guard marker: ${path.relative(
+        root,
+        filePath,
+      )}`,
+    );
+  }
+}
+
+if (
+  budgetFormV47.includes(
+    "Your personal target",
+  ) ||
+  budgetFormV47.includes(
+    "The group dashboard uses the combined total",
+  )
+) {
+  fail(
+    "Removed Personal Budget explanatory block returned.",
+  );
+}
+
+if (
+  !tripManagerV47.includes(
+    "First destination",
+  ) ||
+  !tripManagerV47.includes(
+    "selectedCreateCountry",
+  ) ||
+  !tripRouteV47.includes(
+    "firstCountry",
+  ) ||
+  !tripRouteV47.includes(
+    "countryMembers",
+  )
+) {
+  fail(
+    "Create Trip must support an optional first destination directly.",
+  );
+}
+
+if (
+  !tripManagerV47.includes(
+    'className="owner-country-card"',
+  ) ||
+  !tripManagerV47.includes(
+    "travelers · Manage",
+  ) ||
+  !tripManagerV47.includes(
+    "open\n                >",
+  )
+) {
+  fail(
+    "Newly added country management must be visible without looking missing.",
+  );
+}
+
+if (
+  accessV47.includes(
+    "email: user.email",
+  )
+) {
+  fail(
+    "Normal travel member APIs must never return other users' email addresses.",
+  );
+}
+
+if (
+  !tripManagementV47.includes(
+    "includeEmail: boolean",
+  ) ||
+  !tripPageV47.includes(
+    "isSystemAdmin",
+  ) ||
+  !tripManagerV47.includes(
+    "member.email ?",
+  )
+) {
+  fail(
+    "Trip Owner user lists must expose email only to System Admin.",
+  );
+}
+
+if (
+  !adminOverviewV47.includes(
+    "country.tripName",
+  )
+) {
+  fail(
+    "Configured Countries must display the trip name.",
   );
 }
 

@@ -5,10 +5,15 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  countries,
+  countryMembers,
   tripMembers,
   trips,
 } from "@/db/schema";
 import { recordActivity } from "@/lib/activity";
+import {
+  getCountryCatalogItem,
+} from "@/lib/country-catalog";
 import {
   isTrustedMutationRequest,
   mutationRejectedResponse,
@@ -33,6 +38,10 @@ export async function POST(
     );
   }
 
+  let createdTripId:
+    | string
+    | null = null;
+
   try {
     const input =
       selfServiceTripSchema.parse(
@@ -42,6 +51,25 @@ export async function POST(
       input.name
         .trim()
         .toLocaleLowerCase();
+    const firstCountry =
+      input.firstCountry
+        ? getCountryCatalogItem(
+            input.firstCountry.code,
+          )
+        : null;
+
+    if (
+      input.firstCountry &&
+      !firstCountry
+    ) {
+      return Response.json(
+        {
+          error:
+            "Choose a valid first destination country.",
+        },
+        { status: 400 },
+      );
+    }
 
     const duplicate =
       await db
@@ -100,6 +128,8 @@ export async function POST(
       );
     }
 
+    createdTripId = tripId;
+
     await db
       .insert(tripMembers)
       .values({
@@ -118,6 +148,63 @@ export async function POST(
         },
       });
 
+    let countryId:
+      | string
+      | null = null;
+
+    if (
+      firstCountry &&
+      input.firstCountry
+    ) {
+      const createdCountries =
+        await db
+          .insert(countries)
+          .values({
+            tripId,
+            name:
+              firstCountry.name,
+            code:
+              firstCountry.code,
+            currencyCode:
+              firstCountry.currencyCode,
+            defaultExchangeRate:
+              input.firstCountry.defaultExchangeRate.toFixed(
+                10,
+              ),
+            fxRateDate:
+              input.firstCountry.fxRateProvider ===
+              "Manual override"
+                ? null
+                : input.firstCountry.fxRateDate ||
+                  null,
+            fxRateProvider:
+              input.firstCountry.fxRateProvider ||
+              "Manual",
+          })
+          .returning({
+            id: countries.id,
+          });
+
+      countryId =
+        createdCountries[0]
+          ?.id ?? null;
+
+      if (!countryId) {
+        throw new Error(
+          "First destination could not be created.",
+        );
+      }
+
+      await db
+        .insert(countryMembers)
+        .values({
+          countryId,
+          userId:
+            session.user.id,
+        })
+        .onConflictDoNothing();
+    }
+
     await recordActivity({
       actorUserId:
         session.user.id,
@@ -125,17 +212,36 @@ export async function POST(
       entityType: "TRIP",
       entityId: tripId,
       tripId,
+      countryId,
       summary:
-        `${session.user.name} created trip ${input.name}.`,
+        firstCountry
+          ? `${session.user.name} created trip ${input.name} with ${firstCountry.name}.`
+          : `${session.user.name} created trip ${input.name}.`,
     });
 
     return Response.json(
       {
         id: tripId,
+        countryId,
       },
       { status: 201 },
     );
   } catch (error) {
+    if (createdTripId) {
+      try {
+        await db
+          .delete(trips)
+          .where(
+            eq(
+              trips.id,
+              createdTripId,
+            ),
+          );
+      } catch {
+        // Best-effort rollback for a partially created self-service trip.
+      }
+    }
+
     return Response.json(
       {
         error:

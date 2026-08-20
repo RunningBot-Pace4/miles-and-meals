@@ -1640,14 +1640,9 @@ export function AdminOverview({
                         <div>
                           <strong>
                             {
-                              country.name
-                            }
-                          </strong>
-                          <small>
-                            {
                               country.tripName
                             }
-                          </small>
+                          </strong>
                         </div>
                       </div>
 
@@ -1731,6 +1726,7 @@ export function AdminOverview({
                           </span>
                           <input
                             inputMode="decimal"
+              data-numeric-input="decimal"
                             value={
                               countryFxDrafts[
                                 country.id

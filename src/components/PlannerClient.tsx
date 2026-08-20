@@ -425,6 +425,7 @@ function PlannerItemForm({
           <input
             name="estimatedCost"
             inputMode="decimal"
+              data-numeric-input="decimal"
             placeholder="Optional"
             defaultValue={initial?.estimatedCost ?? ""}
           />
@@ -436,6 +437,7 @@ function PlannerItemForm({
             <input
               name="quantity"
               inputMode="decimal"
+              data-numeric-input="decimal"
               placeholder="1"
               defaultValue={initial?.quantity ?? ""}
             />

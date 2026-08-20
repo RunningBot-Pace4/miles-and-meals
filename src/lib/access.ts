@@ -102,7 +102,6 @@ export async function listCountryMembers(
     .select({
       id: user.id,
       name: user.name,
-      email: user.email,
     })
     .from(countryMembers)
     .innerJoin(user, eq(countryMembers.userId, user.id))
@@ -117,7 +116,6 @@ export async function listCountryMembers(
     .select({
       id: user.id,
       name: user.name,
-      email: user.email,
     })
     .from(user)
     .where(eq(user.id, includeUserId))
@@ -146,7 +144,6 @@ export async function listUsersForCountries(countryIds: string[]) {
     .selectDistinct({
       id: user.id,
       name: user.name,
-      email: user.email,
     })
     .from(countryMembers)
     .innerJoin(user, eq(countryMembers.userId, user.id))

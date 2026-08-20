@@ -39,7 +39,7 @@ type ManagedTrip = {
 type TripUser = {
   id: string;
   name: string;
-  email: string;
+  email?: string;
 };
 
 type JoinedTrip = {
@@ -700,6 +700,7 @@ function ManagedTripCard({
                 }
                 <input
                   inputMode="decimal"
+              data-numeric-input="decimal"
                   required
                   value={
                     fxRate
@@ -781,6 +782,7 @@ function ManagedTripCard({
                   key={
                     country.id
                   }
+                  open
                 >
                   <summary>
                     <span>
@@ -808,7 +810,7 @@ function ManagedTripCard({
                       {
                         assigned.size
                       }{" "}
-                      travelers
+                      travelers · Manage
                     </b>
                   </summary>
 
@@ -820,6 +822,7 @@ function ManagedTripCard({
                         </span>
                         <input
                           inputMode="decimal"
+              data-numeric-input="decimal"
                           value={
                             countryFxDrafts[
                               country.id
@@ -916,11 +919,13 @@ function ManagedTripCard({
                                   ? " · You"
                                   : ""}
                               </strong>
-                              <small>
-                                {
-                                  member.email
-                                }
-                              </small>
+                              {member.email ? (
+                                <small>
+                                  {
+                                    member.email
+                                  }
+                                </small>
+                              ) : null}
                             </span>
 
                             <i>
@@ -985,6 +990,220 @@ export function TripManager({
   const [error, setError] =
     useState("");
 
+  const [
+    createBaseCurrency,
+    setCreateBaseCurrency,
+  ] = useState("MYR");
+  const [
+    createCountryCode,
+    setCreateCountryCode,
+  ] = useState("");
+  const [
+    createFxRate,
+    setCreateFxRate,
+  ] = useState("");
+  const [
+    createFxDate,
+    setCreateFxDate,
+  ] = useState("");
+  const [
+    createFxProvider,
+    setCreateFxProvider,
+  ] = useState("");
+  const [
+    createFxBusy,
+    setCreateFxBusy,
+  ] = useState(false);
+  const createFxAbortRef =
+    useRef<AbortController | null>(
+      null,
+    );
+  const createManualFxRef =
+    useRef(false);
+
+  const selectedCreateCountry =
+    useMemo(
+      () =>
+        countryCatalog.find(
+          (country) =>
+            country.code ===
+            createCountryCode,
+        ),
+      [
+        countryCatalog,
+        createCountryCode,
+      ],
+    );
+
+  async function loadCreateFx(
+    country: CountryCatalogItem,
+    baseCurrency = createBaseCurrency,
+  ) {
+    const normalizedBase =
+      baseCurrency
+        .trim()
+        .toUpperCase();
+
+    if (
+      normalizedBase.length !== 3
+    ) {
+      setCreateFxRate("");
+      setCreateFxDate("");
+      setCreateFxProvider("");
+      return;
+    }
+
+    createFxAbortRef.current?.abort();
+    const controller =
+      new AbortController();
+    createFxAbortRef.current =
+      controller;
+    createManualFxRef.current =
+      false;
+    setCreateFxBusy(true);
+    setCreateFxRate("");
+    setCreateFxDate("");
+    setCreateFxProvider("");
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/fx?base=${encodeURIComponent(
+          country.currencyCode,
+        )}&quote=${encodeURIComponent(
+          normalizedBase,
+        )}`,
+        {
+          cache: "no-store",
+          signal:
+            controller.signal,
+        },
+      );
+
+      const payload =
+        (await response
+          .json()
+          .catch(
+            () => ({}),
+          )) as {
+          error?: string;
+          rate?: number;
+          rateDate?: string;
+          provider?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ??
+            "Unable to load daily FX.",
+        );
+      }
+
+      if (
+        createManualFxRef.current
+      ) {
+        return;
+      }
+
+      setCreateFxRate(
+        String(
+          payload.rate ?? "",
+        ),
+      );
+      setCreateFxDate(
+        payload.rateDate ?? "",
+      );
+      setCreateFxProvider(
+        payload.provider ?? "",
+      );
+    } catch (caught) {
+      if (
+        controller.signal.aborted
+      ) {
+        return;
+      }
+
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to load daily FX.",
+      );
+    } finally {
+      if (
+        createFxAbortRef.current ===
+        controller
+      ) {
+        setCreateFxBusy(false);
+      }
+    }
+  }
+
+  function chooseCreateCountry(
+    code: string,
+  ) {
+    setCreateCountryCode(code);
+
+    const country =
+      countryCatalog.find(
+        (item) =>
+          item.code === code,
+      );
+
+    if (country) {
+      void loadCreateFx(
+        country,
+      );
+      return;
+    }
+
+    createFxAbortRef.current?.abort();
+    setCreateFxBusy(false);
+    setCreateFxRate("");
+    setCreateFxDate("");
+    setCreateFxProvider("");
+  }
+
+  function changeCreateBaseCurrency(
+    value: string,
+  ) {
+    const normalized =
+      value
+        .replace(
+          /[^A-Za-z]/g,
+          "",
+        )
+        .toUpperCase()
+        .slice(0, 3);
+
+    setCreateBaseCurrency(
+      normalized,
+    );
+
+    if (
+      selectedCreateCountry &&
+      normalized.length === 3
+    ) {
+      void loadCreateFx(
+        selectedCreateCountry,
+        normalized,
+      );
+    }
+  }
+
+  function changeCreateFx(
+    value: string,
+  ) {
+    createManualFxRef.current =
+      true;
+    createFxAbortRef.current?.abort();
+    setCreateFxBusy(false);
+    setCreateFxRate(value);
+    setCreateFxDate("");
+    setCreateFxProvider(
+      "Manual override",
+    );
+  }
+
   const managedIds =
     new Set(
       managedTrips.map(
@@ -1023,11 +1242,7 @@ export function TripManager({
               ) ?? "",
             ),
           baseCurrency:
-            String(
-              form.get(
-                "baseCurrency",
-              ) ?? "MYR",
-            ),
+            createBaseCurrency,
           startDate:
             String(
               form.get(
@@ -1040,6 +1255,21 @@ export function TripManager({
                 "endDate",
               ) ?? "",
             ),
+          firstCountry:
+            selectedCreateCountry &&
+            createFxRate.trim()
+              ? {
+                  code:
+                    selectedCreateCountry.code,
+                  defaultExchangeRate:
+                    createFxRate,
+                  fxRateDate:
+                    createFxDate,
+                  fxRateProvider:
+                    createFxProvider ||
+                    "Manual",
+                }
+              : undefined,
         },
       );
 
@@ -1098,20 +1328,140 @@ export function TripManager({
               <input
                 name="baseCurrency"
                 required
-                defaultValue="MYR"
+                value={
+                  createBaseCurrency
+                }
                 maxLength={3}
+                onChange={(
+                  event,
+                ) =>
+                  changeCreateBaseCurrency(
+                    event.target
+                      .value,
+                  )
+                }
               />
             </label>
 
-            <div className="owner-budget-explainer">
-              <strong>
-                No group budget here
-              </strong>
-              <small>
-                Each traveler sets their own budget after joining. Miles &amp; Meals automatically combines them.
-              </small>
-            </div>
+            <label>
+              First destination
+              <select
+                value={
+                  createCountryCode
+                }
+                onChange={(
+                  event,
+                ) =>
+                  chooseCreateCountry(
+                    event.target
+                      .value,
+                  )
+                }
+              >
+                <option value="">
+                  Add later
+                </option>
+                {countryCatalog.map(
+                  (country) => (
+                    <option
+                      key={
+                        country.code
+                      }
+                      value={
+                        country.code
+                      }
+                    >
+                      {
+                        country.name
+                      }
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
           </div>
+
+          {selectedCreateCountry ? (
+            <div className="create-trip-country-inline">
+              <div className="two-col">
+                <label>
+                  Country currency
+                  <input
+                    value={
+                      selectedCreateCountry.currencyCode
+                    }
+                    readOnly
+                  />
+                </label>
+
+                <label>
+                  Default FX · 1{" "}
+                  {
+                    selectedCreateCountry.currencyCode
+                  }{" "}
+                  = ?{" "}
+                  {
+                    createBaseCurrency
+                  }
+                  <input
+                    inputMode="decimal"
+                    data-numeric-input="decimal"
+                    required
+                    value={
+                      createFxRate
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      changeCreateFx(
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder={
+                      createFxBusy
+                        ? "Loading daily FX…"
+                        : "Daily FX or manual value"
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="admin-fx-helper">
+                <span>
+                  {createFxBusy
+                    ? "Checking today's FX…"
+                    : createFxRate
+                      ? `${
+                          createFxProvider ||
+                          "Manual"
+                        }${
+                          createFxDate
+                            ? ` · ${createFxDate}`
+                            : ""
+                        }`
+                      : "Enter a valid FX rate."}
+                </span>
+
+                <button
+                  className="button secondary compact-button"
+                  type="button"
+                  disabled={
+                    createFxBusy ||
+                    createBaseCurrency.length !==
+                      3
+                  }
+                  onClick={() =>
+                    void loadCreateFx(
+                      selectedCreateCountry,
+                    )
+                  }
+                >
+                  Refresh FX
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="two-col">
             <label>
@@ -1143,7 +1493,14 @@ export function TripManager({
           <button
             className="button primary"
             type="submit"
-            disabled={busy}
+            disabled={
+              busy ||
+              createFxBusy ||
+              Boolean(
+                selectedCreateCountry &&
+                  !createFxRate.trim(),
+              )
+            }
           >
             Create trip
           </button>

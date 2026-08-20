@@ -244,3 +244,16 @@ npm run build
 Do not use `db:reset`.
 
 See `V46-TRIP-OWNER-PERSONAL-BUDGETS-NOTIFICATION-BELL.md`.
+
+
+## v47 Numeric Input + Trip Setup + Privacy
+
+v47 blocks alphabetic entry in all current numeric amount/FX/share/quantity
+fields, removes the Personal Budget explanation block, shows Trip Name only in
+Admin Configured Countries, lets Trip Owner add a first destination directly
+while creating a trip, opens country FX/member controls immediately after add,
+and prevents non-admin travelers from receiving other users' email addresses.
+
+No new v47 database migration is required beyond v46's `trip_budgets`.
+
+See `V47-NUMERIC-COUNTRY-PRIVACY-FIXES.md`.
