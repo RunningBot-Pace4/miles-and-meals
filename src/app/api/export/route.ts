@@ -1,4 +1,5 @@
 import {
+  and,
   asc,
   eq,
   inArray,
@@ -9,6 +10,7 @@ import {
   expenses,
   settlements,
   travelItems,
+  tripBudgets,
   user,
 } from "@/db/schema";
 import { listAccessibleCountries } from "@/lib/access";
@@ -62,12 +64,24 @@ export async function GET(request: Request) {
     (country) => country.id,
   );
 
-  const countryById = new Map(
+  const countryById = new Map<
+    string,
+    (typeof allowed)[number]
+  >(
     allowed.map((country) => [
       country.id,
       country,
     ]),
   );
+  const tripIds = [
+    ...new Set(
+      allowed.map(
+        (country) =>
+          country.tripId,
+      ),
+    ),
+  ];
+
 
   if (countryIds.length === 0) {
     const empty = {
@@ -76,6 +90,7 @@ export async function GET(request: Request) {
       expenses: [],
       planner: [],
       settlements: [],
+      personalBudgets: [],
     };
 
     if (format === "json") {
@@ -115,6 +130,7 @@ export async function GET(request: Request) {
     expenseRows,
     plannerRows,
     settlementRows,
+    personalBudgetRows,
   ] = await Promise.all([
     db
       .select({
@@ -180,6 +196,21 @@ export async function GET(request: Request) {
       .orderBy(
         asc(settlements.createdAt),
       ),
+    db
+      .select()
+      .from(tripBudgets)
+      .where(
+        and(
+          inArray(
+            tripBudgets.tripId,
+            tripIds,
+          ),
+          eq(
+            tripBudgets.userId,
+            session.user.id,
+          ),
+        ),
+      ),
   ]);
 
   const exportData = {
@@ -193,6 +224,12 @@ export async function GET(request: Request) {
     expenses: expenseRows,
     planner: plannerRows,
     settlements: settlementRows,
+    personalBudgets:
+      personalBudgetRows.filter(
+        (row) =>
+          row.userId ===
+          session.user.id,
+      ),
   };
 
   if (format === "json") {
@@ -287,6 +324,40 @@ export async function GET(request: Request) {
         settlement.currency,
         settlement.status,
         `${settlement.fromUserId} -> ${settlement.toUserId}`,
+      ]),
+    );
+  }
+
+  for (
+    const budget of
+      personalBudgetRows
+  ) {
+    if (
+      budget.userId !==
+      session.user.id
+    ) {
+      continue;
+    }
+
+    const trip =
+      allowed.find(
+        (country) =>
+          country.tripId ===
+          budget.tripId,
+      );
+
+    lines.push(
+      csvLine([
+        "personal_budget",
+        trip?.tripName ?? "",
+        "",
+        "",
+        "My trip budget",
+        "budget",
+        budget.amount,
+        trip?.baseCurrency ?? "",
+        "",
+        session.user.name,
       ]),
     );
   }

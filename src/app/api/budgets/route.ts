@@ -1,0 +1,70 @@
+import { recordActivity } from "@/lib/activity";
+import {
+  isTrustedMutationRequest,
+  mutationRejectedResponse,
+} from "@/lib/request-security";
+import { getSession } from "@/lib/session";
+import {
+  savePersonalTripBudget,
+} from "@/lib/trip-budget";
+import { personalTripBudgetSchema } from "@/lib/validation";
+
+export async function POST(
+  request: Request,
+) {
+  if (!isTrustedMutationRequest(request)) {
+    return mutationRejectedResponse();
+  }
+
+  const session =
+    await getSession();
+
+  if (!session) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  try {
+    const input =
+      personalTripBudgetSchema.parse(
+        await request.json(),
+      );
+
+    await savePersonalTripBudget(
+      session.user.id,
+      input.tripId,
+      input.amount,
+    );
+
+    await recordActivity({
+      actorUserId:
+        session.user.id,
+      action: "UPDATED",
+      entityType: "TRIP_BUDGET",
+      entityId:
+        `${input.tripId}:${session.user.id}`,
+      tripId: input.tripId,
+      summary:
+        `${session.user.name} updated a personal trip budget.`,
+      metadata: {
+        amount: input.amount,
+      },
+    });
+
+    return Response.json({
+      ok: true,
+    });
+  } catch (error) {
+    return Response.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to save budget.",
+      },
+      { status: 400 },
+    );
+  }
+}

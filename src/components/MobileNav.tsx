@@ -71,7 +71,7 @@ export function MobileNav() {
       {links.map((link) => {
         const moreSection =
           link.href === "/more" &&
-          ["/expenses", "/settlements", "/admin", "/settings"].some(
+          ["/expenses", "/settlements", "/admin", "/settings", "/trips", "/notifications"].some(
             (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
           );
 

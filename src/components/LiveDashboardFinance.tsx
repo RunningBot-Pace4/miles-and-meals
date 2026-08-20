@@ -15,9 +15,14 @@ type FinanceData = {
     category: string;
     amount: number;
   }>;
-  budget: number;
-  remaining: number;
   baseCurrency: string;
+  myBudget: number;
+  myShareSpent: number;
+  myRemaining: number;
+  combinedBudget: number;
+  groupRemaining: number;
+  budgetsSubmitted: number;
+  travelerCount: number;
 };
 
 const categoryIcons: Record<
@@ -33,36 +38,71 @@ const categoryIcons: Record<
   Other: "•",
 };
 
+function WalletCard({
+  label,
+  value,
+  currency,
+  detail,
+  tone = "",
+}: {
+  label: string;
+  value: number;
+  currency: string;
+  detail: string;
+  tone?: string;
+}) {
+  return (
+    <article
+      className={[
+        "stat-card",
+        "travel-stat",
+        tone,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span
+        className="travel-stat-icon"
+        aria-hidden="true"
+      >
+        ◈
+      </span>
+
+      <div>
+        <span>{label}</span>
+        <strong>
+          {formatMoney(
+            value,
+            currency,
+          )}
+        </strong>
+        <small>
+          {detail}
+        </small>
+      </div>
+    </article>
+  );
+}
+
 export function LiveDashboardFinance({
   initialData,
-  countryId,
+  tripId,
 }: {
   initialData: FinanceData;
-  countryId: string;
+  tripId: string;
 }) {
   const [data, setData] =
     useState(initialData);
   const [syncError, setSyncError] =
     useState(false);
 
-  const endpoint = useMemo(() => {
-    const params =
-      new URLSearchParams();
-
-    if (countryId) {
-      params.set(
-        "country",
-        countryId,
-      );
-    }
-
-    const query =
-      params.toString();
-
-    return query
-      ? `/api/dashboard/finance?${query}`
-      : "/api/dashboard/finance";
-  }, [countryId]);
+  const endpoint = useMemo(
+    () =>
+      `/api/dashboard/finance?trip=${encodeURIComponent(
+        tripId,
+      )}`,
+    [tripId],
+  );
 
   const refresh =
     useCallback(async () => {
@@ -75,16 +115,13 @@ export function LiveDashboardFinance({
       }
 
       try {
-        const response = await fetch(
-          `${endpoint}${
-            endpoint.includes("?")
-              ? "&"
-              : "?"
-          }t=${Date.now()}`,
-          {
-            cache: "no-store",
-          },
-        );
+        const response =
+          await fetch(
+            `${endpoint}&t=${Date.now()}`,
+            {
+              cache: "no-store",
+            },
+          );
 
         if (!response.ok) {
           setSyncError(true);
@@ -101,10 +138,11 @@ export function LiveDashboardFinance({
     }, [endpoint]);
 
   useEffect(() => {
-    const timer = window.setInterval(
-      () => void refresh(),
-      8000,
-    );
+    const timer =
+      window.setInterval(
+        () => void refresh(),
+        8000,
+      );
 
     function refreshVisible() {
       if (
@@ -127,6 +165,10 @@ export function LiveDashboardFinance({
       "mnm:expense-updated",
       refreshVisible,
     );
+    window.addEventListener(
+      "mnm:budget-updated",
+      refreshVisible,
+    );
     document.addEventListener(
       "visibilitychange",
       refreshVisible,
@@ -144,6 +186,10 @@ export function LiveDashboardFinance({
       );
       window.removeEventListener(
         "mnm:expense-updated",
+        refreshVisible,
+      );
+      window.removeEventListener(
+        "mnm:budget-updated",
         refreshVisible,
       );
       document.removeEventListener(
@@ -165,85 +211,145 @@ export function LiveDashboardFinance({
         <i aria-hidden="true" />
         <span>
           {syncError
-            ? "Trip spending sync will retry automatically"
-            : "Trip spending updates automatically"}
+            ? "Trip wallet sync will retry automatically"
+            : "Trip wallet updates automatically"}
         </span>
       </div>
 
-      <section
-        className="stat-grid dashboard-stats travel-stat-grid"
-        aria-label="Trip wallet summary"
-      >
-        <article className="stat-card travel-stat spent">
-          <span
-            className="travel-stat-icon"
-            aria-hidden="true"
-          >
-            ↗
-          </span>
+      <section className="dashboard-budget-section">
+        <div className="travel-section-heading compact">
           <div>
-            <span>Spent</span>
-            <strong>
-              {formatMoney(
-                data.total,
-                data.baseCurrency,
-              )}
-            </strong>
-            <small>
-              What the trip has used
-            </small>
+            <p className="eyebrow">
+              MY TRAVEL WALLET
+            </p>
+            <h2>
+              Personal budget
+            </h2>
           </div>
-        </article>
 
-        <article className="stat-card travel-stat budget">
-          <span
-            className="travel-stat-icon"
-            aria-hidden="true"
+          <Link
+            className="panel-link"
+            href="/settings/budgets"
           >
-            ◫
-          </span>
-          <div>
-            <span>Budget</span>
-            <strong>
-              {formatMoney(
-                data.budget,
-                data.baseCurrency,
-              )}
-            </strong>
-            <small>
-              Your travel wallet
-            </small>
-          </div>
-        </article>
+            Edit
+          </Link>
+        </div>
 
-        <article
-          className={
-            data.remaining < 0
-              ? "stat-card travel-stat remaining danger"
-              : "stat-card travel-stat remaining success"
-          }
+        <div
+          className="stat-grid dashboard-stats travel-stat-grid"
+          aria-label="Personal trip budget"
         >
-          <span
-            className="travel-stat-icon"
-            aria-hidden="true"
-          >
-            ✦
-          </span>
+          <WalletCard
+            label="My budget"
+            value={
+              data.myBudget
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail="Your own spending target"
+            tone="budget"
+          />
+
+          <WalletCard
+            label="My share spent"
+            value={
+              data.myShareSpent
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail="Your personal share of trip expenses"
+            tone="spent"
+          />
+
+          <WalletCard
+            label="My remaining"
+            value={
+              data.myRemaining
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail={
+              data.myRemaining < 0
+                ? "Over your personal target"
+                : "Available in your own wallet"
+            }
+            tone={
+              data.myRemaining < 0
+                ? "danger"
+                : "success"
+            }
+          />
+        </div>
+      </section>
+
+      <section className="dashboard-budget-section">
+        <div className="travel-section-heading compact">
           <div>
-            <span>Remaining</span>
-            <strong>
-              {formatMoney(
-                data.remaining,
-                data.baseCurrency,
-              )}
-            </strong>
-            <small>
-              {data.remaining < 0
-                ? "Over planned budget"
-                : "Ready for the next stop"}
-            </small>
+            <p className="eyebrow">
+              GROUP TRIP
+            </p>
+            <h2>
+              Combined travel budget
+            </h2>
           </div>
-        </article>
+
+          <span>
+            {data.budgetsSubmitted}/
+            {data.travelerCount} budgets set
+          </span>
+        </div>
+
+        <div
+          className="stat-grid dashboard-stats travel-stat-grid"
+          aria-label="Group trip budget"
+        >
+          <WalletCard
+            label="Combined budget"
+            value={
+              data.combinedBudget
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail="Sum of submitted personal budgets"
+            tone="budget"
+          />
+
+          <WalletCard
+            label="Trip expenses"
+            value={
+              data.total
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail="Expenses across destinations you can access"
+            tone="spent"
+          />
+
+          <WalletCard
+            label="Group remaining"
+            value={
+              data.groupRemaining
+            }
+            currency={
+              data.baseCurrency
+            }
+            detail={
+              data.groupRemaining < 0
+                ? "Group spending is above combined budgets"
+                : "Combined budget less trip expenses"
+            }
+            tone={
+              data.groupRemaining < 0
+                ? "danger"
+                : "success"
+            }
+          />
+        </div>
       </section>
 
       <section className="panel dashboard-panel dashboard-live-categories">
@@ -252,7 +358,9 @@ export function LiveDashboardFinance({
             <p className="eyebrow">
               SPENDING
             </p>
-            <h2>By category</h2>
+            <h2>
+              By category
+            </h2>
           </div>
 
           <Link
@@ -292,6 +400,7 @@ export function LiveDashboardFinance({
                         ] ?? "•"
                       }
                     </span>
+
                     <div className="category-copy">
                       <div>
                         <span>
@@ -306,6 +415,7 @@ export function LiveDashboardFinance({
                           )}
                         </strong>
                       </div>
+
                       <span className="category-track">
                         <span
                           style={{

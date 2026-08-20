@@ -144,6 +144,23 @@ export function AccountMenu({
           <div className="account-menu-list">
             <Link
               className="account-menu-item"
+              href="/trips"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <span className="account-menu-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16v12H4zM8 7V5h8v2M8 11h8M12 11v8" />
+                </svg>
+              </span>
+              <span>
+                <strong>My trips</strong>
+                <small>Create or manage trips you own</small>
+              </span>
+            </Link>
+
+            <Link
+              className="account-menu-item"
               href="/settings/password"
               role="menuitem"
               onClick={() => setOpen(false)}

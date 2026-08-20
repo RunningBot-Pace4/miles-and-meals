@@ -79,6 +79,14 @@ export default async function MorePage() {
             </Link>
           </>
         ) : null}
+        <Link className="menu-row link-row" href="/trips">
+          <span>Create & manage my trips</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settings/budgets">
+          <span>My trip budgets</span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/settings/profile">
           <span>Profile & avatar</span>
           <span>›</span>

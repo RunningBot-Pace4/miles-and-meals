@@ -175,6 +175,12 @@ export function NotificationCenter({
       setUnreadCount((count) =>
         Math.max(0, count - 1),
       );
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "mnm:notifications-updated",
+        ),
+      );
     } catch {
       setError(
         "Unable to update notification status.",
@@ -234,6 +240,12 @@ export function NotificationCenter({
         })),
       );
       setUnreadCount(0);
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "mnm:notifications-updated",
+        ),
+      );
     } catch {
       setError(
         "Unable to mark notifications as read.",

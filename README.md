@@ -218,3 +218,29 @@ npm run build
 ```
 
 Do not use `db:reset`.
+
+
+## v46 Trip Owner + Personal Budgets
+
+v46 allows normal travelers to create and manage their own trips without a
+System Admin. The trip creator becomes `OWNER`, can add countries and assign
+travelers, while global Admin remains the maintenance/recovery role.
+
+Budgets are now personal per traveler per trip. Home shows My Budget /
+My Share / My Remaining and Combined Budget / Trip Expenses / Group Remaining.
+
+A top-right notification bell shows unread Notification Center count.
+
+v46 adds `trip_budgets`.
+
+```bash
+npm install
+npm run db:push
+npm run phase8:check
+npm test
+npm run build
+```
+
+Do not use `db:reset`.
+
+See `V46-TRIP-OWNER-PERSONAL-BUDGETS-NOTIFICATION-BELL.md`.

@@ -1467,50 +1467,21 @@ export function AdminOverview({
                           />
                         </label>
 
-                        <div className="two-col">
-                          <label>
-                            <span>
-                              Budget
-                            </span>
-                            <input
-                              inputMode="decimal"
-                              value={
-                                draft.budget
-                              }
-                              onChange={(
-                                event,
-                              ) =>
-                                setTripDrafts(
-                                  (
-                                    current,
-                                  ) => ({
-                                    ...current,
-                                    [trip.id]:
-                                      {
-                                        ...draft,
-                                        budget:
-                                          event
-                                            .target
-                                            .value,
-                                      },
-                                  }),
-                                )
-                              }
-                            />
-                          </label>
+                        <label>
+                          <span>
+                            Base currency
+                          </span>
+                          <input
+                            value={
+                              trip.baseCurrency
+                            }
+                            readOnly
+                          />
+                        </label>
 
-                          <label>
-                            <span>
-                              Base currency
-                            </span>
-                            <input
-                              value={
-                                trip.baseCurrency
-                              }
-                              readOnly
-                            />
-                          </label>
-                        </div>
+                        <p className="admin-config-note">
+                          Group budget is now the sum of traveler personal budgets. The old trip-level budget is retained only for backward-compatible data history.
+                        </p>
 
                         <div className="two-col">
                           <label>

@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     await db.insert(tripMembers).values({
       tripId: created[0].id,
       userId: session.user.id,
-      role: "ADMIN",
+      role: "OWNER",
     });
 
     await recordActivity({

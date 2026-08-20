@@ -538,7 +538,6 @@ export function AdminForms({
               (form) => ({
                 name: String(form.get("name") ?? ""),
                 baseCurrency: String(form.get("baseCurrency") ?? "MYR"),
-                budget: String(form.get("budget") ?? "0"),
                 startDate: String(form.get("startDate") ?? ""),
                 endDate: String(form.get("endDate") ?? ""),
               }),
@@ -569,15 +568,15 @@ export function AdminForms({
                 required
               />
             </label>
-            <label>
-              Total budget
-              <input
-                name="budget"
-                inputMode="decimal"
-                defaultValue="0"
-                required
-              />
-            </label>
+
+            <div className="owner-budget-explainer">
+              <strong>
+                Personal budgets
+              </strong>
+              <small>
+                Each assigned traveler enters their own budget. The group total is calculated automatically.
+              </small>
+            </div>
           </div>
 
           <div className="two-col">

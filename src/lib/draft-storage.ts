@@ -7,7 +7,7 @@ export type StoredDraft<T> = {
 const DRAFT_VERSION = 1;
 
 export function draftKey(
-  area: "expense" | "planner",
+  area: "expense" | "planner" | "budget",
   identity: string,
 ): string {
   return `mnm:draft:${area}:${identity}`;

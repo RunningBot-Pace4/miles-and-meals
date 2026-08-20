@@ -5,7 +5,7 @@ export const uuidSchema = z.string().uuid();
 export const createTripSchema = z.object({
   name: z.string().trim().min(2).max(120),
   baseCurrency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
-  budget: z.coerce.number().min(0).max(1_000_000_000),
+  budget: z.coerce.number().min(0).max(1_000_000_000).default(0),
   startDate: z.string().optional().default(""),
   endDate: z.string().optional().default(""),
 });
@@ -162,4 +162,65 @@ export const settlementActionSchema = z.object({
   countryId: uuidSchema,
   counterpartyUserId: z.string().min(1),
   action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),
+});
+
+
+export const selfServiceTripSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  baseCurrency: z
+    .string()
+    .trim()
+    .length(3)
+    .transform((value) =>
+      value.toUpperCase(),
+    ),
+  startDate: z
+    .string()
+    .optional()
+    .default(""),
+  endDate: z
+    .string()
+    .optional()
+    .default(""),
+});
+
+export const selfServiceTripUpdateSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  startDate: z
+    .string()
+    .optional()
+    .default(""),
+  endDate: z
+    .string()
+    .optional()
+    .default(""),
+});
+
+export const personalTripBudgetSchema = z.object({
+  tripId: uuidSchema,
+  amount: z.coerce
+    .number()
+    .positive()
+    .max(1_000_000_000),
+});
+
+export const tripCountryMemberSchema = z.object({
+  userId: z.string().min(1),
+});
+
+export const publicFxQuerySchema = z.object({
+  base: z
+    .string()
+    .trim()
+    .length(3)
+    .transform((value) =>
+      value.toUpperCase(),
+    ),
+  quote: z
+    .string()
+    .trim()
+    .length(3)
+    .transform((value) =>
+      value.toUpperCase(),
+    ),
 });

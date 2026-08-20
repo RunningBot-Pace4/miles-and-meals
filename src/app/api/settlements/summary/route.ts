@@ -4,14 +4,18 @@ import { recordApiMetric } from "@/lib/performance";
 import { getSession } from "@/lib/session";
 import { serializeSettlementLiveData } from "@/lib/settlement-live";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request,
+) {
   const started = Date.now();
-  const session = await getSession();
+  const session =
+    await getSession();
 
   if (!session) {
     await recordApiMetric({
       userId: null,
-      route: "/api/settlements/summary",
+      route:
+        "/api/settlements/summary",
       method: "GET",
       durationMs:
         Date.now() - started,
@@ -23,7 +27,8 @@ export async function GET(request: Request) {
       {
         status: 401,
         headers: {
-          "cache-control": "no-store",
+          "cache-control":
+            "no-store",
         },
       },
     );
@@ -33,9 +38,17 @@ export async function GET(request: Request) {
     await listAccessibleCountries(
       session.user,
     );
-  const url = new URL(request.url);
+  const url = new URL(
+    request.url,
+  );
   const requestedCountryId =
-    url.searchParams.get("country") ?? "";
+    url.searchParams.get(
+      "country",
+    ) ?? "";
+  const requestedTripId =
+    url.searchParams.get(
+      "trip",
+    ) ?? "";
 
   if (
     requestedCountryId &&
@@ -46,8 +59,10 @@ export async function GET(request: Request) {
     )
   ) {
     await recordApiMetric({
-      userId: session.user.id,
-      route: "/api/settlements/summary",
+      userId:
+        session.user.id,
+      route:
+        "/api/settlements/summary",
       method: "GET",
       durationMs:
         Date.now() - started,
@@ -55,11 +70,49 @@ export async function GET(request: Request) {
     });
 
     return Response.json(
-      { error: "Country not accessible." },
+      {
+        error:
+          "Country not accessible.",
+      },
       {
         status: 403,
         headers: {
-          "cache-control": "no-store",
+          "cache-control":
+            "no-store",
+        },
+      },
+    );
+  }
+
+  if (
+    requestedTripId &&
+    !countries.some(
+      (country) =>
+        country.tripId ===
+        requestedTripId,
+    )
+  ) {
+    await recordApiMetric({
+      userId:
+        session.user.id,
+      route:
+        "/api/settlements/summary",
+      method: "GET",
+      durationMs:
+        Date.now() - started,
+      statusCode: 403,
+    });
+
+    return Response.json(
+      {
+        error:
+          "Trip not accessible.",
+      },
+      {
+        status: 403,
+        headers: {
+          "cache-control":
+            "no-store",
         },
       },
     );
@@ -72,19 +125,25 @@ export async function GET(request: Request) {
             country.id ===
             requestedCountryId,
         )
-      : countries;
+      : requestedTripId
+        ? countries.filter(
+            (country) =>
+              country.tripId ===
+              requestedTripId,
+          )
+        : countries;
 
   const summary =
     await buildExpenseSummary(
       selectedCountries.map(
-        (country) => country.id,
+        (country) =>
+          country.id,
       ),
     );
-
   const baseCurrency =
     selectedCountries[0]
-      ?.baseCurrency ?? "MYR";
-
+      ?.baseCurrency ??
+    "MYR";
   const data =
     serializeSettlementLiveData(
       summary,
@@ -92,8 +151,10 @@ export async function GET(request: Request) {
     );
 
   await recordApiMetric({
-    userId: session.user.id,
-    route: "/api/settlements/summary",
+    userId:
+      session.user.id,
+    route:
+      "/api/settlements/summary",
     method: "GET",
     durationMs:
       Date.now() - started,
@@ -104,7 +165,8 @@ export async function GET(request: Request) {
     data,
     {
       headers: {
-        "cache-control": "no-store",
+        "cache-control":
+          "no-store",
       },
     },
   );

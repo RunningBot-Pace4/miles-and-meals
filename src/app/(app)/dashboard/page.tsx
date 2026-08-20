@@ -1,15 +1,24 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
-import { CountryQuickSelect } from "@/components/CountryQuickSelect";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
+import { TripQuickSelect } from "@/components/TripQuickSelect";
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
-import { formatMoney, toNumber } from "@/lib/money";
-import { isSystemAdmin, requirePageSession } from "@/lib/session";
+import { formatMoney } from "@/lib/money";
+import {
+  isSystemAdmin,
+  requirePageSession,
+} from "@/lib/session";
 import { serializeSettlementLiveData } from "@/lib/settlement-live";
+import {
+  loadTripBudgetSummary,
+} from "@/lib/trip-budget";
 
 type DashboardPageProps = {
-  searchParams: Promise<{ country?: string }>;
+  searchParams: Promise<{
+    trip?: string;
+    country?: string;
+  }>;
 };
 
 function StyledTripTitle({
@@ -21,142 +30,316 @@ function StyledTripTitle({
     /^(.*?)(?:\s+(\d{4}))?(?:\s+(\(.+\)))?$/,
   );
 
-  const name = match?.[1]?.trim() || text;
-  const year = match?.[2] ?? "";
-  const note = match?.[3] ?? "";
+  const name =
+    match?.[1]?.trim() ||
+    text;
+  const year =
+    match?.[2] ?? "";
+  const note =
+    match?.[3] ?? "";
 
   return (
-    <span className="travel-title-editorial" aria-label={text}>
-      <span className="travel-title-name">{name}</span>
+    <span
+      className="travel-title-editorial"
+      aria-label={text}
+    >
+      <span className="travel-title-name">
+        {name}
+      </span>
       {year ? (
-        <span className="travel-title-year">{year}</span>
+        <span className="travel-title-year">
+          {year}
+        </span>
       ) : null}
       {note ? (
-        <span className="travel-title-note">{note}</span>
+        <span className="travel-title-note">
+          {note}
+        </span>
       ) : null}
     </span>
   );
 }
 
 function formatTripDateRange(
-  startDate: string | null | undefined,
-  endDate: string | null | undefined,
+  startDate:
+    | string
+    | null
+    | undefined,
+  endDate:
+    | string
+    | null
+    | undefined,
 ): string {
-  if (!startDate && !endDate) {
+  if (
+    !startDate &&
+    !endDate
+  ) {
     return "Dates not set";
   }
 
-  const formatter = new Intl.DateTimeFormat("en-MY", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-MY",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      },
+    );
 
-  function format(value: string): string {
-    const [year, month, day] = value.split("-").map(Number);
+  function format(
+    value: string,
+  ): string {
+    const [
+      year,
+      month,
+      day,
+    ] = value
+      .split("-")
+      .map(Number);
+
     return formatter.format(
-      new Date(year, month - 1, day),
+      new Date(
+        year,
+        month - 1,
+        day,
+      ),
     );
   }
 
-  if (startDate && endDate) {
-    return `${format(startDate)} – ${format(endDate)}`;
+  if (
+    startDate &&
+    endDate
+  ) {
+    return `${format(
+      startDate,
+    )} – ${format(endDate)}`;
   }
 
-  return format(startDate ?? endDate ?? "");
+  return format(
+    startDate ??
+      endDate ??
+      "",
+  );
 }
 
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
-  const session = await requirePageSession();
-  const countries = await listAccessibleCountries(session.user);
-  const query = await searchParams;
-  const selectedId =
-    query.country && countries.some((country) => country.id === query.country)
-      ? query.country
-      : "";
+  const session =
+    await requirePageSession();
+  const countries =
+    await listAccessibleCountries(
+      session.user,
+    );
+  const query =
+    await searchParams;
 
-  const selectedCountries = selectedId
-    ? countries.filter((country) => country.id === selectedId)
-    : countries;
+  const tripMap =
+    new Map<
+      string,
+      {
+        id: string;
+        name: string;
+        baseCurrency: string;
+        startDate:
+          | string
+          | null;
+        endDate:
+          | string
+          | null;
+      }
+    >();
 
-  const summary = await buildExpenseSummary(
-    selectedCountries.map((country) => country.id),
+  for (const country of countries) {
+    if (
+      !tripMap.has(
+        country.tripId,
+      )
+    ) {
+      tripMap.set(
+        country.tripId,
+        {
+          id: country.tripId,
+          name:
+            country.tripName,
+          baseCurrency:
+            country.baseCurrency,
+          startDate:
+            country.startDate,
+          endDate:
+            country.endDate,
+        },
+      );
+    }
+  }
+
+  const tripOptions = [
+    ...tripMap.values(),
+  ].sort(
+    (left, right) =>
+      left.name.localeCompare(
+        right.name,
+      ),
   );
 
-  const baseCurrency = selectedCountries[0]?.baseCurrency ?? "MYR";
-  const budget = selectedId
-    ? toNumber(selectedCountries[0]?.budget)
-    : [
-        ...new Map<string, number>(
-          selectedCountries.map((country) => [
-            country.tripId,
-            toNumber(country.budget),
-          ]),
-        ).values(),
-      ].reduce((sum, tripBudget) => sum + tripBudget, 0);
+  const legacyCountryTripId =
+    query.country
+      ? countries.find(
+          (country) =>
+            country.id ===
+            query.country,
+        )?.tripId
+      : undefined;
 
-  const remaining = budget - summary.total;
-  const budgetPercent =
-    budget > 0 ? Math.min(100, Math.max(0, (summary.total / budget) * 100)) : 0;
-  const admin = isSystemAdmin(session.user.role);
-  const displayName = session.user.name.trim() || "Traveler";
-  const selectedCountry =
-    selectedId ? selectedCountries[0] : null;
-  const uniqueTripIds = new Set(
-    selectedCountries.map((country) => country.tripId),
-  );
-  const singleTrip =
-    uniqueTripIds.size === 1
-      ? selectedCountries[0]
+  const requestedTripId =
+    query.trip &&
+    tripMap.has(query.trip)
+      ? query.trip
+      : legacyCountryTripId &&
+          tripMap.has(
+            legacyCountryTripId,
+          )
+        ? legacyCountryTripId
+        : tripOptions[0]?.id ??
+          "";
+
+  const selectedTrip =
+    requestedTripId
+      ? tripMap.get(
+          requestedTripId,
+        ) ?? null
       : null;
-  const heroDestination =
-    selectedCountry?.tripName ??
-    singleTrip?.tripName ??
-    (countries.length
-      ? "All assigned trips"
-      : "No trip assigned");
-  const heroCode =
-    selectedCountry?.code ??
-    (selectedCountries.length === 1
-      ? selectedCountries[0]?.code
-      : countries.length
-        ? "ALL"
-        : "—");
-  const tripDateLabel =
-    singleTrip || selectedCountry
-      ? formatTripDateRange(
-          (selectedCountry ?? singleTrip)?.startDate,
-          (selectedCountry ?? singleTrip)?.endDate,
+
+  const selectedCountries =
+    requestedTripId
+      ? countries.filter(
+          (country) =>
+            country.tripId ===
+            requestedTripId,
         )
-      : "Multiple trip dates";
+      : [];
+
+  const countryIds =
+    selectedCountries.map(
+      (country) =>
+        country.id,
+    );
+  const summary =
+    await buildExpenseSummary(
+      countryIds,
+    );
+  const budget =
+    requestedTripId
+      ? await loadTripBudgetSummary(
+          session.user.id,
+          requestedTripId,
+          countryIds,
+        )
+      : {
+          myBudget: 0,
+          combinedBudget: 0,
+          budgetsSubmitted: 0,
+          travelerCount: 0,
+          missingBudgetCount: 0,
+        };
+
+  const me =
+    summary.people.find(
+      (person) =>
+        person.userId ===
+        session.user.id,
+    );
+  const myShareSpent =
+    me?.share ?? 0;
+  const baseCurrency =
+    selectedTrip
+      ?.baseCurrency ??
+    "MYR";
+  const admin =
+    isSystemAdmin(
+      session.user.role,
+    );
+  const displayName =
+    session.user.name.trim() ||
+    "Traveler";
+  const heroDestination =
+    selectedTrip?.name ??
+    "Plan your next trip";
+  const heroCode =
+    selectedCountries.length ===
+    1
+      ? selectedCountries[0]
+          ?.code ?? "TRIP"
+      : selectedCountries.length >
+          1
+        ? "TRIP"
+        : "NEW";
+  const tripDateLabel =
+    selectedTrip
+      ? formatTripDateRange(
+          selectedTrip.startDate,
+          selectedTrip.endDate,
+        )
+      : "Dates not set";
   const heroSecondary =
-    selectedCountry
-      ? selectedCountry.name
-      : selectedCountries.length
-        ? `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"} ready`
-        : admin
-          ? "Assign your Admin account to a country in Travel Crew"
-          : "Waiting for country access";
+    selectedCountries.length
+      ? `${selectedCountries.length} destination${
+          selectedCountries.length ===
+          1
+            ? ""
+            : "s"
+        } ready`
+      : "Create a trip or join a destination";
+  const personalPercent =
+    budget.myBudget > 0
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            (
+              myShareSpent /
+              budget.myBudget
+            ) * 100,
+          ),
+        )
+      : 0;
+
   const settlementLiveData =
     serializeSettlementLiveData(
       summary,
       baseCurrency,
     );
+
   const financeLiveData = {
     total: summary.total,
-    categories: summary.categories,
-    budget,
-    remaining,
+    categories:
+      summary.categories,
     baseCurrency,
+    myBudget:
+      budget.myBudget,
+    myShareSpent,
+    myRemaining:
+      budget.myBudget -
+      myShareSpent,
+    combinedBudget:
+      budget.combinedBudget,
+    groupRemaining:
+      budget.combinedBudget -
+      summary.total,
+    budgetsSubmitted:
+      budget.budgetsSubmitted,
+    travelerCount:
+      budget.travelerCount,
   };
 
   return (
     <div className="stack gap-lg dashboard-page">
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
-          <p className="eyebrow">YOUR TRAVEL COMPANION</p>
+          <p className="eyebrow">
+            YOUR TRAVEL COMPANION
+          </p>
           <h1 className="dashboard-welcome-title">
             <span className="welcome-editorial">
               <span className="welcome-prefix">
@@ -166,10 +349,16 @@ export default async function DashboardPage({
                 {displayName}.
               </span>
             </span>
+
             <span className="welcome-tagline">
               Make every{" "}
-              <strong className="tagline-mile">mile</strong>,{" "}
-              <strong className="tagline-meal">meal</strong>{" "}
+              <strong className="tagline-mile">
+                mile
+              </strong>
+              ,{" "}
+              <strong className="tagline-meal">
+                meal
+              </strong>{" "}
               &amp;{" "}
               <strong className="tagline-memory">
                 memory
@@ -178,10 +367,28 @@ export default async function DashboardPage({
             </span>
           </h1>
         </div>
-        <Link className="button primary dashboard-add" href="/expenses/new">
-          <span aria-hidden="true">＋</span>
-          Add expense
-        </Link>
+
+        {selectedTrip ? (
+          <Link
+            className="button primary dashboard-add"
+            href="/expenses/new"
+          >
+            <span aria-hidden="true">
+              ＋
+            </span>
+            Add expense
+          </Link>
+        ) : (
+          <Link
+            className="button primary dashboard-add"
+            href="/trips"
+          >
+            <span aria-hidden="true">
+              ＋
+            </span>
+            Create trip
+          </Link>
+        )}
       </section>
 
       <section className="hero-card dashboard-hero dashboard-travel-hero">
@@ -189,29 +396,39 @@ export default async function DashboardPage({
           className="travel-boarding-stamp"
           aria-hidden="true"
         >
-          <small>BOARDING</small>
-          <strong>{heroCode}</strong>
+          <small>
+            BOARDING
+          </small>
+          <strong>
+            {heroCode}
+          </strong>
         </div>
 
         <div className="hero-main">
           <div className="travel-destination-block">
             <p className="eyebrow travel-eyebrow">
-              <span aria-hidden="true">✦</span>
+              <span aria-hidden="true">
+                ✦
+              </span>
               CURRENT JOURNEY
             </p>
 
             <div className="travel-destination-heading">
               <div>
                 <small className="travel-destination-label">
-                  {selectedCountry
-                    ? "Destination"
-                    : "Trip"}
+                  Trip
                 </small>
                 <h2 className="travel-title-wrap">
-                  <StyledTripTitle text={heroDestination} />
+                  <StyledTripTitle
+                    text={
+                      heroDestination
+                    }
+                  />
                 </h2>
                 <p className="muted-on-dark">
-                  {heroSecondary}
+                  {
+                    heroSecondary
+                  }
                 </p>
               </div>
 
@@ -220,63 +437,100 @@ export default async function DashboardPage({
               </span>
             </div>
 
-            {countries.length ? (
+            {selectedTrip ? (
               <div className="travel-hero-meta">
                 <span>
-                  <b aria-hidden="true">◷</b>
+                  <b aria-hidden="true">
+                    ◷
+                  </b>
                   {tripDateLabel}
                 </span>
                 <span>
-                  <b aria-hidden="true">⌖</b>
-                  {selectedCountry
-                    ? `${selectedCountry.currencyCode} local currency`
-                    : `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"}`}
+                  <b aria-hidden="true">
+                    ⌖
+                  </b>
+                  {selectedCountries.length}{" "}
+                  destination
+                  {selectedCountries.length ===
+                  1
+                    ? ""
+                    : "s"}
                 </span>
               </div>
             ) : null}
           </div>
 
-          {countries.length ? (
-            <CountryQuickSelect
-              countries={countries.map((country) => ({
-                id: country.id,
-                tripName: country.tripName,
-              }))}
-              selectedId={selectedId}
+          {tripOptions.length ? (
+            <TripQuickSelect
+              trips={
+                tripOptions
+              }
+              selectedId={
+                requestedTripId
+              }
             />
           ) : null}
         </div>
 
-        {countries.length ? (
+        {selectedTrip ? (
           <div className="hero-budget travel-wallet-card">
             <div className="travel-wallet-title">
-              <span className="travel-wallet-icon" aria-hidden="true">
+              <span
+                className="travel-wallet-icon"
+                aria-hidden="true"
+              >
                 ◈
               </span>
               <div>
-                <small>TRIP WALLET</small>
-                <strong>{baseCurrency}</strong>
+                <small>
+                  MY WALLET
+                </small>
+                <strong>
+                  {
+                    baseCurrency
+                  }
+                </strong>
               </div>
             </div>
 
             <div className="hero-budget-row">
-              <span>Trip spend</span>
+              <span>
+                My share spent
+              </span>
               <strong>
-                {formatMoney(summary.total, baseCurrency)}
+                {formatMoney(
+                  myShareSpent,
+                  baseCurrency,
+                )}
               </strong>
             </div>
 
             <div
               className="budget-track"
-              aria-label={`${budgetPercent.toFixed(0)}% of budget used`}
+              aria-label={`${personalPercent.toFixed(
+                0,
+              )}% of personal budget used`}
             >
-              <span style={{ width: `${budgetPercent}%` }} />
+              <span
+                style={{
+                  width: `${personalPercent}%`,
+                }}
+              />
             </div>
 
             <div className="hero-budget-foot">
-              <span>{budgetPercent.toFixed(0)}% used</span>
               <span>
-                Budget {formatMoney(budget, baseCurrency)}
+                {personalPercent.toFixed(
+                  0,
+                )}
+                % used
+              </span>
+              <span>
+                My budget{" "}
+                {formatMoney(
+                  budget.myBudget,
+                  baseCurrency,
+                )}
               </span>
             </div>
           </div>
@@ -288,79 +542,57 @@ export default async function DashboardPage({
         >
           <span className="travel-route-dot start" />
           <span className="travel-route-line" />
-          <span className="travel-route-plane">✈</span>
+          <span className="travel-route-plane">
+            ✈
+          </span>
           <span className="travel-route-line second" />
           <span className="travel-route-dot end" />
         </div>
       </section>
 
-      {countries.length === 0 ? (
-        admin ? (
-          <section className="admin-onboarding">
-            <div className="admin-onboarding-copy">
-              <div className="onboarding-orbit" aria-hidden="true">
-                <span className="orbit-pin">⌖</span>
-                <span className="orbit-dot dot-one" />
-                <span className="orbit-dot dot-two" />
-              </div>
-              <div>
-                <p className="eyebrow">COUNTRY ACCESS</p>
-                <h2>No trip country assigned to you</h2>
-                <p className="muted">
-                  Admin tools remain available, but travel pages only show
-                  countries explicitly assigned to your account.
-                </p>
-                <Link className="button primary" href="/admin">
-                  Manage country access
-                </Link>
-              </div>
-            </div>
+      {!selectedTrip ? (
+        <section className="empty-card empty-card-feature dashboard-self-service-empty">
+          <div className="empty-icon">
+            ✦
+          </div>
 
-            <div className="onboarding-steps">
-              <article>
-                <span>01</span>
-                <div>
-                  <strong>Open Travel Crew</strong>
-                  <small>Expand the user who needs trip access</small>
-                </div>
-              </article>
-              <article>
-                <span>02</span>
-                <div>
-                  <strong>Manage country access</strong>
-                  <small>Tick the trip countries that user can see</small>
-                </div>
-              </article>
-              <article>
-                <span>03</span>
-                <div>
-                  <strong>Return to the app</strong>
-                  <small>Only assigned trip data will be visible</small>
-                </div>
-              </article>
+          <div>
+            <h2>
+              Start your own trip
+            </h2>
+            <p>
+              You no longer need a System Admin to begin. Create a trip, add destination countries and assign your travel crew yourself.
+            </p>
+
+            <div className="dashboard-empty-actions">
+              <Link
+                className="button primary"
+                href="/trips"
+              >
+                Create &amp; manage trips
+              </Link>
+
+              {admin ? (
+                <Link
+                  className="button secondary"
+                  href="/admin"
+                >
+                  System Admin
+                </Link>
+              ) : null}
             </div>
-          </section>
-        ) : (
-          <section className="empty-card empty-card-feature">
-            <div className="empty-icon">⌖</div>
-            <div>
-              <h2>No country assigned yet</h2>
-              <p>
-                An admin needs to assign your account to a country before trip
-                information becomes visible.
-              </p>
-            </div>
-          </section>
-        )
+          </div>
+        </section>
       ) : (
         <>
           <LiveDashboardFinance
             initialData={
               financeLiveData
             }
-            countryId={selectedId}
+            tripId={
+              requestedTripId
+            }
           />
-
 
           <LiveSettlementWorkspace
             initialData={
@@ -369,10 +601,11 @@ export default async function DashboardPage({
             currentUserId={
               session.user.id
             }
-            countryId={selectedId}
+            tripId={
+              requestedTripId
+            }
             variant="dashboard"
           />
-
 
           <section
             className="dashboard-travel-shortcuts"
@@ -380,56 +613,100 @@ export default async function DashboardPage({
           >
             <div className="travel-section-heading">
               <div>
-                <p className="eyebrow">TRAVEL SHORTCUTS</p>
-                <h2 id="travel-shortcuts-title">Where next?</h2>
+                <p className="eyebrow">
+                  TRAVEL SHORTCUTS
+                </p>
+                <h2 id="travel-shortcuts-title">
+                  Where next?
+                </h2>
               </div>
-              <span>Eat · Play · Sleep · Share</span>
+              <span>
+                Eat · Play · Sleep · Share
+              </span>
             </div>
 
             <div className="quick-grid travel-quick-grid">
-              <Link className="quick-action travel-quick plan" href="/planner">
-                <span className="quick-action-icon">⌁</span>
-                <span>
-                  <strong>Explore the plan</strong>
-                  <small>Itinerary, food &amp; places</small>
+              <Link
+                className="quick-action travel-quick plan"
+                href="/planner"
+              >
+                <span className="quick-action-icon">
+                  ⌁
                 </span>
-                <span className="quick-arrow">›</span>
+                <span>
+                  <strong>
+                    Explore the plan
+                  </strong>
+                  <small>
+                    Itinerary, food &amp; places
+                  </small>
+                </span>
+                <span className="quick-arrow">
+                  ›
+                </span>
               </Link>
 
-              <Link className="quick-action travel-quick map" href="/location">
-                <span className="quick-action-icon">⌖</span>
-                <span>
-                  <strong>Find the crew</strong>
-                  <small>See shared live locations</small>
+              <Link
+                className="quick-action travel-quick map"
+                href="/location"
+              >
+                <span className="quick-action-icon">
+                  ⌖
                 </span>
-                <span className="quick-arrow">›</span>
+                <span>
+                  <strong>
+                    Find the crew
+                  </strong>
+                  <small>
+                    See shared live locations
+                  </small>
+                </span>
+                <span className="quick-arrow">
+                  ›
+                </span>
               </Link>
 
-              <Link className="quick-action travel-quick wallet" href="/expenses">
-                <span className="quick-action-icon">▤</span>
-                <span>
-                  <strong>Trip wallet</strong>
-                  <small>Receipts, spending &amp; shares</small>
+              <Link
+                className="quick-action travel-quick wallet"
+                href="/expenses"
+              >
+                <span className="quick-action-icon">
+                  ▤
                 </span>
-                <span className="quick-arrow">›</span>
+                <span>
+                  <strong>
+                    Trip wallet
+                  </strong>
+                  <small>
+                    Receipts, spending &amp; shares
+                  </small>
+                </span>
+                <span className="quick-arrow">
+                  ›
+                </span>
               </Link>
 
               <Link
                 className="quick-action travel-quick settle"
                 href="/settlements"
               >
-                <span className="quick-action-icon">✓</span>
-                <span>
-                  <strong>Settle up</strong>
-                  <small>Who paid and who is waiting</small>
+                <span className="quick-action-icon">
+                  ✓
                 </span>
-                <span className="quick-arrow">›</span>
+                <span>
+                  <strong>
+                    Settle up
+                  </strong>
+                  <small>
+                    Who paid and who is waiting
+                  </small>
+                </span>
+                <span className="quick-arrow">
+                  ›
+                </span>
               </Link>
             </div>
           </section>
-
-
-
         </>
       )}
     </div>

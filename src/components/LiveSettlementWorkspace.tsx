@@ -565,11 +565,13 @@ export function LiveSettlementWorkspace({
   initialData,
   currentUserId,
   countryId = "",
+  tripId = "",
   variant,
 }: {
   initialData: SettlementLiveData;
   currentUserId: string;
   countryId?: string;
+  tripId?: string;
   variant: WorkspaceVariant;
 }) {
   const [data, setData] =
@@ -591,6 +593,11 @@ export function LiveSettlementWorkspace({
         "country",
         countryId,
       );
+    } else if (tripId) {
+      query.set(
+        "trip",
+        tripId,
+      );
     }
 
     const suffix = query.toString();
@@ -598,7 +605,7 @@ export function LiveSettlementWorkspace({
     return suffix
       ? `/api/settlements/summary?${suffix}`
       : "/api/settlements/summary";
-  }, [countryId]);
+  }, [countryId, tripId]);
 
   const refresh = useCallback(
     async (

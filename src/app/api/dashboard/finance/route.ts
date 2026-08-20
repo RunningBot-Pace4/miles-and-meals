@@ -1,19 +1,23 @@
 import { listAccessibleCountries } from "@/lib/access";
 import { buildExpenseSummary } from "@/lib/dashboard";
-import { toNumber } from "@/lib/money";
 import { recordApiMetric } from "@/lib/performance";
 import { getSession } from "@/lib/session";
+import {
+  loadTripBudgetSummary,
+} from "@/lib/trip-budget";
 
 export async function GET(
   request: Request,
 ) {
   const started = Date.now();
-  const session = await getSession();
+  const session =
+    await getSession();
 
   if (!session) {
     await recordApiMetric({
       userId: null,
-      route: "/api/dashboard/finance",
+      route:
+        "/api/dashboard/finance",
       method: "GET",
       durationMs:
         Date.now() - started,
@@ -30,21 +34,33 @@ export async function GET(
     await listAccessibleCountries(
       session.user,
     );
-  const url = new URL(request.url);
-  const requested =
-    url.searchParams.get("country") ??
-    "";
+  const url = new URL(
+    request.url,
+  );
+  const requestedTripId =
+    url.searchParams.get(
+      "trip",
+    ) ?? "";
+
+  const tripIds =
+    new Set(
+      countries.map(
+        (country) =>
+          country.tripId,
+      ),
+    );
 
   if (
-    requested &&
-    !countries.some(
-      (country) =>
-        country.id === requested,
+    !requestedTripId ||
+    !tripIds.has(
+      requestedTripId,
     )
   ) {
     await recordApiMetric({
-      userId: session.user.id,
-      route: "/api/dashboard/finance",
+      userId:
+        session.user.id,
+      route:
+        "/api/dashboard/finance",
       method: "GET",
       durationMs:
         Date.now() - started,
@@ -52,55 +68,74 @@ export async function GET(
     });
 
     return Response.json(
-      { error: "Forbidden" },
+      {
+        error:
+          "Trip is not accessible.",
+      },
       { status: 403 },
     );
   }
 
-  const selected = requested
-    ? countries.filter(
-        (country) =>
-          country.id === requested,
-      )
-    : countries;
-
+  const selected =
+    countries.filter(
+      (country) =>
+        country.tripId ===
+        requestedTripId,
+    );
+  const countryIds =
+    selected.map(
+      (country) =>
+        country.id,
+    );
   const summary =
     await buildExpenseSummary(
-      selected.map(
-        (country) =>
-          country.id,
-      ),
+      countryIds,
     );
+  const budget =
+    await loadTripBudgetSummary(
+      session.user.id,
+      requestedTripId,
+      countryIds,
+    );
+  const me =
+    summary.people.find(
+      (person) =>
+        person.userId ===
+        session.user.id,
+    );
+  const myShareSpent =
+    me?.share ?? 0;
   const baseCurrency =
-    selected[0]?.baseCurrency ??
-    "MYR";
-  const budget = requested
-    ? toNumber(
-        selected[0]?.budget,
-      )
-    : [
-        ...new Map<
-          string,
-          number
-        >(
-          selected.map(
-            (country) => [
-              country.tripId,
-              toNumber(
-                country.budget,
-              ),
-            ],
-          ),
-        ).values(),
-      ].reduce(
-        (sum, value) =>
-          sum + value,
-        0,
-      );
+    selected[0]
+      ?.baseCurrency ?? "MYR";
+
+  const data = {
+    total: summary.total,
+    categories:
+      summary.categories,
+    baseCurrency,
+    myBudget:
+      budget.myBudget,
+    myShareSpent,
+    myRemaining:
+      budget.myBudget -
+      myShareSpent,
+    combinedBudget:
+      budget.combinedBudget,
+    groupRemaining:
+      budget.combinedBudget -
+      summary.total,
+    budgetsSubmitted:
+      budget.budgetsSubmitted,
+    travelerCount:
+      budget.travelerCount,
+  };
 
   await recordApiMetric({
-    userId: session.user.id,
-    route: "/api/dashboard/finance",
+    userId:
+      session.user.id,
+    route:
+      "/api/dashboard/finance",
     method: "GET",
     durationMs:
       Date.now() - started,
@@ -108,18 +143,11 @@ export async function GET(
   });
 
   return Response.json(
-    {
-      total: summary.total,
-      categories:
-        summary.categories,
-      budget,
-      remaining:
-        budget - summary.total,
-      baseCurrency,
-    },
+    data,
     {
       headers: {
-        "cache-control": "no-store",
+        "cache-control":
+          "no-store",
       },
     },
   );

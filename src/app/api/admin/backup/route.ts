@@ -8,6 +8,7 @@ import {
   expenses,
   settlements,
   travelItems,
+  tripBudgets,
   tripMembers,
   trips,
   user,
@@ -36,6 +37,15 @@ const backupSchema = z.object({
   data: z.object({
     trips: z.array(z.record(z.string(), z.unknown())),
     tripMembers: z.array(z.record(z.string(), z.unknown())),
+    tripBudgets: z
+      .array(
+        z.record(
+          z.string(),
+          z.unknown(),
+        ),
+      )
+      .optional()
+      .default([]),
     countries: z.array(z.record(z.string(), z.unknown())),
     countryMembers: z.array(z.record(z.string(), z.unknown())),
     expenses: z.array(z.record(z.string(), z.unknown())),
@@ -163,6 +173,13 @@ function requiredUserIds(
 
   for (
     const row of
+      backup.data.tripBudgets
+  ) {
+    add(row, "userId");
+  }
+
+  for (
+    const row of
       backup.data.countryMembers
   ) {
     add(row, "userId");
@@ -234,6 +251,44 @@ async function validateBackup(
   );
   const countryTripIds =
     new Map<string, string>();
+
+  for (
+    const [index, row]
+    of backup.data.tripBudgets.entries()
+  ) {
+    const tripId =
+      requiredString(
+        row,
+        "tripId",
+        errors,
+        `tripBudgets[${index}]`,
+      );
+
+    if (
+      tripId &&
+      !tripIds.has(tripId)
+    ) {
+      errors.push(
+        `tripBudgets[${index}] references a missing trip.`,
+      );
+    }
+
+    const amount = Number(
+      value(
+        row,
+        "amount",
+      ),
+    );
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      errors.push(
+        `tripBudgets[${index}] has an invalid personal budget amount.`,
+      );
+    }
+  }
 
   for (
     const [index, row]
@@ -548,6 +603,9 @@ async function validateBackup(
       tripMembers:
         backup.data.tripMembers
           .length,
+      personalBudgets:
+        backup.data.tripBudgets
+          .length,
       countries:
         backup.data.countries
           .length,
@@ -647,6 +705,27 @@ async function restoreBackup(
         ${value(row, "userId")},
         ${value(row, "role")},
         ${timestamp(row, "createdAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (
+    const row of
+      backup.data.tripBudgets
+  ) {
+    queries.push(sql`
+      INSERT INTO trip_budgets (
+        trip_id,
+        user_id,
+        amount,
+        created_at,
+        updated_at
+      ) VALUES (
+        ${value(row, "tripId")},
+        ${value(row, "userId")},
+        ${value(row, "amount")},
+        ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
       )
     `);
   }
@@ -890,6 +969,7 @@ export async function GET() {
   const [
     tripRows,
     tripMemberRows,
+    tripBudgetRows,
     countryRows,
     countryMemberRows,
     expenseRows,
@@ -899,6 +979,7 @@ export async function GET() {
   ] = await Promise.all([
     db.select().from(trips),
     db.select().from(tripMembers),
+    db.select().from(tripBudgets),
     db.select().from(countries),
     db.select().from(countryMembers),
     db.select().from(expenses),
@@ -934,6 +1015,8 @@ export async function GET() {
       trips: tripRows,
       tripMembers:
         tripMemberRows,
+      tripBudgets:
+        tripBudgetRows,
       countries: countryRows,
       countryMembers:
         countryMemberRows,

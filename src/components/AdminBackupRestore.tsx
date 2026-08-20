@@ -242,7 +242,7 @@ export function AdminBackupRestore() {
               Download full travel backup
             </h2>
             <p className="muted">
-              Includes trips, country assignments, expenses, splits, settlements and planner items. Login/password tables are excluded.
+              Includes trips, personal budgets, country assignments, expenses, splits, settlements and planner items. Login/password tables are excluded.
             </p>
           </div>
 

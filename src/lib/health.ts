@@ -10,7 +10,6 @@ import {
   expenses,
   settlements,
   tripMembers,
-  trips,
 } from "@/db/schema";
 import {
   effectiveConvertedAmount,
@@ -32,7 +31,6 @@ export type ConsistencyReport = {
 export async function runConsistencyChecks(): Promise<ConsistencyReport> {
   try {
     const [
-      tripRows,
       countryRows,
       expenseRows,
       splitRows,
@@ -40,12 +38,6 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
       countryMemberRows,
       tripMemberRows,
     ] = await Promise.all([
-      db
-        .select({
-          id: trips.id,
-          name: trips.name,
-        })
-        .from(trips),
       db
         .select({
           id: countries.id,
@@ -249,46 +241,6 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
           assignmentMismatch,
         detail:
           "A country assignment exists without the matching trip membership.",
-      });
-    }
-
-    const tripNames =
-      new Map<string, number>();
-
-    for (const trip of tripRows) {
-      const key = trip.name
-        .trim()
-        .toLocaleLowerCase();
-
-      tripNames.set(
-        key,
-        (tripNames.get(key) ?? 0) +
-          1,
-      );
-    }
-
-    const duplicateTripNames =
-      [...tripNames.values()]
-        .filter(
-          (count) =>
-            count > 1,
-        )
-        .reduce(
-          (sum, count) =>
-            sum + count,
-          0,
-        );
-
-    if (
-      duplicateTripNames > 0
-    ) {
-      issues.push({
-        type:
-          "DUPLICATE_TRIP_NAMES",
-        count:
-          duplicateTripNames,
-        detail:
-          "Multiple trip records share the same name. Consider renaming them for clarity.",
       });
     }
 

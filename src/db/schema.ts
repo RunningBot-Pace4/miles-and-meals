@@ -239,6 +239,47 @@ export const tripMembers = pgTable(
   (table) => [primaryKey({ columns: [table.tripId, table.userId] })],
 );
 
+export const tripBudgets = pgTable(
+  "trip_budgets",
+  {
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, {
+        onDelete: "cascade",
+      }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, {
+        onDelete: "cascade",
+      }),
+    amount: numeric("amount", {
+      precision: 18,
+      scale: 2,
+    }).notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [
+        table.tripId,
+        table.userId,
+      ],
+    }),
+    index("trip_budget_user_idx").on(
+      table.userId,
+    ),
+  ],
+);
+
 export const countries = pgTable(
   "countries",
   {
@@ -526,6 +567,7 @@ export const schema = {
   appErrors,
   trips,
   tripMembers,
+  tripBudgets,
   countries,
   countryMembers,
   expenses,

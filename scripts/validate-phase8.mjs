@@ -64,6 +64,22 @@ const requiredFiles = [
   "src/app/api/admin/backup/route.ts",
   "src/app/(app)/notifications/page.tsx",
   "src/app/(app)/admin/backup/page.tsx",
+  "src/components/TripManager.tsx",
+  "src/components/TripBudgetForm.tsx",
+  "src/components/TripQuickSelect.tsx",
+  "src/components/NotificationBell.tsx",
+  "src/components/BudgetAccessGate.tsx",
+  "src/lib/trip-budget.ts",
+  "src/lib/trip-management.ts",
+  "src/lib/trip-roles.ts",
+  "src/lib/budget-math.ts",
+  "src/app/(app)/trips/page.tsx",
+  "src/app/(app)/settings/budgets/page.tsx",
+  "src/app/onboarding/budget/page.tsx",
+  "src/app/api/trips/route.ts",
+  "src/app/api/budgets/route.ts",
+  "src/app/api/notifications/unread/route.ts",
+  "tests/v46-budget-owner.test.ts",
 ];
 
 for (const file of requiredFiles) {
@@ -79,6 +95,7 @@ for (const table of [
   "pushSubscriptions",
   "notifications",
   "apiMetrics",
+  "tripBudgets",
   "activityLogs",
   "appErrors",
 ]) {
@@ -628,6 +645,159 @@ if (
 ) {
   fail(
     "Two-user settlement E2E coverage is missing.",
+  );
+}
+
+const tripManagerV46 = read(
+  "src/components/TripManager.tsx",
+);
+const tripBudgetFormV46 = read(
+  "src/components/TripBudgetForm.tsx",
+);
+const dashboardV46 = read(
+  "src/app/(app)/dashboard/page.tsx",
+);
+const dashboardFinanceV46 = read(
+  "src/components/LiveDashboardFinance.tsx",
+);
+const notificationBellV46 = read(
+  "src/components/NotificationBell.tsx",
+);
+const appLayoutV46 = read(
+  "src/app/(app)/layout.tsx",
+);
+const budgetGateV46 = read(
+  "src/components/BudgetAccessGate.tsx",
+);
+const tripApiV46 = read(
+  "src/app/api/trips/route.ts",
+);
+const tripBudgetV46 = read(
+  "src/lib/trip-budget.ts",
+);
+const tripManagementV46 = read(
+  "src/lib/trip-management.ts",
+);
+const backupV46 = read(
+  "src/app/api/admin/backup/route.ts",
+);
+const v46Tests = read(
+  "tests/v46-budget-owner.test.ts",
+);
+
+if (
+  !tripApiV46.includes(
+    'role: "OWNER"',
+  ) ||
+  !tripManagementV46.includes(
+    "canManageTrip",
+  ) ||
+  !tripManagerV46.includes(
+    "Create a new trip",
+  ) ||
+  !tripManagerV46.includes(
+    "Tick the travelers",
+  )
+) {
+  fail(
+    "Trip Owner self-service trip creation and traveler assignment are missing.",
+  );
+}
+
+for (const marker of [
+  "myBudget",
+  "combinedBudget",
+  "budgetsSubmitted",
+  "travelerCount",
+]) {
+  if (
+    !tripBudgetV46.includes(
+      marker,
+    )
+  ) {
+    fail(
+      `Personal/group budget layer missing: ${marker}`,
+    );
+  }
+}
+
+if (
+  !dashboardV46.includes(
+    "TripQuickSelect",
+  ) ||
+  !dashboardV46.includes(
+    "loadTripBudgetSummary",
+  ) ||
+  !dashboardFinanceV46.includes(
+    "MY TRAVEL WALLET",
+  ) ||
+  !dashboardFinanceV46.includes(
+    "GROUP TRIP",
+  ) ||
+  !dashboardFinanceV46.includes(
+    "Combined budget",
+  )
+) {
+  fail(
+    "Home must use true Trip selection and separate personal/group budgets.",
+  );
+}
+
+if (
+  !tripBudgetFormV46.includes(
+    "Start my trip",
+  ) ||
+  !budgetGateV46.includes(
+    "/onboarding/budget",
+  ) ||
+  !appLayoutV46.includes(
+    "listMissingTripBudgets",
+  )
+) {
+  fail(
+    "Required personal-budget onboarding after trip assignment is missing.",
+  );
+}
+
+if (
+  !notificationBellV46.includes(
+    "unreadCount",
+  ) ||
+  !notificationBellV46.includes(
+    'href="/notifications"',
+  ) ||
+  !appLayoutV46.includes(
+    "NotificationBell",
+  )
+) {
+  fail(
+    "Top-right notification bell with unread count is missing.",
+  );
+}
+
+if (
+  !backupV46.includes(
+    "tripBudgets",
+  ) ||
+  !backupV46.includes(
+    "trip_budgets",
+  )
+) {
+  fail(
+    "Admin backup/restore must include personal trip budgets.",
+  );
+}
+
+if (
+  !v46Tests.includes(
+    "sums individual traveler budgets",
+  ) ||
+  !v46Tests.includes(
+    "OWNER",
+  )
+) {
+  fail(
+    "v46 budget and Trip Owner regression tests are missing.",
   );
 }
 
