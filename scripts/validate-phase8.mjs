@@ -67,6 +67,29 @@ for (const table of [
   }
 }
 
+const notificationSettings = read(
+  "src/components/NotificationSettings.tsx",
+);
+
+if (
+  !notificationSettings.includes(
+    "function base64UrlToArrayBuffer",
+  ) ||
+  !notificationSettings.includes(
+    "): ArrayBuffer",
+  ) ||
+  !notificationSettings.includes(
+    "applicationServerKey:",
+  ) ||
+  !notificationSettings.includes(
+    "base64UrlToArrayBuffer(publicKey)",
+  )
+) {
+  fail(
+    "Web Push applicationServerKey must use a guaranteed ArrayBuffer.",
+  );
+}
+
 const serviceWorker = read(
   "public/sw.js",
 );

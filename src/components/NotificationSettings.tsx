@@ -19,9 +19,9 @@ type SettingsPayload = {
   publicKey: string;
 };
 
-function base64UrlToUint8Array(
+function base64UrlToArrayBuffer(
   base64Url: string,
-): Uint8Array {
+): ArrayBuffer {
   const padding = "=".repeat(
     (4 - (base64Url.length % 4)) % 4,
   );
@@ -31,7 +31,8 @@ function base64UrlToUint8Array(
     .replace(/-/g, "+")
     .replace(/_/g, "/");
   const raw = window.atob(base64);
-  const output = new Uint8Array(raw.length);
+  const buffer = new ArrayBuffer(raw.length);
+  const output = new Uint8Array(buffer);
 
   for (
     let index = 0;
@@ -41,7 +42,7 @@ function base64UrlToUint8Array(
     output[index] = raw.charCodeAt(index);
   }
 
-  return output;
+  return buffer;
 }
 
 export function NotificationSettings() {
@@ -210,7 +211,7 @@ export function NotificationSettings() {
           await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey:
-              base64UrlToUint8Array(publicKey),
+              base64UrlToArrayBuffer(publicKey),
           });
       }
 
