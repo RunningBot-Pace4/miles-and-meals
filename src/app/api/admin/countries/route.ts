@@ -4,7 +4,6 @@ import { countries, trips } from "@/db/schema";
 import { recordActivity } from "@/lib/activity";
 import { getCountryCatalogItem } from "@/lib/country-catalog";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
-import { getDailyFxRate } from "@/lib/fx";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createCountrySchema } from "@/lib/validation";
 
@@ -51,22 +50,15 @@ export async function POST(request: Request) {
       );
     }
 
-    let exchangeRate = input.defaultExchangeRate;
-    let fxRateDate: string | null = null;
-    let fxRateProvider = "Manual";
-
-    try {
-      const dailyFx = await getDailyFxRate(
-        catalogCountry.currencyCode,
-        trip.baseCurrency,
-      );
-
-      exchangeRate = dailyFx.rate;
-      fxRateDate = dailyFx.rateDate;
-      fxRateProvider = dailyFx.provider;
-    } catch {
-      // Keep the submitted manual value when the free FX sources are unavailable.
-    }
+    const exchangeRate =
+      input.defaultExchangeRate;
+    const fxRateDate =
+      input.fxRateProvider === "Manual override"
+        ? null
+        : input.fxRateDate || null;
+    const fxRateProvider =
+      input.fxRateProvider ||
+      "Manual";
 
     const created = await db
       .insert(countries)

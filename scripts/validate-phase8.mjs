@@ -135,6 +135,99 @@ if (
   );
 }
 
+const pwaRegister = read(
+  "src/components/PwaRegister.tsx",
+);
+const accessSource = read(
+  "src/lib/access.ts",
+);
+const adminForms = read(
+  "src/components/AdminForms.tsx",
+);
+const expenseForm = read(
+  "src/components/ExpenseForm.tsx",
+);
+const adminCountryRoute = read(
+  "src/app/api/admin/countries/route.ts",
+);
+
+if (
+  !pwaRegister.includes(
+    "isInstalledMobileApp",
+  ) ||
+  !pwaRegister.includes(
+    "(display-mode: standalone)",
+  )
+) {
+  fail(
+    "PWA update prompt must be limited to the installed mobile app.",
+  );
+}
+
+if (
+  accessSource.includes(
+    "isSystemAdmin",
+  ) ||
+  accessSource.includes(
+    "return true;",
+  )
+) {
+  fail(
+    "Admin role must not bypass country assignment for travel data.",
+  );
+}
+
+if (
+  !adminOverview.includes(
+    "Manage country access",
+  ) ||
+  !adminOverview.includes(
+    "/api/admin/assignments",
+  ) ||
+  adminForms.includes(
+    "Assign person to country",
+  )
+) {
+  fail(
+    "Country assignment must be managed inside each Travel Crew user card.",
+  );
+}
+
+if (
+  !adminForms.includes(
+    "fxManualOverrideRef",
+  ) ||
+  !adminForms.includes(
+    "Manual override",
+  ) ||
+  !adminForms.includes(
+    "fxRequestControllerRef.current?.abort()",
+  ) ||
+  adminCountryRoute.includes(
+    "getDailyFxRate",
+  ) ||
+  !adminCountryRoute.includes(
+    "input.defaultExchangeRate",
+  )
+) {
+  fail(
+    "Manual FX entry must override the automatic value on both client and server.",
+  );
+}
+
+if (
+  !expenseForm.includes(
+    "tripName: string",
+  ) ||
+  !expenseForm.includes(
+    "{country.tripName} · {country.name}",
+  )
+) {
+  fail(
+    "Expense country selector must show Trip Name and Country.",
+  );
+}
+
 const notificationSettings = read(
   "src/components/NotificationSettings.tsx",
 );

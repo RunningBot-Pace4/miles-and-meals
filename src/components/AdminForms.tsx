@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { countryCatalog } from "@/lib/country-catalog";
 
@@ -8,12 +8,6 @@ type Trip = {
   id: string;
   name: string;
   baseCurrency: string;
-};
-
-type Country = {
-  id: string;
-  name: string;
-  tripName: string;
 };
 
 type UserOption = {
@@ -35,8 +29,7 @@ type FormKey =
   | "create-user"
   | "reset-password"
   | "create-trip"
-  | "add-country"
-  | "assign-person";
+  | "add-country";
 
 const adminLoadingCopy: Record<
   FormKey,
@@ -44,7 +37,7 @@ const adminLoadingCopy: Record<
 > = {
   "create-user": {
     title: "Creating traveler",
-    message: "Preparing their account and trip access.",
+    message: "Preparing their account, user type and security.",
   },
   "reset-password": {
     title: "Resetting password",
@@ -57,10 +50,6 @@ const adminLoadingCopy: Record<
   "add-country": {
     title: "Adding country",
     message: "Updating currencies, access and trip planning.",
-  },
-  "assign-person": {
-    title: "Assigning traveler",
-    message: "Updating who can see this country and its trip data.",
   },
 };
 
@@ -111,11 +100,9 @@ function SubmitButton({
 
 export function AdminForms({
   trips,
-  countries,
   users,
 }: {
   trips: Trip[];
-  countries: Country[];
   users: UserOption[];
 }) {
   const [busyForm, setBusyForm] = useState<FormKey | null>(null);
@@ -132,6 +119,9 @@ export function AdminForms({
   const [fxError, setFxError] = useState("");
   const [fxBusy, setFxBusy] = useState(false);
   const [fxRefreshKey, setFxRefreshKey] = useState(0);
+  const fxManualOverrideRef = useRef(false);
+  const fxRequestControllerRef =
+    useRef<AbortController | null>(null);
 
   const selectedCatalogCountry = useMemo(
     () =>
@@ -154,6 +144,8 @@ export function AdminForms({
       selectedCatalogCountry?.currencyCode ?? "";
 
     if (!countryTripId || !currency) {
+      fxRequestControllerRef.current?.abort();
+      fxRequestControllerRef.current = null;
       setFxRate("");
       setFxRateDate("");
       setFxProvider("");
@@ -163,6 +155,7 @@ export function AdminForms({
     }
 
     const controller = new AbortController();
+    fxRequestControllerRef.current = controller;
 
     async function loadDailyFx() {
       setFxBusy(true);
@@ -202,6 +195,10 @@ export function AdminForms({
           );
         }
 
+        if (fxManualOverrideRef.current) {
+          return;
+        }
+
         setFxRate(
           payload.rate
             .toFixed(10)
@@ -209,9 +206,14 @@ export function AdminForms({
             .replace(/\.$/, ""),
         );
         setFxRateDate(payload.rateDate ?? "");
-        setFxProvider(payload.provider ?? "Daily reference");
+        setFxProvider(
+          payload.provider ?? "Daily reference",
+        );
       } catch (caught) {
-        if (controller.signal.aborted) {
+        if (
+          controller.signal.aborted ||
+          fxManualOverrideRef.current
+        ) {
           return;
         }
 
@@ -224,7 +226,10 @@ export function AdminForms({
             : "Unable to load the daily FX rate. Enter it manually.",
         );
       } finally {
-        if (!controller.signal.aborted) {
+        if (
+          !controller.signal.aborted &&
+          !fxManualOverrideRef.current
+        ) {
           setFxBusy(false);
         }
       }
@@ -234,12 +239,64 @@ export function AdminForms({
 
     return () => {
       controller.abort();
+
+      if (
+        fxRequestControllerRef.current ===
+        controller
+      ) {
+        fxRequestControllerRef.current = null;
+      }
     };
   }, [
     countryTripId,
     fxRefreshKey,
     selectedCatalogCountry?.currencyCode,
   ]);
+
+
+  function selectTrip(nextTripId: string) {
+    fxManualOverrideRef.current = false;
+    fxRequestControllerRef.current?.abort();
+    setFxRate("");
+    setFxRateDate("");
+    setFxProvider("");
+    setFxError("");
+    setCountryTripId(nextTripId);
+  }
+
+  function selectCountry(nextCountryCode: string) {
+    fxManualOverrideRef.current = false;
+    fxRequestControllerRef.current?.abort();
+    setFxRate("");
+    setFxRateDate("");
+    setFxProvider("");
+    setFxError("");
+    setCountryCode(nextCountryCode);
+  }
+
+  function setManualFxRate(value: string) {
+    fxManualOverrideRef.current = true;
+    fxRequestControllerRef.current?.abort();
+    fxRequestControllerRef.current = null;
+    setFxBusy(false);
+    setFxError("");
+    setFxRateDate("");
+    setFxProvider(
+      value.trim() ? "Manual override" : "",
+    );
+    setFxRate(value);
+  }
+
+  function refreshDailyFx() {
+    fxManualOverrideRef.current = false;
+    setFxRate("");
+    setFxRateDate("");
+    setFxProvider("");
+    setFxError("");
+    setFxRefreshKey(
+      (current) => current + 1,
+    );
+  }
 
   useEffect(() => {
     if (!message) {
@@ -559,9 +616,15 @@ export function AdminForms({
                   String(
                     form.get("defaultExchangeRate") ?? "",
                   ),
+                fxRateDate,
+                fxRateProvider:
+                  fxProvider || "Manual",
               }),
               "Country added with its daily FX reference rate.",
               () => {
+                fxManualOverrideRef.current = false;
+                fxRequestControllerRef.current?.abort();
+                fxRequestControllerRef.current = null;
                 setCountryCode("");
                 setFxRate("");
                 setFxRateDate("");
@@ -587,7 +650,7 @@ export function AdminForms({
               required
               value={countryTripId}
               onChange={(event) =>
-                setCountryTripId(event.target.value)
+                selectTrip(event.target.value)
               }
             >
               <option value="">Choose trip</option>
@@ -606,7 +669,7 @@ export function AdminForms({
               required
               value={countryCode}
               onChange={(event) =>
-                setCountryCode(event.target.value)
+                selectCountry(event.target.value)
               }
             >
               <option value="">Choose country</option>
@@ -653,7 +716,7 @@ export function AdminForms({
               required
               value={fxRate}
               onChange={(event) =>
-                setFxRate(event.target.value)
+                setManualFxRate(event.target.value)
               }
               placeholder={
                 fxBusy
@@ -701,9 +764,7 @@ export function AdminForms({
                 !countryTripId ||
                 !selectedCatalogCountry
               }
-              onClick={() =>
-                setFxRefreshKey((current) => current + 1)
-              }
+              onClick={refreshDailyFx}
             >
               Refresh FX
             </button>
@@ -722,61 +783,6 @@ export function AdminForms({
           />
         </form>
 
-        <form
-          className="panel stack admin-form-card admin-form-card-wide"
-          onSubmit={(event) =>
-            run(
-              event,
-              "assign-person",
-              "/api/admin/assignments",
-              (form) => ({
-                countryId: String(form.get("countryId") ?? ""),
-                userId: String(form.get("userId") ?? ""),
-              }),
-              "Traveler assigned to country.",
-            )
-          }
-        >
-          <div className="admin-form-heading">
-            <span className="admin-form-icon">◎</span>
-            <div>
-              <p className="eyebrow">ACCESS</p>
-              <h2>Assign person to country</h2>
-            </div>
-          </div>
-
-          <div className="two-col">
-            <label>
-              Country
-              <select name="countryId" required>
-                <option value="">Choose country</option>
-                {countries.map((country) => (
-                  <option value={country.id} key={country.id}>
-                    {country.tripName} · {country.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Person
-              <select name="userId" required>
-                <option value="">Choose person</option>
-                {users.map((member) => (
-                  <option value={member.id} key={member.id}>
-                    {member.name} · {member.email}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <SubmitButton
-            active={busyForm === "assign-person"}
-            idleLabel="Assign traveler"
-            busyLabel="Assigning…"
-          />
-        </form>
       </section>
     </div>
   );

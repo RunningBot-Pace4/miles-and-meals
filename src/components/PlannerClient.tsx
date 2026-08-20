@@ -6,6 +6,7 @@ import { SavingOverlay } from "@/components/SavingOverlay";
 type CountryOption = {
   id: string;
   name: string;
+  tripName: string;
 };
 
 type PlannerItem = {
@@ -215,7 +216,7 @@ function PlannerItemForm({
           >
             {countries.map((country) => (
               <option value={country.id} key={country.id}>
-                {country.name}
+                {country.tripName} · {country.name}
               </option>
             ))}
           </select>
@@ -809,7 +810,7 @@ export function PlannerClient({
             <option value="ALL">All my countries</option>
             {countries.map((country) => (
               <option value={country.id} key={country.id}>
-                {country.name}
+                {country.tripName} · {country.name}
               </option>
             ))}
           </select>

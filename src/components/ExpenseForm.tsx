@@ -8,6 +8,7 @@ import { parseTravelNumber } from "@/lib/numbers";
 type CountryOption = {
   id: string;
   name: string;
+  tripName: string;
   currencyCode: string;
   defaultExchangeRate: string;
   baseCurrency: string;
@@ -765,7 +766,7 @@ export function ExpenseForm({
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id}>
-                  {country.name}
+                  {country.tripName} · {country.name}
                 </option>
               ))}
             </select>

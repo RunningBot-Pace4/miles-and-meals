@@ -218,7 +218,6 @@ export default async function AdminPage() {
 
       <AdminForms
         trips={tripRows}
-        countries={countryRows}
         users={users.map((member) => ({
           id: member.id,
           name: member.name,

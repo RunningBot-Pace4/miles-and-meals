@@ -16,6 +16,7 @@ import { SavingOverlay } from "@/components/SavingOverlay";
 type CountryOption = {
   id: string;
   name: string;
+  tripName: string;
 };
 
 type MemberLocation = {
@@ -722,7 +723,7 @@ export function LocationTracker({
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id}>
-                  {country.name}
+                  {country.tripName} · {country.name}
                 </option>
               ))}
             </select>

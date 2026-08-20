@@ -16,6 +16,8 @@ export const createCountrySchema = z.object({
   code: z.string().trim().min(2).max(3).transform((value) => value.toUpperCase()),
   currencyCode: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   defaultExchangeRate: z.coerce.number().positive().max(1_000_000),
+  fxRateDate: z.string().trim().max(20).optional().default(""),
+  fxRateProvider: z.string().trim().max(120).optional().default("Manual"),
 });
 
 export const assignmentSchema = z.object({

@@ -6,6 +6,36 @@ import {
   useState,
 } from "react";
 
+type NavigatorWithStandalone =
+  Navigator & {
+    standalone?: boolean;
+  };
+
+function isInstalledMobileApp(): boolean {
+  const standalone =
+    window.matchMedia(
+      "(display-mode: standalone)",
+    ).matches ||
+    Boolean(
+      (
+        navigator as NavigatorWithStandalone
+      ).standalone,
+    );
+
+  if (!standalone) {
+    return false;
+  }
+
+  return (
+    window.matchMedia(
+      "(pointer: coarse)",
+    ).matches ||
+    window.matchMedia(
+      "(max-width: 820px)",
+    ).matches
+  );
+}
+
 export function PwaRegister() {
   const registrationRef =
     useRef<ServiceWorkerRegistration | null>(
@@ -27,13 +57,20 @@ export function PwaRegister() {
     let disposed = false;
     let refreshing = false;
 
+    function showUpdateIfAppropriate() {
+      setUpdateAvailable(
+        isInstalledMobileApp(),
+      );
+    }
+
     function watchRegistration(
       registration: ServiceWorkerRegistration,
     ) {
-      registrationRef.current = registration;
+      registrationRef.current =
+        registration;
 
       if (registration.waiting) {
-        setUpdateAvailable(true);
+        showUpdateIfAppropriate();
       }
 
       registration.addEventListener(
@@ -50,10 +87,12 @@ export function PwaRegister() {
             "statechange",
             () => {
               if (
-                worker.state === "installed" &&
-                navigator.serviceWorker.controller
+                worker.state ===
+                  "installed" &&
+                navigator.serviceWorker
+                  .controller
               ) {
-                setUpdateAvailable(true);
+                showUpdateIfAppropriate();
               }
             },
           );
@@ -76,10 +115,12 @@ export function PwaRegister() {
           return;
         }
 
-        watchRegistration(registration);
+        watchRegistration(
+          registration,
+        );
         void registration.update();
       } catch {
-        // Miles & Meals remains usable online without service-worker registration.
+        // Online web use still works if service-worker setup is unavailable.
       }
     }
 
@@ -97,7 +138,9 @@ export function PwaRegister() {
       controllerChanged,
     );
 
-    if (document.readyState === "complete") {
+    if (
+      document.readyState === "complete"
+    ) {
       void register();
     } else {
       window.addEventListener(
@@ -130,7 +173,8 @@ export function PwaRegister() {
 
     function clearBadge() {
       if (
-        document.visibilityState === "visible" &&
+        document.visibilityState ===
+          "visible" &&
         badgeNavigator.clearAppBadge
       ) {
         void badgeNavigator
@@ -170,7 +214,8 @@ export function PwaRegister() {
         ?.update()
         .then(() => {
           const next =
-            registrationRef.current?.waiting;
+            registrationRef.current
+              ?.waiting;
 
           if (next) {
             setUpdating(true);
@@ -200,6 +245,7 @@ export function PwaRegister() {
       >
         ↻
       </span>
+
       <div>
         <strong>
           Miles &amp; Meals update ready
@@ -209,13 +255,16 @@ export function PwaRegister() {
           reinstalling the Home Screen app.
         </small>
       </div>
+
       <button
         type="button"
         className="button primary"
         onClick={installUpdate}
         disabled={updating}
       >
-        {updating ? "Updating…" : "Update"}
+        {updating
+          ? "Updating…"
+          : "Update"}
       </button>
     </div>
   ) : null;

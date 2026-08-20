@@ -123,12 +123,16 @@ export default async function DashboardPage({
   const heroDestination =
     selectedCountry?.tripName ??
     singleTrip?.tripName ??
-    "All trips";
+    (countries.length
+      ? "All assigned trips"
+      : "No trip assigned");
   const heroCode =
     selectedCountry?.code ??
     (selectedCountries.length === 1
       ? selectedCountries[0]?.code
-      : "ALL");
+      : countries.length
+        ? "ALL"
+        : "—");
   const tripDateLabel =
     singleTrip || selectedCountry
       ? formatTripDateRange(
@@ -142,7 +146,7 @@ export default async function DashboardPage({
       : selectedCountries.length
         ? `${selectedCountries.length} destination${selectedCountries.length === 1 ? "" : "s"} ready`
         : admin
-          ? "Create a trip, add a country and bring your crew"
+          ? "Assign your Admin account to a country in Travel Crew"
           : "Waiting for country access";
   const me = summary.people.find(
     (person) => person.userId === session.user.id,
@@ -305,14 +309,14 @@ export default async function DashboardPage({
                 <span className="orbit-dot dot-two" />
               </div>
               <div>
-                <p className="eyebrow">FIRST TRIP SETUP</p>
-                <h2>Build your first adventure</h2>
+                <p className="eyebrow">COUNTRY ACCESS</p>
+                <h2>No trip country assigned to you</h2>
                 <p className="muted">
-                  Start with a trip, add the countries you will visit, then
-                  assign travelers so everyone only sees the right trip data.
+                  Admin tools remain available, but travel pages only show
+                  countries explicitly assigned to your account.
                 </p>
                 <Link className="button primary" href="/admin">
-                  Open Admin setup
+                  Manage country access
                 </Link>
               </div>
             </div>
@@ -321,22 +325,22 @@ export default async function DashboardPage({
               <article>
                 <span>01</span>
                 <div>
-                  <strong>Create a trip</strong>
-                  <small>Name, dates, base currency and budget</small>
+                  <strong>Open Travel Crew</strong>
+                  <small>Expand the user who needs trip access</small>
                 </div>
               </article>
               <article>
                 <span>02</span>
                 <div>
-                  <strong>Add countries</strong>
-                  <small>Local currency and default exchange rate</small>
+                  <strong>Manage country access</strong>
+                  <small>Tick the trip countries that user can see</small>
                 </div>
               </article>
               <article>
                 <span>03</span>
                 <div>
-                  <strong>Assign your crew</strong>
-                  <small>Give each traveler country-level access</small>
+                  <strong>Return to the app</strong>
+                  <small>Only assigned trip data will be visible</small>
                 </div>
               </article>
             </div>

@@ -8,7 +8,6 @@ import {
   listAccessibleCountries,
   type SessionUser,
 } from "@/lib/access";
-import { isSystemAdmin } from "@/lib/session";
 
 export type ActivityInput = {
   actorUserId?: string | null;
@@ -65,12 +64,6 @@ export async function listActivityForUser(
       user,
       eq(activityLogs.actorUserId, user.id),
     );
-
-  if (isSystemAdmin(currentUser.role)) {
-    return baseSelect
-      .orderBy(desc(activityLogs.createdAt))
-      .limit(limit);
-  }
 
   const accessible = await listAccessibleCountries(
     currentUser,

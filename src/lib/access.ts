@@ -7,7 +7,6 @@ import {
   trips,
   user,
 } from "@/db/schema";
-import { isSystemAdmin } from "@/lib/session";
 
 export type SessionUser = {
   id: string;
@@ -15,26 +14,6 @@ export type SessionUser = {
 };
 
 export async function listAccessibleCountries(currentUser: SessionUser) {
-  if (isSystemAdmin(currentUser.role)) {
-    return db
-      .select({
-        id: countries.id,
-        name: countries.name,
-        code: countries.code,
-        currencyCode: countries.currencyCode,
-        defaultExchangeRate: countries.defaultExchangeRate,
-        tripId: trips.id,
-        tripName: trips.name,
-        baseCurrency: trips.baseCurrency,
-        budget: trips.budget,
-        startDate: trips.startDate,
-        endDate: trips.endDate,
-      })
-      .from(countries)
-      .innerJoin(trips, eq(countries.tripId, trips.id))
-      .orderBy(trips.name, countries.name);
-  }
-
   return db
     .select({
       id: countries.id,
@@ -50,27 +29,45 @@ export async function listAccessibleCountries(currentUser: SessionUser) {
       endDate: trips.endDate,
     })
     .from(countryMembers)
-    .innerJoin(countries, eq(countryMembers.countryId, countries.id))
-    .innerJoin(trips, eq(countries.tripId, trips.id))
-    .where(eq(countryMembers.userId, currentUser.id))
-    .orderBy(trips.name, countries.name);
+    .innerJoin(
+      countries,
+      eq(countryMembers.countryId, countries.id),
+    )
+    .innerJoin(
+      trips,
+      eq(countries.tripId, trips.id),
+    )
+    .where(
+      eq(
+        countryMembers.userId,
+        currentUser.id,
+      ),
+    )
+    .orderBy(
+      trips.name,
+      countries.name,
+    );
 }
 
 export async function canAccessCountry(
   currentUser: SessionUser,
   countryId: string,
 ): Promise<boolean> {
-  if (isSystemAdmin(currentUser.role)) {
-    return true;
-  }
-
   const rows = await db
-    .select({ countryId: countryMembers.countryId })
+    .select({
+      countryId: countryMembers.countryId,
+    })
     .from(countryMembers)
     .where(
       and(
-        eq(countryMembers.countryId, countryId),
-        eq(countryMembers.userId, currentUser.id),
+        eq(
+          countryMembers.countryId,
+          countryId,
+        ),
+        eq(
+          countryMembers.userId,
+          currentUser.id,
+        ),
       ),
     )
     .limit(1);

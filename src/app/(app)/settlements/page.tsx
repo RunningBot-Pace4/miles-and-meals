@@ -52,12 +52,12 @@ export default async function SettlementsPage({
         <section className="panel settle-filter-panel">
           <form className="settle-country-filter">
             <label>
-              Trip
+              Trip / country
               <select defaultValue={selectedId} name="country">
                 <option value="">All trips</option>
                 {countries.map((country) => (
                   <option value={country.id} key={country.id}>
-                    {country.tripName}
+                    {country.tripName} · {country.name}
                   </option>
                 ))}
               </select>
