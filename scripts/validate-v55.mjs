@@ -9,8 +9,7 @@ const fail = (message) => failures.push(message);
 const expenseForm = read("src/components/ExpenseForm.tsx");
 const receiptClient = read("src/lib/receipt-ocr-client.ts");
 const receiptParser = read("src/lib/receipt-parser.ts");
-const dashboard = read("src/app/(app)/dashboard/page.tsx");
-const allTrips = read("src/components/AllTripsOverview.tsx");
+const tripSelect = read("src/components/TripQuickSelect.tsx");
 
 if (
   !expenseForm.includes('aria-label="Transaction currency"') ||
@@ -32,12 +31,10 @@ if (
 }
 
 if (
-  !dashboard.includes("allTripOverview") ||
-  !dashboard.includes("<AllTripsOverview") ||
-  !allTrips.includes("Open this trip") ||
-  !allTrips.includes('fetch("/api/active-trip"')
+  !tripSelect.includes("View all trips") ||
+  !tripSelect.includes("/api/active-trip")
 ) {
-  fail("Home must provide the all-trips overview while preserving active-trip switching.");
+  fail("Home must retain an all-trips option while preserving active-trip switching.");
 }
 
 if (failures.length) {
@@ -46,4 +43,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("v55 currency + receipt OCR + all-trips Home validation passed.");
+console.log("v55 currency + receipt OCR + Home trip scope validation passed.");

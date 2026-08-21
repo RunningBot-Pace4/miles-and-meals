@@ -566,12 +566,14 @@ export function LiveSettlementWorkspace({
   currentUserId,
   countryId = "",
   tripId = "",
+  allTrips = false,
   variant,
 }: {
   initialData: SettlementLiveData;
   currentUserId: string;
   countryId?: string;
   tripId?: string;
+  allTrips?: boolean;
   variant: WorkspaceVariant;
 }) {
   const [data, setData] =
@@ -588,7 +590,9 @@ export function LiveSettlementWorkspace({
   const endpoint = useMemo(() => {
     const query = new URLSearchParams();
 
-    if (countryId) {
+    if (allTrips) {
+      query.set("scope", "all");
+    } else if (countryId) {
       query.set(
         "country",
         countryId,
@@ -605,7 +609,7 @@ export function LiveSettlementWorkspace({
     return suffix
       ? `/api/settlements/summary?${suffix}`
       : "/api/settlements/summary";
-  }, [countryId, tripId]);
+  }, [allTrips, countryId, tripId]);
 
   const refresh = useCallback(
     async (

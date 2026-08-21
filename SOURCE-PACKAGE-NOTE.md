@@ -1,23 +1,15 @@
-# Miles & Meals v56 — Full Source Package
+# Miles & Meals v58 — Full Source Package
 
-This ZIP contains the complete v56 source tree based on v55.
+This ZIP contains the complete v58 source tree based on v57.
 
-Included v56 behavior:
+Included v58 behavior:
 
-- Trip Owner status remains on one line in the traveler list.
-- Assign/remove traveler actions display a blocking loading overlay.
-- Missing personal budgets are checked live every 4 seconds and on window focus, so newly assigned travelers do not need to refresh.
-- The newly assigned trip is made active before budget onboarding when possible.
-- Assignment creates a trip notification; budget setup is requested only when no existing budget is present.
-- Self-service trip creation verifies the creator as OWNER plus destination traveler, including System Admin creators.
-- Newly created trips become active immediately and open the creator's personal-budget onboarding.
-- Opening Create & manage trips repairs older creator assignments if either OWNER or country access is missing.
-- v55 currency/OCR/All Trips Home enhancements remain included.
-- v54 settlement locks and Trip Owner privacy permissions remain included.
-- v53 notification reliability fixes remain included.
+- Home defaults to **View all trips**.
+- The View All mode keeps the exact same dashboard structure used by an individual trip; the separate travel-overview card grid has been retired.
+- The main wallet, personal budget, group budget, category spending and settlement sections aggregate all trips the user can access.
+- Selecting a named trip from the Home dropdown makes that trip active and opens the same dashboard filtered to that trip.
+- Selecting **View all trips** returns to `/dashboard` and does not overwrite the active-trip cookie used by Plan/Add Expense.
+- Mixed trip base currencies are normalized for the all-trip dashboard through the existing daily FX service with a short server-side rate cache.
+- v57 dropdown selection, v56 creator assignment/live budget prompt, v55 currency/OCR, v54 settlement locks/privacy and v53 notification fixes remain included.
 
-No database migration is required from v55 to v56.
-
-## v57
-
-Home `View all trips` is now a dropdown mode instead of a permanently displayed travel-overview section. No database migration is required.
+No database migration is required from v57 to v58.

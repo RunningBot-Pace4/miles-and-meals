@@ -6,37 +6,26 @@ const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
 const failures = [];
 const fail = (message) => failures.push(message);
 
-const dashboard = read("src/app/(app)/dashboard/page.tsx");
 const tripSelect = read("src/components/TripQuickSelect.tsx");
-const allTrips = read("src/components/AllTripsOverview.tsx");
+const dashboard = read("src/app/(app)/dashboard/page.tsx");
 
 if (
-  !tripSelect.includes('View all trips') ||
-  !tripSelect.includes('ALL_TRIPS_VALUE') ||
-  !tripSelect.includes('/dashboard?view=all') ||
-  !tripSelect.includes('viewAll')
+  !tripSelect.includes("View all trips") ||
+  !tripSelect.includes("ALL_TRIPS_VALUE") ||
+  !tripSelect.includes("viewAll")
 ) {
-  fail("Home trip dropdown must include a View all trips mode.");
+  fail("Home trip dropdown must retain a View all trips mode.");
 }
 
 if (
-  !dashboard.includes('query.view === "all"') ||
-  !dashboard.includes('viewAll={viewAll}') ||
-  !dashboard.includes('? "All trips"') ||
-  !dashboard.includes('selectedTrip && !viewAll')
+  !dashboard.includes("viewAll={viewAll}") ||
+  !dashboard.includes('? "All trips"')
 ) {
-  fail("Dashboard must render all-trip and single-trip modes from the same selector.");
+  fail("Dashboard must retain all-trip and single-trip modes from the same selector.");
 }
 
-if (
-  allTrips.includes('Your travel overview') ||
-  allTrips.includes('id="all-trips-title"')
-) {
-  fail("The separate Your travel overview heading must be removed.");
-}
-
-if (!dashboard.includes(') : viewAll ? null : (')) {
-  fail("Trip-specific finance/settlement panels must stay hidden in all-trip mode.");
+if (dashboard.includes("<AllTripsOverview")) {
+  fail("The retired separate all-trip card overview must not render on Home.");
 }
 
 if (failures.length) {
@@ -45,4 +34,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log("v57 Home View all dropdown validation passed.");
+console.log("v57 Home View all dropdown compatibility validation passed.");

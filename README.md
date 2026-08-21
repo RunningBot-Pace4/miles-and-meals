@@ -1,5 +1,17 @@
 # Miles & Meals
 
+## v58 — Home Defaults to View All, Same Dashboard Screen
+
+- Home now defaults to **View all trips** whenever the traveler has at least one accessible trip.
+- View All no longer opens a separate trip-card overview; it uses the exact same Home dashboard layout as an individual trip.
+- The hero wallet, personal/group budgets, spending categories and settlement panels aggregate all accessible trips.
+- Choosing a specific trip switches the active trip and shows the same dashboard filtered to that trip.
+- Returning to the normal `/dashboard` route defaults Home back to **View all trips** without clearing the active trip used by Plan/Add Expense.
+- When trip base currencies differ, all-trip totals are normalized into the active wallet currency using the existing daily FX service.
+- No database migration is required from v57 to v58.
+
+See `V58-HOME-DEFAULT-ALL-SAME-SCREEN.md`.
+
 ## v56 — Owner Row + Live Budget Prompt + Creator Assignment
 
 - `Owner` stays on one line in Trip Travelers.

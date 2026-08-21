@@ -2,6 +2,7 @@ import {
   getActiveTripContext,
 } from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
+import { loadAllTripsDashboardData } from "@/lib/dashboard-scope";
 import { recordApiMetric } from "@/lib/performance";
 import { getSession } from "@/lib/session";
 import {
@@ -41,10 +42,37 @@ export async function GET(
   const url = new URL(
     request.url,
   );
+  const scopeAll =
+    url.searchParams.get("scope") === "all";
   const requestedTripId =
     url.searchParams.get(
       "trip",
     ) ?? "";
+
+  if (scopeAll) {
+    const aggregate =
+      await loadAllTripsDashboardData(
+        session.user.id,
+        activeTrip,
+      );
+
+    await recordApiMetric({
+      userId: session.user.id,
+      route: "/api/dashboard/finance",
+      method: "GET",
+      durationMs: Date.now() - started,
+      statusCode: 200,
+    });
+
+    return Response.json(
+      aggregate.finance,
+      {
+        headers: {
+          "cache-control": "no-store",
+        },
+      },
+    );
+  }
 
   if (
     !requestedTripId ||

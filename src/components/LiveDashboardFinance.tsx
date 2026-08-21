@@ -87,9 +87,11 @@ function WalletCard({
 export function LiveDashboardFinance({
   initialData,
   tripId,
+  allTrips = false,
 }: {
   initialData: FinanceData;
   tripId: string;
+  allTrips?: boolean;
 }) {
   const [data, setData] =
     useState(initialData);
@@ -98,10 +100,12 @@ export function LiveDashboardFinance({
 
   const endpoint = useMemo(
     () =>
-      `/api/dashboard/finance?trip=${encodeURIComponent(
-        tripId,
-      )}`,
-    [tripId],
+      allTrips
+        ? "/api/dashboard/finance?scope=all"
+        : `/api/dashboard/finance?trip=${encodeURIComponent(
+            tripId,
+          )}`,
+    [allTrips, tripId],
   );
 
   const refresh =
@@ -211,8 +215,10 @@ export function LiveDashboardFinance({
         <i aria-hidden="true" />
         <span>
           {syncError
-            ? "Trip wallet sync will retry automatically"
-            : "Trip wallet updates automatically"}
+            ? "Travel wallet sync will retry automatically"
+            : allTrips
+              ? "All-trip wallet updates automatically"
+              : "Trip wallet updates automatically"}
         </span>
       </div>
 

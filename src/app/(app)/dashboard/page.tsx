@@ -1,4 +1,3 @@
-import { AllTripsOverview } from "@/components/AllTripsOverview";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
@@ -7,6 +6,7 @@ import {
   getActiveTripContext,
 } from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
+import { loadAllTripsDashboardData } from "@/lib/dashboard-scope";
 import { formatMoney } from "@/lib/money";
 import {
   isSystemAdmin,
@@ -136,7 +136,7 @@ export default async function DashboardPage({
   const tripOptions =
     activeTrip.trips;
   const viewAll =
-    query.view === "all" &&
+    query.view !== "trip" &&
     tripOptions.length > 0;
   const requestedTripId =
     activeTrip.tripId;
@@ -148,43 +148,52 @@ export default async function DashboardPage({
     ) ?? null;
   const selectedCountries =
     activeTrip.countries;
-
   const countryIds =
     selectedCountries.map(
-      (country) =>
-        country.id,
+      (country) => country.id,
     );
-  const summary =
-    await buildExpenseSummary(
-      countryIds,
-    );
-  const budget =
-    requestedTripId
-      ? await loadTripBudgetSummary(
-          session.user.id,
-          requestedTripId,
-          countryIds,
-        )
-      : {
-          myBudget: 0,
-          combinedBudget: 0,
-          budgetsSubmitted: 0,
-          travelerCount: 0,
-          missingBudgetCount: 0,
-        };
 
-  const me =
-    summary.people.find(
-      (person) =>
-        person.userId ===
-        session.user.id,
-    );
-  const myShareSpent =
+  const [summary, budget, allTripsData] =
+    await Promise.all([
+      buildExpenseSummary(countryIds),
+      requestedTripId
+        ? loadTripBudgetSummary(
+            session.user.id,
+            requestedTripId,
+            countryIds,
+          )
+        : Promise.resolve({
+            myBudget: 0,
+            combinedBudget: 0,
+            budgetsSubmitted: 0,
+            travelerCount: 0,
+            missingBudgetCount: 0,
+          }),
+      viewAll
+        ? loadAllTripsDashboardData(
+            session.user.id,
+            activeTrip,
+          )
+        : Promise.resolve(null),
+    ]);
+
+  const me = summary.people.find(
+    (person) =>
+      person.userId ===
+      session.user.id,
+  );
+  const individualMyShareSpent =
     me?.share ?? 0;
   const baseCurrency =
-    selectedTrip
-      ?.baseCurrency ??
+    allTripsData?.finance.baseCurrency ??
+    selectedTrip?.baseCurrency ??
     "MYR";
+  const myShareSpent =
+    allTripsData?.finance.myShareSpent ??
+    individualMyShareSpent;
+  const displayMyBudget =
+    allTripsData?.finance.myBudget ??
+    budget.myBudget;
   const admin =
     isSystemAdmin(
       session.user.role,
@@ -192,6 +201,21 @@ export default async function DashboardPage({
   const displayName =
     session.user.name.trim() ||
     "Traveler";
+  const allTripStartDates =
+    tripOptions
+      .map((trip) => trip.startDate)
+      .filter((value): value is string => Boolean(value))
+      .sort();
+  const allTripEndDates =
+    tripOptions
+      .map((trip) => trip.endDate)
+      .filter((value): value is string => Boolean(value))
+      .sort();
+  const allTripDateLabel =
+    formatTripDateRange(
+      allTripStartDates[0],
+      allTripEndDates.at(-1),
+    );
   const heroDestination =
     viewAll
       ? "All trips"
@@ -209,19 +233,21 @@ export default async function DashboardPage({
           ? "TRIP"
           : "NEW";
   const tripDateLabel =
-    selectedTrip
-      ? formatTripDateRange(
-          selectedTrip.startDate,
-          selectedTrip.endDate,
-        )
-      : "Dates not set";
+    viewAll
+      ? allTripDateLabel
+      : selectedTrip
+        ? formatTripDateRange(
+            selectedTrip.startDate,
+            selectedTrip.endDate,
+          )
+        : "Dates not set";
   const heroSecondary =
     viewAll
       ? `${tripOptions.length} trip${
           tripOptions.length === 1
             ? ""
             : "s"
-        } available`
+        } ready`
       : selectedCountries.length
         ? `${selectedCountries.length} destination${
             selectedCountries.length ===
@@ -231,112 +257,48 @@ export default async function DashboardPage({
           } ready`
         : "Create a trip or join a destination";
   const personalPercent =
-    budget.myBudget > 0
+    displayMyBudget > 0
       ? Math.min(
           100,
           Math.max(
             0,
             (
               myShareSpent /
-              budget.myBudget
+              displayMyBudget
             ) * 100,
           ),
         )
       : 0;
 
   const settlementLiveData =
+    allTripsData?.settlement ??
     serializeSettlementLiveData(
       summary,
       baseCurrency,
     );
 
-  const financeLiveData = {
-    total: summary.total,
-    categories:
-      summary.categories,
-    baseCurrency,
-    myBudget:
-      budget.myBudget,
-    myShareSpent,
-    myRemaining:
-      budget.myBudget -
+  const financeLiveData =
+    allTripsData?.finance ?? {
+      total: summary.total,
+      categories:
+        summary.categories,
+      baseCurrency,
+      myBudget:
+        budget.myBudget,
       myShareSpent,
-    combinedBudget:
-      budget.combinedBudget,
-    groupRemaining:
-      budget.combinedBudget -
-      summary.total,
-    budgetsSubmitted:
-      budget.budgetsSubmitted,
-    travelerCount:
-      budget.travelerCount,
-  };
-
-  const allTripOverview =
-    viewAll
-      ? await Promise.all(
-          tripOptions.map(async (trip) => {
-            const tripCountries =
-              activeTrip.allCountries.filter(
-                (country) =>
-                  country.tripId === trip.id,
-              );
-            const tripCountryIds =
-              tripCountries.map(
-                (country) => country.id,
-              );
-            const isActive =
-              trip.id === requestedTripId;
-            let tripSummary = summary;
-            let tripBudget = budget;
-
-            if (!isActive) {
-              [tripSummary, tripBudget] =
-                await Promise.all([
-                  buildExpenseSummary(
-                    tripCountryIds,
-                  ),
-                  loadTripBudgetSummary(
-                    session.user.id,
-                    trip.id,
-                    tripCountryIds,
-                  ),
-                ]);
-            }
-
-            const person =
-              tripSummary.people.find(
-                (row) =>
-                  row.userId === session.user.id,
-              );
-            const tripShare =
-              person?.share ?? 0;
-
-            return {
-              id: trip.id,
-              name: trip.name,
-              countryName:
-                tripCountries
-                  .map((country) => country.name)
-                  .join(", ") || "Destination not set",
-              countryCode:
-                tripCountries[0]?.code ?? "TRIP",
-              dateLabel: formatTripDateRange(
-                trip.startDate,
-                trip.endDate,
-              ),
-              baseCurrency: trip.baseCurrency,
-              myBudget: tripBudget.myBudget,
-              myShareSpent: tripShare,
-              myRemaining:
-                tripBudget.myBudget - tripShare,
-              tripExpenses: tripSummary.total,
-              travelerCount:
-                tripBudget.travelerCount,
-            };
-          }),
-        )
-      : [];
+      myRemaining:
+        budget.myBudget -
+        myShareSpent,
+      combinedBudget:
+        budget.combinedBudget,
+      groupRemaining:
+        budget.combinedBudget -
+        summary.total,
+      budgetsSubmitted:
+        budget.budgetsSubmitted,
+      travelerCount:
+        budget.travelerCount,
+    };
 
   return (
     <div className="stack gap-lg dashboard-page">
@@ -442,7 +404,7 @@ export default async function DashboardPage({
               </span>
             </div>
 
-            {selectedTrip && !viewAll ? (
+            {selectedTrip ? (
               <div className="travel-hero-meta">
                 <span>
                   <b aria-hidden="true">
@@ -454,12 +416,11 @@ export default async function DashboardPage({
                   <b aria-hidden="true">
                     ⌖
                   </b>
-                  {selectedCountries.length}{" "}
-                  destination
-                  {selectedCountries.length ===
-                  1
-                    ? ""
-                    : "s"}
+                  {viewAll
+                    ? `${allTripsData?.destinationCount ?? activeTrip.allCountries.length} destinations`
+                    : `${selectedCountries.length} destination${
+                        selectedCountries.length === 1 ? "" : "s"
+                      }`}
                 </span>
               </div>
             ) : null}
@@ -478,7 +439,7 @@ export default async function DashboardPage({
           ) : null}
         </div>
 
-        {selectedTrip && !viewAll ? (
+        {selectedTrip ? (
           <div className="hero-budget travel-wallet-card">
             <div className="travel-wallet-title">
               <span
@@ -534,7 +495,7 @@ export default async function DashboardPage({
               <span>
                 My budget{" "}
                 {formatMoney(
-                  budget.myBudget,
+                  displayMyBudget,
                   baseCurrency,
                 )}
               </span>
@@ -555,13 +516,6 @@ export default async function DashboardPage({
           <span className="travel-route-dot end" />
         </div>
       </section>
-
-      {viewAll ? (
-        <AllTripsOverview
-          trips={allTripOverview}
-          activeTripId={requestedTripId}
-        />
-      ) : null}
 
       {!selectedTrip ? (
         <section className="empty-card empty-card-feature dashboard-self-service-empty">
@@ -596,7 +550,7 @@ export default async function DashboardPage({
             </div>
           </div>
         </section>
-      ) : viewAll ? null : (
+      ) : (
         <>
           <LiveDashboardFinance
             initialData={
@@ -605,6 +559,7 @@ export default async function DashboardPage({
             tripId={
               requestedTripId
             }
+            allTrips={viewAll}
           />
 
           <LiveSettlementWorkspace
@@ -617,6 +572,7 @@ export default async function DashboardPage({
             tripId={
               requestedTripId
             }
+            allTrips={viewAll}
             variant="dashboard"
           />
 

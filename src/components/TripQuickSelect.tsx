@@ -43,7 +43,7 @@ export function TripQuickSelect({
       setValue(ALL_TRIPS_VALUE);
       setSwitching(true);
       window.location.assign(
-        "/dashboard?view=all",
+        "/dashboard",
       );
       return;
     }
@@ -101,7 +101,7 @@ export function TripQuickSelect({
       }
 
       window.location.assign(
-        "/dashboard",
+        "/dashboard?view=trip",
       );
     } catch (error) {
       setValue(
