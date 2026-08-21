@@ -396,22 +396,79 @@ function collectTotalCandidates(
         source,
       });
     });
+
+    // Many receipts print TOTAL on one line and the amount directly below it.
+    // Read the next two OCR lines with a small score penalty instead of
+    // discarding an otherwise strong TOTAL label.
+    for (let offset = 1; offset <= 2; offset += 1) {
+      const nearby = lines[index + offset];
+
+      if (!nearby) {
+        continue;
+      }
+
+      const normalizedNearby = normalizeTotalLabel(nearby);
+
+      if (
+        NEGATIVE_TOTAL_KEYWORDS.some((pattern) =>
+          pattern.test(normalizedNearby),
+        )
+      ) {
+        continue;
+      }
+
+      const nearbyHasCurrency = CURRENCY_RULES.some(
+        ([, rule]) => rule.test(nearby),
+      );
+
+      for (const amount of extractNumbers(nearby)) {
+        candidates.push({
+          amount,
+          score:
+            score - offset * 16 +
+            (nearbyHasCurrency ? 10 : 0),
+          source,
+        });
+      }
+    }
   });
 
   if (candidates.length === 0 && source === "BOTTOM") {
     lines.forEach((line, index) => {
+      const normalizedLine = normalizeTotalLabel(line);
+
+      if (
+        NEGATIVE_TOTAL_KEYWORDS.some((pattern) =>
+          pattern.test(normalizedLine),
+        )
+      ) {
+        return;
+      }
+
       const hasCurrency = CURRENCY_RULES.some(
         ([, rule]) => rule.test(line),
       );
+      const moneyLikeText = normalizeNumericOcr(line);
+      const looksLikeMoney =
+        hasCurrency ||
+        /\d[.,]\d{2}\b/.test(moneyLikeText) ||
+        /\d{1,3}(?:[.,\s]\d{3})+\b/.test(moneyLikeText);
 
-      if (!hasCurrency) {
+      if (!looksLikeMoney) {
         return;
       }
+
+      const positionRatio =
+        lines.length > 1 ? index / (lines.length - 1) : 1;
+      const fallbackScore =
+        32 +
+        Math.round(positionRatio * 22) +
+        (hasCurrency ? 18 : 0);
 
       for (const amount of extractNumbers(line)) {
         candidates.push({
           amount,
-          score: 62 + index,
+          score: fallbackScore,
           source,
         });
       }

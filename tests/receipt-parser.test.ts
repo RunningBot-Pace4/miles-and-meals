@@ -183,4 +183,55 @@ TONG CONG 250.000 VND
 
     expect(parsed.totalAmount).toBe(250000);
   });
+  it("reads a total amount printed on the line below TOTAL", () => {
+    const parsed = parseReceiptText(
+      `
+MORNING CAFE
+SUBTOTAL RM 27.50
+TOTAL
+RM 30.25
+CASH RM 50.00
+CHANGE RM 19.75
+`,
+      "MYR",
+      80,
+      "MORNING CAFE",
+      `
+MORNING CAFE
+TOTAL
+30.25
+`,
+      `
+SUBTOTAL 27.50
+TOTAL
+RM 30.25
+CASH 50.00
+CHANGE 19.75
+`,
+    );
+
+    expect(parsed.totalAmount).toBe(30.25);
+    expect(parsed.totalCandidates[0]).toBe(30.25);
+  });
+
+  it("does not use receipt numbers as an unlabeled bottom fallback", () => {
+    const parsed = parseReceiptText(
+      `
+SMALL SHOP
+RECEIPT 20260821
+THANK YOU
+`,
+      "MYR",
+      70,
+      "SMALL SHOP",
+      "",
+      `
+RECEIPT 20260821
+THANK YOU
+`,
+    );
+
+    expect(parsed.totalAmount).toBeNull();
+  });
+
 });

@@ -11,7 +11,8 @@ import {
 export type NotificationCategory =
   | "PAYMENTS"
   | "EXPENSES"
-  | "PLANNER";
+  | "PLANNER"
+  | "TRIPS";
 
 export type PushPayload = {
   title: string;
@@ -103,6 +104,10 @@ async function enabledUserIds(
 
       if (category === "EXPENSES") {
         return preference.expensesEnabled;
+      }
+
+      if (category === "TRIPS") {
+        return true;
       }
 
       return preference.plannerEnabled;

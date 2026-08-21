@@ -1,3 +1,4 @@
+import { AllTripsOverview } from "@/components/AllTripsOverview";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
@@ -251,6 +252,72 @@ export default async function DashboardPage() {
       budget.travelerCount,
   };
 
+  const allTripOverview =
+    tripOptions.length > 1
+      ? await Promise.all(
+          tripOptions.map(async (trip) => {
+            const tripCountries =
+              activeTrip.allCountries.filter(
+                (country) =>
+                  country.tripId === trip.id,
+              );
+            const tripCountryIds =
+              tripCountries.map(
+                (country) => country.id,
+              );
+            const isActive =
+              trip.id === requestedTripId;
+            let tripSummary = summary;
+            let tripBudget = budget;
+
+            if (!isActive) {
+              [tripSummary, tripBudget] =
+                await Promise.all([
+                  buildExpenseSummary(
+                    tripCountryIds,
+                  ),
+                  loadTripBudgetSummary(
+                    session.user.id,
+                    trip.id,
+                    tripCountryIds,
+                  ),
+                ]);
+            }
+
+            const person =
+              tripSummary.people.find(
+                (row) =>
+                  row.userId === session.user.id,
+              );
+            const tripShare =
+              person?.share ?? 0;
+
+            return {
+              id: trip.id,
+              name: trip.name,
+              countryName:
+                tripCountries
+                  .map((country) => country.name)
+                  .join(", ") || "Destination not set",
+              countryCode:
+                tripCountries[0]?.code ?? "TRIP",
+              dateLabel: formatTripDateRange(
+                trip.startDate,
+                trip.endDate,
+              ),
+              baseCurrency: trip.baseCurrency,
+              myBudget: tripBudget.myBudget,
+              myShareSpent: tripShare,
+              myRemaining:
+                tripBudget.myBudget - tripShare,
+              tripExpenses: tripSummary.total,
+              travelerCount:
+                tripBudget.travelerCount,
+            };
+          }),
+        )
+      : [];
+
   return (
     <div className="stack gap-lg dashboard-page">
       <section className="dashboard-welcome">
@@ -468,6 +535,11 @@ export default async function DashboardPage() {
         </div>
       </section>
 
+      <AllTripsOverview
+        trips={allTripOverview}
+        activeTripId={requestedTripId}
+      />
+
       {!selectedTrip ? (
         <section className="empty-card empty-card-feature dashboard-self-service-empty">
           <div className="empty-icon">
@@ -479,7 +551,7 @@ export default async function DashboardPage() {
               Start your own trip
             </h2>
             <p>
-              You no longer need a System Admin to begin. Create a trip, add destination countries and assign your travel crew yourself.
+              You no longer need a System Admin to begin. Create a trip, choose its destination and assign your travel crew yourself.
             </p>
 
             <div className="dashboard-empty-actions">

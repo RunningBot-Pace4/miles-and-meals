@@ -118,6 +118,29 @@ const rateTypes: { value: RateType; label: string }[] = [
   { value: "MANUAL", label: "Manual" },
 ];
 
+const commonCurrencies = [
+  ["MYR", "Malaysian Ringgit"],
+  ["SGD", "Singapore Dollar"],
+  ["THB", "Thai Baht"],
+  ["VND", "Vietnamese Dong"],
+  ["IDR", "Indonesian Rupiah"],
+  ["PHP", "Philippine Peso"],
+  ["USD", "US Dollar"],
+  ["JPY", "Japanese Yen"],
+  ["KRW", "South Korean Won"],
+  ["CNY", "Chinese Yuan"],
+  ["HKD", "Hong Kong Dollar"],
+  ["TWD", "New Taiwan Dollar"],
+  ["AUD", "Australian Dollar"],
+  ["NZD", "New Zealand Dollar"],
+  ["EUR", "Euro"],
+  ["GBP", "British Pound"],
+  ["CHF", "Swiss Franc"],
+  ["CAD", "Canadian Dollar"],
+  ["AED", "UAE Dirham"],
+  ["SAR", "Saudi Riyal"],
+] as const;
+
 const splitModes: { value: SplitMode; label: string }[] = [
   { value: "EQUAL", label: "Equal" },
   { value: "PERCENTAGE", label: "%" },
@@ -237,6 +260,9 @@ export function ExpenseForm({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [tripSwitching, setTripSwitching] = useState(false);
+  const [fxRateLoading, setFxRateLoading] = useState(false);
+  const [fxRateMessage, setFxRateMessage] = useState("");
+  const fxRequestIdRef = useRef(0);
 
   const expenseDraftKey = draftKey(
     "expense",
@@ -262,6 +288,60 @@ export function ExpenseForm({
     currency,
     currentCountry?.baseCurrency,
   );
+
+  const currencyOptions = useMemo(() => {
+    const labels = new Map<string, string>(
+      commonCurrencies.map(([code, label]) => [code, label]),
+    );
+
+    if (currentCountry?.currencyCode) {
+      labels.set(
+        currentCountry.currencyCode.toUpperCase(),
+        labels.get(currentCountry.currencyCode.toUpperCase()) ??
+          "Trip default currency",
+      );
+    }
+
+    if (currentCountry?.baseCurrency) {
+      labels.set(
+        currentCountry.baseCurrency.toUpperCase(),
+        labels.get(currentCountry.baseCurrency.toUpperCase()) ??
+          "Trip base currency",
+      );
+    }
+
+    if (/^[A-Z]{3}$/.test(currency)) {
+      labels.set(
+        currency,
+        labels.get(currency) ?? "Detected currency",
+      );
+    }
+
+    const preferred = [
+      currentCountry?.currencyCode?.toUpperCase(),
+      currentCountry?.baseCurrency?.toUpperCase(),
+    ].filter((value): value is string => Boolean(value));
+
+    return [...labels.entries()]
+      .map(([code, label]) => ({
+        code,
+        label,
+        preferred: preferred.indexOf(code),
+      }))
+      .sort((left, right) => {
+        if (left.preferred >= 0 || right.preferred >= 0) {
+          if (left.preferred < 0) return 1;
+          if (right.preferred < 0) return -1;
+          return left.preferred - right.preferred;
+        }
+
+        return left.code.localeCompare(right.code);
+      });
+  }, [
+    currency,
+    currentCountry?.baseCurrency,
+    currentCountry?.currencyCode,
+  ]);
 
   const converted = useMemo(() => {
     const parsedAmount = parseTravelNumber(amount);
@@ -573,30 +653,135 @@ export function ExpenseForm({
     return () => controller.abort();
   }, [countryId, initial]);
 
-  function handleCurrencyChange(nextCurrency: string) {
-    const normalized = nextCurrency.trim().toUpperCase().slice(0, 3);
+  async function handleCurrencyChange(
+    nextCurrency: string,
+  ): Promise<void> {
+    const normalized = nextCurrency
+      .trim()
+      .toUpperCase()
+      .slice(0, 3);
+
+    if (!/^[A-Z]{3}$/.test(normalized)) {
+      return;
+    }
+
+    const requestId = fxRequestIdRef.current + 1;
+    fxRequestIdRef.current = requestId;
 
     setCurrency(normalized);
+    setFxRateMessage("");
+    setActualConvertedAmount("");
 
     if (!currentCountry) {
       return;
     }
 
-    if (sameCurrency(normalized, currentCountry.baseCurrency)) {
+    const baseCurrency =
+      currentCountry.baseCurrency.toUpperCase();
+    const tripCurrency =
+      currentCountry.currencyCode.toUpperCase();
+
+    if (sameCurrency(normalized, baseCurrency)) {
       setRate("1");
       setRateType("DEFAULT");
-      setActualConvertedAmount("");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `${normalized} is the trip base currency, so the rate is 1:1.`,
+      );
       return;
     }
 
-    if (isBaseCurrency || rate === "1") {
+    if (sameCurrency(normalized, tripCurrency)) {
       setRate(currentCountry.defaultExchangeRate);
       setRateType("DEFAULT");
-      setActualConvertedAmount("");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `Using the saved trip default for ${normalized}.`,
+      );
+      return;
+    }
+
+    setRate("");
+    setRateType("DEFAULT");
+
+    if (!navigator.onLine) {
+      setRateType("MANUAL");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `Offline: enter the ${normalized} → ${baseCurrency} rate manually.`,
+      );
+      return;
+    }
+
+    setFxRateLoading(true);
+    setFxRateMessage(
+      `Loading today's ${normalized} → ${baseCurrency} reference rate…`,
+    );
+
+    try {
+      const response = await fetch(
+        `/api/fx?base=${encodeURIComponent(
+          normalized,
+        )}&quote=${encodeURIComponent(baseCurrency)}`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      const payload =
+        (await response.json().catch(() => ({}))) as {
+          rate?: number;
+          rateDate?: string;
+          provider?: string;
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Unable to load the reference FX rate.",
+        );
+      }
+
+      const nextRate = Number(payload.rate);
+
+      if (!Number.isFinite(nextRate) || nextRate <= 0) {
+        throw new Error("The FX service returned an invalid rate.");
+      }
+
+      if (fxRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRate(
+        nextRate
+          .toFixed(10)
+          .replace(/0+$/, "")
+          .replace(/\.$/, ""),
+      );
+      setRateType("DEFAULT");
+      setFxRateMessage(
+        `Daily reference${payload.rateDate ? ` · ${payload.rateDate}` : ""}${
+          payload.provider ? ` · ${payload.provider}` : ""
+        }. You can still choose Cash, Card or Manual below.`,
+      );
+    } catch {
+      if (fxRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRateType("MANUAL");
+      setFxRateMessage(
+        `Reference rate unavailable. Enter the ${normalized} → ${baseCurrency} rate manually.`,
+      );
+    } finally {
+      if (fxRequestIdRef.current === requestId) {
+        setFxRateLoading(false);
+      }
     }
   }
 
   function applyTripCountry(nextId: string) {
+    fxRequestIdRef.current += 1;
     setCountryId(nextId);
     const country = countries.find((item) => item.id === nextId);
 
@@ -613,6 +798,8 @@ export function ExpenseForm({
       setRate(nextRate);
       setRateType("DEFAULT");
       setActualConvertedAmount("");
+      setFxRateLoading(false);
+      setFxRateMessage("");
       setReceiptResult(null);
       setReceiptMessage("");
       setReceiptScanStatus("");
@@ -693,8 +880,20 @@ export function ExpenseForm({
     setRateType(nextType);
 
     if (nextType === "DEFAULT" && currentCountry) {
-      setRate(currentCountry.defaultExchangeRate);
-      setActualConvertedAmount("");
+      if (
+        sameCurrency(
+          currency,
+          currentCountry.currencyCode,
+        )
+      ) {
+        setRate(currentCountry.defaultExchangeRate);
+        setActualConvertedAmount("");
+        setFxRateMessage(
+          `Using the saved trip default for ${currency}.`,
+        );
+      } else {
+        void handleCurrencyChange(currency);
+      }
     }
   }
 
@@ -782,7 +981,7 @@ export function ExpenseForm({
         detected.currencyCode &&
         /^[A-Z]{3}$/.test(detected.currencyCode)
       ) {
-        handleCurrencyChange(detected.currencyCode);
+        void handleCurrencyChange(detected.currencyCode);
       }
 
       if (!detected.merchantName && detected.totalAmount === null) {
@@ -1188,13 +1387,21 @@ export function ExpenseForm({
         <div className="money-entry">
           <label className="currency-control">
             Currency
-            <input
+            <select
               value={currency}
-              maxLength={3}
-              onChange={(event) => handleCurrencyChange(event.target.value)}
+              onChange={(event) =>
+                void handleCurrencyChange(event.target.value)
+              }
               required
               aria-label="Transaction currency"
-            />
+              disabled={busy || fxRateLoading}
+            >
+              {currencyOptions.map((option) => (
+                <option value={option.code} key={option.code}>
+                  {option.code} · {option.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="amount-control">
             Amount
@@ -1209,6 +1416,24 @@ export function ExpenseForm({
             />
           </label>
         </div>
+
+        {fxRateLoading || fxRateMessage ? (
+          <div
+            className={
+              fxRateLoading
+                ? "expense-fx-helper loading"
+                : "expense-fx-helper"
+            }
+            role="status"
+          >
+            {fxRateLoading ? (
+              <span className="mini-spinner" aria-hidden="true" />
+            ) : (
+              <span aria-hidden="true">↔</span>
+            )}
+            <small>{fxRateMessage}</small>
+          </div>
+        ) : null}
       </section>
 
       <section className="expense-section fx-section">

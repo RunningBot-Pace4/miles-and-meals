@@ -38,6 +38,10 @@ function categoryIcon(
     return "✦";
   }
 
+  if (category === "TRIPS") {
+    return "⌁";
+  }
+
   return "•";
 }
 
@@ -54,6 +58,10 @@ function categoryLabel(
 
   if (category === "PLANNER") {
     return "Planner";
+  }
+
+  if (category === "TRIPS") {
+    return "Trip";
   }
 
   return "Trip update";

@@ -6,6 +6,7 @@ import { db } from "@/db";
 import {
   countries,
   countryMembers,
+  tripBudgets,
   trips,
   user,
 } from "@/db/schema";
@@ -14,6 +15,7 @@ import {
   removeTripMemberIfNoCountryAccess,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
+import { sendPushToUsers } from "@/lib/push";
 import {
   isTrustedMutationRequest,
   mutationRejectedResponse,
@@ -158,8 +160,62 @@ export async function POST(
         `${session.user.name} assigned ${target[0].name} to a trip.`,
     });
 
+    const [tripRows, existingBudget] =
+      await Promise.all([
+        db
+          .select({
+            name: trips.name,
+          })
+          .from(trips)
+          .where(
+            eq(
+              trips.id,
+              tripId,
+            ),
+          )
+          .limit(1),
+        db
+          .select({
+            tripId: tripBudgets.tripId,
+          })
+          .from(tripBudgets)
+          .where(
+            and(
+              eq(
+                tripBudgets.tripId,
+                tripId,
+              ),
+              eq(
+                tripBudgets.userId,
+                input.userId,
+              ),
+            ),
+          )
+          .limit(1),
+      ]);
+
+    const budgetPrompt =
+      existingBudget.length === 0;
+
+    await sendPushToUsers(
+      [input.userId],
+      "TRIPS",
+      {
+        title: "New trip assigned",
+        body: budgetPrompt
+          ? `You were added to ${tripRows[0]?.name ?? "a trip"}. Set your personal budget to get started.`
+          : `You were added to ${tripRows[0]?.name ?? "a trip"}. Your existing personal budget is ready.`,
+        url: budgetPrompt
+          ? "/onboarding/budget"
+          : "/dashboard",
+        tag: `trip-assigned-${tripId}`,
+        countryId,
+      },
+    );
+
     return Response.json({
       ok: true,
+      budgetPrompt,
     });
   } catch (error) {
     return Response.json(

@@ -6,11 +6,10 @@ import {
 import { db } from "@/db";
 import {
   countries,
-  countryMembers,
-  tripMembers,
   trips,
 } from "@/db/schema";
 import { recordActivity } from "@/lib/activity";
+import { ensureTripOwnerAccess } from "@/lib/access";
 import {
   getCountryCatalogItem,
 } from "@/lib/country-catalog";
@@ -99,21 +98,6 @@ export async function POST(
 
     createdTripId = tripId;
 
-    await db
-      .insert(tripMembers)
-      .values({
-        tripId,
-        userId: session.user.id,
-        role: "OWNER",
-      })
-      .onConflictDoUpdate({
-        target: [
-          tripMembers.tripId,
-          tripMembers.userId,
-        ],
-        set: { role: "OWNER" },
-      });
-
     const createdCountries = await db
       .insert(countries)
       .values({
@@ -138,13 +122,11 @@ export async function POST(
       throw new Error("Destination could not be created.");
     }
 
-    await db
-      .insert(countryMembers)
-      .values({
-        countryId,
-        userId: session.user.id,
-      })
-      .onConflictDoNothing();
+    await ensureTripOwnerAccess(
+      tripId,
+      session.user.id,
+      countryId,
+    );
 
     await recordActivity({
       actorUserId: session.user.id,
@@ -161,6 +143,7 @@ export async function POST(
       {
         id: tripId,
         countryId,
+        ownerAssigned: true,
       },
       { status: 201 },
     );

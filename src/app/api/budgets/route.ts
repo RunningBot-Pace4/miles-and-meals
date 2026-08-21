@@ -5,9 +5,33 @@ import {
 } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import {
+  listMissingTripBudgets,
   savePersonalTripBudget,
 } from "@/lib/trip-budget";
 import { personalTripBudgetSchema } from "@/lib/validation";
+
+
+export async function GET() {
+  const session = await getSession();
+
+  if (!session) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const missing =
+    await listMissingTripBudgets(
+      session.user.id,
+    );
+
+  return Response.json({
+    missing,
+    missingBudgetCount:
+      missing.length,
+  });
+}
 
 export async function POST(
   request: Request,

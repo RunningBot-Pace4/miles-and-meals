@@ -1,7 +1,4 @@
 import { AccountMenu } from "@/components/AccountMenu";
-import {
-  getActiveTripContext,
-} from "@/lib/active-trip";
 import { BrandLogo } from "@/components/BrandLogo";
 import { BudgetAccessGate } from "@/components/BudgetAccessGate";
 import { MobileNav } from "@/components/MobileNav";
@@ -33,10 +30,6 @@ export default async function AppLayout({
       session.user.role,
     );
 
-  const activeTrip =
-    await getActiveTripContext(
-      session.user,
-    );
   const [
     preferences,
     unreadNotificationCount,
@@ -50,7 +43,6 @@ export default async function AppLayout({
     ),
     listMissingTripBudgets(
       session.user.id,
-      activeTrip.tripId,
     ),
   ]);
 
@@ -63,6 +55,9 @@ export default async function AppLayout({
       <BudgetAccessGate
         missingBudgetCount={
           missingBudgets.length
+        }
+        missingTripId={
+          missingBudgets[0]?.tripId ?? ""
         }
       >
         <div className="app-shell">

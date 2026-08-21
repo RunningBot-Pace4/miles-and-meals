@@ -730,8 +730,18 @@ const v46Tests = read(
 );
 
 if (
-  !tripApiV46.includes(
-    'role: "OWNER"',
+  (
+    !tripApiV46.includes(
+      'role: "OWNER"',
+    ) &&
+    !(
+      accessSource.includes(
+        "ensureTripOwnerAccess",
+      ) &&
+      accessSource.includes(
+        'role: "OWNER"',
+      )
+    )
   ) ||
   !tripManagementV46.includes(
     "canManageTrip",
@@ -955,8 +965,18 @@ if (
   !tripRouteV47.includes(
     "firstCountry",
   ) ||
-  !tripRouteV47.includes(
-    "countryMembers",
+  (
+    !tripRouteV47.includes(
+      "countryMembers",
+    ) &&
+    !(
+      accessV47.includes(
+        "ensureTripOwnerAccess",
+      ) &&
+      accessV47.includes(
+        "countryMembers",
+      )
+    )
   )
 ) {
   fail(

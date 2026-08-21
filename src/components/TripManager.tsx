@@ -51,13 +51,19 @@ type JoinedTrip = {
 
 type ApiPayload = {
   error?: string;
+  id?: string;
+  countryId?: string;
+  ownerAssigned?: boolean;
+  ok?: boolean;
+  tripId?: string;
+  budgetPrompt?: boolean;
 };
 
 async function mutation(
   url: string,
   method: "POST" | "PATCH" | "DELETE",
   body: unknown,
-): Promise<void> {
+): Promise<ApiPayload> {
   const response = await fetch(url, {
     method,
     headers: {
@@ -74,6 +80,8 @@ async function mutation(
       payload.error ?? "Unable to save trip changes.",
     );
   }
+
+  return payload;
 }
 
 function ManagedTripCard({
@@ -95,6 +103,11 @@ function ManagedTripCard({
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [travelerBusy, setTravelerBusy] = useState<{
+    name: string;
+    assign: boolean;
+  } | null>(null);
   const [assignments, setAssignments] = useState<
     Record<string, string[]>
   >(() =>
@@ -176,10 +189,15 @@ function ManagedTripCard({
   ) {
     const key = `${country.id}:${member.id}`;
     setBusy(key);
+    setTravelerBusy({
+      name: member.name,
+      assign,
+    });
     setError("");
+    setMessage("");
 
     try {
-      await mutation(
+      const result = await mutation(
         `/api/trips/${trip.id}/countries/${country.id}/members`,
         assign ? "POST" : "DELETE",
         { userId: member.id },
@@ -195,6 +213,14 @@ function ManagedTripCard({
             : previous.filter((id) => id !== member.id),
         };
       });
+
+      setMessage(
+        assign
+          ? result.budgetPrompt
+            ? `${member.name} was added. Their screen will prompt them to set a personal budget automatically.`
+            : `${member.name} was added. Their existing personal budget is still available.`
+          : `${member.name} was removed from this trip.`,
+      );
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -203,6 +229,7 @@ function ManagedTripCard({
       );
     } finally {
       setBusy(null);
+      setTravelerBusy(null);
     }
   }
 
@@ -218,6 +245,21 @@ function ManagedTripCard({
         <SavingOverlay
           title="Updating your trip"
           message="Saving the trip setup securely."
+        />
+      ) : null}
+
+      {travelerBusy ? (
+        <SavingOverlay
+          title={
+            travelerBusy.assign
+              ? "Adding traveler"
+              : "Removing traveler"
+          }
+          message={
+            travelerBusy.assign
+              ? `Assigning ${travelerBusy.name} to this trip and preparing their travel wallet.`
+              : `Removing ${travelerBusy.name} from this trip.`
+          }
         />
       ) : null}
 
@@ -237,6 +279,12 @@ function ManagedTripCard({
       {error ? (
         <p className="form-error" role="alert">
           {error}
+        </p>
+      ) : null}
+
+      {message ? (
+        <p className="form-success" role="status">
+          {message}
         </p>
       ) : null}
 
@@ -647,7 +695,7 @@ export function TripManager({
     const form = new FormData(event.currentTarget);
 
     try {
-      await mutation("/api/trips", "POST", {
+      const created = await mutation("/api/trips", "POST", {
         name: String(form.get("name") ?? ""),
         baseCurrency: createBaseCurrency,
         startDate: String(form.get("startDate") ?? ""),
@@ -660,7 +708,26 @@ export function TripManager({
         },
       });
 
-      window.location.reload();
+      if (!created.id || created.ownerAssigned !== true) {
+        throw new Error(
+          "The trip was created, but Trip Owner access could not be confirmed.",
+        );
+      }
+
+      try {
+        await mutation(
+          "/api/active-trip",
+          "POST",
+          { tripId: created.id },
+        );
+      } catch {
+        // Owner access is already persisted. Budget onboarding can still
+        // continue even if the active-trip cookie could not be updated.
+      }
+
+      window.location.replace(
+        "/onboarding/budget",
+      );
     } catch (caught) {
       setError(
         caught instanceof Error

@@ -10,6 +10,7 @@ type PreparedReceipt = {
   fullEnhanced: Blob;
   fullBinary: Blob;
   headerEnhanced: Blob;
+  bottomEnhanced: Blob;
   bottomBinary: Blob;
 };
 
@@ -242,9 +243,9 @@ async function preprocessReceiptImage(
   const bitmap = await createImageBitmap(file);
 
   try {
-    const maxSide = 2200;
+    const maxSide = 2600;
     const scale = Math.min(
-      1.9,
+      2.2,
       maxSide /
         Math.max(
           bitmap.width,
@@ -327,28 +328,37 @@ async function preprocessReceiptImage(
       0.34,
     );
 
-    const bottomCanvas = cropCanvas(
+    const bottomEnhancedCanvas = cropCanvas(
+      enhancedCanvas,
+      0.46,
+      0.54,
+    );
+
+    const bottomBinaryCanvas = cropCanvas(
       binaryCanvas,
-      0.52,
-      0.48,
+      0.46,
+      0.54,
     );
 
     const [
       fullEnhanced,
       fullBinary,
       headerEnhanced,
+      bottomEnhanced,
       bottomBinary,
     ] = await Promise.all([
-      canvasToBlob(enhancedCanvas, 0.96),
-      canvasToBlob(binaryCanvas, 0.97),
-      canvasToBlob(headerCanvas, 0.97),
-      canvasToBlob(bottomCanvas, 0.97),
+      canvasToBlob(enhancedCanvas, 0.97),
+      canvasToBlob(binaryCanvas, 0.98),
+      canvasToBlob(headerCanvas, 0.98),
+      canvasToBlob(bottomEnhancedCanvas, 0.98),
+      canvasToBlob(bottomBinaryCanvas, 0.98),
     ]);
 
     return {
       fullEnhanced,
       fullBinary,
       headerEnhanced,
+      bottomEnhanced,
       bottomBinary,
     };
   } finally {
@@ -399,7 +409,8 @@ export async function recognizeReceiptLocally(
     | "FULL"
     | "ALT_FULL"
     | "HEADER"
-    | "BOTTOM";
+    | "BOTTOM_ENHANCED"
+    | "BOTTOM_BINARY";
 
   let phase: Phase = "FULL";
 
@@ -409,23 +420,28 @@ export async function recognizeReceiptLocally(
   > = {
     FULL: {
       start: 0,
-      weight: 0.34,
+      weight: 0.28,
       label: "Reading full receipt",
     },
     ALT_FULL: {
-      start: 0.34,
-      weight: 0.24,
+      start: 0.28,
+      weight: 0.2,
       label: "Checking faint text",
     },
     HEADER: {
-      start: 0.58,
-      weight: 0.2,
+      start: 0.48,
+      weight: 0.18,
       label: "Reading shop header",
     },
-    BOTTOM: {
-      start: 0.78,
-      weight: 0.22,
-      label: "Finding final total",
+    BOTTOM_ENHANCED: {
+      start: 0.66,
+      weight: 0.18,
+      label: "Reading total area",
+    },
+    BOTTOM_BINARY: {
+      start: 0.84,
+      weight: 0.16,
+      label: "Verifying final total",
     },
   };
 
@@ -502,7 +518,21 @@ export async function recognizeReceiptLocally(
         prepared.headerEnhanced,
       );
 
-    phase = "BOTTOM";
+    phase = "BOTTOM_ENHANCED";
+
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      user_defined_dpi: "300",
+      tessedit_pageseg_mode:
+        PSM.SINGLE_BLOCK,
+    });
+
+    const bottomEnhancedResult =
+      await worker.recognize(
+        prepared.bottomEnhanced,
+      );
+
+    phase = "BOTTOM_BINARY";
 
     await worker.setParameters({
       preserve_interword_spaces: "1",
@@ -511,16 +541,17 @@ export async function recognizeReceiptLocally(
         PSM.SPARSE_TEXT,
     });
 
-    const bottomResult =
+    const bottomBinaryResult =
       await worker.recognize(
         prepared.bottomBinary,
       );
 
     const confidence =
-      fullResult.data.confidence * 0.32 +
-      altFullResult.data.confidence * 0.23 +
-      headerResult.data.confidence * 0.23 +
-      bottomResult.data.confidence * 0.22;
+      fullResult.data.confidence * 0.28 +
+      altFullResult.data.confidence * 0.2 +
+      headerResult.data.confidence * 0.18 +
+      bottomEnhancedResult.data.confidence * 0.18 +
+      bottomBinaryResult.data.confidence * 0.16;
 
     onProgress?.({
       status: "Comparing receipt results",
@@ -533,7 +564,12 @@ export async function recognizeReceiptLocally(
       confidence,
       headerResult.data.text,
       altFullResult.data.text,
-      bottomResult.data.text,
+      [
+        bottomEnhancedResult.data.text,
+        bottomBinaryResult.data.text,
+      ]
+        .filter(Boolean)
+        .join("\n"),
     );
   } finally {
     await worker.terminate();

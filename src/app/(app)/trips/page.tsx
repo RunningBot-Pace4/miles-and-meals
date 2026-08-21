@@ -1,4 +1,5 @@
 import { TripManager } from "@/components/TripManager";
+import { repairOwnedTripAccess } from "@/lib/access";
 import {
   countryCatalog,
 } from "@/lib/country-catalog";
@@ -14,6 +15,12 @@ import {
 
 export default async function TripsPage() {
   const session = await requirePageSession();
+
+  // Self-heal older creator records so the person who created a trip is
+  // always both OWNER and an assigned traveler, including System Admins.
+  await repairOwnedTripAccess(
+    session.user.id,
+  );
 
   const [managedTrips, joinedTrips] = await Promise.all([
     listManagedTrips(session.user),

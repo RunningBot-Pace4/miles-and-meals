@@ -1,5 +1,29 @@
 # Miles & Meals
 
+## v56 — Owner Row + Live Budget Prompt + Creator Assignment
+
+- `Owner` stays on one line in Trip Travelers.
+- Traveler assignment/removal now shows a proper blocking loading state.
+- Newly assigned travelers are detected live (no manual refresh) and prompted to set a personal budget.
+- Trip assignment also creates an in-app/push trip notification.
+- Self-service trip creation verifies the creator as both Trip Owner and assigned traveler, including System Admin users.
+- Newly created trips become the creator's active trip and open personal-budget setup.
+- Existing creator records are self-healed when **Create & manage trips** is opened.
+- No database migration is required from v55 to v56.
+
+See `V56-OWNER-LIVE-BUDGET-ASSIGNMENT.md`.
+
+
+## v55 — Currency Choice + Receipt OCR + All Trips Home
+
+- Add Expense defaults to the trip currency but now offers a currency dropdown when another transaction currency is needed.
+- Alternate currencies use the existing daily FX reference service, with Cash/Card/Manual overrides still available.
+- Receipt OCR uses stronger image preparation, two total-area passes, next-line TOTAL detection and safer candidate ranking.
+- Home keeps one active trip and adds an **All Trips** overview for travelers with multiple accessible trips.
+- No database migration is required from v54 to v55.
+
+See `V55-CURRENCY-OCR-ALL-TRIPS-HOME.md`.
+
 
 ## v54 — Completed Payment Lock + Trip Traveler Permissions
 
@@ -46,9 +70,9 @@ Drizzle ORM and Vercel.
 
 - Email/password login and registration
 - One active server-side session per account
-- Admin trip creation and multi-country setup
-- Admin country assignment
-- Normal users only see assigned-country data
+- Self-service trip creation with one destination country per trip
+- Trip Owner traveler assignment; System Admin recovery/maintenance controls
+- Travelers only see data for trips they are assigned to
 - Dashboard with budget, spending, person-level shares and settlement summaries
 - Expense add/view/edit/delete
 - Historical per-expense FX rates

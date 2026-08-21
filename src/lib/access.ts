@@ -124,6 +124,135 @@ export async function listCountryMembers(
   return [...assigned, ...additional];
 }
 
+
+export async function ensureTripOwnerAccess(
+  tripId: string,
+  userId: string,
+  countryId: string,
+): Promise<void> {
+  await db
+    .insert(tripMembers)
+    .values({
+      tripId,
+      userId,
+      role: "OWNER",
+    })
+    .onConflictDoUpdate({
+      target: [
+        tripMembers.tripId,
+        tripMembers.userId,
+      ],
+      set: { role: "OWNER" },
+    });
+
+  await db
+    .insert(countryMembers)
+    .values({
+      countryId,
+      userId,
+    })
+    .onConflictDoNothing();
+
+  const [tripAccess, countryAccess] =
+    await Promise.all([
+      db
+        .select({
+          userId: tripMembers.userId,
+        })
+        .from(tripMembers)
+        .where(
+          and(
+            eq(
+              tripMembers.tripId,
+              tripId,
+            ),
+            eq(
+              tripMembers.userId,
+              userId,
+            ),
+          ),
+        )
+        .limit(1),
+      db
+        .select({
+          userId: countryMembers.userId,
+        })
+        .from(countryMembers)
+        .where(
+          and(
+            eq(
+              countryMembers.countryId,
+              countryId,
+            ),
+            eq(
+              countryMembers.userId,
+              userId,
+            ),
+          ),
+        )
+        .limit(1),
+    ]);
+
+  if (!tripAccess[0] || !countryAccess[0]) {
+    throw new Error(
+      "Trip Owner access could not be assigned.",
+    );
+  }
+}
+
+export async function repairOwnedTripAccess(
+  userId: string,
+): Promise<void> {
+  const owned = await db
+    .select({
+      tripId: trips.id,
+      countryId: countries.id,
+    })
+    .from(trips)
+    .leftJoin(
+      countries,
+      eq(
+        countries.tripId,
+        trips.id,
+      ),
+    )
+    .where(
+      eq(
+        trips.createdBy,
+        userId,
+      ),
+    );
+
+  for (const row of owned) {
+    await db
+      .insert(tripMembers)
+      .values({
+        tripId: row.tripId,
+        userId,
+        role: "OWNER",
+      })
+      .onConflictDoUpdate({
+        target: [
+          tripMembers.tripId,
+          tripMembers.userId,
+        ],
+        set: { role: "OWNER" },
+      });
+
+    if (!row.countryId) {
+      continue;
+    }
+
+    await db
+      .insert(countryMembers)
+      .values({
+        countryId: row.countryId,
+        userId,
+      })
+      .onConflictDoNothing();
+  }
+}
+
 export async function ensureTripMember(tripId: string, userId: string) {
   await db
     .insert(tripMembers)

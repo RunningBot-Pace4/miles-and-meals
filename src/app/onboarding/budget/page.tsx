@@ -1,7 +1,4 @@
 import { redirect } from "next/navigation";
-import {
-  getActiveTripContext,
-} from "@/lib/active-trip";
 import { BrandLogo } from "@/components/BrandLogo";
 import { TripBudgetForm } from "@/components/TripBudgetForm";
 import { requirePageSession } from "@/lib/session";
@@ -28,14 +25,9 @@ export default async function BudgetOnboardingPage() {
     );
   }
 
-  const activeTrip =
-    await getActiveTripContext(
-      session.user,
-    );
   const missing =
     await listMissingTripBudgets(
       session.user.id,
-      activeTrip.tripId,
     );
 
   if (
