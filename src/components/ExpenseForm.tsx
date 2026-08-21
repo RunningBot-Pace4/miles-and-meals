@@ -21,6 +21,7 @@ import { parseTravelNumber } from "@/lib/numbers";
 type CountryOption = {
   id: string;
   name: string;
+  tripId: string;
   tripName: string;
   currencyCode: string;
   defaultExchangeRate: string;
@@ -160,15 +161,18 @@ function initials(name: string) {
 
 export function ExpenseForm({
   countries,
+  activeTripId,
   currentUserId,
   initial,
 }: {
   countries: CountryOption[];
+  activeTripId: string;
   currentUserId: string;
   initial?: ExpenseInitial;
 }) {
   const first =
     countries.find((country) => country.id === initial?.countryId) ??
+    countries.find((country) => country.tripId === activeTripId) ??
     countries[0];
 
   const startingCurrency = (
@@ -232,6 +236,7 @@ export function ExpenseForm({
   const [receiptMessage, setReceiptMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tripSwitching, setTripSwitching] = useState(false);
 
   const expenseDraftKey = draftKey(
     "expense",
@@ -422,7 +427,7 @@ export function ExpenseForm({
     splitValues,
   ]);
 
-  function restoreExpenseDraft() {
+  async function restoreExpenseDraft() {
     const stored =
       readDraft<ExpenseDraft>(
         expenseDraftKey,
@@ -436,6 +441,17 @@ export function ExpenseForm({
     const draft = stored.data;
     const countryChanged =
       draft.countryId !== countryId;
+
+    if (countryChanged && !initial) {
+      const switched =
+        await handleTripChange(
+          draft.countryId,
+        );
+
+      if (!switched) {
+        return;
+      }
+    }
 
     if (countryChanged) {
       preserveMembersRef.current =
@@ -580,7 +596,7 @@ export function ExpenseForm({
     }
   }
 
-  function handleCountryChange(nextId: string) {
+  function applyTripCountry(nextId: string) {
     setCountryId(nextId);
     const country = countries.find((item) => item.id === nextId);
 
@@ -601,6 +617,68 @@ export function ExpenseForm({
       setReceiptMessage("");
       setReceiptScanStatus("");
       setReceiptScanProgress(0);
+    }
+  }
+
+  async function handleTripChange(nextId: string): Promise<boolean> {
+    if (nextId === countryId) {
+      return true;
+    }
+
+    const country = countries.find((item) => item.id === nextId);
+
+    if (!country) {
+      return false;
+    }
+
+    if (initial) {
+      applyTripCountry(nextId);
+      return true;
+    }
+
+    if (!navigator.onLine) {
+      window.location.assign("/offline.html");
+      return false;
+    }
+
+    const previousId = countryId;
+    setError("");
+    setTripSwitching(true);
+
+    try {
+      const response = await fetch("/api/active-trip", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          tripId: country.tripId,
+        }),
+      });
+
+      const payload =
+        (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Unable to switch trip.",
+        );
+      }
+
+      applyTripCountry(nextId);
+      return true;
+    } catch (caught) {
+      setCountryId(previousId);
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to switch trip.",
+      );
+      return false;
+    } finally {
+      setTripSwitching(false);
     }
   }
 
@@ -917,7 +995,12 @@ export function ExpenseForm({
 
   return (
     <>
-      {receiptScanning ? (
+      {tripSwitching ? (
+        <SavingOverlay
+          title="Switching trip"
+          message="Updating this expense to the selected trip."
+        />
+      ) : receiptScanning ? (
         <SavingOverlay
           title="Reading your receipt"
           message="Finding the shop name and final amount on this device."
@@ -967,8 +1050,8 @@ export function ExpenseForm({
               <button
                 className="button primary"
                 type="button"
-                onClick={
-                  restoreExpenseDraft
+                onClick={() =>
+                  void restoreExpenseDraft()
                 }
               >
                 Restore draft
@@ -1040,14 +1123,18 @@ export function ExpenseForm({
 
         <div className="two-col compact-fields">
           <label>
-            Country
+            Trip
             <select
+              aria-label="Choose expense trip"
               value={countryId}
-              onChange={(event) => handleCountryChange(event.target.value)}
+              disabled={tripSwitching || busy || Boolean(initial)}
+              onChange={(event) =>
+                void handleTripChange(event.target.value)
+              }
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id}>
-                  {country.name}
+                  {country.tripName}
                 </option>
               ))}
             </select>

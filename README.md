@@ -320,3 +320,14 @@ a second confirmation.
 No new database migration is required.
 
 See `V51-SINGLE-COUNTRY-TRIPS.md`.
+
+
+## v52 Trip Switcher UX
+
+- Home-selected trip remains the default across the app.
+- Planner and Add Expense can switch the active trip directly.
+- Trip selectors show trip names rather than country names.
+- Removed the extra locked-country explanatory sentence.
+- Single-country enforcement and System Admin-only trip deletion remain in place.
+
+See `V52-TRIP-SWITCHER-UX.md`.

@@ -24,6 +24,11 @@ type CountryOption = {
   tripName: string;
 };
 
+type TripOption = {
+  id: string;
+  name: string;
+};
+
 type PlannerItem = {
   id: string;
   countryId: string;
@@ -331,7 +336,7 @@ function PlannerItemForm({
 
       <div className="form-grid">
         <label>
-          Country
+          Trip
           <select
             name="countryId"
             required
@@ -339,7 +344,7 @@ function PlannerItemForm({
           >
             {countries.map((country) => (
               <option value={country.id} key={country.id}>
-                {country.name}
+                {country.tripName}
               </option>
             ))}
           </select>
@@ -632,14 +637,17 @@ function PlannerDetailsModal({
 export function PlannerClient({
   countries,
   items,
+  trips,
+  activeTripId,
 }: {
   countries: CountryOption[];
   items: PlannerItem[];
+  trips: TripOption[];
+  activeTripId: string;
 }) {
   const [itemsState, setItemsState] =
     useState<PlannerItem[]>(items);
   const [tab, setTab] = useState<TabValue>("ITINERARY");
-  const [countryFilter, setCountryFilter] = useState("ALL");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
   const [detailItem, setDetailItem] = useState<PlannerItem | null>(null);
@@ -653,9 +661,7 @@ export function PlannerClient({
     return itemsState
       .filter(
         (item) =>
-          item.itemType === tab &&
-          (countryFilter === "ALL" ||
-            item.countryId === countryFilter),
+          item.itemType === tab,
       )
       .sort((a, b) => {
         const dateA = a.itemDate ?? "9999-12-31";
@@ -669,12 +675,12 @@ export function PlannerClient({
           b.itemTime ?? "99:99",
         );
       });
-  }, [countryFilter, itemsState, tab]);
+  }, [itemsState, tab]);
 
   const countryById = useMemo(
     () =>
       new Map(
-        countries.map((country) => [country.id, country.name]),
+        countries.map((country) => [country.id, country.tripName]),
       ),
     [countries],
   );
@@ -760,9 +766,7 @@ export function PlannerClient({
   }, [refreshItems]);
 
   const defaultCountryId =
-    countryFilter === "ALL"
-      ? (countries[0]?.id ?? "")
-      : countryFilter;
+    countries[0]?.id ?? "";
 
   useEffect(() => {
     if (!detailItem) {
@@ -951,6 +955,56 @@ export function PlannerClient({
     });
   }
 
+  async function changeTrip(nextTripId: string) {
+    if (
+      !nextTripId ||
+      nextTripId === activeTripId
+    ) {
+      return;
+    }
+
+    if (!navigator.onLine) {
+      window.location.assign("/offline.html");
+      return;
+    }
+
+    setError("");
+    setLoadingTitle("Switching trip");
+    setBusy(true);
+
+    try {
+      const response = await fetch("/api/active-trip", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          tripId: nextTripId,
+        }),
+      });
+
+      const payload =
+        (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Unable to switch trip.",
+        );
+      }
+
+      window.location.assign("/planner");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to switch trip.",
+      );
+      setBusy(false);
+    }
+  }
+
   function switchTab(nextTab: TabValue) {
     setTab(nextTab);
     setShowForm(false);
@@ -962,9 +1016,9 @@ export function PlannerClient({
   if (countries.length === 0) {
     return (
       <article className="empty-card">
-        <h2>No country assigned yet</h2>
+        <h2>No trip available yet</h2>
         <p>
-          Ask the trip admin to assign you to a country before adding plans.
+          Ask the trip admin to give you access to a trip before adding plans.
         </p>
       </article>
     );
@@ -975,7 +1029,11 @@ export function PlannerClient({
       {busy ? (
         <SavingOverlay
           title={loadingTitle}
-          message="Updating the shared trip plan for everyone."
+          message={
+            loadingTitle === "Switching trip"
+              ? "Opening the selected trip plan."
+              : "Updating the shared trip plan for everyone."
+          }
         />
       ) : null}
       <div
@@ -1022,22 +1080,22 @@ export function PlannerClient({
 
       <div className="planner-filter">
         <label>
-          <span>Showing</span>
+          <span>Trip</span>
           <select
-            value={countryFilter}
+            aria-label="Change planner trip"
+            value={activeTripId}
+            disabled={busy}
             onChange={(event) => {
-              setCountryFilter(event.target.value);
               setEditingItem(null);
               setDetailItem(null);
+              setShowForm(false);
               setError("");
+              void changeTrip(event.target.value);
             }}
           >
-            <option value="ALL">
-              All destinations in this trip
-            </option>
-            {countries.map((country) => (
-              <option value={country.id} key={country.id}>
-                {country.name}
+            {trips.map((trip) => (
+              <option value={trip.id} key={trip.id}>
+                {trip.name}
               </option>
             ))}
           </select>

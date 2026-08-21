@@ -10,7 +10,6 @@ After creation, Trip Owner sees the country as read-only:
 DESTINATION COUNTRY                         Locked
 Malaysia
 
-This country was selected when the trip was created and cannot be changed or replaced.
 ```
 
 There is no `+ Add destination`, country queue or multi-country batch action.

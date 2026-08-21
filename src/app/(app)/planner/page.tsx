@@ -59,12 +59,17 @@ export default async function PlannerPage() {
           <h1>Plan the good stuff</h1>
           <p className="muted">
             Build the trip together — plans can be proposed, refined and
-            updated by travelers who have access to the country.
+            updated by travelers who have access to the trip.
           </p>
         </div>
       </div>
 
-      <PlannerClient countries={countries} items={items} />
+      <PlannerClient
+        countries={countries}
+        items={items}
+        trips={activeTrip.trips}
+        activeTripId={activeTrip.tripId}
+      />
     </div>
   );
 }

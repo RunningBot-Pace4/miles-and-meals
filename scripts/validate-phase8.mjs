@@ -301,11 +301,11 @@ if (
     "tripName: string",
   ) ||
   !expenseForm.includes(
-    "{country.name}",
+    "{country.tripName}",
   )
 ) {
   fail(
-    "Expense destination selector must render countries inside the active trip.",
+    "Expense trip selector must render trip names.",
   );
 }
 
@@ -1145,15 +1145,21 @@ for (
 }
 
 if (
-  plannerClientV49.includes(
-    "{country.tripName} · {country.name}",
+  !plannerClientV49.includes(
+    'aria-label="Change planner trip"',
   ) ||
   !plannerClientV49.includes(
+    '"/api/active-trip"',
+  ) ||
+  !plannerClientV49.includes(
+    "{trip.name}",
+  ) ||
+  plannerClientV49.includes(
     "All destinations in this trip",
   )
 ) {
   fail(
-    "Planner must not offer another trip while adding or filtering items.",
+    "Planner must follow Home by default while still allowing an in-page trip switch.",
   );
 }
 
@@ -1215,6 +1221,10 @@ const adminCountryRouteV51 = read(
   "src/app/api/admin/countries/route.ts",
 );
 
+const expenseFormV52 = read(
+  "src/components/ExpenseForm.tsx",
+);
+
 if (
   tripManagerV50.includes(
     "+ Add destination",
@@ -1229,7 +1239,7 @@ if (
     "DESTINATION COUNTRY",
   ) ||
   !tripManagerV50.includes(
-    "cannot be changed or replaced",
+    'admin-status-pill active">Locked',
   ) ||
   !tripManagerV50.includes(
     "required",
@@ -1256,6 +1266,28 @@ if (
 ) {
   fail(
     "Single-country enforcement must exist in both owner and Admin APIs.",
+  );
+}
+
+if (
+  !newExpensePageV49.includes(
+    "activeTrip.allCountries",
+  ) ||
+  !expenseFormV52.includes(
+    'aria-label="Choose expense trip"',
+  ) ||
+  !expenseFormV52.includes(
+    "{country.tripName}",
+  ) ||
+  !expenseFormV52.includes(
+    '"/api/active-trip"',
+  ) ||
+  expenseFormV52.includes(
+    "Country\n            <select",
+  )
+) {
+  fail(
+    "Add Expense must default to the active Home trip and allow switching by trip name.",
   );
 }
 

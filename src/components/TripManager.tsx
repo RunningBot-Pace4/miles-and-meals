@@ -318,11 +318,6 @@ function ManagedTripCard({
           <span className="admin-status-pill active">Locked</span>
         </div>
 
-        <p className="muted">
-          This country was selected when the trip was created and
-          cannot be changed or replaced.
-        </p>
-
         {legacyExtraCountries > 0 ? (
           <p className="form-error" role="alert">
             This older trip contains {legacyExtraCountries + 1} countries.

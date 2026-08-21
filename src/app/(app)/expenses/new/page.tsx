@@ -15,7 +15,10 @@ export default async function NewExpensePage() {
   return (
     <ExpenseForm
       countries={
-        activeTrip.countries
+        activeTrip.allCountries
+      }
+      activeTripId={
+        activeTrip.tripId
       }
       currentUserId={
         session.user.id

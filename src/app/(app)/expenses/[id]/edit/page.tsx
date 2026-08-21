@@ -75,6 +75,7 @@ export default async function EditExpensePage({ params }: Props) {
   return (
       <ExpenseForm
         countries={countries}
+        activeTripId={activeTrip.tripId}
         currentUserId={session.user.id}
         initial={{
           id: expense.id,
