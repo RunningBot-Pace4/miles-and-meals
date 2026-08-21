@@ -344,7 +344,7 @@ function ManagedTripCard({
                     </small>
                   </span>
 
-                  <b>{assigned.size} travelers · Manage</b>
+                  <b>{assigned.size} trip travelers · Manage</b>
                 </summary>
 
                 <div className="owner-country-members">
@@ -385,21 +385,31 @@ function ManagedTripCard({
                     </button>
                   </div>
 
+                  <div className="owner-trip-traveler-heading">
+                    <div>
+                      <p className="eyebrow">TRIP TRAVELERS</p>
+                      <h4>Assign travelers to this trip</h4>
+                    </div>
+                    <span>{assigned.size} assigned</span>
+                  </div>
+
                   <p>
-                    Tick the travelers who can see and use this trip
-                    destination.
+                    Trip Owners can add or remove travelers here. Traveler
+                    accounts are shown by name only; email addresses are
+                    visible only to System Admin.
                   </p>
 
                   {users.map((member) => {
                     const checked = assigned.has(member.id);
+                    const isOwner = member.id === trip.createdBy;
                     const key = `${destination.id}:${member.id}`;
 
                     return (
                       <label key={key}>
                         <input
                           type="checkbox"
-                          checked={checked}
-                          disabled={busy !== null}
+                          checked={checked || isOwner}
+                          disabled={busy !== null || isOwner}
                           onChange={(event) =>
                             void toggleMember(
                               destination,
@@ -418,11 +428,19 @@ function ManagedTripCard({
                           </strong>
                           {member.email ? (
                             <small>{member.email}</small>
+                          ) : isOwner ? (
+                            <small>Trip Owner · Always assigned</small>
                           ) : null}
                         </span>
 
                         <i>
-                          {busy === key ? "…" : checked ? "✓" : ""}
+                          {busy === key
+                            ? "…"
+                            : isOwner
+                              ? "Owner"
+                              : checked
+                                ? "✓"
+                                : ""}
                         </i>
                       </label>
                     );

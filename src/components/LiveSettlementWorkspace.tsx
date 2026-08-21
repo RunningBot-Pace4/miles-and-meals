@@ -508,7 +508,7 @@ function SettlementHistory({
             HISTORY
           </p>
           <h2>
-            Received payments
+            Completed payments
           </h2>
         </div>
       </div>
@@ -532,7 +532,7 @@ function SettlementHistory({
                   </strong>
                   <small>
                     {payment.countryName} ·
-                    Received{" "}
+                    Completed · View only ·{" "}
                     {payment.confirmedAt
                       ? new Date(
                           payment.confirmedAt,
@@ -552,7 +552,7 @@ function SettlementHistory({
             ))
         ) : (
           <p className="muted">
-            No confirmed settlement
+            No completed settlement
             payments yet.
           </p>
         )}

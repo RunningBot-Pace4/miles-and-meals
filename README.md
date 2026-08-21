@@ -1,5 +1,27 @@
 # Miles & Meals
 
+
+## v54 — Completed Payment Lock + Trip Traveler Permissions
+
+- Completed settlements are history-only and shown as **Completed · View only**.
+- Trip Owners can assign/remove travelers on trips they own.
+- Trip and one-country membership stay synchronized when access changes.
+- The Trip Owner cannot be removed from their own trip.
+- System Admin can view traveler name + email; Trip Owners receive name-only assignment data; regular travelers do not receive the global assignment directory.
+
+See `V54-SETTLEMENT-LOCK-TRIP-TRAVELERS.md`.
+
+
+## v53 — Settlement + Notification Reliability
+
+- Receiver confirmation completes both payer and receiver settlement status.
+- In-app notifications remain available even without Web Push.
+- Restored complete PWA assets required by the service worker.
+- Push setup checks the current device and no longer waits indefinitely for a broken service worker.
+- Notification bell/list refresh every 5 seconds.
+
+See `V53-SETTLEMENT-AUTO-NOTIFICATION-FIX.md`.
+
 Travel together. Spend smarter.
 
 Mobile-first travel tracker built with Next.js, Better Auth, Neon PostgreSQL,

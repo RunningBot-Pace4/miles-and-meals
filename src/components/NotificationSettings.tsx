@@ -45,6 +45,52 @@ function base64UrlToArrayBuffer(
   return buffer;
 }
 
+const SERVICE_WORKER_READY_TIMEOUT_MS = 10000;
+
+async function getNotificationServiceWorker():
+  Promise<ServiceWorkerRegistration> {
+  if (!("serviceWorker" in navigator)) {
+    throw new Error(
+      "This browser does not support service workers.",
+    );
+  }
+
+  let registration =
+    await navigator.serviceWorker.getRegistration(
+      "/",
+    );
+
+  if (!registration) {
+    registration =
+      await navigator.serviceWorker.register(
+        "/sw.js",
+        {
+          scope: "/",
+          updateViaCache: "none",
+        },
+      );
+  } else {
+    void registration.update().catch(
+      () => undefined,
+    );
+  }
+
+  return await Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<never>((_, reject) => {
+      window.setTimeout(
+        () =>
+          reject(
+            new Error(
+              "Notification service worker could not start. Refresh the app and try again.",
+            ),
+          ),
+        SERVICE_WORKER_READY_TIMEOUT_MS,
+      );
+    }),
+  ]);
+}
+
 export function NotificationSettings() {
   const [preferences, setPreferences] =
     useState<Preferences>({
@@ -91,9 +137,27 @@ export function NotificationSettings() {
         }
 
         setPreferences(payload.preferences);
-        setSubscribed(payload.subscribed);
         setConfigured(payload.configured);
         setPublicKey(payload.publicKey);
+
+        let localSubscribed = false;
+
+        if (
+          "serviceWorker" in navigator &&
+          "PushManager" in window
+        ) {
+          const registration =
+            await navigator.serviceWorker.getRegistration(
+              "/",
+            );
+          const subscription = registration
+            ? await registration.pushManager.getSubscription()
+            : null;
+
+          localSubscribed = Boolean(subscription);
+        }
+
+        setSubscribed(localSubscribed);
 
         if ("Notification" in window) {
           setPermission(Notification.permission);
@@ -201,7 +265,7 @@ export function NotificationSettings() {
       }
 
       const registration =
-        await navigator.serviceWorker.ready;
+        await getNotificationServiceWorker();
 
       let subscription =
         await registration.pushManager.getSubscription();
@@ -331,7 +395,15 @@ export function NotificationSettings() {
       }
 
       const registration =
-        await navigator.serviceWorker.ready;
+        await navigator.serviceWorker.getRegistration(
+          "/",
+        );
+
+      if (!registration) {
+        setSubscribed(false);
+        return;
+      }
+
       const subscription =
         await registration.pushManager.getSubscription();
 
@@ -383,6 +455,20 @@ export function NotificationSettings() {
           message="Saving your Phase 8 notification preferences."
         />
       ) : null}
+
+      <section className="settings-card notification-settings-card">
+        <div>
+          <p className="eyebrow">IN APP</p>
+          <h2>Notification Center</h2>
+          <p className="muted">
+            The bell and notification history work inside Miles &amp; Meals
+            even when device push is turned off.
+          </p>
+          <div className="notification-device-row">
+            <span className="status-pill success">Always available</span>
+          </div>
+        </div>
+      </section>
 
       <section className="settings-card notification-settings-card">
         <div>
@@ -462,8 +548,12 @@ export function NotificationSettings() {
 
       <section className="settings-card notification-settings-card">
         <div>
-          <p className="eyebrow">WHAT TO NOTIFY</p>
-          <h2>Notification preferences</h2>
+          <p className="eyebrow">PUSH ALERTS</p>
+          <h2>Push notification preferences</h2>
+          <p className="muted">
+            These switches control device push alerts. In-app notifications
+            still stay available from the bell.
+          </p>
 
           <div className="notification-preference-list">
             <label className="notification-preference-row">

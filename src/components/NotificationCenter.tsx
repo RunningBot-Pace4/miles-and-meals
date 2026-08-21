@@ -6,6 +6,8 @@ import {
   useState,
 } from "react";
 
+const NOTIFICATION_POLL_INTERVAL_MS = 5000;
+
 type NotificationItem = {
   id: string;
   category: string;
@@ -136,7 +138,7 @@ export function NotificationCenter({
   useEffect(() => {
     const timer = window.setInterval(
       () => void reload(),
-      15000,
+      NOTIFICATION_POLL_INTERVAL_MS,
     );
 
     function refreshWhenVisible() {

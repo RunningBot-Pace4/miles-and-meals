@@ -6,10 +6,12 @@ import { db } from "@/db";
 import {
   countries,
   countryMembers,
+  trips,
   user,
 } from "@/db/schema";
 import {
   ensureTripMember,
+  removeTripMemberIfNoCountryAccess,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
 import {
@@ -153,7 +155,7 @@ export async function POST(
       tripId,
       countryId,
       summary:
-        `${session.user.name} added ${target[0].name} to a trip destination.`,
+        `${session.user.name} assigned ${target[0].name} to a trip.`,
     });
 
     return Response.json({
@@ -217,6 +219,23 @@ export async function DELETE(
         await request.json(),
       );
 
+    const tripRows = await db
+      .select({
+        createdBy: trips.createdBy,
+      })
+      .from(trips)
+      .where(eq(trips.id, tripId))
+      .limit(1);
+
+    if (tripRows[0]?.createdBy === input.userId) {
+      return Response.json(
+        {
+          error: "The Trip Owner cannot be removed from their own trip.",
+        },
+        { status: 409 },
+      );
+    }
+
     await db
       .delete(countryMembers)
       .where(
@@ -232,6 +251,11 @@ export async function DELETE(
         ),
       );
 
+    await removeTripMemberIfNoCountryAccess(
+      tripId,
+      input.userId,
+    );
+
     await recordActivity({
       actorUserId:
         session.user.id,
@@ -242,7 +266,7 @@ export async function DELETE(
       tripId,
       countryId,
       summary:
-        `${session.user.name} removed a traveler from a trip destination.`,
+        `${session.user.name} removed a traveler from a trip.`,
     });
 
     return Response.json({

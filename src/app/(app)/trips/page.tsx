@@ -15,13 +15,18 @@ import {
 export default async function TripsPage() {
   const session = await requirePageSession();
 
-  const [managedTrips, joinedTrips, users] = await Promise.all([
+  const [managedTrips, joinedTrips] = await Promise.all([
     listManagedTrips(session.user),
     listJoinedTrips(session.user.id),
-    listActiveUsersForTripManagement(
-      isSystemAdmin(session.user.role),
-    ),
   ]);
+
+  // Only Trip Owners need the assignment directory. Regular travelers should
+  // not receive a global user directory in the page payload.
+  const users = managedTrips.length
+    ? await listActiveUsersForTripManagement(
+        isSystemAdmin(session.user.role),
+      )
+    : [];
 
   return (
     <div className="stack gap-lg">
@@ -32,7 +37,8 @@ export default async function TripsPage() {
           <p className="muted">
             Create a trip without a System Admin. The creator becomes
             Trip Owner, selects one destination country during creation,
-            and manages traveler access for that trip.
+            and can assign travelers to that trip. Trip Owners and travelers
+            use names only; email addresses are reserved for System Admin.
           </p>
         </div>
       </div>

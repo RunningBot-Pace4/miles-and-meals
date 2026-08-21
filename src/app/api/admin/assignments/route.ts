@@ -1,7 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { countries, countryMembers } from "@/db/schema";
-import { ensureTripMember } from "@/lib/access";
+import {
+  ensureTripMember,
+  removeTripMemberIfNoCountryAccess,
+} from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
@@ -79,6 +82,16 @@ export async function DELETE(request: Request) {
 
   try {
     const input = assignmentSchema.parse(await request.json());
+    const countryRows = await db
+      .select({ tripId: countries.tripId })
+      .from(countries)
+      .where(eq(countries.id, input.countryId))
+      .limit(1);
+
+    if (!countryRows[0]) {
+      return Response.json({ error: "Country not found." }, { status: 404 });
+    }
+
     await db
       .delete(countryMembers)
       .where(
@@ -87,6 +100,11 @@ export async function DELETE(request: Request) {
           eq(countryMembers.userId, input.userId),
         ),
       );
+
+    await removeTripMemberIfNoCountryAccess(
+      countryRows[0].tripId,
+      input.userId,
+    );
 
     await recordActivity({
       actorUserId: session.user.id,

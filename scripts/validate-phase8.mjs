@@ -740,7 +740,7 @@ if (
     "Create a new trip",
   ) ||
   !tripManagerV46.includes(
-    "Tick the travelers",
+    "Assign travelers to this trip",
   )
 ) {
   fail(

@@ -24,10 +24,13 @@ export function SettlementActionButton({
     useState(false);
   const [error, setError] =
     useState("");
+  const [completed, setCompleted] =
+    useState(false);
 
   async function runAction() {
     setBusy(true);
     setError("");
+    setCompleted(false);
 
     try {
       const response = await fetch(
@@ -60,6 +63,9 @@ export function SettlementActionButton({
         );
       }
 
+      setCompleted(
+        action === "MARK_RECEIVED",
+      );
       window.dispatchEvent(
         new CustomEvent(
           SETTLEMENT_UPDATED_EVENT,
@@ -90,7 +96,9 @@ export function SettlementActionButton({
         onClick={runAction}
         type="button"
       >
-        {busy ? (
+        {completed ? (
+          "Received ✓"
+        ) : busy ? (
           <>
             <span
               className="button-spinner"

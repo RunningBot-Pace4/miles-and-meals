@@ -7,6 +7,8 @@ import {
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 
+const NOTIFICATION_POLL_INTERVAL_MS = 5000;
+
 export const NOTIFICATION_UPDATED_EVENT =
   "mnm:notifications-updated";
 
@@ -61,7 +63,7 @@ export function NotificationBell({
     const timer =
       window.setInterval(
         () => void refresh(),
-        15000,
+        NOTIFICATION_POLL_INTERVAL_MS,
       );
 
     function refreshVisible() {

@@ -135,6 +135,54 @@ export async function ensureTripMember(tripId: string, userId: string) {
     .onConflictDoNothing();
 }
 
+export async function removeTripMemberIfNoCountryAccess(
+  tripId: string,
+  userId: string,
+): Promise<void> {
+  const tripRow = await db
+    .select({
+      createdBy: trips.createdBy,
+    })
+    .from(trips)
+    .where(eq(trips.id, tripId))
+    .limit(1);
+
+  // The creator is the permanent Trip Owner and must always retain access.
+  if (tripRow[0]?.createdBy === userId) {
+    return;
+  }
+
+  const remainingCountryAccess = await db
+    .select({
+      countryId: countryMembers.countryId,
+    })
+    .from(countryMembers)
+    .innerJoin(
+      countries,
+      eq(countryMembers.countryId, countries.id),
+    )
+    .where(
+      and(
+        eq(countries.tripId, tripId),
+        eq(countryMembers.userId, userId),
+      ),
+    )
+    .limit(1);
+
+  if (remainingCountryAccess.length > 0) {
+    return;
+  }
+
+  await db
+    .delete(tripMembers)
+    .where(
+      and(
+        eq(tripMembers.tripId, tripId),
+        eq(tripMembers.userId, userId),
+      ),
+    );
+}
+
 export async function listUsersForCountries(countryIds: string[]) {
   if (countryIds.length === 0) {
     return [];

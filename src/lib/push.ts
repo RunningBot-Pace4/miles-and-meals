@@ -170,20 +170,25 @@ export async function sendPushToUsers(
   payload: PushPayload,
 ): Promise<void> {
   try {
+    const uniqueIds = [...new Set(userIds)];
+
+    // In-app notifications are the reliable notification history and do not
+    // depend on browser permission, an active service worker or VAPID setup.
+    // Push preferences only control external Web Push delivery.
+    await recordInAppNotifications(
+      uniqueIds,
+      category,
+      payload,
+    );
+
     const enabled = await enabledUserIds(
-      userIds,
+      uniqueIds,
       category,
     );
 
     if (enabled.size === 0) {
       return;
     }
-
-    await recordInAppNotifications(
-      [...enabled],
-      category,
-      payload,
-    );
 
     const configuration = getConfiguration();
 

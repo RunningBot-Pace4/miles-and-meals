@@ -1,10 +1,12 @@
 {
   "name": "Miles & Meals",
   "short_name": "Miles & Meals",
-  "description": "Travel together. Spend smarter.",
+  "description": "Travel together, plan the day, split expenses and stay connected.",
+  "id": "/dashboard",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f7f2e8",
+  "background_color": "#fffaf2",
   "theme_color": "#12786f",
   "icons": [
     {
@@ -18,40 +20,23 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/miles-meals-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
     }
   ],
-  "id": "/",
-  "scope": "/",
   "shortcuts": [
-    {
-      "name": "Add expense",
-      "short_name": "Add expense",
-      "description": "Add a new trip expense",
-      "url": "/expenses/new?source=shortcut"
-    },
     {
       "name": "Plan",
       "short_name": "Plan",
-      "description": "Open the trip planner",
-      "url": "/planner?source=shortcut"
+      "url": "/planner"
     },
     {
-      "name": "Map",
-      "short_name": "Map",
-      "description": "Open shared trip locations",
-      "url": "/location?source=shortcut"
+      "name": "Add expense",
+      "short_name": "Expense",
+      "url": "/expenses/new"
     },
     {
-      "name": "Settle Up",
-      "short_name": "Settle Up",
-      "description": "Open balances and settlements",
-      "url": "/settlements?source=shortcut"
+      "name": "Settle up",
+      "short_name": "Settle",
+      "url": "/settlements"
     }
   ]
 }

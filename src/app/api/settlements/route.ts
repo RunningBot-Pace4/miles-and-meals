@@ -154,8 +154,8 @@ export async function POST(request: Request) {
         [input.counterpartyUserId],
         "PAYMENTS",
         {
-          title: "Payment confirmed",
-          body: `${session.user.name} confirmed your payment was received.`,
+          title: "Payment completed",
+          body: `${session.user.name} confirmed your payment was received. Your payment is now completed automatically.`,
           url: "/settlements",
           countryId: ledger.countryId,
           tag: `settlement-${pending.id}`,
@@ -166,6 +166,7 @@ export async function POST(request: Request) {
         ok: true,
         settlementId: pending.id,
         status: "SETTLED",
+        payerAutoUpdated: true,
       });
     }
 
@@ -210,15 +211,15 @@ export async function POST(request: Request) {
       entityId: inserted[0]?.id ?? null,
       tripId: ledger.tripId,
       countryId: ledger.countryId,
-      summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received.`,
+      summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received; the payer side was completed automatically.`,
     });
 
     await sendPushToUsers(
       [input.counterpartyUserId],
       "PAYMENTS",
       {
-        title: "Payment received",
-        body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received.`,
+        title: "Payment completed",
+        body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received. Your payment was marked completed automatically.`,
         url: "/settlements",
         countryId: ledger.countryId,
         tag: `settlement-${inserted[0]?.id ?? "received"}`,
@@ -229,6 +230,7 @@ export async function POST(request: Request) {
       ok: true,
       settlementId: inserted[0]?.id,
       status: "SETTLED",
+      payerAutoUpdated: true,
     });
   } catch (error) {
     const message =

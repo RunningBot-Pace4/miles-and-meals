@@ -1,14 +1,19 @@
-# Miles & Meals v52 — Full Source Package
+# Miles & Meals v54 — Full Source Package
 
-This ZIP contains the complete source tree reconstructed from the v51 full-source package plus the v52 Trip Switcher UX changes.
+This ZIP contains the complete v54 source tree based on v53.
 
-Included v52 behavior:
+Included v54 behavior:
 
-- Home-selected trip remains the default active trip.
-- Planner and Add Expense allow switching to another accessible trip.
-- Trip dropdowns display Trip Name instead of Country Name.
-- The extra locked-country explanatory sentence is removed.
+- Completed settlement records are **view-only** history.
+- Completed payments cannot be edited or deleted through the application settlement API.
+- Trip Owner can assign and remove travelers for trips they own.
+- Assignment updates both one-country access and trip membership consistently.
+- The trip creator/Trip Owner cannot be unassigned.
+- System Admin management can view traveler **name + email**.
+- Trip Owner assignment lists show **name only**.
+- Regular travelers do not receive the global assignment directory.
+- v53 notification reliability fixes remain included.
 - One trip remains limited to one destination country.
 - Trip deletion remains System Admin-only.
 
-The original source package includes the SVG app icon, service worker, and offline page. Binary PWA image assets that were not present in the original text/source export are not fabricated here.
+No database migration is required from v53 to v54.
