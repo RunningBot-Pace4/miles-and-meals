@@ -119,7 +119,14 @@ function formatTripDateRange(
   );
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    view?: string;
+  }>;
+}) {
+  const query = await searchParams;
   const session =
     await requirePageSession();
   const activeTrip =
@@ -128,6 +135,9 @@ export default async function DashboardPage() {
     );
   const tripOptions =
     activeTrip.trips;
+  const viewAll =
+    query.view === "all" &&
+    tripOptions.length > 0;
   const requestedTripId =
     activeTrip.tripId;
   const selectedTrip =
@@ -183,17 +193,21 @@ export default async function DashboardPage() {
     session.user.name.trim() ||
     "Traveler";
   const heroDestination =
-    selectedTrip?.name ??
-    "Plan your next trip";
+    viewAll
+      ? "All trips"
+      : selectedTrip?.name ??
+        "Plan your next trip";
   const heroCode =
-    selectedCountries.length ===
-    1
-      ? selectedCountries[0]
-          ?.code ?? "TRIP"
-      : selectedCountries.length >
-          1
-        ? "TRIP"
-        : "NEW";
+    viewAll
+      ? "ALL"
+      : selectedCountries.length ===
+        1
+        ? selectedCountries[0]
+            ?.code ?? "TRIP"
+        : selectedCountries.length >
+            1
+          ? "TRIP"
+          : "NEW";
   const tripDateLabel =
     selectedTrip
       ? formatTripDateRange(
@@ -202,14 +216,20 @@ export default async function DashboardPage() {
         )
       : "Dates not set";
   const heroSecondary =
-    selectedCountries.length
-      ? `${selectedCountries.length} destination${
-          selectedCountries.length ===
-          1
+    viewAll
+      ? `${tripOptions.length} trip${
+          tripOptions.length === 1
             ? ""
             : "s"
-        } ready`
-      : "Create a trip or join a destination";
+        } available`
+      : selectedCountries.length
+        ? `${selectedCountries.length} destination${
+            selectedCountries.length ===
+            1
+              ? ""
+              : "s"
+          } ready`
+        : "Create a trip or join a destination";
   const personalPercent =
     budget.myBudget > 0
       ? Math.min(
@@ -253,7 +273,7 @@ export default async function DashboardPage() {
   };
 
   const allTripOverview =
-    tripOptions.length > 1
+    viewAll
       ? await Promise.all(
           tripOptions.map(async (trip) => {
             const tripCountries =
@@ -422,7 +442,7 @@ export default async function DashboardPage() {
               </span>
             </div>
 
-            {selectedTrip ? (
+            {selectedTrip && !viewAll ? (
               <div className="travel-hero-meta">
                 <span>
                   <b aria-hidden="true">
@@ -453,11 +473,12 @@ export default async function DashboardPage() {
               selectedId={
                 requestedTripId
               }
+              viewAll={viewAll}
             />
           ) : null}
         </div>
 
-        {selectedTrip ? (
+        {selectedTrip && !viewAll ? (
           <div className="hero-budget travel-wallet-card">
             <div className="travel-wallet-title">
               <span
@@ -535,10 +556,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <AllTripsOverview
-        trips={allTripOverview}
-        activeTripId={requestedTripId}
-      />
+      {viewAll ? (
+        <AllTripsOverview
+          trips={allTripOverview}
+          activeTripId={requestedTripId}
+        />
+      ) : null}
 
       {!selectedTrip ? (
         <section className="empty-card empty-card-feature dashboard-self-service-empty">
@@ -573,7 +596,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         </section>
-      ) : (
+      ) : viewAll ? null : (
         <>
           <LiveDashboardFinance
             initialData={

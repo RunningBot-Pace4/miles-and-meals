@@ -377,3 +377,7 @@ See `V51-SINGLE-COUNTRY-TRIPS.md`.
 - Single-country enforcement and System Admin-only trip deletion remain in place.
 
 See `V52-TRIP-SWITCHER-UX.md`.
+
+## v57 Home selector
+
+Home now puts `View all trips` inside the main Trip dropdown. The old always-visible `Your travel overview` section heading is removed. Selecting a specific trip restores the normal active-trip dashboard.

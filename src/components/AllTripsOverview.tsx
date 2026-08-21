@@ -72,7 +72,7 @@ export function AllTripsOverview({
     }
   }
 
-  if (trips.length <= 1) {
+  if (trips.length === 0) {
     return null;
   }
 
@@ -87,16 +87,8 @@ export function AllTripsOverview({
 
       <section
         className="all-trips-overview"
-        aria-labelledby="all-trips-title"
+        aria-label="All trips"
       >
-        <div className="travel-section-heading">
-          <div>
-            <p className="eyebrow">ALL TRIPS</p>
-            <h2 id="all-trips-title">Your travel overview</h2>
-          </div>
-          <span>{trips.length} trips</span>
-        </div>
-
         <div className="all-trips-grid">
           {trips.map((trip) => {
             const active = trip.id === activeTripId;

@@ -1135,11 +1135,14 @@ if (
     'window.location.assign(\n        "/dashboard"',
   ) ||
   dashboardV49.includes(
-    "searchParams"
+    "query.tripId"
+  ) ||
+  dashboardV49.includes(
+    "searchParams.tripId"
   )
 ) {
   fail(
-    "Home trip selection must persist globally instead of using page-only query state.",
+    "Home trip selection must persist globally; query state may only control non-trip display modes such as View all.",
   );
 }
 

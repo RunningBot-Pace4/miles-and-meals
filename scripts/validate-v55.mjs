@@ -34,11 +34,10 @@ if (
 if (
   !dashboard.includes("allTripOverview") ||
   !dashboard.includes("<AllTripsOverview") ||
-  !allTrips.includes("ALL TRIPS") ||
   !allTrips.includes("Open this trip") ||
   !allTrips.includes('fetch("/api/active-trip"')
 ) {
-  fail("Home must show the all-trips overview while preserving active-trip switching.");
+  fail("Home must provide the all-trips overview while preserving active-trip switching.");
 }
 
 if (failures.length) {

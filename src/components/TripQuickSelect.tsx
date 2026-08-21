@@ -11,27 +11,45 @@ type TripOption = {
   name: string;
 };
 
+const ALL_TRIPS_VALUE = "__all_trips__";
+
 export function TripQuickSelect({
   trips,
   selectedId,
+  viewAll = false,
 }: {
   trips: TripOption[];
   selectedId: string;
+  viewAll?: boolean;
 }) {
   const [value, setValue] =
-    useState(selectedId);
+    useState(viewAll ? ALL_TRIPS_VALUE : selectedId);
   const [switching, setSwitching] =
     useState(false);
 
   useEffect(() => {
-    setValue(selectedId);
+    setValue(viewAll ? ALL_TRIPS_VALUE : selectedId);
     setSwitching(false);
-  }, [selectedId]);
+  }, [selectedId, viewAll]);
 
   async function changeTrip(
     nextId: string,
   ) {
+    if (nextId === ALL_TRIPS_VALUE) {
+      if (viewAll) {
+        return;
+      }
+
+      setValue(ALL_TRIPS_VALUE);
+      setSwitching(true);
+      window.location.assign(
+        "/dashboard?view=all",
+      );
+      return;
+    }
+
     if (
+      !viewAll &&
       nextId === selectedId
     ) {
       return;
@@ -132,6 +150,9 @@ export function TripQuickSelect({
             )
           }
         >
+          <option value={ALL_TRIPS_VALUE}>
+            View all trips
+          </option>
           {trips.map(
             (trip) => (
               <option

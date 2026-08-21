@@ -17,3 +17,7 @@ Included v56 behavior:
 - v53 notification reliability fixes remain included.
 
 No database migration is required from v55 to v56.
+
+## v57
+
+Home `View all trips` is now a dropdown mode instead of a permanently displayed travel-overview section. No database migration is required.
