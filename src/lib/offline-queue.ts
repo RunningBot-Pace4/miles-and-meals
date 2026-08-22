@@ -5,6 +5,10 @@ export type OfflineMutation = {
   body?: unknown;
   label: string;
   createdAt: string;
+  attempts?: number;
+  lastAttemptAt?: string;
+  lastError?: string;
+  blocked?: boolean;
 };
 
 const STORAGE_KEY = "mnm:offline-mutation-queue:v1";
@@ -49,7 +53,10 @@ function writeOfflineQueue(items: OfflineMutation[]) {
 }
 
 export function enqueueOfflineMutation(
-  input: Omit<OfflineMutation, "id" | "createdAt">,
+  input: Omit<
+    OfflineMutation,
+    "id" | "createdAt" | "attempts" | "lastAttemptAt" | "lastError" | "blocked"
+  >,
 ): OfflineMutation {
   const item: OfflineMutation = {
     ...input,
@@ -58,6 +65,8 @@ export function enqueueOfflineMutation(
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     createdAt: new Date().toISOString(),
+    attempts: 0,
+    blocked: false,
   };
   const current = readOfflineQueue();
   writeOfflineQueue([...current, item]);
@@ -78,13 +87,32 @@ export function removeOfflineMutation(id: string) {
   writeOfflineQueue(readOfflineQueue().filter((item) => item.id !== id));
 }
 
-export async function flushOfflineQueue(): Promise<{
+function shouldBlockForStatus(status: number): boolean {
+  return [400, 401, 403, 404, 409, 422].includes(status);
+}
+
+async function responseError(response: Response): Promise<string> {
+  const payload = (await response.json().catch(() => null)) as
+    | { error?: string }
+    | null;
+
+  return payload?.error ?? `Server returned ${response.status}.`;
+}
+
+export async function flushOfflineQueue(options: {
+  forceBlocked?: boolean;
+} = {}): Promise<{
   synced: number;
   remaining: number;
+  blocked: number;
 }> {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
-    const remaining = readOfflineQueue().length;
-    return { synced: 0, remaining };
+    const items = readOfflineQueue();
+    return {
+      synced: 0,
+      remaining: items.length,
+      blocked: items.filter((item) => item.blocked).length,
+    };
   }
 
   const items = readOfflineQueue();
@@ -92,11 +120,17 @@ export async function flushOfflineQueue(): Promise<{
   const remaining: OfflineMutation[] = [];
 
   for (const item of items) {
+    if (item.blocked && !options.forceBlocked) {
+      remaining.push(item);
+      continue;
+    }
+
     try {
       const response = await fetch(item.url, {
         method: item.method,
         headers: item.body === undefined ? undefined : { "content-type": "application/json" },
         body: item.body === undefined ? undefined : JSON.stringify(item.body),
+        credentials: "same-origin",
       });
 
       if (response.ok) {
@@ -104,14 +138,28 @@ export async function flushOfflineQueue(): Promise<{
         continue;
       }
 
-      // Authentication or a server-side conflict should be kept for a later retry.
-      // Other validation errors also stay visible rather than silently dropping data.
-      remaining.push(item);
+      remaining.push({
+        ...item,
+        attempts: (item.attempts ?? 0) + 1,
+        lastAttemptAt: new Date().toISOString(),
+        lastError: await responseError(response),
+        blocked: shouldBlockForStatus(response.status),
+      });
     } catch {
-      remaining.push(item);
+      remaining.push({
+        ...item,
+        attempts: (item.attempts ?? 0) + 1,
+        lastAttemptAt: new Date().toISOString(),
+        lastError: "Connection failed. Miles & Meals will retry automatically.",
+        blocked: false,
+      });
     }
   }
 
   writeOfflineQueue(remaining);
-  return { synced, remaining: remaining.length };
+  return {
+    synced,
+    remaining: remaining.length,
+    blocked: remaining.filter((item) => item.blocked).length,
+  };
 }

@@ -4,6 +4,7 @@ import { getDailyFxRate } from "@/lib/fx";
 import type {
   CountrySettlementTransfer,
   SettlementRecordView,
+  SmartSettlementPlan,
 } from "@/lib/settlement-ledger";
 import { serializeSettlementLiveData, type SettlementLiveData } from "@/lib/settlement-live";
 import { loadTripBudgetSummary } from "@/lib/trip-budget";
@@ -161,6 +162,24 @@ function convertSettlement(
   };
 }
 
+function convertSmartPlan(
+  plan: SmartSettlementPlan,
+  factor: number,
+  displayCurrency: string,
+): SmartSettlementPlan {
+  return {
+    ...plan,
+    currency: displayCurrency,
+    totalOutstanding: plan.totalOutstanding * factor,
+    originalTransfers: plan.originalTransfers.map((transfer) =>
+      convertTransfer(transfer, factor, displayCurrency),
+    ),
+    optimizedTransfers: plan.optimizedTransfers.map((transfer) =>
+      convertTransfer(transfer, factor, displayCurrency),
+    ),
+  };
+}
+
 function sortSettlements(rows: SettlementRecordView[]) {
   return rows.sort((left, right) => right.sentAt.getTime() - left.sentAt.getTime());
 }
@@ -175,6 +194,7 @@ export async function loadAllTripsDashboardData(
   const waitingTransfers: CountrySettlementTransfer[] = [];
   const pendingSettlements: SettlementRecordView[] = [];
   const settledSettlements: SettlementRecordView[] = [];
+  const smartPlans: SmartSettlementPlan[] = [];
 
   let total = 0;
   let myBudget = 0;
@@ -238,16 +258,22 @@ export async function loadAllTripsDashboardData(
         convertSettlement(settlement, factor, displayCurrency),
       ),
     );
+    smartPlans.push(
+      ...summary.smartPlans.map((plan) =>
+        convertSmartPlan(plan, factor, displayCurrency),
+      ),
+    );
   }
 
   const aggregateSummary: Pick<
     ExpenseSummary,
-    "people" | "waitingTransfers" | "pendingSettlements" | "settledSettlements"
+    "people" | "waitingTransfers" | "pendingSettlements" | "settledSettlements" | "smartPlans"
   > = {
     people: [...people.values()].sort((left, right) => left.name.localeCompare(right.name)),
     waitingTransfers,
     pendingSettlements: sortSettlements(pendingSettlements),
     settledSettlements: sortSettlements(settledSettlements),
+    smartPlans,
   };
 
   const finance: DashboardFinanceData = {

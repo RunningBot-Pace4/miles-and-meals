@@ -82,6 +82,7 @@ type ExpensePrefill = {
 
 type ExpenseInitial = {
   id: string;
+  updatedAt: string;
   countryId: string;
   expenseDate: string;
   category: string;
@@ -101,6 +102,7 @@ type ExpenseInitial = {
 };
 
 type ExpenseDraft = {
+  clientRequestId?: string;
   countryId: string;
   expenseDate: string;
   category: string;
@@ -183,6 +185,19 @@ function equalPercentages(userIds: string[]): Record<string, string> {
       return [userId, value.toFixed(2)];
     }),
   );
+}
+
+function createClientRequestId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  // RFC 4122 v4-shaped fallback for older embedded webviews.
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
 }
 
 function localDateString() {
@@ -294,6 +309,9 @@ export function ExpenseForm({
   const formRef = useRef<HTMLFormElement>(null);
   const submitFeedbackRef = useRef<HTMLParagraphElement>(null);
   const duplicateWarningRef = useRef<HTMLElement>(null);
+  const clientRequestIdRef = useRef<string>(
+    initial?.id ?? createClientRequestId(),
+  );
 
   const expenseDraftKey = draftKey(
     "expense",
@@ -509,6 +527,7 @@ export function ExpenseForm({
         writeDraft<ExpenseDraft>(
           expenseDraftKey,
           {
+            clientRequestId: clientRequestIdRef.current,
             countryId,
             expenseDate,
             category,
@@ -575,6 +594,9 @@ export function ExpenseForm({
     }
 
     const draft = stored.data;
+    if (draft.clientRequestId) {
+      clientRequestIdRef.current = draft.clientRequestId;
+    }
     const countryChanged =
       draft.countryId !== countryId;
 
@@ -1314,6 +1336,8 @@ export function ExpenseForm({
     }
 
     const body = {
+      clientRequestId: initial ? undefined : clientRequestIdRef.current,
+      expectedUpdatedAt: initial?.updatedAt,
       countryId,
       expenseDate,
       category,
@@ -1405,6 +1429,14 @@ export function ExpenseForm({
               behavior: "smooth",
               block: "center",
             }),
+          );
+          return;
+        }
+
+        if (response.status === 409 && payload.code === "STALE_EDIT") {
+          failSubmit(
+            payload.error ??
+              "This expense changed on another device. Reload the page before saving so you do not overwrite newer changes.",
           );
           return;
         }

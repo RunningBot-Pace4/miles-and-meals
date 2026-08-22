@@ -17,7 +17,7 @@
     "test": "vitest run",
     "db:reset": "tsx scripts/reset-db.ts",
     "predev": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs",
-    "prebuild": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check && npm run phase8:check && npm run v53:check && npm run v54:check && npm run v55:check && npm run v56:check && npm run v57:check && npm run v58:check && npm run v63:check && npm run v64:check && npm run v65:check",
+    "prebuild": "npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check && npm run phase8:check && npm run v53:check && npm run v54:check && npm run v55:check && npm run v56:check && npm run v57:check && npm run v58:check && npm run v63:check && npm run v64:check && npm run v65:check && npm run v66:check",
     "cleanup:legacy": "node ./scripts/cleanup-legacy-files.mjs",
     "pwa:check": "node scripts/validate-pwa.mjs",
     "navigation:check": "npm run cleanup:legacy && node scripts/validate-navigation.mjs",
@@ -33,7 +33,8 @@
     "v58:check": "node scripts/validate-v58.mjs",
     "v63:check": "node scripts/validate-v63.mjs",
     "v64:check": "node scripts/validate-v64.mjs",
-    "v65:check": "node scripts/validate-v65.mjs"
+    "v65:check": "node scripts/validate-v65.mjs",
+    "v66:check": "node scripts/validate-v66.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

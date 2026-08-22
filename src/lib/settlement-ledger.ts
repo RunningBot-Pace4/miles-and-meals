@@ -10,8 +10,11 @@ import {
 } from "@/db/schema";
 import { effectiveConvertedAmount, toNumber } from "@/lib/money";
 import {
+  calculateDirectOutstandingObligations,
   calculateOutstandingSettlements,
+  calculateSmartSettlementPlan,
   type SettlementInput,
+  type SettlementTransfer,
 } from "@/lib/settlement";
 
 export type CountrySettlementTransfer = {
@@ -24,6 +27,21 @@ export type CountrySettlementTransfer = {
   toUserId: string;
   toName: string;
   amount: number;
+};
+
+
+export type SmartSettlementPlan = {
+  countryId: string;
+  countryName: string;
+  tripId: string;
+  currency: string;
+  originalTransfers: CountrySettlementTransfer[];
+  optimizedTransfers: CountrySettlementTransfer[];
+  originalTransferCount: number;
+  optimizedTransferCount: number;
+  transfersSaved: number;
+  totalOutstanding: number;
+  optimizationMode: "EXACT" | "SIMPLIFIED";
 };
 
 export type SettlementRecordView = {
@@ -58,6 +76,7 @@ export type CountrySettlementLedger = {
   waitingTransfers: CountrySettlementTransfer[];
   pendingSettlements: SettlementRecordView[];
   settledSettlements: SettlementRecordView[];
+  smartPlan: SmartSettlementPlan;
 };
 
 export async function buildCountrySettlementLedger(
@@ -98,6 +117,7 @@ export async function buildCountrySettlementLedger(
       ? []
       : await db
           .select({
+            expenseId: expenseSplits.expenseId,
             userId: expenseSplits.userId,
             shareAmountBase: expenseSplits.shareAmountBase,
           })
@@ -119,14 +139,6 @@ export async function buildCountrySettlementLedger(
     .where(eq(settlements.countryId, countryId))
     .orderBy(desc(settlements.sentAt));
 
-  const namesRows = await db
-    .select({
-      id: user.id,
-      name: user.name,
-    })
-    .from(user);
-
-  const names = new Map(namesRows.map((row) => [row.id, row.name]));
   const paid = new Map<string, number>();
   const owed = new Map<string, number>();
 
@@ -155,6 +167,18 @@ export async function buildCountrySettlementLedger(
     ...recordedRows.flatMap((row) => [row.fromUserId, row.toUserId]),
   ]);
 
+  const namesRows =
+    participantIds.size === 0
+      ? []
+      : await db
+          .select({
+            id: user.id,
+            name: user.name,
+          })
+          .from(user)
+          .where(inArray(user.id, [...participantIds]));
+  const names = new Map(namesRows.map((row) => [row.id, row.name]));
+
   const input: SettlementInput[] = [...participantIds].map((userId) => ({
     userId,
     name: names.get(userId) ?? "Traveler",
@@ -170,16 +194,71 @@ export async function buildCountrySettlementLedger(
       amount: toNumber(row.amount),
     }));
 
-  const waitingTransfers = calculateOutstandingSettlements(
+  const expensePayers = new Map(
+    expenseRows.map((expense) => [expense.id, expense.paidByUserId]),
+  );
+  const originalObligations: SettlementTransfer[] = splitRows
+    .map((split): SettlementTransfer | null => {
+      const payerId = expensePayers.get(split.expenseId);
+      const amount = toNumber(split.shareAmountBase);
+
+      if (!payerId || payerId === split.userId || amount <= 0.005) {
+        return null;
+      }
+
+      return {
+        fromUserId: split.userId,
+        fromName: names.get(split.userId) ?? "Traveler",
+        toUserId: payerId,
+        toName: names.get(payerId) ?? "Traveler",
+        amount,
+      };
+    })
+    .filter((transfer): transfer is SettlementTransfer => transfer !== null);
+
+  const currentOutstanding = calculateOutstandingSettlements(
     input,
     activeRecorded,
-  ).map((transfer) => ({
+  );
+  const optimizedOutstanding = calculateSmartSettlementPlan(currentOutstanding);
+
+  // Before any settlement has started we can safely show the direct expense
+  // relationships as the "before netting" comparison. Once a smart/rerouted
+  // payment exists, attributing that transfer back to one original pair would
+  // be arbitrary, so we use the already-reconciled plan as the comparison
+  // baseline instead of presenting a misleading saving number.
+  const directOutstanding =
+    activeRecorded.length === 0
+      ? calculateDirectOutstandingObligations(originalObligations, [])
+      : currentOutstanding;
+
+  const decorate = (transfer: SettlementTransfer): CountrySettlementTransfer => ({
     ...transfer,
     countryId: country.countryId,
     countryName: country.countryName,
     tripId: country.tripId,
     currency: country.currency,
-  }));
+  });
+
+  const smartParticipantCount = new Set(
+    currentOutstanding.flatMap((row) => [row.fromUserId, row.toUserId]),
+  ).size;
+
+  const smartPlan: SmartSettlementPlan = {
+    countryId: country.countryId,
+    countryName: country.countryName,
+    tripId: country.tripId,
+    currency: country.currency,
+    originalTransfers: directOutstanding.map(decorate),
+    optimizedTransfers: optimizedOutstanding.map(decorate),
+    originalTransferCount: directOutstanding.length,
+    optimizedTransferCount: optimizedOutstanding.length,
+    transfersSaved: Math.max(0, directOutstanding.length - optimizedOutstanding.length),
+    totalOutstanding: optimizedOutstanding.reduce((sum, row) => sum + row.amount, 0),
+    optimizationMode: smartParticipantCount <= 11 ? "EXACT" : "SIMPLIFIED",
+  };
+
+  const waitingTransfers = currentOutstanding.map(decorate);
 
   const recordViews = recordedRows
     .filter((row) => row.status === "SENT" || row.status === "SETTLED")
@@ -215,5 +294,6 @@ export async function buildCountrySettlementLedger(
     waitingTransfers,
     pendingSettlements: recordViews.filter((row) => row.status === "SENT"),
     settledSettlements: recordViews.filter((row) => row.status === "SETTLED"),
+    smartPlan,
   };
 }

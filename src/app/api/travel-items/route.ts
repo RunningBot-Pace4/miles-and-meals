@@ -75,6 +75,7 @@ export async function GET() {
       linkUrl: travelItems.linkUrl,
       notes: travelItems.notes,
       createdBy: travelItems.createdBy,
+      updatedAt: travelItems.updatedAt,
       proposedByName: user.name,
     })
     .from(travelItems)

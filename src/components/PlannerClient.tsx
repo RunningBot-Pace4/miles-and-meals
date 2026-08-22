@@ -49,6 +49,7 @@ type PlannerItem = {
   linkUrl: string | null;
   notes: string | null;
   createdBy: string;
+  updatedAt: string;
   proposedByName: string | null;
 };
 
@@ -895,10 +896,13 @@ export function PlannerClient({
     }
 
     const form = new FormData(event.currentTarget);
-    const payload = formPayload(
-      form,
-      editingItem.itemType as TabValue,
-    );
+    const payload = {
+      ...formPayload(
+        form,
+        editingItem.itemType as TabValue,
+      ),
+      expectedUpdatedAt: editingItem.updatedAt,
+    };
 
     if (!navigator.onLine) {
       try {
@@ -940,7 +944,15 @@ export function PlannerClient({
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           error?: string;
+          code?: string;
         };
+
+        if (response.status === 409 && payload.code === "STALE_EDIT") {
+          throw new Error(
+            payload.error ??
+              "This plan changed on another device. Refresh the latest version before saving.",
+          );
+        }
 
         throw new Error(payload.error ?? "Unable to update item.");
       }

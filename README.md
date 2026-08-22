@@ -1,5 +1,22 @@
 # Miles & Meals
 
+## v66 — Smart Settlement + World-Class Trust Hardening
+
+- New **Smart Settlement** report nets remaining group balances into fewer recommended transfers while keeping the existing ledger/payment flow unchanged.
+- Normal travel groups use an exact minimum-transfer search; unusually large groups use a fast deterministic fallback.
+- Settle Up shows the before/after transfer count, personal recommended moves, group plan and an expandable calculation explanation.
+- Home surfaces **Smart settlement ready** after a trip has ended and outstanding balances remain.
+- New-expense saves are idempotent across network retries and can recover an interrupted split save.
+- Expense and Planner edits reject stale versions instead of silently overwriting another traveler’s newer change.
+- Offline conflicts now become reviewable **needs attention** items with Retry/Discard controls instead of retrying forever.
+- Settlement actions tolerate harmless repeated requests.
+- Dashboard/settlement name queries are participant-scoped, and production security headers are enabled.
+- Admin health checks cover impossible settlement states and confirmation inconsistencies.
+- Smart Settlement/offline recovery receive mobile-first and accessibility polish.
+- No database migration is required from v65.1 to v66.
+
+See `V66-SMART-SETTLEMENT-WORLD-CLASS-HARDENING.md`.
+
 ## v65 — Add Expense Save Reliability
 
 - Fixed mobile/PWA saves that could appear to do nothing when browser-native validation blocked React submit.

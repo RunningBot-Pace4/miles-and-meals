@@ -54,6 +54,186 @@ function balanceStatus(
   };
 }
 
+
+function SmartSettlementPanel({
+  data,
+  currentUserId,
+}: {
+  data: SettlementLiveData;
+  currentUserId: string;
+}) {
+  const plans = data.smartPlans.filter(
+    (plan) => plan.optimizedTransferCount > 0,
+  );
+
+  if (plans.length === 0) {
+    return null;
+  }
+
+  const originalCount = plans.reduce(
+    (sum, plan) => sum + plan.originalTransferCount,
+    0,
+  );
+  const optimizedCount = plans.reduce(
+    (sum, plan) => sum + plan.optimizedTransferCount,
+    0,
+  );
+  const saved = Math.max(0, originalCount - optimizedCount);
+  const allOptimized = plans.flatMap((plan) => plan.optimizedTransfers);
+  const exactPlan = plans.every((plan) => plan.optimizationMode === "EXACT");
+  const myTransfers = allOptimized.filter(
+    (transfer) =>
+      transfer.fromUserId === currentUserId ||
+      transfer.toUserId === currentUserId,
+  );
+
+  return (
+    <section
+      className="panel smart-settlement-panel"
+      aria-labelledby="smart-settlement-title"
+      aria-live="polite"
+    >
+      <div className="smart-settlement-hero">
+        <div>
+          <p className="eyebrow">SMART SETTLEMENT</p>
+          <h2 id="smart-settlement-title">Settle with fewer transfers.</h2>
+          <p>
+            Miles &amp; Meals nets the remaining balances and suggests {exactPlan
+              ? "a minimum-transfer payment plan"
+              : "a simplified payment plan for this larger group"}. This is a read-only recommendation — your expense ledger and completed
+            payment history stay exactly as recorded.
+          </p>
+        </div>
+        <span className="smart-settlement-badge" aria-label={`${saved} transfers avoided`}>
+          ✦ {exactPlan
+            ? saved > 0
+              ? `${saved} avoided · minimum plan`
+              : "Minimum plan"
+            : saved > 0
+              ? `${saved} avoided`
+              : "Simplified plan"}
+        </span>
+      </div>
+
+      <div className="smart-settlement-metrics" aria-label="Settlement optimization summary">
+        <div>
+          <span>Outstanding directions</span>
+          <strong>{originalCount}</strong>
+        </div>
+        <span className="smart-settlement-arrow" aria-hidden="true">→</span>
+        <div className="recommended">
+          <span>Recommended transfers</span>
+          <strong>{optimizedCount}</strong>
+        </div>
+        <div>
+          <span>Transfers avoided</span>
+          <strong>{saved}</strong>
+        </div>
+      </div>
+
+      {myTransfers.length > 0 ? (
+        <div className="smart-settlement-your-move">
+          <div className="smart-settlement-section-title">
+            <span className="smart-settlement-spark" aria-hidden="true">✦</span>
+            <div>
+              <strong>Your recommended moves</strong>
+              <small>Only the transfers involving you</small>
+            </div>
+          </div>
+          <div className="smart-settlement-transfer-list">
+            {myTransfers.map((transfer, index) => (
+              <article
+                className={
+                  transfer.fromUserId === currentUserId
+                    ? "smart-transfer-card pay"
+                    : "smart-transfer-card receive"
+                }
+                key={`${transfer.countryId}-${transfer.fromUserId}-${transfer.toUserId}-${index}`}
+              >
+                <div className="smart-transfer-route">
+                  <span className="avatar mini">
+                    {transfer.fromUserId === currentUserId
+                      ? "You".charAt(0)
+                      : transfer.fromName.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span>
+                    <strong>
+                      {transfer.fromUserId === currentUserId ? "You" : transfer.fromName}
+                    </strong>
+                    <small>pays</small>
+                  </span>
+                  <b aria-hidden="true">→</b>
+                  <span className="avatar mini">
+                    {transfer.toUserId === currentUserId
+                      ? "You".charAt(0)
+                      : transfer.toName.trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span>
+                    <strong>
+                      {transfer.toUserId === currentUserId ? "You" : transfer.toName}
+                    </strong>
+                    <small>{transfer.countryName}</small>
+                  </span>
+                </div>
+                <strong className="smart-transfer-amount">
+                  {formatMoney(transfer.amount, transfer.currency)}
+                </strong>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="smart-settlement-all-moves">
+        <div className="smart-settlement-section-title">
+          <span className="smart-settlement-spark" aria-hidden="true">◎</span>
+          <div>
+            <strong>Recommended group plan</strong>
+            <small>{optimizedCount} transfer{optimizedCount === 1 ? "" : "s"} clears the remaining balances</small>
+          </div>
+        </div>
+
+        <div className="smart-settlement-transfer-list">
+          {allOptimized.map((transfer, index) => (
+            <article
+              className="smart-transfer-card"
+              key={`all-${transfer.countryId}-${transfer.fromUserId}-${transfer.toUserId}-${index}`}
+            >
+              <div className="smart-transfer-copy">
+                <strong>{transfer.fromName} <span aria-hidden="true">→</span> {transfer.toName}</strong>
+                <small>{transfer.countryName} · Suggested only</small>
+              </div>
+              <strong className="smart-transfer-amount">
+                {formatMoney(transfer.amount, transfer.currency)}
+              </strong>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <details className="smart-settlement-explain">
+        <summary>See how this was calculated</summary>
+        <div className="smart-settlement-explain-body">
+          <p>
+            Before netting, the remaining expense relationships would require {originalCount} transfer{originalCount === 1 ? "" : "s"}.
+            Opposing balances are cancelled first, then the remaining net payers are matched to net receivers.
+          </p>
+          <div className="smart-original-list">
+            {plans.flatMap((plan) => plan.originalTransfers).map((transfer, index) => (
+              <span key={`original-${transfer.countryId}-${transfer.fromUserId}-${transfer.toUserId}-${index}`}>
+                {transfer.fromName} → {transfer.toName} · {formatMoney(transfer.amount, transfer.currency)}
+              </span>
+            ))}
+          </div>
+          <p className="smart-settlement-note">
+            Payments already sent or confirmed are deducted before this recommendation is calculated.
+          </p>
+        </div>
+      </details>
+    </section>
+  );
+}
+
 function PersonCards({
   data,
   currentUserId,
@@ -776,12 +956,16 @@ export function LiveSettlementWorkspace({
 
       {variant ===
       "settlements" ? (
-        <PersonalSummary
-          data={data}
-          currentUserId={
-            currentUserId
-          }
-        />
+        <>
+          <PersonalSummary
+            data={data}
+            currentUserId={currentUserId}
+          />
+          <SmartSettlementPanel
+            data={data}
+            currentUserId={currentUserId}
+          />
+        </>
       ) : null}
 
       <PersonCards

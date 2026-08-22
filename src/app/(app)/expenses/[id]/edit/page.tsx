@@ -79,6 +79,7 @@ export default async function EditExpensePage({ params }: Props) {
         currentUserId={session.user.id}
         initial={{
           id: expense.id,
+          updatedAt: expense.updatedAt.toISOString(),
           countryId: expense.countryId,
           expenseDate: expense.expenseDate,
           category: expense.category,

@@ -2,6 +2,7 @@ import type { PersonExpenseSummary } from "@/lib/dashboard";
 import type {
   CountrySettlementTransfer,
   SettlementRecordView,
+  SmartSettlementPlan,
 } from "@/lib/settlement-ledger";
 
 export type SerializedSettlementRecord = Omit<
@@ -18,6 +19,7 @@ export type SettlementLiveData = {
   waitingTransfers: CountrySettlementTransfer[];
   pendingSettlements: SerializedSettlementRecord[];
   settledSettlements: SerializedSettlementRecord[];
+  smartPlans: SmartSettlementPlan[];
 };
 
 type SettlementSummaryLike = {
@@ -25,6 +27,7 @@ type SettlementSummaryLike = {
   waitingTransfers: CountrySettlementTransfer[];
   pendingSettlements: SettlementRecordView[];
   settledSettlements: SettlementRecordView[];
+  smartPlans: SmartSettlementPlan[];
 };
 
 export function serializeSettlementLiveData(
@@ -47,6 +50,7 @@ export function serializeSettlementLiveData(
             null,
         }),
       ),
+    smartPlans: summary.smartPlans,
     settledSettlements:
       summary.settledSettlements.map(
         (payment) => ({

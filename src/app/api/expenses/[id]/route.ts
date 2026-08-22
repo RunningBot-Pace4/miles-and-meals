@@ -13,7 +13,7 @@ import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrenc
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
-import { expenseSchema } from "@/lib/validation";
+import { expenseUpdateSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -54,10 +54,27 @@ export async function PUT(request: Request, context: Context) {
   }
 
   try {
-    const input = expenseSchema.parse(await request.json());
+    const input = expenseUpdateSchema.parse(await request.json());
 
     if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    if (input.expectedUpdatedAt) {
+      const expected = new Date(input.expectedUpdatedAt).getTime();
+      const current = existing.updatedAt.getTime();
+
+      if (!Number.isFinite(expected) || Math.abs(expected - current) > 1) {
+        return Response.json(
+          {
+            error:
+              "This expense was changed by another traveler after you opened it. Reload the latest version before saving.",
+            code: "STALE_EDIT",
+            currentUpdatedAt: existing.updatedAt.toISOString(),
+          },
+          { status: 409 },
+        );
+      }
     }
 
     const country = await getCountryWithTrip(input.countryId);

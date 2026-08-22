@@ -72,7 +72,56 @@ export async function POST(request: Request) {
       return Response.json({ error: "Country not found." }, { status: 404 });
     }
 
-    if (!input.allowDuplicate) {
+    const priorRequest = input.clientRequestId
+      ? (
+          await db
+            .select({
+              id: expenses.id,
+              countryId: expenses.countryId,
+              createdBy: expenses.createdBy,
+            })
+            .from(expenses)
+            .where(eq(expenses.id, input.clientRequestId))
+            .limit(1)
+        )[0] ?? null
+      : null;
+
+    if (
+      priorRequest &&
+      (priorRequest.createdBy !== session.user.id ||
+        priorRequest.countryId !== input.countryId)
+    ) {
+      return Response.json(
+        {
+          error: "This save request conflicts with an existing expense.",
+          code: "REQUEST_ID_CONFLICT",
+        },
+        { status: 409 },
+      );
+    }
+
+    let repairPriorRequest = false;
+
+    if (priorRequest) {
+      const existingSplit = await db
+        .select({ expenseId: expenseSplits.expenseId })
+        .from(expenseSplits)
+        .where(eq(expenseSplits.expenseId, priorRequest.id))
+        .limit(1);
+
+      if (existingSplit.length > 0) {
+        return Response.json({
+          id: priorRequest.id,
+          idempotent: true,
+        });
+      }
+
+      // A previous request created the expense row but did not finish its
+      // split rows. Continue through validation and repair that same record.
+      repairPriorRequest = true;
+    }
+
+    if (!input.allowDuplicate && !priorRequest) {
       const sameDay = await db
         .select({
           id: expenses.id,
@@ -173,9 +222,41 @@ export async function POST(request: Request) {
       appliedExchangeRate,
     );
 
+    const settlementBase =
+      actualConvertedAmount ?? baseAmount;
+
+    if (repairPriorRequest && priorRequest) {
+      await db.delete(expenseSplits).where(eq(expenseSplits.expenseId, priorRequest.id));
+      await db.insert(expenseSplits).values(
+        buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(
+          (split) => ({
+            expenseId: priorRequest.id,
+            ...split,
+          }),
+        ),
+      );
+
+      await recordActivity({
+        actorUserId: session.user.id,
+        action: "RECOVERED",
+        entityType: "EXPENSE",
+        entityId: priorRequest.id,
+        tripId: country.tripId,
+        countryId: input.countryId,
+        summary: `${session.user.name} recovered an interrupted expense save: ${input.description}`,
+      });
+
+      return Response.json({
+        id: priorRequest.id,
+        idempotent: true,
+        recovered: true,
+      });
+    }
+
     const inserted = await db
       .insert(expenses)
       .values({
+        ...(input.clientRequestId ? { id: input.clientRequestId } : {}),
         tripId: country.tripId,
         countryId: input.countryId,
         expenseDate: input.expenseDate,
@@ -199,9 +280,6 @@ export async function POST(request: Request) {
         createdBy: session.user.id,
       })
       .returning({ id: expenses.id });
-
-    const settlementBase =
-      actualConvertedAmount ?? baseAmount;
 
     await db.insert(expenseSplits).values(
       buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(

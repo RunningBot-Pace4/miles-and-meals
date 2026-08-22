@@ -121,6 +121,32 @@ function formatTripDateRange(
   );
 }
 
+function malaysiaDateString(date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kuala_Lumpur",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+  return `${values.get("year")}-${values.get("month")}-${values.get("day")}`;
+}
+
+function tripEndedAtLeastOneDayAgo(endDate: string | null | undefined): boolean {
+  if (!endDate) {
+    return false;
+  }
+
+  const today = malaysiaDateString();
+  if (endDate >= today) {
+    return false;
+  }
+
+  const end = new Date(`${endDate}T00:00:00+08:00`).getTime();
+  const now = new Date(`${today}T00:00:00+08:00`).getTime();
+  return now - end >= 24 * 60 * 60 * 1000;
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -323,7 +349,39 @@ export default async function DashboardPage({
     .filter((payment) => payment.toUserId === session.user.id)
     .reduce((total, payment) => total + payment.amount, 0);
 
+  const endedTripIds = new Set(
+    tripOptions
+      .filter((trip) => tripEndedAtLeastOneDayAgo(trip.endDate))
+      .map((trip) => trip.id),
+  );
+  const postTripSmartPlans = settlementLiveData.smartPlans.filter(
+    (plan) =>
+      endedTripIds.has(plan.tripId) &&
+      plan.optimizedTransferCount > 0,
+  );
+  const smartTransferCount = postTripSmartPlans.reduce(
+    (sum, plan) => sum + plan.optimizedTransferCount,
+    0,
+  );
+  const smartTransfersSaved = postTripSmartPlans.reduce(
+    (sum, plan) => sum + plan.transfersSaved,
+    0,
+  );
+
   const actionItems = [
+    postTripSmartPlans.length > 0
+      ? {
+          icon: "✦",
+          title: viewAll
+            ? `Smart settlement ready for ${postTripSmartPlans.length} trip${postTripSmartPlans.length === 1 ? "" : "s"}`
+            : `Trip complete · settle in ${smartTransferCount} transfer${smartTransferCount === 1 ? "" : "s"}`,
+          copy:
+            smartTransfersSaved > 0
+              ? `Netting avoids ${smartTransfersSaved} unnecessary transfer${smartTransfersSaved === 1 ? "" : "s"}. Original records stay unchanged.`
+              : "Your remaining balances are already optimized. Review the recommended payment plan.",
+          href: "/settlements#smart-settlement-title",
+        }
+      : null,
     unreadNotificationCount > 0
       ? {
           icon: "🔔",

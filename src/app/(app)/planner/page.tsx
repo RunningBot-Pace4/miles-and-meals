@@ -44,6 +44,7 @@ export default async function PlannerPage() {
             linkUrl: travelItems.linkUrl,
             notes: travelItems.notes,
             createdBy: travelItems.createdBy,
+            updatedAt: travelItems.updatedAt,
             proposedByName: user.name,
           })
           .from(travelItems)
@@ -66,7 +67,10 @@ export default async function PlannerPage() {
 
       <PlannerClient
         countries={countries}
-        items={items}
+        items={items.map((item) => ({
+          ...item,
+          updatedAt: item.updatedAt.toISOString(),
+        }))}
         trips={activeTrip.trips}
         activeTripId={activeTrip.tripId}
       />

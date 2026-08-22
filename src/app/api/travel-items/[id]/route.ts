@@ -11,7 +11,7 @@ import { recordActivity } from "@/lib/activity";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
-import { travelItemSchema } from "@/lib/validation";
+import { travelItemUpdateSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -24,6 +24,7 @@ async function getExistingItem(id: string) {
     .select({
       id: travelItems.id,
       countryId: travelItems.countryId,
+      updatedAt: travelItems.updatedAt,
     })
     .from(travelItems)
     .where(eq(travelItems.id, id))
@@ -55,13 +56,30 @@ export async function PATCH(request: Request, context: Context) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const input = travelItemSchema.parse(await request.json());
+    const input = travelItemUpdateSchema.parse(await request.json());
 
     if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json(
         { error: "You do not have access to the selected country." },
         { status: 403 },
       );
+    }
+
+    if (input.expectedUpdatedAt) {
+      const expected = new Date(input.expectedUpdatedAt).getTime();
+      const current = existing.updatedAt.getTime();
+
+      if (!Number.isFinite(expected) || Math.abs(expected - current) > 1) {
+        return Response.json(
+          {
+            error:
+              "This planner item was changed by another traveler after you opened it. Refresh before saving so newer changes are not overwritten.",
+            code: "STALE_EDIT",
+            currentUpdatedAt: existing.updatedAt.toISOString(),
+          },
+          { status: 409 },
+        );
+      }
     }
 
     await db

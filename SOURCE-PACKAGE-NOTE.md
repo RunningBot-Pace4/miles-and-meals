@@ -1,3 +1,24 @@
+# Miles & Meals v66 — Full Source Package
+
+This package includes Smart Settlement plus the v66 reliability, collaboration, offline-recovery, privacy/security and mobile hardening work on top of the complete v65.1 source.
+
+Key v66 behavior:
+
+- Existing settlement actions/history remain unchanged; Smart Settlement is a read-only optimized recommendation layer.
+- The JY/JH/Tan example resolves to JH → JY RM10 and Tan → JY RM40 instead of three opposite transfers.
+- Up to 11 non-zero travelers use exact minimum-transfer optimization; larger groups use a fast deterministic fallback.
+- Home can surface a post-trip Smart Settlement readiness action.
+- New expense writes are idempotent across retries and can repair an interrupted split save.
+- Expense and Planner stale edits return 409 instead of silently overwriting newer collaborative changes.
+- Offline conflicts are visible/reviewable with retry and discard controls.
+- Settlement retries are idempotent where safe.
+- Participant-name queries are scoped; security headers and additional settlement-integrity checks are included.
+- Existing v53-v65.1 product behavior remains included.
+
+No database migration is required from v65.1 to v66.
+
+See `V66-SMART-SETTLEMENT-WORLD-CLASS-HARDENING.md` for architecture, limitations and validation notes.
+
 # Miles & Meals v65 — Full Source Package
 
 This package includes the v65 Add Expense save-reliability fixes on top of the complete v64 source.

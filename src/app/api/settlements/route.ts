@@ -45,22 +45,6 @@ export async function POST(request: Request) {
     }
 
     if (input.action === "MARK_PAID") {
-      const transfer = ledger.waitingTransfers.find(
-        (row) =>
-          row.fromUserId === session.user.id &&
-          row.toUserId === input.counterpartyUserId,
-      );
-
-      if (!transfer) {
-        return Response.json(
-          {
-            error:
-              "There is no unpaid balance to mark as paid for this traveler.",
-          },
-          { status: 409 },
-        );
-      }
-
       const existingPending = ledger.pendingSettlements.find(
         (row) =>
           row.fromUserId === session.user.id &&
@@ -72,7 +56,39 @@ export async function POST(request: Request) {
           ok: true,
           settlementId: existingPending.id,
           status: "SENT",
+          idempotent: true,
         });
+      }
+
+      const transfer = ledger.waitingTransfers.find(
+        (row) =>
+          row.fromUserId === session.user.id &&
+          row.toUserId === input.counterpartyUserId,
+      );
+
+      if (!transfer) {
+        const existingSettled = ledger.settledSettlements.find(
+          (row) =>
+            row.fromUserId === session.user.id &&
+            row.toUserId === input.counterpartyUserId,
+        );
+
+        if (existingSettled) {
+          return Response.json({
+            ok: true,
+            settlementId: existingSettled.id,
+            status: "SETTLED",
+            idempotent: true,
+          });
+        }
+
+        return Response.json(
+          {
+            error:
+              "There is no unpaid balance to mark as paid for this traveler.",
+          },
+          { status: 409 },
+        );
       }
 
       const inserted = await db
@@ -177,6 +193,22 @@ export async function POST(request: Request) {
     );
 
     if (!transfer) {
+      const alreadySettled = ledger.settledSettlements.find(
+        (row) =>
+          row.fromUserId === input.counterpartyUserId &&
+          row.toUserId === session.user.id,
+      );
+
+      if (alreadySettled) {
+        return Response.json({
+          ok: true,
+          settlementId: alreadySettled.id,
+          status: "SETTLED",
+          payerAutoUpdated: true,
+          idempotent: true,
+        });
+      }
+
       return Response.json(
         {
           error:

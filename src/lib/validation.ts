@@ -118,6 +118,7 @@ const optionalPositiveMoneySchema = z.preprocess((value) => {
 }, z.coerce.number().positive().max(1_000_000_000).nullable());
 
 export const expenseSchema = z.object({
+  clientRequestId: uuidSchema.optional(),
   countryId: uuidSchema,
   expenseDate: z.string().min(10).max(10),
   category: z.string().trim().min(1).max(80),
@@ -143,6 +144,10 @@ export const expenseSchema = z.object({
     .min(1),
 });
 
+export const expenseUpdateSchema = expenseSchema.extend({
+  expectedUpdatedAt: z.string().trim().min(10).max(80).optional(),
+});
+
 export const travelItemSchema = z.object({
   countryId: uuidSchema,
   itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING", "BOOKING"]),
@@ -160,6 +165,10 @@ export const travelItemSchema = z.object({
   confirmationNo: z.string().trim().max(100).optional().default(""),
   linkUrl: z.union([z.string().url(), z.literal("")]).optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
+});
+
+export const travelItemUpdateSchema = travelItemSchema.extend({
+  expectedUpdatedAt: z.string().trim().min(10).max(80).optional(),
 });
 
 export const locationSchema = z.object({

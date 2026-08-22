@@ -69,6 +69,18 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
           tripId: settlements.tripId,
           countryId:
             settlements.countryId,
+          fromUserId:
+            settlements.fromUserId,
+          toUserId:
+            settlements.toUserId,
+          amount:
+            settlements.amount,
+          status:
+            settlements.status,
+          confirmedBy:
+            settlements.confirmedBy,
+          confirmedAt:
+            settlements.confirmedAt,
         })
         .from(settlements),
       db
@@ -241,6 +253,67 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
           assignmentMismatch,
         detail:
           "A country assignment exists without the matching trip membership.",
+      });
+    }
+
+    const invalidSettlementPartyCount =
+      settlementRows.filter(
+        (settlement) =>
+          settlement.fromUserId === settlement.toUserId,
+      ).length;
+
+    if (invalidSettlementPartyCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_SAME_PARTICIPANT",
+        count: invalidSettlementPartyCount,
+        detail:
+          "A settlement has the same traveler as both payer and receiver.",
+      });
+    }
+
+    const invalidSettlementAmountCount =
+      settlementRows.filter(
+        (settlement) => toNumber(settlement.amount) <= 0,
+      ).length;
+
+    if (invalidSettlementAmountCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_INVALID_AMOUNT",
+        count: invalidSettlementAmountCount,
+        detail:
+          "A settlement has a zero or negative payment amount.",
+      });
+    }
+
+    const invalidSettledStateCount =
+      settlementRows.filter(
+        (settlement) =>
+          settlement.status === "SETTLED" &&
+          (!settlement.confirmedBy || !settlement.confirmedAt),
+      ).length;
+
+    if (invalidSettledStateCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_CONFIRMATION_MISSING",
+        count: invalidSettledStateCount,
+        detail:
+          "A completed settlement is missing receiver confirmation metadata.",
+      });
+    }
+
+    const invalidPendingStateCount =
+      settlementRows.filter(
+        (settlement) =>
+          settlement.status === "SENT" &&
+          Boolean(settlement.confirmedAt),
+      ).length;
+
+    if (invalidPendingStateCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_PENDING_WITH_CONFIRMATION",
+        count: invalidPendingStateCount,
+        detail:
+          "A pending settlement already contains confirmation metadata and should be reviewed.",
       });
     }
 

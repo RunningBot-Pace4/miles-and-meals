@@ -10,6 +10,7 @@ import {
   buildCountrySettlementLedger,
   type CountrySettlementTransfer,
   type SettlementRecordView,
+  type SmartSettlementPlan,
 } from "@/lib/settlement-ledger";
 
 export type PersonExpenseSummary = {
@@ -40,6 +41,7 @@ export async function buildExpenseSummary(countryIds: string[]) {
       waitingTransfers: [] as CountrySettlementTransfer[],
       pendingSettlements: [] as SettlementRecordView[],
       settledSettlements: [] as SettlementRecordView[],
+      smartPlans: [] as SmartSettlementPlan[],
     };
   }
 
@@ -55,13 +57,6 @@ export async function buildExpenseSummary(countryIds: string[]) {
     .where(inArray(expenses.countryId, countryIds));
 
   const expenseIds = rows.map((row) => row.id);
-  const userRows = await db.select({ id: user.id, name: user.name }).from(user);
-  const names = new Map<string, string>(
-    userRows.map((row) => [
-      row.id,
-      row.name,
-    ]),
-  );
 
   const categories = new Map<string, number>();
   const paid = new Map<string, number>();
@@ -115,6 +110,7 @@ export async function buildExpenseSummary(countryIds: string[]) {
   const settledSettlements = ledgers
     .flatMap((ledger) => ledger.settledSettlements)
     .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime());
+  const smartPlans = ledgers.map((ledger) => ledger.smartPlan);
 
   const participantIds = new Set<string>([
     ...paid.keys(),
@@ -123,6 +119,17 @@ export async function buildExpenseSummary(countryIds: string[]) {
     ...pendingSettlements.flatMap((row) => [row.fromUserId, row.toUserId]),
     ...settledSettlements.flatMap((row) => [row.fromUserId, row.toUserId]),
   ]);
+
+  const userRows =
+    participantIds.size === 0
+      ? []
+      : await db
+          .select({ id: user.id, name: user.name })
+          .from(user)
+          .where(inArray(user.id, [...participantIds]));
+  const names = new Map<string, string>(
+    userRows.map((row) => [row.id, row.name]),
+  );
 
   const people = [...participantIds]
     .map((userId): PersonExpenseSummary => {
@@ -209,5 +216,6 @@ export async function buildExpenseSummary(countryIds: string[]) {
     waitingTransfers,
     pendingSettlements,
     settledSettlements,
+    smartPlans,
   };
 }
