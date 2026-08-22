@@ -10,6 +10,7 @@ import {
   listCountryMembers,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
+import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
@@ -119,6 +120,17 @@ export async function POST(request: Request) {
       // A previous request created the expense row but did not finish its
       // split rows. Continue through validation and repair that same record.
       repairPriorRequest = true;
+    }
+
+    // A previously accepted idempotent request may finish its split repair even
+    // if the owner locked the trip in the meantime. Brand-new financial writes
+    // are blocked once the final-settlement snapshot is closed.
+    if (!priorRequest) {
+      const locked = await expenseLedgerLockedResponse(country.tripId);
+
+      if (locked) {
+        return locked;
+      }
     }
 
     if (!input.allowDuplicate && !priorRequest) {

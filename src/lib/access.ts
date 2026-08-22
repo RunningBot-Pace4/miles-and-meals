@@ -27,6 +27,8 @@ export async function listAccessibleCountries(currentUser: SessionUser) {
       budget: trips.budget,
       startDate: trips.startDate,
       endDate: trips.endDate,
+      financialStatus: trips.financialStatus,
+      financialVersion: trips.financialVersion,
     })
     .from(countryMembers)
     .innerJoin(
@@ -47,6 +49,25 @@ export async function listAccessibleCountries(currentUser: SessionUser) {
       trips.name,
       countries.name,
     );
+}
+
+
+export async function canAccessTrip(
+  currentUser: SessionUser,
+  tripId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ tripId: tripMembers.tripId })
+    .from(tripMembers)
+    .where(
+      and(
+        eq(tripMembers.tripId, tripId),
+        eq(tripMembers.userId, currentUser.id),
+      ),
+    )
+    .limit(1);
+
+  return rows.length === 1;
 }
 
 export async function canAccessCountry(

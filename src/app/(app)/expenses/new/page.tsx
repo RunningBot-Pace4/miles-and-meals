@@ -1,7 +1,11 @@
 import { ExpenseForm } from "@/components/ExpenseForm";
+import { FinancialClosePanel } from "@/components/FinancialClosePanel";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
+import { getTripFinancialState } from "@/lib/financial-close";
+import { canManageTrip } from "@/lib/trip-management";
 import { requirePageSession } from "@/lib/session";
 
 const allowedCategories = new Set([
@@ -38,6 +42,29 @@ export default async function NewExpensePage({
     query.category && allowedCategories.has(query.category)
       ? query.category
       : undefined;
+  const [financialState, canManageFinancials] = await Promise.all([
+    getTripFinancialState(activeTrip.tripId),
+    activeTrip.tripId ? canManageTrip(session.user, activeTrip.tripId) : Promise.resolve(false),
+  ]);
+
+  if (financialState?.status === "CLOSED") {
+    return (
+      <div className="stack gap-lg">
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">MONEY · FINAL SETTLEMENT</p>
+            <h1>Add a spend</h1>
+            <p className="muted">This trip is locked for final settlement, so new expense changes are paused.</p>
+          </div>
+          <Link className="button secondary" href="/settlements">Back to settlement</Link>
+        </div>
+        <FinancialClosePanel
+          initialState={financialState}
+          canManage={canManageFinancials}
+        />
+      </div>
+    );
+  }
 
   return (
     <ExpenseForm

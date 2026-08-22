@@ -14324,3 +14324,516 @@ body {
     max-height: 50svh;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* v67 · Phase 9–14 launch-candidate polish                                   */
+/* -------------------------------------------------------------------------- */
+
+.skip-link {
+  position: fixed;
+  top: 0.7rem;
+  left: 0.7rem;
+  z-index: 10000;
+  transform: translateY(-160%);
+  padding: 0.68rem 0.9rem;
+  border-radius: 12px;
+  background: #102a2a;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgb(18 120 111 / 30%);
+  outline-offset: 3px;
+}
+
+.financial-close-panel {
+  overflow: hidden;
+  border: 1px solid rgb(18 120 111 / 14%);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(18 120 111 / 9%), transparent 34%),
+    var(--surface);
+}
+
+.financial-close-panel.closed {
+  border-color: rgb(24 126 83 / 20%);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(24 126 83 / 10%), transparent 36%),
+    linear-gradient(180deg, #fff, #f8fffb);
+}
+
+.financial-close-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.financial-close-heading h2,
+.financial-close-heading p {
+  margin: 0;
+}
+
+.financial-close-heading h2 {
+  margin-top: 0.1rem;
+  font-size: clamp(1.05rem, 2.7vw, 1.35rem);
+}
+
+.financial-close-heading .muted {
+  margin-top: 0.28rem;
+  max-width: 72ch;
+  line-height: 1.55;
+}
+
+.financial-close-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: rgb(18 120 111 / 10%);
+  color: var(--primary);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.financial-close-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0.35rem 0.62rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.financial-close-status.open {
+  background: #fff8df;
+  color: #815f00;
+}
+
+.financial-close-status.closed {
+  background: #e9f8ef;
+  color: #176f4b;
+}
+
+.financial-close-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.financial-close-meta > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+  padding: 0.7rem 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgb(255 255 255 / 72%);
+}
+
+.financial-close-meta small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.financial-close-meta strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.financial-close-actions,
+.financial-close-owner-note,
+.financial-close-error {
+  margin-top: 0.9rem;
+}
+
+.financial-close-owner-note {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.financial-close-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid rgb(18 120 111 / 16%);
+  border-radius: 14px;
+  background: rgb(18 120 111 / 5%);
+}
+
+.financial-close-confirm strong,
+.financial-close-confirm p {
+  margin: 0;
+}
+
+.financial-close-confirm p {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.financial-close-confirm-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.5rem;
+}
+
+.financial-lock-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgb(24 126 83 / 17%);
+  border-radius: 15px;
+  background: #f4fff8;
+}
+
+.financial-lock-strip > span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #dcf4e6;
+  color: #176f4b;
+  font-weight: 900;
+}
+
+.financial-lock-strip > div {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.financial-lock-strip small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.financial-lock-strip > a {
+  white-space: nowrap;
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.collaboration-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1600;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  width: min(430px, calc(100vw - 2rem));
+  padding: 0.75rem 0.82rem;
+  border: 1px solid rgb(18 120 111 / 16%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 18px 48px rgb(16 42 42 / 17%);
+  backdrop-filter: blur(18px);
+}
+
+.collaboration-live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #1eb980;
+  box-shadow: 0 0 0 5px rgb(30 185 128 / 12%);
+}
+
+.collaboration-toast > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.05rem;
+}
+
+.collaboration-toast small {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.collaboration-toast strong {
+  overflow: hidden;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collaboration-toast > a {
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.collaboration-toast > button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.admin-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.insights-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.insights-kpi-grid > article {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.insights-kpi-grid span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.insights-kpi-grid strong {
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.insights-kpi-grid small {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.insights-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.insights-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.62rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.insights-list article:last-child {
+  border-bottom: 0;
+}
+
+.insights-list strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insights-list span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.insights-list.compact article {
+  padding: 0.46rem 0;
+}
+
+.insights-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+@media (max-width: 760px) {
+  .financial-close-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .financial-close-status {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .financial-close-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-close-confirm {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .financial-close-confirm-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .financial-close-confirm-buttons .button {
+    width: 100%;
+  }
+
+  .financial-lock-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .financial-lock-strip > a {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .collaboration-toast {
+    right: 0.7rem;
+    bottom: calc(5.8rem + env(safe-area-inset-bottom));
+    width: calc(100vw - 1.4rem);
+  }
+
+  .insights-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insights-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-quick-links {
+    justify-content: flex-start;
+  }
+
+  .page-container :where(button, .button, select, input:not([type="checkbox"]):not([type="radio"])) {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 430px) {
+  .insights-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .collaboration-toast {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .collaboration-toast > a {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.launch-readiness-panel {
+  display: grid;
+  gap: 0.85rem;
+  border-width: 1px;
+}
+
+.launch-readiness-panel.ready {
+  border-color: rgb(24 126 83 / 20%);
+  background: linear-gradient(135deg, #f7fffa, #fff);
+}
+
+.launch-readiness-panel.attention {
+  border-color: rgb(190 122 0 / 22%);
+  background: linear-gradient(135deg, #fffaf0, #fff);
+}
+
+.launch-readiness-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.launch-readiness-score {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgb(18 120 111 / 10%);
+  color: var(--primary);
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.launch-readiness-copy h2,
+.launch-readiness-copy p {
+  margin: 0;
+}
+
+.launch-readiness-copy h2 {
+  margin-top: 0.08rem;
+}
+
+.launch-readiness-copy .muted {
+  margin-top: 0.25rem;
+  line-height: 1.55;
+}
+
+.launch-manual-gates {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.68rem 0.75rem;
+  border: 1px dashed var(--border);
+  border-radius: 13px;
+  background: rgb(255 255 255 / 68%);
+}
+
+.launch-manual-gates span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.launch-manual-gates strong {
+  font-size: 0.78rem;
+  line-height: 1.45;
+}

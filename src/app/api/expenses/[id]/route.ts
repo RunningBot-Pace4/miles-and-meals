@@ -9,6 +9,7 @@ import {
   listCountryMembers,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
+import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
@@ -51,6 +52,12 @@ export async function PUT(request: Request, context: Context) {
 
   if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const locked = await expenseLedgerLockedResponse(existing.tripId);
+
+  if (locked) {
+    return locked;
   }
 
   try {
@@ -207,6 +214,12 @@ export async function DELETE(request: Request, context: Context) {
 
   if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const locked = await expenseLedgerLockedResponse(existing.tripId);
+
+  if (locked) {
+    return locked;
   }
 
   await db.delete(expenses).where(eq(expenses.id, id));

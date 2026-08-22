@@ -18,6 +18,7 @@ import {
 import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import { trackProductEvent } from "@/lib/product-analytics-client";
 
 type CountryOption = {
   id: string;
@@ -1375,6 +1376,7 @@ export function ExpenseForm({
         setDraftSavedAt(null);
         setDraftState("ACTIVE");
         setOfflineQueued(true);
+        trackProductEvent("offline_change_queued", "/expenses/new");
         submitInFlightRef.current = false;
         setBusy(false);
         return;
@@ -1420,6 +1422,7 @@ export function ExpenseForm({
           duplicateOverrideRef.current = false;
           submitInFlightRef.current = false;
           setDuplicateWarning(payload.duplicate);
+          trackProductEvent("duplicate_warning", "/expenses/new");
           setError(
             "Possible duplicate found. Review it below, then choose Review expenses or Save anyway.",
           );
@@ -1434,6 +1437,7 @@ export function ExpenseForm({
         }
 
         if (response.status === 409 && payload.code === "STALE_EDIT") {
+          trackProductEvent("expense_save_failed", "/expenses/new");
           failSubmit(
             payload.error ??
               "This expense changed on another device. Reload the page before saving so you do not overwrite newer changes.",
@@ -1441,10 +1445,12 @@ export function ExpenseForm({
           return;
         }
 
+        trackProductEvent("expense_save_failed", "/expenses/new");
         failSubmit(payload.error ?? "Unable to save expense.");
         return;
       }
 
+      trackProductEvent("expense_saved", initial ? "/expenses/edit" : "/expenses/new");
       clearDraft(
         expenseDraftKey,
       );
@@ -1457,6 +1463,7 @@ export function ExpenseForm({
     } catch (caught) {
       const timedOut =
         caught instanceof DOMException && caught.name === "AbortError";
+      trackProductEvent("expense_save_failed", "/expenses/new");
       failSubmit(
         timedOut
           ? "Saving took too long. Your expense is still saved as a draft on this device. Check your connection and try again."

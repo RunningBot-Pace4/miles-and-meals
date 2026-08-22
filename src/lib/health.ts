@@ -10,6 +10,7 @@ import {
   expenses,
   settlements,
   tripMembers,
+  trips,
 } from "@/db/schema";
 import {
   effectiveConvertedAmount,
@@ -37,6 +38,7 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
       settlementRows,
       countryMemberRows,
       tripMemberRows,
+      tripRows,
     ] = await Promise.all([
       db
         .select({
@@ -99,6 +101,16 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
             tripMembers.userId,
         })
         .from(tripMembers),
+      db
+        .select({
+          id: trips.id,
+          financialStatus: trips.financialStatus,
+          financialVersion: trips.financialVersion,
+          financialClosedAt: trips.financialClosedAt,
+          financialClosedBy: trips.financialClosedBy,
+          financialSnapshot: trips.financialSnapshot,
+        })
+        .from(trips),
     ]);
 
     const issues: ConsistencyIssue[] =
@@ -314,6 +326,60 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
         count: invalidPendingStateCount,
         detail:
           "A pending settlement already contains confirmation metadata and should be reviewed.",
+      });
+    }
+
+    const invalidClosedTripCount = tripRows.filter((trip) => {
+      if (trip.financialStatus !== "CLOSED") {
+        return false;
+      }
+
+      if (
+        !trip.financialClosedAt ||
+        !trip.financialClosedBy ||
+        !trip.financialSnapshot ||
+        (trip.financialVersion ?? 0) < 1
+      ) {
+        return true;
+      }
+
+      try {
+        const snapshot = JSON.parse(trip.financialSnapshot) as {
+          checksum?: unknown;
+          version?: unknown;
+        };
+
+        return (
+          typeof snapshot.checksum !== "string" ||
+          snapshot.checksum.length < 12 ||
+          Number(snapshot.version) !== trip.financialVersion
+        );
+      } catch {
+        return true;
+      }
+    }).length;
+
+    if (invalidClosedTripCount > 0) {
+      issues.push({
+        type: "FINANCIAL_SNAPSHOT_INVALID",
+        count: invalidClosedTripCount,
+        detail:
+          "A financially locked trip is missing a valid close timestamp, owner or settlement snapshot.",
+      });
+    }
+
+    const invalidOpenTripCount = tripRows.filter(
+      (trip) =>
+        trip.financialStatus !== "CLOSED" &&
+        Boolean(trip.financialClosedAt || trip.financialClosedBy),
+    ).length;
+
+    if (invalidOpenTripCount > 0) {
+      issues.push({
+        type: "FINANCIAL_OPEN_STATE_DIRTY",
+        count: invalidOpenTripCount,
+        detail:
+          "An open trip still has active close metadata and should be reviewed.",
       });
     }
 

@@ -1,3 +1,22 @@
+# Miles & Meals v67 — Full Source Package
+
+This package consolidates **Phase 9 through Phase 14** on top of the complete v66 source. It is a production launch-candidate/hardening release rather than a feature-count release.
+
+Key v67 behavior:
+
+- Versioned Trip financial close/reopen with server-enforced expense ledger locking.
+- Financial close snapshots preserve totals, remaining balances, Smart Settlement recommendations and checksum metadata.
+- Existing Smart Settlement remains read-only and the original repayment ledger remains the source of truth.
+- Privacy-scoped ~5-second collaboration pulse plus stale-edit conflict protection.
+- Privacy-minimal product event telemetry and a System Admin Product Insights screen.
+- Mobile/accessibility consistency improvements, authenticated E2E launch coverage and source/typecheck release gates.
+- CSP/security header hardening, launch-readiness health checks and safe load-smoke tooling.
+- Backup/restore supports the new financial fields and older backup payloads.
+
+**Database migration is required from v66 to v67.** Take a backup and run `npm run db:push` before starting/deploying v67 against that database.
+
+See `V67-PHASE9-14-PRODUCTION-LAUNCH-CANDIDATE.md` for deployment order, test setup and the external evidence still required before making a world-class/public-launch claim.
+
 # Miles & Meals v66 — Full Source Package
 
 This package includes Smart Settlement plus the v66 reliability, collaboration, offline-recovery, privacy/security and mobile hardening work on top of the complete v65.1 source.

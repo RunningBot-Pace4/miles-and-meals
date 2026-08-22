@@ -12,6 +12,7 @@ import {
   SettlementActionButton,
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
+import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
 const POLL_INTERVAL_MS = 4000;
@@ -65,6 +66,12 @@ function SmartSettlementPanel({
   const plans = data.smartPlans.filter(
     (plan) => plan.optimizedTransferCount > 0,
   );
+
+  useEffect(() => {
+    if (plans.length > 0) {
+      trackProductEvent("smart_settlement_viewed", "/settlements");
+    }
+  }, [plans.length]);
 
   if (plans.length === 0) {
     return null;

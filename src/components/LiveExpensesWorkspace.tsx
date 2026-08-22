@@ -23,8 +23,10 @@ const REQUEST_TIMEOUT_MS = 4000;
 
 export function LiveExpensesWorkspace({
   initialData,
+  locked = false,
 }: {
   initialData: ExpenseLiveData;
+  locked?: boolean;
 }) {
   const [data, setData] =
     useState(initialData);
@@ -340,11 +342,15 @@ export function LiveExpensesWorkspace({
                   </div>
 
                   <div className="card-actions">
-                    <Link
-                      href={`/expenses/${expense.id}/edit`}
-                    >
-                      Edit
-                    </Link>
+                    {!locked ? (
+                      <Link
+                        href={`/expenses/${expense.id}/edit`}
+                      >
+                        Edit
+                      </Link>
+                    ) : (
+                      <span className="muted">Locked for settlement</span>
+                    )}
 
                     {expense.hasReceipt ? (
                       <ReceiptViewerButton
@@ -354,10 +360,12 @@ export function LiveExpensesWorkspace({
                       />
                     ) : null}
 
-                    <DeleteExpenseButton
-                      id={expense.id}
-                      quiet
-                    />
+                    {!locked ? (
+                      <DeleteExpenseButton
+                        id={expense.id}
+                        quiet
+                      />
+                    ) : null}
                   </div>
                 </article>
               );

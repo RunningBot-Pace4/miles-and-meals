@@ -1,10 +1,12 @@
 import { AccountMenu } from "@/components/AccountMenu";
+import { CollaborationPulse } from "@/components/CollaborationPulse";
 import { BrandLogo } from "@/components/BrandLogo";
 import { BudgetAccessGate } from "@/components/BudgetAccessGate";
 import { MobileNav } from "@/components/MobileNav";
 import { NotificationBell } from "@/components/NotificationBell";
 import { OfflineQueueSync } from "@/components/OfflineQueueSync";
 import { PasswordChangeGate } from "@/components/PasswordChangeGate";
+import { ProductAnalytics } from "@/components/ProductAnalytics";
 import {
   loadUnreadNotificationCount,
 } from "@/lib/notification-count";
@@ -62,6 +64,9 @@ export default async function AppLayout({
         }
       >
         <div className="app-shell">
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
           <header className="topbar">
             <BrandLogo />
 
@@ -92,11 +97,13 @@ export default async function AppLayout({
 
           <MobileNav />
 
-          <main className="page-container">
+          <main id="main-content" className="page-container">
             {children}
           </main>
 
           <OfflineQueueSync />
+          <CollaborationPulse />
+          <ProductAnalytics />
         </div>
       </BudgetAccessGate>
     </PasswordChangeGate>

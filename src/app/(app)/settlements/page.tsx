@@ -1,9 +1,12 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
+import { FinancialClosePanel } from "@/components/FinancialClosePanel";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
+import { getTripFinancialState } from "@/lib/financial-close";
+import { canManageTrip } from "@/lib/trip-management";
 import { requirePageSession } from "@/lib/session";
 import { serializeSettlementLiveData } from "@/lib/settlement-live";
 
@@ -60,6 +63,10 @@ export default async function SettlementsPage({
       summary,
       baseCurrency,
     );
+  const [financialState, canManageFinancials] = await Promise.all([
+    getTripFinancialState(activeTrip.tripId),
+    activeTrip.tripId ? canManageTrip(session.user, activeTrip.tripId) : Promise.resolve(false),
+  ]);
 
   return (
     <div className="stack gap-lg settle-page">
@@ -124,6 +131,13 @@ export default async function SettlementsPage({
             </button>
           </form>
         </section>
+      ) : null}
+
+      {financialState ? (
+        <FinancialClosePanel
+          initialState={financialState}
+          canManage={canManageFinancials}
+        />
       ) : null}
 
       <LiveSettlementWorkspace

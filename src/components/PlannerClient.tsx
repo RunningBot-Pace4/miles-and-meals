@@ -768,6 +768,10 @@ export function PlannerClient({
       refreshWhenVisible,
     );
     window.addEventListener(
+      "mnm:planner-updated",
+      refreshWhenVisible,
+    );
+    window.addEventListener(
       "focus",
       refreshWhenVisible,
     );
@@ -780,6 +784,10 @@ export function PlannerClient({
       window.clearInterval(timer);
       window.removeEventListener(
         "online",
+        refreshWhenVisible,
+      );
+      window.removeEventListener(
+        "mnm:planner-updated",
         refreshWhenVisible,
       );
       window.removeEventListener(

@@ -25,6 +25,8 @@ export type ActiveTripContext = {
     baseCurrency: string;
     startDate: string | null;
     endDate: string | null;
+    financialStatus: string;
+    financialVersion: number;
   }>;
 };
 
@@ -48,6 +50,8 @@ function uniqueTrips(
         endDate:
           | string
           | null;
+        financialStatus: string;
+        financialVersion: number;
       }
     >();
 
@@ -72,6 +76,10 @@ function uniqueTrips(
           country.startDate,
         endDate:
           country.endDate,
+        financialStatus:
+          country.financialStatus,
+        financialVersion:
+          country.financialVersion,
       },
     );
   }

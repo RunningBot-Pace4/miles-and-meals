@@ -1,5 +1,6 @@
 import { desc, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { db } from "@/db";
 import { appErrors } from "@/db/schema";
 import {
@@ -111,6 +112,34 @@ export default async function AdminHealthPage() {
         "Manifest, service worker, offline shell and mobile icons are build-validated.",
     },
     {
+      name: "Security headers",
+      ok: true,
+      detail:
+        "CSP, HSTS, frame denial, nosniff, referrer and permissions policies are configured in Next.js.",
+    },
+    {
+      name: "Production auth secret",
+      ok: process.env.NODE_ENV !== "production" || Boolean(process.env.BETTER_AUTH_SECRET),
+      detail:
+        process.env.NODE_ENV !== "production" || process.env.BETTER_AUTH_SECRET
+          ? "Better Auth has a production secret or the app is not running in production mode."
+          : "Set BETTER_AUTH_SECRET before a public production launch.",
+    },
+    {
+      name: "Canonical app URL",
+      ok: Boolean(
+        process.env.BETTER_AUTH_URL ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      ),
+      detail:
+        process.env.BETTER_AUTH_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.VERCEL_PROJECT_PRODUCTION_URL
+          ? "A production app URL is available for authentication and link generation."
+          : "Set BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL before public launch.",
+    },
+    {
       name: "Web Push",
       ok: Boolean(
         process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY &&
@@ -126,18 +155,45 @@ export default async function AdminHealthPage() {
     },
   ];
 
+  const launchBlockers = checks.filter(
+    (check) => !check.ok && check.name !== "Web Push",
+  );
+  const launchReady = launchBlockers.length === 0 && consistency.ok;
+
   return (
     <div className="stack gap-lg admin-health-page">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">PHASE 8 · ADMIN</p>
+          <p className="eyebrow">PHASE 14 · LAUNCH READINESS</p>
           <h1>App health</h1>
           <p className="muted">
-            Free production checks using the existing Miles &amp; Meals
-            server and Neon database.
+            Production readiness, financial consistency, performance and security configuration checks.
           </p>
         </div>
+        <div className="admin-quick-links">
+          <Link className="button secondary" href="/admin/insights">Product insights</Link>
+          <Link className="button secondary" href="/admin/backup">Backup</Link>
+        </div>
       </div>
+
+      <section className={`panel launch-readiness-panel ${launchReady ? "ready" : "attention"}`}>
+        <div className="launch-readiness-copy">
+          <span className="launch-readiness-score" aria-hidden="true">{launchReady ? "✓" : "!"}</span>
+          <div>
+            <p className="eyebrow">RELEASE GATE</p>
+            <h2>{launchReady ? "Code-level launch checks are green" : "Launch blockers need attention"}</h2>
+            <p className="muted">
+              {launchReady
+                ? "The in-app checks are healthy. Before a public world-scale claim, still complete real-device usability, load testing and an independent security review."
+                : `${launchBlockers.length} code/configuration blocker(s) remain before the public launch gate is green.`}
+            </p>
+          </div>
+        </div>
+        <div className="launch-manual-gates">
+          <span>Manual evidence still required</span>
+          <strong>Real devices · load test · external security review · accessibility audit</strong>
+        </div>
+      </section>
 
       <section className="health-grid">
         {checks.map((check) => (

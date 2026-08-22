@@ -162,6 +162,7 @@ function requiredUserIds(
 
   for (const row of backup.data.trips) {
     add(row, "createdBy");
+    add(row, "financialClosedBy");
   }
 
   for (
@@ -675,6 +676,11 @@ async function restoreBackup(
         budget,
         start_date,
         end_date,
+        financial_status,
+        financial_version,
+        financial_closed_at,
+        financial_closed_by,
+        financial_snapshot,
         created_by,
         created_at
       ) VALUES (
@@ -684,6 +690,11 @@ async function restoreBackup(
         ${value(row, "budget")},
         ${value(row, "startDate")},
         ${value(row, "endDate")},
+        ${value(row, "financialStatus") ?? "OPEN"},
+        ${value(row, "financialVersion") ?? 0},
+        ${timestamp(row, "financialClosedAt")},
+        ${value(row, "financialClosedBy")},
+        ${value(row, "financialSnapshot")},
         ${value(row, "createdBy")},
         ${timestamp(row, "createdAt") ?? new Date()}
       )
@@ -1010,6 +1021,7 @@ export async function GET() {
       "notifications",
       "app_errors",
       "api_metrics",
+      "product_events",
     ],
     data: {
       trips: tripRows,

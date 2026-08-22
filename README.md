@@ -1,5 +1,20 @@
 # Miles & Meals
 
+## v67 — Phase 9–14 Production Launch Candidate
+
+- Phase 9–14 are consolidated into one production-quality release.
+- New versioned **Financial checkpoint** lets a Trip Owner lock the expense ledger before final settlement and safely reopen it for corrections.
+- Closed-trip snapshots keep totals, Smart Settlement plans and a checksum while leaving the existing repayment ledger unchanged.
+- Expense writes are server-blocked while financials are closed; repayment confirmation still works normally.
+- Added a ~5-second privacy-scoped collaboration pulse and existing stale-edit protection remains active.
+- Added privacy-minimal aggregate product analytics plus System Admin **Product insights** for save reliability, errors, P95 and usage signals.
+- Added keyboard/reduced-motion/mobile touch-target hardening and launch-candidate E2E coverage.
+- Added CSP/security headers, financial snapshot health checks, backup compatibility and a safe staging load-smoke tool.
+- Added `source:check`, `typecheck`, `release:check` and Phase 9–14 regression gates to the build pipeline.
+- **Database migration is required from v66 to v67. Back up first, then run `npm run db:push`.**
+
+See `V67-PHASE9-14-PRODUCTION-LAUNCH-CANDIDATE.md`.
+
 ## v66 — Smart Settlement + World-Class Trust Hardening
 
 - New **Smart Settlement** report nets remaining group balances into fewer recommended transfers while keeping the existing ledger/payment flow unchanged.

@@ -1,5 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { AdminForms } from "@/components/AdminForms";
 import { AdminOverview } from "@/components/AdminOverview";
 import { db } from "@/db";
@@ -205,6 +206,11 @@ export default async function AdminPage() {
           <p className="muted">
             Review users, login activity, country access and trip setup.
           </p>
+        </div>
+        <div className="admin-quick-links">
+          <Link className="button secondary" href="/admin/insights">Product insights</Link>
+          <Link className="button secondary" href="/admin/health">App health</Link>
+          <Link className="button secondary" href="/admin/backup">Backup</Link>
         </div>
       </div>
 

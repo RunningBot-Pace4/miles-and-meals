@@ -186,6 +186,27 @@ export const apiMetrics = pgTable(
   ],
 );
 
+
+export const productEvents = pgTable(
+  "product_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    eventName: text("event_name").notNull(),
+    route: text("route").notNull(),
+    context: text("context"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("product_event_time_idx").on(table.createdAt),
+    index("product_event_name_time_idx").on(
+      table.eventName,
+      table.createdAt,
+    ),
+  ],
+);
+
 export const appErrors = pgTable(
   "app_errors",
   {
@@ -218,6 +239,13 @@ export const trips = pgTable("trips", {
   budget: numeric("budget", { precision: 18, scale: 2 }).default("0").notNull(),
   startDate: date("start_date"),
   endDate: date("end_date"),
+  financialStatus: text("financial_status").default("OPEN").notNull(),
+  financialVersion: integer("financial_version").default(0).notNull(),
+  financialClosedAt: timestamp("financial_closed_at", { withTimezone: true }),
+  financialClosedBy: text("financial_closed_by").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  financialSnapshot: text("financial_snapshot"),
   createdBy: text("created_by")
     .notNull()
     .references(() => user.id, { onDelete: "restrict" }),
@@ -563,6 +591,7 @@ export const schema = {
   pushSubscriptions,
   notifications,
   apiMetrics,
+  productEvents,
   activityLogs,
   appErrors,
   trips,

@@ -367,8 +367,21 @@ export default async function DashboardPage({
     (sum, plan) => sum + plan.transfersSaved,
     0,
   );
+  const finishedOpenTrips = tripOptions.filter(
+    (trip) =>
+      tripEndedAtLeastOneDayAgo(trip.endDate) &&
+      trip.financialStatus !== "CLOSED",
+  );
 
   const actionItems = [
+    finishedOpenTrips.length > 0
+      ? {
+          icon: "◎",
+          title: `${finishedOpenTrips.length} finished trip${finishedOpenTrips.length === 1 ? " is" : "s are"} still open for expense changes`,
+          copy: "When everyone has finished adding spending, lock the expense ledger before final settlement.",
+          href: "/settlements",
+        }
+      : null,
     postTripSmartPlans.length > 0
       ? {
           icon: "✦",
@@ -454,15 +467,25 @@ export default async function DashboardPage({
         </div>
 
         {selectedTrip ? (
-          <Link
-            className="button primary dashboard-add"
-            href="/expenses/new"
-          >
-            <span aria-hidden="true">
-              ＋
-            </span>
-            Add expense
-          </Link>
+          selectedTrip.financialStatus === "CLOSED" ? (
+            <Link
+              className="button secondary dashboard-add"
+              href="/settlements"
+            >
+              <span aria-hidden="true">✓</span>
+              Final settlement
+            </Link>
+          ) : (
+            <Link
+              className="button primary dashboard-add"
+              href="/expenses/new"
+            >
+              <span aria-hidden="true">
+                ＋
+              </span>
+              Add expense
+            </Link>
+          )
         ) : (
           <Link
             className="button primary dashboard-add"
