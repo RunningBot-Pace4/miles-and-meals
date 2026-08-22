@@ -1,3 +1,19 @@
+# Miles & Meals v65 — Full Source Package
+
+This package includes the v65 Add Expense save-reliability fixes on top of the complete v64 source.
+
+Key v65 behavior:
+
+- React owns Add Expense validation so mobile Safari/PWA cannot silently block submit with native `required` validation.
+- Save errors remain visible in the sticky Save bar and invalid fields are focused/scrolled into view.
+- Tapping Save alone no longer creates a phantom unsaved draft.
+- Duplicate-expense warnings are surfaced automatically.
+- Save requests time out cleanly and repeated taps cannot create parallel submissions.
+- Offline-queued expenses no longer recreate a stale draft after being queued.
+- Existing v53-v64 behavior remains included.
+
+No database migration is required from v64 to v65.
+
 # Miles & Meals v63 — Full Source Package
 
 This ZIP contains the complete v63 source tree, consolidated from the stable v58 baseline.

@@ -13849,3 +13849,37 @@ body {
     justify-self: end;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* v65 Expense save reliability + visible mobile feedback                      */
+/* -------------------------------------------------------------------------- */
+
+.sticky-save.has-feedback {
+  border-color: rgb(185 57 47 / 24%);
+  box-shadow: 0 16px 42px rgb(74 34 29 / 17%);
+}
+
+.sticky-save-feedback {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  padding: 0.68rem 0.78rem;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.duplicate-expense-warning:focus {
+  outline: 3px solid rgb(191 124 20 / 18%);
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .sticky-save.has-feedback {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .sticky-save-feedback {
+    font-size: 0.72rem;
+  }
+}

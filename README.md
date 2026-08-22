@@ -1,5 +1,18 @@
 # Miles & Meals
 
+## v65 — Add Expense Save Reliability
+
+- Fixed mobile/PWA saves that could appear to do nothing when browser-native validation blocked React submit.
+- Add Expense now uses one explicit validation path with visible, sticky feedback and first-field focus.
+- Removed phantom draft creation caused by marking every form click as an edit.
+- Possible duplicates auto-scroll into view instead of appearing off-screen.
+- Added a 20-second save timeout and a double-submit guard.
+- Successful saves clear draft state before navigation.
+- Offline-queued expenses no longer recreate an unsaved draft after queueing.
+- No database migration is required from v64 to v65.
+
+See `V65-EXPENSE-SAVE-RELIABILITY.md`.
+
 ## v63 — Consolidated Mobile + Product Maturity Release
 
 - Mobile Add Expense has been compacted and polished for phone use.

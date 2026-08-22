@@ -290,7 +290,10 @@ export function ExpenseForm({
   const [offlineQueued, setOfflineQueued] = useState(false);
   const fxRequestIdRef = useRef(0);
   const duplicateOverrideRef = useRef(false);
+  const submitInFlightRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const submitFeedbackRef = useRef<HTMLParagraphElement>(null);
+  const duplicateWarningRef = useRef<HTMLElement>(null);
 
   const expenseDraftKey = draftKey(
     "expense",
@@ -308,6 +311,13 @@ export function ExpenseForm({
     useState(false);
   const preserveMembersRef =
     useRef(false);
+
+  function markFormEdited() {
+    setDraftDirty(true);
+    setError("");
+    duplicateOverrideRef.current = false;
+    setDuplicateWarning(null);
+  }
 
   useEffect(() => {
     if (!offlineQueued) {
@@ -488,6 +498,7 @@ export function ExpenseForm({
       draftState !== "ACTIVE" ||
       !draftDirty ||
       busy ||
+      offlineQueued ||
       receiptScanning
     ) {
       return;
@@ -540,6 +551,7 @@ export function ExpenseForm({
     expenseDate,
     expenseDraftKey,
     notes,
+    offlineQueued,
     paidByUserId,
     paymentMethod,
     rate,
@@ -914,6 +926,8 @@ export function ExpenseForm({
   }
 
   function handleRateType(nextType: RateType) {
+    markFormEdited();
+
     if (isBaseCurrency) {
       setRateType("DEFAULT");
       setRate("1");
@@ -942,6 +956,7 @@ export function ExpenseForm({
   }
 
   function handleSplitMode(nextMode: SplitMode) {
+    markFormEdited();
     setSplitMode(nextMode);
 
     if (nextMode === "PERCENTAGE") {
@@ -956,6 +971,7 @@ export function ExpenseForm({
   }
 
   function toggleSplit(userId: string) {
+    markFormEdited();
     setSplitUserIds((current) => {
       const next = current.includes(userId)
         ? current.filter((id) => id !== userId)
@@ -1105,20 +1121,124 @@ export function ExpenseForm({
     return compressReceiptForDatabase(file);
   }
 
+  function revealSubmitProblem(fieldName?: string) {
+    window.requestAnimationFrame(() => {
+      const form = formRef.current;
+      let target: HTMLElement | null = null;
+
+      if (form && fieldName) {
+        const named = form.elements.namedItem(fieldName);
+
+        if (named instanceof HTMLElement) {
+          target = named;
+        } else if (named instanceof RadioNodeList) {
+          target = Array.from(named).find(
+            (item): item is HTMLElement => item instanceof HTMLElement,
+          ) ?? null;
+        }
+      }
+
+      const fallback = submitFeedbackRef.current;
+      const focusTarget = target ?? fallback;
+
+      focusTarget?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
+        target.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  function failSubmit(message: string, fieldName?: string) {
+    submitInFlightRef.current = false;
+    setBusy(false);
+    setError(message);
+    revealSubmitProblem(fieldName);
+  }
+
+  function validReceiptLink(value: string): boolean {
+    const trimmed = value.trim();
+
+    if (!trimmed || trimmed.startsWith("data:image/")) {
+      return true;
+    }
+
+    try {
+      const url = new URL(trimmed);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (submitInFlightRef.current) {
+      return;
+    }
+
     setError("");
 
+    if (!countryId || !currentCountry) {
+      failSubmit("Choose a trip before saving this expense.", "countryId");
+      return;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) {
+      failSubmit("Choose a valid expense date.", "expenseDate");
+      return;
+    }
+
+    if (!description.trim()) {
+      failSubmit("Add a shop name or expense description before saving.", "description");
+      return;
+    }
+
+    if (!category.trim()) {
+      failSubmit("Choose an expense category before saving.");
+      return;
+    }
+
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      failSubmit("Choose a valid 3-letter currency.", "transactionCurrency");
+      return;
+    }
+
+    if (fxRateLoading) {
+      failSubmit(
+        "The exchange rate is still loading. Wait a moment, or choose Manual and enter the rate yourself.",
+        "exchangeRate",
+      );
+      return;
+    }
+
+    if (!paidByUserId) {
+      failSubmit("Choose who paid for this expense.");
+      return;
+    }
+
     if (splitUserIds.length === 0) {
-      setError("Choose at least one person to share this expense.");
+      failSubmit("Choose at least one person to share this expense.");
       return;
     }
 
     if (!splitStatus.valid) {
-      setError(
+      failSubmit(
         splitMode === "PERCENTAGE"
           ? "Percentage shares must add up to 100%."
           : "Exact shares must add up to the amount being split.",
+      );
+      return;
+    }
+
+    if (!validReceiptLink(receiptUrl)) {
+      failSubmit(
+        "Enter a complete receipt link starting with http:// or https://, or leave it blank.",
+        "receiptUrl",
       );
       return;
     }
@@ -1130,25 +1250,30 @@ export function ExpenseForm({
         ? null
         : parseTravelNumber(actualConvertedAmount);
 
-    if (parsedAmount === null || parsedAmount <= 0) {
-      setError(
-        "Enter a valid transaction amount. You can use values like 150000 or 150,000.",
+    if (parsedAmount === null || parsedAmount <= 0 || parsedAmount > 1_000_000_000) {
+      failSubmit(
+        "Enter a valid transaction amount greater than 0 and below 1,000,000,000.",
+        "transactionAmount",
       );
       return;
     }
 
-    if (parsedRate === null || parsedRate <= 0) {
-      setError(
-        "Enter a valid exchange rate. You can use values like 0.0001579.",
+    if (parsedRate === null || parsedRate <= 0 || parsedRate > 1_000_000) {
+      failSubmit(
+        "Enter a valid exchange rate greater than 0 and below 1,000,000.",
+        "exchangeRate",
       );
       return;
     }
 
     if (
       actualConvertedAmount.trim() !== "" &&
-      (parsedActual === null || parsedActual <= 0)
+      (parsedActual === null || parsedActual <= 0 || parsedActual > 1_000_000_000)
     ) {
-      setError("Enter a valid actual card charge or leave it blank.");
+      failSubmit(
+        "Enter a valid actual card charge or leave it blank.",
+        "actualConvertedAmount",
+      );
       return;
     }
 
@@ -1166,10 +1291,11 @@ export function ExpenseForm({
         (split) => !Number.isFinite(split.value) || split.value < 0,
       )
     ) {
-      setError("Enter a valid share for every selected traveler.");
+      failSubmit("Enter a valid share for every selected traveler.");
       return;
     }
 
+    submitInFlightRef.current = true;
     setBusy(true);
     let finalReceiptUrl = receiptUrl.trim();
 
@@ -1179,12 +1305,11 @@ export function ExpenseForm({
           await prepareReceiptForSave(receiptFile);
       }
     } catch (caught) {
-      setError(
+      failSubmit(
         caught instanceof Error
           ? caught.message
           : "Unable to prepare the receipt photo.",
       );
-      setBusy(false);
       return;
     }
 
@@ -1222,19 +1347,28 @@ export function ExpenseForm({
           },
         });
         clearDraft(expenseDraftKey);
+        setDraftDirty(false);
+        setDraftSavedAt(null);
+        setDraftState("ACTIVE");
         setOfflineQueued(true);
+        submitInFlightRef.current = false;
         setBusy(false);
         return;
       } catch (caught) {
-        setError(
+        failSubmit(
           caught instanceof Error
             ? caught.message
             : "Unable to store this expense offline.",
         );
-        setBusy(false);
         return;
       }
     }
+
+    const controller = new AbortController();
+    const saveTimeout = window.setTimeout(
+      () => controller.abort(),
+      20_000,
+    );
 
     try {
       const response = await fetch(
@@ -1243,6 +1377,7 @@ export function ExpenseForm({
           method: initial ? "PUT" : "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
+          signal: controller.signal,
         },
       );
 
@@ -1259,26 +1394,44 @@ export function ExpenseForm({
           payload.duplicate
         ) {
           duplicateOverrideRef.current = false;
+          submitInFlightRef.current = false;
           setDuplicateWarning(payload.duplicate);
-          setError("");
+          setError(
+            "Possible duplicate found. Review it below, then choose Review expenses or Save anyway.",
+          );
           setBusy(false);
+          window.requestAnimationFrame(() =>
+            duplicateWarningRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            }),
+          );
           return;
         }
 
-        setError(payload.error ?? "Unable to save expense.");
-        setBusy(false);
+        failSubmit(payload.error ?? "Unable to save expense.");
         return;
       }
 
       clearDraft(
         expenseDraftKey,
       );
+      setDraftDirty(false);
+      setDraftSavedAt(null);
+      setDraftState("ACTIVE");
       duplicateOverrideRef.current = false;
       setDuplicateWarning(null);
       window.location.assign("/expenses");
-    } catch {
-      setError("Unable to reach Miles & Meals. Check your connection and try again.");
-      setBusy(false);
+    } catch (caught) {
+      const timedOut =
+        caught instanceof DOMException && caught.name === "AbortError";
+      failSubmit(
+        timedOut
+          ? "Saving took too long. Your expense is still saved as a draft on this device. Check your connection and try again."
+          : "Unable to reach Miles & Meals. Your expense is still saved as a draft on this device. Check your connection and try again.",
+      );
+    } finally {
+      window.clearTimeout(saveTimeout);
     }
   }
 
@@ -1317,15 +1470,9 @@ export function ExpenseForm({
         ref={formRef}
         className="expense-editor"
         onSubmit={submit}
-        onInput={() =>
-          setDraftDirty(true)
-        }
-        onChange={() =>
-          setDraftDirty(true)
-        }
-        onClickCapture={() =>
-          setDraftDirty(true)
-        }
+        noValidate
+        onInput={markFormEdited}
+        onChange={markFormEdited}
       >
         {draftState === "PENDING" ? (
           <div className="draft-recovery-banner expense-draft">
@@ -1424,6 +1571,7 @@ export function ExpenseForm({
           <label>
             Trip
             <select
+              name="countryId"
               aria-label="Choose expense trip"
               value={countryId}
               disabled={tripSwitching || busy || Boolean(initial)}
@@ -1474,7 +1622,10 @@ export function ExpenseForm({
               <button
                 className={category === item.value ? "category-chip active" : "category-chip"}
                 key={item.value}
-                onClick={() => setCategory(item.value)}
+                onClick={() => {
+                  setCategory(item.value);
+                  markFormEdited();
+                }}
                 type="button"
               >
                 <span className="category-icon">{item.icon}</span>
@@ -1502,6 +1653,7 @@ export function ExpenseForm({
                 {currency || "CUR"}
               </span>
               <input
+                name="transactionAmount"
                 inputMode="decimal"
                 data-numeric-input="decimal"
                 value={amount}
@@ -1517,6 +1669,7 @@ export function ExpenseForm({
             <label className="advanced-currency-control">
               <span>Currency</span>
               <select
+                name="transactionCurrency"
                 value={currency}
                 onChange={(event) =>
                   void handleCurrencyChange(event.target.value)
@@ -1608,6 +1761,7 @@ export function ExpenseForm({
           <label>
             1 {currency || "CUR"} =
             <input
+              name="exchangeRate"
               inputMode="decimal"
               data-numeric-input="decimal"
               value={isBaseCurrency ? "1" : rate}
@@ -1646,6 +1800,7 @@ export function ExpenseForm({
           <label className="actual-charge">
             Actual card charge in {currentCountry?.baseCurrency ?? "MYR"}
             <input
+              name="actualConvertedAmount"
               inputMode="decimal"
               data-numeric-input="decimal"
               value={actualConvertedAmount}
@@ -1673,7 +1828,10 @@ export function ExpenseForm({
               <button
                 className={paidByUserId === member.id ? "person-pill active" : "person-pill"}
                 key={member.id}
-                onClick={() => setPaidByUserId(member.id)}
+                onClick={() => {
+                  setPaidByUserId(member.id);
+                  markFormEdited();
+                }}
                 type="button"
               >
                 <span className="avatar">{initials(member.name)}</span>
@@ -2048,7 +2206,12 @@ export function ExpenseForm({
       ) : null}
 
       {duplicateWarning ? (
-        <section className="duplicate-expense-warning" role="alert">
+        <section
+          ref={duplicateWarningRef}
+          className="duplicate-expense-warning"
+          role="alert"
+          tabIndex={-1}
+        >
           <span className="duplicate-warning-icon" aria-hidden="true">⚠</span>
           <div>
             <strong>Possible duplicate</strong>
@@ -2068,6 +2231,7 @@ export function ExpenseForm({
                 onClick={() => {
                   duplicateOverrideRef.current = true;
                   setDuplicateWarning(null);
+                  setError("");
                   window.requestAnimationFrame(() =>
                     formRef.current?.requestSubmit(),
                   );
@@ -2080,9 +2244,18 @@ export function ExpenseForm({
         </section>
       ) : null}
 
-      {error ? <p className="form-error-banner">{error}</p> : null}
-
-      <div className="sticky-save">
+      <div className={error ? "sticky-save has-feedback" : "sticky-save"}>
+        {error ? (
+          <p
+            ref={submitFeedbackRef}
+            className="form-error-banner sticky-save-feedback"
+            role="alert"
+            aria-live="assertive"
+            tabIndex={-1}
+          >
+            {error}
+          </p>
+        ) : null}
         <div className="save-total">
           <span>Total</span>
           <strong>
