@@ -53,8 +53,8 @@ export function CountryQuickSelect({
     <>
       {switching ? (
         <SavingOverlay
-          title="Switching destination"
-          message="Your dashboard is changing to the selected destination."
+          title="Switching trip"
+          message="Your dashboard is changing to the selected trip."
         />
       ) : null}
 

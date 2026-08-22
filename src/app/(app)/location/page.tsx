@@ -12,7 +12,12 @@ export default async function LocationPage() {
       session.user,
     );
   const countries =
-    activeTrip.countries;
+    activeTrip.allCountries.filter(
+      (country, index, rows) =>
+        rows.findIndex((item) => item.tripId === country.tripId) === index,
+    );
+  const initialCountryId =
+    activeTrip.countries[0]?.id ?? countries[0]?.id ?? "";
 
   return (
     <div className="stack gap-lg">
@@ -25,7 +30,7 @@ export default async function LocationPage() {
             Find your travel crew
           </h1>
           <p className="muted">
-            Share your live position with people assigned to the same destination in the active trip.
+            Share your live position with people assigned to the selected trip.
           </p>
         </div>
       </div>
@@ -36,6 +41,7 @@ export default async function LocationPage() {
           currentUserId={
             session.user.id
           }
+          initialCountryId={initialCountryId}
         />
       ) : (
         <section className="empty-card">
@@ -43,7 +49,7 @@ export default async function LocationPage() {
             No destination assigned
           </h2>
           <p>
-            You need destination access in the active trip before sharing or viewing GPS.
+            You need access to at least one trip before sharing or viewing GPS.
           </p>
         </section>
       )}

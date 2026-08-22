@@ -1,8 +1,6 @@
 import { db } from "@/db";
 import { locationPings } from "@/db/schema";
-import {
-  isCountryInActiveTrip,
-} from "@/lib/active-trip";
+import { canAccessCountry } from "@/lib/access";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { locationSchema } from "@/lib/validation";
@@ -21,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const input = locationSchema.parse(await request.json());
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
+    if (!(await canAccessCountry(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 

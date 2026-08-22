@@ -21,6 +21,7 @@ export type CountrySettlementTransfer = {
   countryId: string;
   countryName: string;
   tripId: string;
+  tripName: string;
   currency: string;
   fromUserId: string;
   fromName: string;
@@ -34,6 +35,7 @@ export type SmartSettlementPlan = {
   countryId: string;
   countryName: string;
   tripId: string;
+  tripName: string;
   currency: string;
   originalTransfers: CountrySettlementTransfer[];
   optimizedTransfers: CountrySettlementTransfer[];
@@ -49,6 +51,7 @@ export type SettlementRecordView = {
   countryId: string;
   countryName: string;
   tripId: string;
+  tripName: string;
   currency: string;
   fromUserId: string;
   fromName: string;
@@ -71,6 +74,7 @@ export type CountrySettlementLedger = {
   countryId: string;
   countryName: string;
   tripId: string;
+  tripName: string;
   currency: string;
   people: CountryPersonLedger[];
   waitingTransfers: CountrySettlementTransfer[];
@@ -87,6 +91,7 @@ export async function buildCountrySettlementLedger(
       countryId: countries.id,
       countryName: countries.name,
       tripId: trips.id,
+      tripName: trips.name,
       currency: trips.baseCurrency,
     })
     .from(countries)
@@ -237,6 +242,7 @@ export async function buildCountrySettlementLedger(
     countryId: country.countryId,
     countryName: country.countryName,
     tripId: country.tripId,
+    tripName: country.tripName,
     currency: country.currency,
   });
 
@@ -248,6 +254,7 @@ export async function buildCountrySettlementLedger(
     countryId: country.countryId,
     countryName: country.countryName,
     tripId: country.tripId,
+    tripName: country.tripName,
     currency: country.currency,
     originalTransfers: directOutstanding.map(decorate),
     optimizedTransfers: optimizedOutstanding.map(decorate),
@@ -267,6 +274,7 @@ export async function buildCountrySettlementLedger(
       countryId: country.countryId,
       countryName: country.countryName,
       tripId: country.tripId,
+      tripName: country.tripName,
       currency: row.currency || country.currency,
       fromUserId: row.fromUserId,
       fromName: names.get(row.fromUserId) ?? "Traveler",
@@ -282,6 +290,7 @@ export async function buildCountrySettlementLedger(
     countryId: country.countryId,
     countryName: country.countryName,
     tripId: country.tripId,
+    tripName: country.tripName,
     currency: country.currency,
     people: [...participantIds]
       .map((userId) => ({

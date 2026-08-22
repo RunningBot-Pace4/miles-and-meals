@@ -179,7 +179,7 @@ function SmartSettlementPanel({
                     <strong>
                       {transfer.toUserId === currentUserId ? "You" : transfer.toName}
                     </strong>
-                    <small>{transfer.countryName}</small>
+                    <small>{transfer.tripName}</small>
                   </span>
                 </div>
                 <strong className="smart-transfer-amount">
@@ -208,7 +208,7 @@ function SmartSettlementPanel({
             >
               <div className="smart-transfer-copy">
                 <strong>{transfer.fromName} <span aria-hidden="true">→</span> {transfer.toName}</strong>
-                <small>{transfer.countryName} · Suggested only</small>
+                <small>{transfer.tripName} · Suggested only</small>
               </div>
               <strong className="smart-transfer-amount">
                 {formatMoney(transfer.amount, transfer.currency)}
@@ -438,7 +438,7 @@ function SettlementStatus({
                       : `${payment.fromName} → ${payment.toName}`}
                 </strong>
                 <small>
-                  {payment.countryName} ·
+                  {payment.tripName} ·
                   Payment sent · Waiting
                   for receiver
                 </small>
@@ -489,7 +489,7 @@ function SettlementStatus({
                       : `${transfer.fromName} → ${transfer.toName}`}
                 </strong>
                 <small>
-                  {transfer.countryName} ·
+                  {transfer.tripName} ·
                   Waiting for payment
                 </small>
               </div>
@@ -718,7 +718,7 @@ function SettlementHistory({
                     {payment.toName}
                   </strong>
                   <small>
-                    {payment.countryName} ·
+                    {payment.tripName} ·
                     Completed · View only ·{" "}
                     {payment.confirmedAt
                       ? new Date(

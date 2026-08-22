@@ -97,9 +97,11 @@ export function FinancialClosePanel({
             {closed ? "✓" : "◎"}
           </div>
           <div>
-            <p className="eyebrow">FINANCIAL CHECKPOINT</p>
+            <p className="eyebrow">FINANCIAL CHECKPOINT · {state.tripName}</p>
             <h2 id="financial-close-title">
-              {closed ? "Trip expenses are locked" : "Expenses are still open"}
+              {closed
+                ? `${state.tripName} expenses are locked`
+                : `${state.tripName} expenses are still open`}
             </h2>
             <p className="muted">
               {closed

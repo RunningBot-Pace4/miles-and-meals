@@ -4,9 +4,7 @@ import { locationPings } from "@/db/schema";
 import {
   listCountryMembers,
 } from "@/lib/access";
-import {
-  isCountryInActiveTrip,
-} from "@/lib/active-trip";
+import { canAccessCountry } from "@/lib/access";
 import {
   getSession,
   isSystemAdmin,
@@ -25,7 +23,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "countryId is required." }, { status: 400 });
   }
 
-  if (!(await isCountryInActiveTrip(session.user, countryId))) {
+  if (!(await canAccessCountry(session.user, countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

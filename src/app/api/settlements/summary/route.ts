@@ -43,6 +43,8 @@ export async function GET(
     );
   const countries =
     activeTrip.countries;
+  const allCountries =
+    activeTrip.allCountries;
   const url = new URL(
     request.url,
   );
@@ -84,7 +86,7 @@ export async function GET(
 
   if (
     requestedCountryId &&
-    !countries.some(
+    !allCountries.some(
       (country) =>
         country.id ===
         requestedCountryId,
@@ -118,8 +120,11 @@ export async function GET(
 
   if (
     requestedTripId &&
-    requestedTripId !==
-      activeTrip.tripId
+    !activeTrip.trips.some(
+      (trip) =>
+        trip.id ===
+        requestedTripId,
+    )
   ) {
     await recordApiMetric({
       userId:
@@ -149,12 +154,18 @@ export async function GET(
 
   const selectedCountries =
     requestedCountryId
-      ? countries.filter(
+      ? allCountries.filter(
           (country) =>
             country.id ===
             requestedCountryId,
         )
-      : countries;
+      : requestedTripId
+        ? allCountries.filter(
+            (country) =>
+              country.tripId ===
+              requestedTripId,
+          )
+        : countries;
 
   const summary =
     await buildExpenseSummary(

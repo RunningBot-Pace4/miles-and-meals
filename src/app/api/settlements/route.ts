@@ -1,9 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { settlements } from "@/db/schema";
-import {
-  isCountryInActiveTrip,
-} from "@/lib/active-trip";
+import { canAccessCountry } from "@/lib/access";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { recordActivity } from "@/lib/activity";
@@ -27,7 +25,7 @@ export async function POST(request: Request) {
   try {
     const input = settlementActionSchema.parse(await request.json());
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
+    if (!(await canAccessCountry(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -121,7 +119,7 @@ export async function POST(request: Request) {
         {
           title: "Payment marked as paid",
           body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
-          url: "/settlements",
+          url: `/settlements?tripId=${encodeURIComponent(ledger.tripId)}`,
           countryId: ledger.countryId,
           tag: `settlement-${inserted[0]?.id ?? "sent"}`,
         },
@@ -172,7 +170,7 @@ export async function POST(request: Request) {
         {
           title: "Payment completed",
           body: `${session.user.name} confirmed your payment was received. Your payment is now completed automatically.`,
-          url: "/settlements",
+          url: `/settlements?tripId=${encodeURIComponent(ledger.tripId)}`,
           countryId: ledger.countryId,
           tag: `settlement-${pending.id}`,
         },
@@ -252,7 +250,7 @@ export async function POST(request: Request) {
       {
         title: "Payment completed",
         body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received. Your payment was marked completed automatically.`,
-        url: "/settlements",
+        url: `/settlements?tripId=${encodeURIComponent(ledger.tripId)}`,
         countryId: ledger.countryId,
         tag: `settlement-${inserted[0]?.id ?? "received"}`,
       },

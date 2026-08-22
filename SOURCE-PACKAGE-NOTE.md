@@ -1,3 +1,7 @@
+# v68 — Trip-first settlement dropdowns
+
+Settle Up is now explicitly trip-scoped: the selector shows trip names and readiness, the financial checkpoint names the selected trip, and Live GPS also uses trip names instead of country-only labels. See `V68-TRIP-FIRST-SETTLEMENT-DROPDOWNS.md`.
+
 # Miles & Meals v67 — Full Source Package
 
 This package consolidates **Phase 9 through Phase 14** on top of the complete v66 source. It is a production launch-candidate/hardening release rather than a feature-count release.

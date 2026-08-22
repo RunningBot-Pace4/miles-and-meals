@@ -259,7 +259,7 @@ export async function closeTripFinancials(
       sendPushToCountry(country.id, currentUser.id, "TRIPS", {
         title: "Trip expenses locked",
         body: `${current.tripName} is ready for final settlement. New expense changes are paused until the owner reopens the ledger.`,
-        url: "/settlements",
+        url: `/settlements?tripId=${encodeURIComponent(tripId)}`,
         tag: `trip-financial-close-${tripId}`,
       }),
     ),

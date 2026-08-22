@@ -16,6 +16,7 @@ import { SavingOverlay } from "@/components/SavingOverlay";
 type CountryOption = {
   id: string;
   name: string;
+  tripId: string;
   tripName: string;
 };
 
@@ -137,11 +138,17 @@ function initials(name: string): string {
 export function LocationTracker({
   countries,
   currentUserId,
+  initialCountryId,
 }: {
   countries: CountryOption[];
   currentUserId: string;
+  initialCountryId?: string;
 }) {
-  const [countryId, setCountryId] = useState(countries[0]?.id ?? "");
+  const [countryId, setCountryId] = useState(
+    countries.some((country) => country.id === initialCountryId)
+      ? initialCountryId ?? ""
+      : countries[0]?.id ?? "",
+  );
   const [sharing, setSharing] = useState(false);
   const [locating, setLocating] = useState(false);
   const [manualRefreshing, setManualRefreshing] = useState(false);
@@ -710,7 +717,7 @@ export function LocationTracker({
       <section className="panel live-location-control">
         <div className="live-location-control-top">
           <label className="live-location-country">
-            Country
+            Trip
             <select
               value={countryId}
               onChange={(event) => {
@@ -723,10 +730,13 @@ export function LocationTracker({
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id}>
-                  {country.name}
+                  {country.tripName}
                 </option>
               ))}
             </select>
+            <small className="live-location-trip-destination">
+              Destination: {countries.find((country) => country.id === countryId)?.name ?? "—"}
+            </small>
           </label>
 
           <div className="live-location-actions">
