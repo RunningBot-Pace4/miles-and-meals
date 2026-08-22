@@ -39,6 +39,11 @@ if (rootLayout.includes("OfflineQueueSync")) {
 }
 must(wrapped, "TRIP WRAPPED", "v63 Trip Wrapped missing");
 must(css, "grid-template-columns: repeat(4, minmax(0, 1fr));", "v63 mobile 4-column category layout missing");
-must(expenseForm, "currency-name", "v63 compact mobile currency label missing");
+if (
+  !expenseForm.includes("currency-name") &&
+  !expenseForm.includes('className="advanced-currency-control"')
+) {
+  throw new Error("v63+ mobile currency control missing");
+}
 
 console.log("v63 consolidated mobile + v59-v63 validation passed.");

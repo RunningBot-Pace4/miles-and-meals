@@ -408,3 +408,9 @@ See `V52-TRIP-SWITCHER-UX.md`.
 ## v57 Home selector
 
 Home now puts `View all trips` inside the main Trip dropdown. The old always-visible `Your travel overview` section heading is removed. Selecting a specific trip restores the normal active-trip dashboard.
+
+## v64 Advanced Money Input
+
+Add Expense now uses an amount-first money card on mobile and desktop. The amount is visually dominant, the currency dropdown shows code + name, the trip default currency is clearly separated, and foreign-currency entries get an immediate conversion preview. Existing FX rate types and storage logic are unchanged. No database migration is required from v63.
+
+See `V64-ADVANCED-MONEY-INPUT.md`.

@@ -1484,40 +1484,77 @@ export function ExpenseForm({
           </div>
         </div>
 
-        <div className="money-entry">
-          <label className="currency-control">
-            Currency
-            <select
-              value={currency}
-              onChange={(event) =>
-                void handleCurrencyChange(event.target.value)
-              }
-              required
-              aria-label="Transaction currency"
-              disabled={busy || fxRateLoading}
-            >
-              {currencyOptions.map((option) => (
-                <option value={option.code} key={option.code}>
-                  {option.code}
-                </option>
-              ))}
-            </select>
-            <small className="currency-name">
-              {currencyOptions.find((option) => option.code === currency)?.label ?? "Currency"}
-            </small>
+        <div className="advanced-money-card">
+          <div className="advanced-money-heading">
+            <div>
+              <span>Amount paid</span>
+              <small>Enter the original amount exactly as you paid it.</small>
+            </div>
+            <span className="advanced-money-code" aria-label={`Selected currency ${currency}`}>
+              {currency || "CUR"}
+            </span>
+          </div>
+
+          <label className="advanced-amount-control">
+            <span className="sr-only">Transaction amount</span>
+            <div className="advanced-amount-shell">
+              <span className="advanced-amount-prefix" aria-hidden="true">
+                {currency || "CUR"}
+              </span>
+              <input
+                inputMode="decimal"
+                data-numeric-input="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+                placeholder="0.00"
+                aria-label="Transaction amount"
+              />
+            </div>
           </label>
-          <label className="amount-control">
-            Amount
-            <input
-              inputMode="decimal"
-              data-numeric-input="decimal"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              required
-              placeholder="0.00"
-              aria-label="Transaction amount"
-            />
-          </label>
+
+          <div className="advanced-money-settings">
+            <label className="advanced-currency-control">
+              <span>Currency</span>
+              <select
+                value={currency}
+                onChange={(event) =>
+                  void handleCurrencyChange(event.target.value)
+                }
+                required
+                aria-label="Transaction currency"
+                disabled={busy || fxRateLoading}
+              >
+                {currencyOptions.map((option) => (
+                  <option value={option.code} key={option.code}>
+                    {option.code} — {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="advanced-trip-currency" aria-label="Trip default currency">
+              <span>Trip default</span>
+              <strong>{currentCountry?.currencyCode ?? "—"}</strong>
+            </div>
+          </div>
+
+          {!isBaseCurrency ? (
+            <div className="advanced-conversion-preview">
+              <div>
+                <span>Estimated trip amount</span>
+                <strong>
+                  {currentCountry?.baseCurrency ?? "MYR"} {converted.toFixed(2)}
+                </strong>
+              </div>
+              <small>Final amount follows the rate selected below.</small>
+            </div>
+          ) : (
+            <div className="advanced-base-currency-note">
+              <span aria-hidden="true">✓</span>
+              <small>No conversion needed — this matches the trip base currency.</small>
+            </div>
+          )}
         </div>
 
         {fxRateLoading || fxRateMessage ? (
