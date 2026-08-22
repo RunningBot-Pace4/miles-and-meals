@@ -32,6 +32,7 @@ must(expenseForm, "sticky-save-feedback", "v65 sticky save error feedback missin
 must(expenseForm, "setDraftDirty(false)", "v65 success draft-state cleanup missing");
 must(expenseForm, "busy ||\n      offlineQueued ||\n      receiptScanning", "v65 draft autosave must stop after offline queueing");
 mustNot(expenseForm, "onClickCapture={() =>\n          setDraftDirty(true)", "v65 must not create drafts from generic clicks");
+mustNot(expenseForm, "(item): item is HTMLElement => item instanceof HTMLElement", "v65.1 must not use an invalid RadioNodeList HTMLElement type predicate");
 must(css, ".sticky-save.has-feedback", "v65 sticky error styling missing");
 must(css, ".sticky-save-feedback", "v65 sticky feedback styling missing");
 

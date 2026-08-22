@@ -36,3 +36,8 @@ No database migration is required from v58 to v63.
 ## v64
 
 This package includes the v64 Advanced Money Input redesign. No database migration is required from v63.
+
+
+## v65.1 build hotfix
+
+Fixed strict TypeScript compilation in the Add Expense submit-problem focus helper (`RadioNodeList` handling). No database migration is required.

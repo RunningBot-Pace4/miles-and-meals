@@ -1133,7 +1133,7 @@ export function ExpenseForm({
           target = named;
         } else if (named instanceof RadioNodeList) {
           target = Array.from(named).find(
-            (item): item is HTMLElement => item instanceof HTMLElement,
+            (item) => item instanceof HTMLElement,
           ) ?? null;
         }
       }

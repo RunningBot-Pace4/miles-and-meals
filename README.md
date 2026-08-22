@@ -427,3 +427,8 @@ Home now puts `View all trips` inside the main Trip dropdown. The old always-vis
 Add Expense now uses an amount-first money card on mobile and desktop. The amount is visually dominant, the currency dropdown shows code + name, the trip default currency is clearly separated, and foreign-currency entries get an immediate conversion preview. Existing FX rate types and storage logic are unchanged. No database migration is required from v63.
 
 See `V64-ADVANCED-MONEY-INPUT.md`.
+
+
+## v65.1 build hotfix
+
+Fixed strict TypeScript compilation in the Add Expense submit-problem focus helper (`RadioNodeList` handling). No database migration is required.
