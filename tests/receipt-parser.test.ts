@@ -234,4 +234,35 @@ THANK YOU
     expect(parsed.totalAmount).toBeNull();
   });
 
+  it("detects receipt date and a useful category suggestion", () => {
+    const parsed = parseReceiptText(
+      `
+HIGHLANDS COFFEE
+DATE 21/08/2026 11:35
+GRAND TOTAL 120,000 VND
+`,
+      "VND",
+      88,
+      "HIGHLANDS COFFEE",
+    );
+
+    expect(parsed.receiptDate).toBe("2026-08-21");
+    expect(parsed.dateConfidence).not.toBe("LOW");
+    expect(parsed.categorySuggestion).toBe("Food");
+  });
+
+  it("suggests Other for currency exchange / credit services", () => {
+    const parsed = parseReceiptText(
+      `
+AEN CREDIT SERVICE
+21/08/2026
+TOTAL MYR 97.76
+`,
+      "MYR",
+      82,
+    );
+
+    expect(parsed.categorySuggestion).toBe("Other");
+  });
+
 });

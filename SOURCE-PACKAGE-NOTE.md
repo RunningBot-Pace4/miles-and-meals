@@ -1,15 +1,18 @@
-# Miles & Meals v58 — Full Source Package
+# Miles & Meals v63 — Full Source Package
 
-This ZIP contains the complete v58 source tree based on v57.
+This ZIP contains the complete v63 source tree, consolidated from the stable v58 baseline.
 
-Included v58 behavior:
+Included v63 behavior:
 
-- Home defaults to **View all trips**.
-- The View All mode keeps the exact same dashboard structure used by an individual trip; the separate travel-overview card grid has been retired.
-- The main wallet, personal budget, group budget, category spending and settlement sections aggregate all trips the user can access.
-- Selecting a named trip from the Home dropdown makes that trip active and opens the same dashboard filtered to that trip.
-- Selecting **View all trips** returns to `/dashboard` and does not overwrite the active-trip cookie used by Plan/Add Expense.
-- Mixed trip base currencies are normalized for the all-trip dashboard through the existing daily FX service with a short server-side rate cache.
-- v57 dropdown selection, v56 creator assignment/live budget prompt, v55 currency/OCR, v54 settlement locks/privacy and v53 notification fixes remain included.
+- Home still defaults to **View all trips** with the same dashboard screen used for individual trips.
+- Mobile Add Expense is compacted and polished for phone use.
+- Home adds an action centre and recent activity timeline.
+- Receipt OCR adds receipt date/category intelligence and duplicate-expense protection.
+- Planner items can open a prefilled Add Expense form.
+- New Search page searches expenses, planner items and activity across accessible trips.
+- Expense/planner changes can be queued offline and synced after reconnection.
+- Existing JSON/CSV exports and System Admin backup/restore remain available for recovery.
+- New Trip Wrapped page summarizes the trip after/during travel.
+- v53-v58 settlement, notification, single-country, traveler assignment and Home-scope behavior remains included.
 
-No database migration is required from v57 to v58.
+No database migration is required from v58 to v63.

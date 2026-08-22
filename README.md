@@ -1,5 +1,20 @@
 # Miles & Meals
 
+## v63 — Consolidated Mobile + Product Maturity Release
+
+- Mobile Add Expense has been compacted and polished for phone use.
+- Home adds a **Needs your attention** action centre and recent activity timeline.
+- Receipt recognition adds date/category intelligence and API-backed duplicate-expense warnings.
+- Planner items can open **Add expense** with trip/date/description/category prefilled.
+- New **Search trips** searches expenses, plans and activity across accessible trips.
+- Supported expense/planner mutations can queue offline and sync after connection returns.
+- New **Trip Wrapped** provides a post-trip spending/planning summary.
+- Existing JSON/CSV export plus Admin backup/restore remain the recovery layer.
+- v59-v63 are delivered together in this source package.
+- No database migration is required from v58 to v63.
+
+See `V59-HOME-ACTION-ACTIVITY.md` through `V63-TRIP-WRAPPED-MOBILE.md`.
+
 ## v58 — Home Defaults to View All, Same Dashboard Screen
 
 - Home now defaults to **View all trips** whenever the traveler has at least one accessible trip.

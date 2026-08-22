@@ -6,8 +6,10 @@ import {
   getActiveTripContext,
 } from "@/lib/active-trip";
 import { buildExpenseSummary } from "@/lib/dashboard";
+import { listActivityForUser } from "@/lib/activity";
 import { loadAllTripsDashboardData } from "@/lib/dashboard-scope";
 import { formatMoney } from "@/lib/money";
+import { loadUnreadNotificationCount } from "@/lib/notification-count";
 import {
   isSystemAdmin,
   requirePageSession,
@@ -153,29 +155,43 @@ export default async function DashboardPage({
       (country) => country.id,
     );
 
-  const [summary, budget, allTripsData] =
-    await Promise.all([
-      buildExpenseSummary(countryIds),
-      requestedTripId
-        ? loadTripBudgetSummary(
-            session.user.id,
-            requestedTripId,
-            countryIds,
-          )
-        : Promise.resolve({
-            myBudget: 0,
-            combinedBudget: 0,
-            budgetsSubmitted: 0,
-            travelerCount: 0,
-            missingBudgetCount: 0,
-          }),
-      viewAll
-        ? loadAllTripsDashboardData(
-            session.user.id,
-            activeTrip,
-          )
-        : Promise.resolve(null),
-    ]);
+  const [
+    summary,
+    budget,
+    allTripsData,
+    unreadNotificationCount,
+    recentActivity,
+  ] = await Promise.all([
+    buildExpenseSummary(countryIds),
+    requestedTripId
+      ? loadTripBudgetSummary(
+          session.user.id,
+          requestedTripId,
+          countryIds,
+        )
+      : Promise.resolve({
+          myBudget: 0,
+          combinedBudget: 0,
+          budgetsSubmitted: 0,
+          travelerCount: 0,
+          missingBudgetCount: 0,
+        }),
+    viewAll
+      ? loadAllTripsDashboardData(
+          session.user.id,
+          activeTrip,
+        )
+      : Promise.resolve(null),
+    loadUnreadNotificationCount(
+      session.user.id,
+    ),
+    listActivityForUser(
+      session.user,
+      6,
+      viewAll ? "" : requestedTripId,
+      viewAll ? [] : countryIds,
+    ),
+  ]);
 
   const me = summary.people.find(
     (person) =>
@@ -299,6 +315,50 @@ export default async function DashboardPage({
       travelerCount:
         budget.travelerCount,
     };
+
+  const iOwe = settlementLiveData.waitingTransfers
+    .filter((transfer) => transfer.fromUserId === session.user.id)
+    .reduce((total, transfer) => total + transfer.amount, 0);
+  const waitingForMe = settlementLiveData.pendingSettlements
+    .filter((payment) => payment.toUserId === session.user.id)
+    .reduce((total, payment) => total + payment.amount, 0);
+
+  const actionItems = [
+    unreadNotificationCount > 0
+      ? {
+          icon: "🔔",
+          title: `${unreadNotificationCount} unread notification${unreadNotificationCount === 1 ? "" : "s"}`,
+          copy: "See what changed across your trips.",
+          href: "/notifications",
+        }
+      : null,
+    iOwe > 0
+      ? {
+          icon: "↗",
+          title: `You have ${formatMoney(iOwe, baseCurrency)} to settle`,
+          copy: "Review who is waiting for payment.",
+          href: "/settlements",
+        }
+      : null,
+    waitingForMe > 0
+      ? {
+          icon: "✓",
+          title: `${formatMoney(waitingForMe, baseCurrency)} waiting for your confirmation`,
+          copy: "Mark it received when the money arrives.",
+          href: "/settlements",
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  function activityTime(value: Date): string {
+    return new Intl.DateTimeFormat("en-MY", {
+      day: "numeric",
+      month: "short",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "Asia/Kuala_Lumpur",
+    }).format(value);
+  }
 
   return (
     <div className="stack gap-lg dashboard-page">
@@ -517,6 +577,31 @@ export default async function DashboardPage({
         </div>
       </section>
 
+      {selectedTrip && actionItems.length > 0 ? (
+        <section className="dashboard-action-centre" aria-labelledby="dashboard-action-title">
+          <div className="travel-section-heading dashboard-action-heading">
+            <div>
+              <p className="eyebrow">NEEDS YOUR ATTENTION</p>
+              <h2 id="dashboard-action-title">Quick things to do</h2>
+            </div>
+            <span>{actionItems.length} open</span>
+          </div>
+
+          <div className="dashboard-action-grid">
+            {actionItems.map((item) => (
+              <Link className="dashboard-action-card" href={item.href} key={`${item.href}-${item.title}`}>
+                <span className="dashboard-action-icon" aria-hidden="true">{item.icon}</span>
+                <span className="dashboard-action-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.copy}</small>
+                </span>
+                <span className="dashboard-action-arrow" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {!selectedTrip ? (
         <section className="empty-card empty-card-feature dashboard-self-service-empty">
           <div className="empty-icon">
@@ -575,6 +660,30 @@ export default async function DashboardPage({
             allTrips={viewAll}
             variant="dashboard"
           />
+
+          {recentActivity.length > 0 ? (
+            <section className="dashboard-recent-activity" aria-labelledby="recent-activity-title">
+              <div className="travel-section-heading">
+                <div>
+                  <p className="eyebrow">RECENT ACTIVITY</p>
+                  <h2 id="recent-activity-title">What changed</h2>
+                </div>
+                <Link className="dashboard-section-link" href="/activity">View all</Link>
+              </div>
+
+              <div className="dashboard-activity-list">
+                {recentActivity.map((item) => (
+                  <article className="dashboard-activity-row" key={item.id}>
+                    <span className="dashboard-activity-dot" aria-hidden="true" />
+                    <span className="dashboard-activity-copy">
+                      <strong>{item.summary}</strong>
+                      <small>{item.actorName ?? "System"} · {activityTime(item.createdAt)}</small>
+                    </span>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <section
             className="dashboard-travel-shortcuts"

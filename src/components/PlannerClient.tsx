@@ -17,6 +17,7 @@ import {
   readDraft,
   writeDraft,
 } from "@/lib/draft-storage";
+import { enqueueOfflineMutation } from "@/lib/offline-queue";
 
 type CountryOption = {
   id: string;
@@ -141,6 +142,32 @@ function formatFullDate(value: string | null): string {
     month: "short",
     year: "numeric",
   }).format(new Date(year, month - 1, day));
+}
+
+function expenseCategoryForItem(item: PlannerItem): string {
+  const text = `${item.title} ${item.subtype ?? ""}`.toLowerCase();
+
+  if (item.itemType === "FOOD") return "Food";
+  if (item.itemType === "SHOPPING") return "Shopping";
+  if (/flight|airline|airport/.test(text)) return "Flights";
+  if (/hotel|hostel|resort|stay/.test(text)) return "Hotel";
+  if (/taxi|grab|train|metro|bus|transfer|transport/.test(text)) return "Transport";
+  if (item.itemType === "PLACE" || item.itemType === "ITINERARY") return "Attractions";
+  return "Other";
+}
+
+function expenseHrefForItem(item: PlannerItem): string {
+  const params = new URLSearchParams({
+    countryId: item.countryId,
+    description: item.title,
+    category: expenseCategoryForItem(item),
+  });
+
+  if (item.itemDate) {
+    params.set("date", item.itemDate);
+  }
+
+  return `/expenses/new?${params.toString()}`;
 }
 
 function statusClass(status: string | null): string {
@@ -795,6 +822,29 @@ export function PlannerClient({
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const payload = formPayload(form, tab);
+
+    if (!navigator.onLine) {
+      try {
+        enqueueOfflineMutation({
+          url: "/api/travel-items",
+          method: "POST",
+          body: payload,
+          label: "Planner item",
+        });
+        clearDraft(draftKey("planner", `new:${tab}`));
+        formElement.reset();
+        setShowForm(false);
+        setError("Saved offline — this plan will appear for everyone after it syncs.");
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to store this plan offline.",
+        );
+      }
+      return;
+    }
 
     setError("");
     setLoadingTitle(`Adding ${meta.titleLabel.toLowerCase()}`);
@@ -806,7 +856,7 @@ export function PlannerClient({
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(formPayload(form, tab)),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -845,6 +895,31 @@ export function PlannerClient({
     }
 
     const form = new FormData(event.currentTarget);
+    const payload = formPayload(
+      form,
+      editingItem.itemType as TabValue,
+    );
+
+    if (!navigator.onLine) {
+      try {
+        enqueueOfflineMutation({
+          url: `/api/travel-items/${editingItem.id}`,
+          method: "PATCH",
+          body: payload,
+          label: "Planner update",
+        });
+        clearDraft(draftKey("planner", `edit:${editingItem.id}`));
+        setEditingItem(null);
+        setError("Update saved offline — it will sync when your connection returns.");
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to store this update offline.",
+        );
+      }
+      return;
+    }
 
     setError("");
     setLoadingTitle(`Saving ${tabMeta[editingItem.itemType as TabValue].titleLabel.toLowerCase()}`);
@@ -858,9 +933,7 @@ export function PlannerClient({
           headers: {
             "content-type": "application/json",
           },
-          body: JSON.stringify(
-            formPayload(form, editingItem.itemType as TabValue),
-          ),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -893,6 +966,28 @@ export function PlannerClient({
 
   async function remove(id: string) {
     if (!window.confirm("Delete this item?")) {
+      return;
+    }
+
+    if (!navigator.onLine) {
+      try {
+        enqueueOfflineMutation({
+          url: `/api/travel-items/${id}`,
+          method: "DELETE",
+          label: "Planner deletion",
+        });
+        setItemsState((current) => current.filter((item) => item.id !== id));
+        setEditingItem((current) => (current?.id === id ? null : current));
+        setDetailItem((current) => (current?.id === id ? null : current));
+        clearDraft(draftKey("planner", `edit:${id}`));
+        setError("Deletion saved offline — it will sync when your connection returns.");
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to store this deletion offline.",
+        );
+      }
       return;
     }
 
@@ -1272,6 +1367,13 @@ export function PlannerClient({
                     >
                       View details
                     </button>
+
+                    <a
+                      className="planner-expense-button"
+                      href={expenseHrefForItem(item)}
+                    >
+                      Add expense
+                    </a>
 
                     <button
                       className="planner-edit-button"

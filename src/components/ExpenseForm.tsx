@@ -17,6 +17,7 @@ import {
 } from "@/lib/draft-storage";
 import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
+import { enqueueOfflineMutation } from "@/lib/offline-queue";
 
 type CountryOption = {
   id: string;
@@ -42,7 +43,17 @@ type ReceiptAnalysis = {
   confidence: "HIGH" | "MEDIUM" | "LOW";
   merchantConfidence: "HIGH" | "MEDIUM" | "LOW";
   totalConfidence: "HIGH" | "MEDIUM" | "LOW";
+  receiptDate: string | null;
+  dateConfidence: "HIGH" | "MEDIUM" | "LOW";
+  categorySuggestion: string | null;
   rawText: string;
+};
+
+type DuplicateWarning = {
+  id: string;
+  description: string;
+  currency: string;
+  amount: number;
 };
 
 type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
@@ -61,6 +72,13 @@ function normalizeOptionalActualCharge(
 
   return parsed !== null && parsed > 0 ? trimmed : "";
 }
+
+type ExpensePrefill = {
+  countryId?: string;
+  expenseDate?: string;
+  description?: string;
+  category?: string;
+};
 
 type ExpenseInitial = {
   id: string;
@@ -187,14 +205,17 @@ export function ExpenseForm({
   activeTripId,
   currentUserId,
   initial,
+  prefill,
 }: {
   countries: CountryOption[];
   activeTripId: string;
   currentUserId: string;
   initial?: ExpenseInitial;
+  prefill?: ExpensePrefill;
 }) {
   const first =
     countries.find((country) => country.id === initial?.countryId) ??
+    countries.find((country) => country.id === prefill?.countryId) ??
     countries.find((country) => country.tripId === activeTripId) ??
     countries[0];
 
@@ -210,7 +231,9 @@ export function ExpenseForm({
       : initial?.exchangeRate ?? first?.defaultExchangeRate ?? "1";
 
   const [countryId, setCountryId] = useState(first?.id ?? "");
-  const [category, setCategory] = useState(initial?.category ?? "Food");
+  const [category, setCategory] = useState(
+    initial?.category ?? prefill?.category ?? "Food",
+  );
   const [currency, setCurrency] = useState(startingCurrency);
   const [rate, setRate] = useState(startingRate);
   const [rateType, setRateType] = useState<RateType>(
@@ -235,10 +258,10 @@ export function ExpenseForm({
     initial?.paidByUserId ?? currentUserId,
   );
   const [description, setDescription] = useState(
-    initial?.description ?? "",
+    initial?.description ?? prefill?.description ?? "",
   );
   const [expenseDate, setExpenseDate] = useState(
-    initial?.expenseDate ?? localDateString(),
+    initial?.expenseDate ?? prefill?.expenseDate ?? localDateString(),
   );
   const [paymentMethod, setPaymentMethod] = useState(
     initial?.paymentMethod ?? "",
@@ -262,7 +285,12 @@ export function ExpenseForm({
   const [tripSwitching, setTripSwitching] = useState(false);
   const [fxRateLoading, setFxRateLoading] = useState(false);
   const [fxRateMessage, setFxRateMessage] = useState("");
+  const [duplicateWarning, setDuplicateWarning] =
+    useState<DuplicateWarning | null>(null);
+  const [offlineQueued, setOfflineQueued] = useState(false);
   const fxRequestIdRef = useRef(0);
+  const duplicateOverrideRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const expenseDraftKey = draftKey(
     "expense",
@@ -280,6 +308,22 @@ export function ExpenseForm({
     useState(false);
   const preserveMembersRef =
     useRef(false);
+
+  useEffect(() => {
+    if (!offlineQueued) {
+      return;
+    }
+
+    function synced() {
+      window.location.assign("/expenses");
+    }
+
+    window.addEventListener("mnm:data-synced", synced);
+
+    return () => {
+      window.removeEventListener("mnm:data-synced", synced);
+    };
+  }, [offlineQueued]);
 
   const currentCountry = countries.find(
     (country) => country.id === countryId,
@@ -984,6 +1028,17 @@ export function ExpenseForm({
         void handleCurrencyChange(detected.currencyCode);
       }
 
+      if (
+        detected.receiptDate &&
+        detected.dateConfidence !== "LOW"
+      ) {
+        setExpenseDate(detected.receiptDate);
+      }
+
+      if (detected.categorySuggestion) {
+        setCategory(detected.categorySuggestion);
+      }
+
       if (!detected.merchantName && detected.totalAmount === null) {
         setReceiptMessage(
           "The receipt text was read, but the shop or final total is still uncertain. Try one of the suggestions below or enter it manually.",
@@ -1150,9 +1205,36 @@ export function ExpenseForm({
       paymentMethod,
       receiptUrl: finalReceiptUrl,
       notes,
+      allowDuplicate: duplicateOverrideRef.current,
       splitMode,
       splits: parsedSplits,
     };
+
+    if (!navigator.onLine) {
+      try {
+        enqueueOfflineMutation({
+          url: initial ? `/api/expenses/${initial.id}` : "/api/expenses",
+          method: initial ? "PUT" : "POST",
+          label: initial ? "Expense update" : "Expense",
+          body: {
+            ...body,
+            allowDuplicate: true,
+          },
+        });
+        clearDraft(expenseDraftKey);
+        setOfflineQueued(true);
+        setBusy(false);
+        return;
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to store this expense offline.",
+        );
+        setBusy(false);
+        return;
+      }
+    }
 
     try {
       const response = await fetch(
@@ -1167,7 +1249,22 @@ export function ExpenseForm({
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           error?: string;
+          code?: string;
+          duplicate?: DuplicateWarning;
         };
+
+        if (
+          response.status === 409 &&
+          payload.code === "POSSIBLE_DUPLICATE" &&
+          payload.duplicate
+        ) {
+          duplicateOverrideRef.current = false;
+          setDuplicateWarning(payload.duplicate);
+          setError("");
+          setBusy(false);
+          return;
+        }
+
         setError(payload.error ?? "Unable to save expense.");
         setBusy(false);
         return;
@@ -1176,6 +1273,8 @@ export function ExpenseForm({
       clearDraft(
         expenseDraftKey,
       );
+      duplicateOverrideRef.current = false;
+      setDuplicateWarning(null);
       window.location.assign("/expenses");
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
@@ -1215,6 +1314,7 @@ export function ExpenseForm({
         />
       ) : null}
       <form
+        ref={formRef}
         className="expense-editor"
         onSubmit={submit}
         onInput={() =>
@@ -1398,10 +1498,13 @@ export function ExpenseForm({
             >
               {currencyOptions.map((option) => (
                 <option value={option.code} key={option.code}>
-                  {option.code} · {option.label}
+                  {option.code}
                 </option>
               ))}
             </select>
+            <small className="currency-name">
+              {currencyOptions.find((option) => option.code === currency)?.label ?? "Currency"}
+            </small>
           </label>
           <label className="amount-control">
             Amount
@@ -1743,6 +1846,18 @@ export function ExpenseForm({
                 </strong>
               </div>
               <div>
+                <small>Receipt date</small>
+                <strong>
+                  {receiptResult.receiptDate ?? "Not detected"}
+                </strong>
+              </div>
+              <div>
+                <small>Suggested category</small>
+                <strong>
+                  {receiptResult.categorySuggestion ?? "Review manually"}
+                </strong>
+              </div>
+              <div>
                 <small>
                   Overall OCR
                 </small>
@@ -1885,6 +2000,49 @@ export function ExpenseForm({
         </label>
       </section>
 
+      {offlineQueued ? (
+        <section className="offline-saved-card" role="status">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <strong>Saved offline</strong>
+            <p>This expense is safe on this device and will sync automatically when your connection returns.</p>
+          </div>
+        </section>
+      ) : null}
+
+      {duplicateWarning ? (
+        <section className="duplicate-expense-warning" role="alert">
+          <span className="duplicate-warning-icon" aria-hidden="true">⚠</span>
+          <div>
+            <strong>Possible duplicate</strong>
+            <p>
+              {duplicateWarning.description} · {duplicateWarning.currency}{" "}
+              {duplicateWarning.amount.toLocaleString("en-MY", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+              {" "}is already recorded for this date.
+            </p>
+            <div className="duplicate-warning-actions">
+              <a className="button secondary" href="/expenses">Review expenses</a>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => {
+                  duplicateOverrideRef.current = true;
+                  setDuplicateWarning(null);
+                  window.requestAnimationFrame(() =>
+                    formRef.current?.requestSubmit(),
+                  );
+                }}
+              >
+                Save anyway
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {error ? <p className="form-error-banner">{error}</p> : null}
 
       <div className="sticky-save">
@@ -1894,8 +2052,8 @@ export function ExpenseForm({
             {currentCountry?.baseCurrency ?? "MYR"} {settlementTotal.toFixed(2)}
           </strong>
         </div>
-        <button className="button primary save-expense-button" disabled={busy} type="submit">
-          {busy ? "Saving…" : initial ? "Save changes" : "Save expense"}
+        <button className="button primary save-expense-button" disabled={busy || offlineQueued} type="submit">
+          {busy ? "Saving…" : offlineQueued ? "Waiting to sync" : initial ? "Save changes" : "Save expense"}
         </button>
       </div>
       </form>

@@ -66,8 +66,8 @@ if (
   failures.push("Notification bell and center must refresh every 5 seconds.");
 }
 
-if (!worker.includes('miles-meals-static-v53')) {
-  failures.push("Service-worker cache version was not bumped for v53.");
+if (!/miles-meals-static-v(?:5[3-9]|6\d+)/.test(worker)) {
+  failures.push("Service-worker cache version must remain v53 or newer.");
 }
 
 for (const asset of [

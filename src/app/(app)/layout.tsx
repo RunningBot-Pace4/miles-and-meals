@@ -3,6 +3,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { BudgetAccessGate } from "@/components/BudgetAccessGate";
 import { MobileNav } from "@/components/MobileNav";
 import { NotificationBell } from "@/components/NotificationBell";
+import { OfflineQueueSync } from "@/components/OfflineQueueSync";
 import { PasswordChangeGate } from "@/components/PasswordChangeGate";
 import {
   loadUnreadNotificationCount,
@@ -94,6 +95,8 @@ export default async function AppLayout({
           <main className="page-container">
             {children}
           </main>
+
+          <OfflineQueueSync />
         </div>
       </BudgetAccessGate>
     </PasswordChangeGate>

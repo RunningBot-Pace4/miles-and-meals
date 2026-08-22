@@ -108,8 +108,16 @@ export default async function MorePage() {
           <span>Notification settings</span>
           <span>›</span>
         </Link>
+        <Link className="menu-row link-row" href="/search">
+          <span>Search trips</span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/activity">
           <span>Trip activity</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/wrapped">
+          <span>Trip Wrapped</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/export">

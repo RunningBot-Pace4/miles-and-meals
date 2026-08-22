@@ -131,6 +131,7 @@ export const expenseSchema = z.object({
   paymentMethod: z.string().trim().max(100).optional().default(""),
   receiptUrl: receiptReferenceSchema.optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
+  allowDuplicate: z.coerce.boolean().optional().default(false),
   splitMode: z.enum(["EQUAL", "PERCENTAGE", "EXACT"]),
   splits: z
     .array(

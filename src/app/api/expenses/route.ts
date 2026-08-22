@@ -72,6 +72,65 @@ export async function POST(request: Request) {
       return Response.json({ error: "Country not found." }, { status: 404 });
     }
 
+    if (!input.allowDuplicate) {
+      const sameDay = await db
+        .select({
+          id: expenses.id,
+          description: expenses.description,
+          transactionCurrency: expenses.transactionCurrency,
+          transactionAmount: expenses.transactionAmount,
+          createdAt: expenses.createdAt,
+        })
+        .from(expenses)
+        .where(
+          and(
+            eq(expenses.countryId, input.countryId),
+            eq(expenses.expenseDate, input.expenseDate),
+          ),
+        )
+        .orderBy(desc(expenses.createdAt))
+        .limit(40);
+
+      const normalizedDescription = input.description
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+      const duplicate = sameDay.find((row) => {
+        const existingDescription = row.description
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ");
+        const sameAmount =
+          Math.abs(Number(row.transactionAmount) - input.transactionAmount) < 0.01;
+        const sameCurrency =
+          row.transactionCurrency.toUpperCase() === input.transactionCurrency.toUpperCase();
+        const sameMerchant =
+          existingDescription === normalizedDescription ||
+          (existingDescription.length >= 5 &&
+            normalizedDescription.length >= 5 &&
+            (existingDescription.includes(normalizedDescription) ||
+              normalizedDescription.includes(existingDescription)));
+
+        return sameAmount && sameCurrency && sameMerchant;
+      });
+
+      if (duplicate) {
+        return Response.json(
+          {
+            error: "Possible duplicate expense.",
+            code: "POSSIBLE_DUPLICATE",
+            duplicate: {
+              id: duplicate.id,
+              description: duplicate.description,
+              currency: duplicate.transactionCurrency,
+              amount: Number(duplicate.transactionAmount),
+            },
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     const members = await listCountryMembers(input.countryId, session.user.id);
     const memberIds = new Set(members.map((member) => member.id));
 

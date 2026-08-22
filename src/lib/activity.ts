@@ -108,6 +108,11 @@ export async function listActivityForUser(
   const countryIds = accessible.map(
     (country) => country.id,
   );
+  const tripIds = [
+    ...new Set(
+      accessible.map((country) => country.tripId),
+    ),
+  ];
 
   if (countryIds.length === 0) {
     return baseSelect
@@ -132,6 +137,14 @@ export async function listActivityForUser(
           activityLogs.countryId,
           countryIds,
         ),
+        ...(tripIds.length
+          ? [
+              inArray(
+                activityLogs.tripId,
+                tripIds,
+              ),
+            ]
+          : []),
       ),
     )
     .orderBy(desc(activityLogs.createdAt))

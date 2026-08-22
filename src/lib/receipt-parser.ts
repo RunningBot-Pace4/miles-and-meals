@@ -9,6 +9,9 @@ export type ParsedReceipt = {
   confidence: ReceiptConfidence;
   merchantConfidence: ReceiptConfidence;
   totalConfidence: ReceiptConfidence;
+  receiptDate: string | null;
+  dateConfidence: ReceiptConfidence;
+  categorySuggestion: string | null;
   rawText: string;
 };
 
@@ -906,6 +909,109 @@ function receiptConfidence(
   return "LOW";
 }
 
+function validIsoDate(year: number, month: number, day: number): string | null {
+  if (year < 2000 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  const value = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    value.getUTCFullYear() !== year ||
+    value.getUTCMonth() !== month - 1 ||
+    value.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+}
+
+function detectReceiptDate(text: string): {
+  value: string | null;
+  confidence: ReceiptConfidence;
+} {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => cleanLine(line))
+    .filter(Boolean);
+  const monthMap: Record<string, number> = {
+    JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+    JUL: 7, AUG: 8, SEP: 9, SEPT: 9, OCT: 10, NOV: 11, DEC: 12,
+  };
+  const candidates: Array<{ value: string; score: number }> = [];
+
+  lines.forEach((line, index) => {
+    const normalized = normalizeSearchText(line);
+    const dateLabelBonus = /\bDATE\b|\bTRANSACTION\s+DATE\b|\bRECEIPT\s+DATE\b/.test(normalized) ? 40 : 0;
+    const earlyBonus = index < 16 ? Math.max(0, 18 - index) : 0;
+
+    for (const match of line.matchAll(/\b(20\d{2})[\/.\-](\d{1,2})[\/.\-](\d{1,2})\b/g)) {
+      const value = validIsoDate(Number(match[1]), Number(match[2]), Number(match[3]));
+      if (value) candidates.push({ value, score: 90 + dateLabelBonus + earlyBonus });
+    }
+
+    for (const match of line.matchAll(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/g)) {
+      let year = Number(match[3]);
+      if (year < 100) year += year >= 70 ? 1900 : 2000;
+      const value = validIsoDate(year, Number(match[2]), Number(match[1]));
+      if (value) candidates.push({ value, score: 82 + dateLabelBonus + earlyBonus });
+    }
+
+    for (const match of normalized.matchAll(/\b(\d{1,2})\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)[A-Z]*\s+(20\d{2})\b/g)) {
+      const month = monthMap[match[2]];
+      const value = validIsoDate(Number(match[3]), month, Number(match[1]));
+      if (value) candidates.push({ value, score: 88 + dateLabelBonus + earlyBonus });
+    }
+  });
+
+  if (candidates.length === 0) {
+    return { value: null, confidence: "LOW" };
+  }
+
+  const grouped = new Map<string, { value: string; score: number; count: number }>();
+  for (const candidate of candidates) {
+    const existing = grouped.get(candidate.value);
+    if (existing) {
+      existing.score = Math.max(existing.score, candidate.score);
+      existing.count += 1;
+    } else {
+      grouped.set(candidate.value, { ...candidate, count: 1 });
+    }
+  }
+
+  const ranked = [...grouped.values()]
+    .map((item) => ({ ...item, score: item.score + Math.min(24, (item.count - 1) * 12) }))
+    .sort((a, b) => b.score - a.score);
+  const best = ranked[0];
+
+  return {
+    value: best.value,
+    confidence: best.score >= 120 ? "HIGH" : best.score >= 88 ? "MEDIUM" : "LOW",
+  };
+}
+
+function suggestReceiptCategory(text: string): string | null {
+  const value = normalizeSearchText(text);
+  const rules: Array<[string, RegExp[]]> = [
+    ["Other", [/\bCREDIT\s+SERVICE\b/, /\bMONEY\s+CHANGER\b/, /\bCURRENCY\s+EXCHANGE\b/, /\bFOREX\b/]],
+    ["Flights", [/\bAIRLINES?\b/, /\bAIRWAYS\b/, /\bFLIGHT\b/, /\bBOARDING\b/, /\bAIRPORT\b/]],
+    ["Hotel", [/\bHOTEL\b/, /\bHOSTEL\b/, /\bRESORT\b/, /\bHOMESTAY\b/, /\bACCOMMODATION\b/]],
+    ["Transport", [/\bGRAB\b/, /\bTAXI\b/, /\bUBER\b/, /\bTRAIN\b/, /\bMETRO\b/, /\bBUS\b/, /\bTOLL\b/, /\bPARKING\b/, /\bPETROL\b/, /\bGASOLINE\b/]],
+    ["Attractions", [/\bMUSEUM\b/, /\bTICKET\b/, /\bADMISSION\b/, /\bATTRACTION\b/, /\bTHEME\s+PARK\b/, /\bTOUR\b/]],
+    ["Shopping", [/\bMART\b/, /\bMARKET\b/, /\bMALL\b/, /\bBOUTIQUE\b/, /\bDEPARTMENT\s+STORE\b/, /\bSUPERMARKET\b/, /\bRETAIL\b/]],
+    ["Food", [/\bCAFE\b/, /\bCOFFEE\b/, /\bRESTAURANT\b/, /\bFOOD\b/, /\bBAKERY\b/, /\bKITCHEN\b/, /\bBISTRO\b/, /\bDINING\b/, /\bBAR\b/]],
+  ];
+
+  for (const [category, patterns] of rules) {
+    if (patterns.some((pattern) => pattern.test(value))) {
+      return category;
+    }
+  }
+
+  return null;
+}
+
 export function parseReceiptText(
   rawText: string,
   fallbackCurrency: string | null,
@@ -934,6 +1040,7 @@ export function parseReceiptText(
   ]
     .filter(Boolean)
     .join("\n");
+  const receiptDate = detectReceiptDate(combinedText);
 
   return {
     merchantName: merchants.merchantName,
@@ -964,6 +1071,9 @@ export function parseReceiptText(
         totals.total,
         ocrConfidence,
       ),
+    receiptDate: receiptDate.value,
+    dateConfidence: receiptDate.confidence,
+    categorySuggestion: suggestReceiptCategory(combinedText),
     rawText: combinedText,
   };
 }
