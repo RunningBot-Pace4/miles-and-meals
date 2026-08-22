@@ -3,6 +3,7 @@ import { CollaborationPulse } from "@/components/CollaborationPulse";
 import { BrandLogo } from "@/components/BrandLogo";
 import { BudgetAccessGate } from "@/components/BudgetAccessGate";
 import { MobileNav } from "@/components/MobileNav";
+import { MobileContextBack } from "@/components/MobileContextBack";
 import { NotificationBell } from "@/components/NotificationBell";
 import { OfflineQueueSync } from "@/components/OfflineQueueSync";
 import { PasswordChangeGate } from "@/components/PasswordChangeGate";
@@ -98,6 +99,7 @@ export default async function AppLayout({
           <MobileNav />
 
           <main id="main-content" className="page-container">
+            <MobileContextBack />
             {children}
           </main>
 

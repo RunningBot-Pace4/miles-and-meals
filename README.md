@@ -1,3 +1,15 @@
+# v69 — Mobile Flow, Navigation & Safe Neon Reset
+
+- Added a context-aware mobile **Back** control on secondary screens while keeping the five main tabs clean.
+- **Your travel story** trip selection now opens immediately; the extra View button is removed.
+- Search no longer auto-focuses on mobile, preventing the keyboard from hiding the bottom navigation.
+- Added a mobile-only design-system pass for 320–430px phones: larger touch targets, iOS-safe 16px inputs, premium bottom nav, safer spacing and clearer search/wrapped cards.
+- Added authenticated multi-viewport E2E coverage for the full core mobile route flow.
+- Added a guarded Neon reset that clears app/travel data while preserving Better Auth login accounts and security/profile state.
+- No new database migration is required from v68 to v69 (assuming the v67 schema is already applied).
+
+See `V69-MOBILE-FLOW-NAV-RESET.md`.
+
 # v68 — Trip-first settlement dropdowns
 
 Settle Up is now explicitly trip-scoped: the selector shows trip names and readiness, the financial checkpoint names the selected trip, and Live GPS also uses trip names instead of country-only labels. See `V68-TRIP-FIRST-SETTLEMENT-DROPDOWNS.md`.

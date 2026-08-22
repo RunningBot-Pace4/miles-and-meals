@@ -111,8 +111,9 @@ export default async function SearchPage({
           name="q"
           defaultValue={q}
           placeholder="Merchant, place, booking, category…"
-          autoFocus
           maxLength={80}
+          enterKeyHint="search"
+          aria-label="Search across your trips"
         />
         <button className="button primary" type="submit">Search</button>
       </form>

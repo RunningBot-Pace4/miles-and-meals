@@ -1,3 +1,20 @@
+# Miles & Meals v69 — Full Source Package
+
+This package adds the v69 mobile-flow/navigation reliability pass on top of the complete v68/v67 launch-candidate source.
+
+Key v69 behavior:
+
+- Context-aware Back control on secondary mobile pages only.
+- Trip Wrapped dropdown opens the selected trip immediately and syncs active-trip context.
+- Search keeps the mobile bottom tools available instead of auto-opening the software keyboard.
+- Mobile layout is standardized for 320–430px widths with larger controls, iOS-safe form sizing and improved card/navigation spacing.
+- Core signed-in routes have new multi-viewport E2E regression coverage.
+- `scripts/neon-reset-keep-login.sql` and `db:reset:keep-login` can clear application data while preserving login/auth records.
+
+No new schema migration is required from v68 to v69. The v67 schema changes must already exist.
+
+See `V69-MOBILE-FLOW-NAV-RESET.md`.
+
 # v68 — Trip-first settlement dropdowns
 
 Settle Up is now explicitly trip-scoped: the selector shows trip names and readiness, the financial checkpoint names the selected trip, and Live GPS also uses trip names instead of country-only labels. See `V68-TRIP-FIRST-SETTLEMENT-DROPDOWNS.md`.

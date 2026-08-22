@@ -14989,3 +14989,390 @@ body {
   margin: 0;
   font-size: 0.72rem;
 }
+
+/* -------------------------------------------------------------------------- */
+/* v69 — Mobile navigation + premium flow polish                              */
+/* -------------------------------------------------------------------------- */
+
+.mobile-context-back-row {
+  display: none;
+}
+
+.wrapped-trip-picker-auto {
+  display: grid;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+
+.wrapped-trip-picker-hint {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+@media (max-width: 719px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+
+  body {
+    min-width: 0;
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .topbar {
+    min-height: 64px;
+    height: auto;
+    padding:
+      max(0.72rem, env(safe-area-inset-top))
+      max(0.85rem, env(safe-area-inset-right))
+      0.72rem
+      max(0.85rem, env(safe-area-inset-left));
+  }
+
+  .page-container {
+    width: 100%;
+    max-width: 100%;
+    padding:
+      0.82rem
+      max(0.82rem, env(safe-area-inset-right))
+      calc(7.2rem + env(safe-area-inset-bottom))
+      max(0.82rem, env(safe-area-inset-left));
+  }
+
+  .mobile-context-back-row {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+    margin: -0.1rem 0 0.45rem;
+  }
+
+  .mobile-context-back {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.62rem 0.35rem 0.48rem;
+    border: 1px solid rgb(18 120 111 / 13%);
+    border-radius: 999px;
+    color: var(--primary);
+    background: rgb(255 255 255 / 74%);
+    box-shadow: 0 6px 16px rgb(44 69 62 / 6%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    font-size: 0.75rem;
+    font-weight: 820;
+  }
+
+  .mobile-context-back svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .page-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 0.65rem;
+  }
+
+  .page-heading > div {
+    min-width: 0;
+  }
+
+  .page-heading h1 {
+    max-width: 100%;
+    margin-bottom: 0.28rem;
+    font-size: clamp(1.78rem, 9vw, 2.45rem);
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+    overflow-wrap: anywhere;
+  }
+
+  .page-heading .muted {
+    max-width: 46rem;
+    margin-bottom: 0;
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .eyebrow {
+    margin-bottom: 0.32rem;
+    font-size: 0.67rem;
+    letter-spacing: 0.115em;
+  }
+
+  .stack.gap-lg {
+    gap: 1rem;
+  }
+
+  .panel,
+  .card,
+  .info-card,
+  .expense-section,
+  .planner-intro,
+  .planner-filter,
+  .planner-add-form,
+  .planner-edit-form,
+  .trip-country-card,
+  .settle-filter-panel,
+  .settlement-trip-context,
+  .wrapped-stat-card,
+  .wrapped-footer-card,
+  .search-result-list,
+  .admin-form-card,
+  .settings-form,
+  .profile-settings-form {
+    border-radius: 20px;
+  }
+
+  .panel,
+  .expense-section,
+  .planner-intro,
+  .planner-filter,
+  .planner-add-form,
+  .planner-edit-form,
+  .admin-form-card,
+  .settings-form,
+  .profile-settings-form {
+    padding-left: clamp(0.82rem, 3.4vw, 1rem);
+    padding-right: clamp(0.82rem, 3.4vw, 1rem);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 50px;
+    border-radius: 15px;
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  textarea {
+    min-height: 104px;
+    line-height: 1.45;
+  }
+
+  .button,
+  button.button,
+  a.button {
+    min-height: 48px;
+    border-radius: 15px;
+    font-size: 0.88rem;
+    touch-action: manipulation;
+  }
+
+  .mobile-nav {
+    z-index: 120;
+    left: max(0.58rem, env(safe-area-inset-left));
+    right: max(0.58rem, env(safe-area-inset-right));
+    bottom: max(0.58rem, env(safe-area-inset-bottom));
+    min-height: 70px;
+    padding: 0.42rem;
+    border-color: rgb(218 226 222 / 88%);
+    border-radius: 25px;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(255 250 244 / 95%));
+    box-shadow:
+      0 18px 46px rgb(41 58 53 / 18%),
+      inset 0 1px 0 rgb(255 255 255 / 82%);
+    backdrop-filter: blur(20px) saturate(125%);
+    -webkit-backdrop-filter: blur(20px) saturate(125%);
+  }
+
+  .mobile-nav .nav-item {
+    min-height: 54px;
+    border-radius: 16px;
+    font-size: 0.64rem;
+    touch-action: manipulation;
+  }
+
+  .mobile-nav .nav-action .nav-icon {
+    width: 43px;
+    height: 43px;
+    margin-top: -18px;
+    border: 4px solid #fbf7ef;
+    border-radius: 50%;
+    box-shadow: 0 10px 25px rgb(18 120 111 / 28%);
+  }
+
+  .travel-search-form {
+    position: relative;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 0.45rem;
+    padding: 0.52rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 30px rgb(44 61 55 / 7%);
+  }
+
+  .travel-search-form > span {
+    width: 38px;
+    height: 38px;
+  }
+
+  .travel-search-form input {
+    min-height: 48px;
+    padding-inline: 0.35rem;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .travel-search-form .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .search-result-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 0.72rem;
+    min-height: 72px;
+    padding: 0.78rem 0.82rem;
+  }
+
+  .search-result-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+  }
+
+  .search-result-copy strong,
+  .search-result-copy small {
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+  }
+
+  .search-result-copy strong {
+    -webkit-line-clamp: 2;
+    font-size: 0.86rem;
+    line-height: 1.3;
+  }
+
+  .search-result-copy small {
+    -webkit-line-clamp: 2;
+    font-size: 0.68rem;
+    line-height: 1.35;
+  }
+
+  .search-result-row > b {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: -0.12rem;
+    font-size: 0.7rem;
+  }
+
+  .wrapped-trip-picker-auto {
+    width: 100%;
+    padding: 0.68rem;
+    border: 1px solid rgb(18 120 111 / 12%);
+    border-radius: 18px;
+    background: rgb(255 255 255 / 72%);
+    box-shadow: 0 8px 20px rgb(48 65 59 / 5%);
+  }
+
+  .wrapped-trip-picker-auto label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .wrapped-trip-picker-auto select {
+    min-height: 50px;
+  }
+
+  .wrapped-trip-picker-hint {
+    padding-inline: 0.1rem;
+  }
+
+  .wrapped-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.58rem;
+  }
+
+  .wrapped-stat-card {
+    min-height: 112px;
+    align-content: start;
+    padding: 0.86rem;
+  }
+
+  .wrapped-stat-card > strong {
+    font-size: 0.98rem;
+    line-height: 1.25;
+  }
+
+  .settle-country-filter,
+  .settlement-trip-context,
+  .trip-budget-entry,
+  .planner-filter,
+  .location-controls {
+    min-width: 0;
+  }
+
+  .settle-country-filter {
+    gap: 0.62rem;
+  }
+
+  .settle-country-filter .button {
+    width: 100%;
+  }
+
+  .sticky-save {
+    z-index: 110;
+    bottom: calc(5.9rem + env(safe-area-inset-bottom));
+    margin-inline: 0;
+    border-radius: 19px;
+    box-shadow: 0 16px 42px rgb(24 55 50 / 19%);
+  }
+
+  .planner-detail-backdrop,
+  .modal-backdrop,
+  .drawer-backdrop {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 390px) {
+  .page-container {
+    padding-left: max(0.68rem, env(safe-area-inset-left));
+    padding-right: max(0.68rem, env(safe-area-inset-right));
+  }
+
+  .page-heading h1 {
+    font-size: clamp(1.62rem, 9.2vw, 2.1rem);
+  }
+
+  .wrapped-stat-grid {
+    gap: 0.46rem;
+  }
+
+  .wrapped-stat-card {
+    min-height: 104px;
+    padding: 0.72rem;
+  }
+
+  .mobile-nav {
+    left: max(0.42rem, env(safe-area-inset-left));
+    right: max(0.42rem, env(safe-area-inset-right));
+  }
+
+  .mobile-nav .nav-item {
+    font-size: 0.6rem;
+  }
+}
+
+@media (min-width: 720px) {
+  .mobile-context-back-row {
+    display: none !important;
+  }
+}

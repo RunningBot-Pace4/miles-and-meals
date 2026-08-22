@@ -67,7 +67,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mobile-nav" aria-label="Main navigation">
+    <nav className="mobile-nav" aria-label="Main navigation" data-app-mobile-nav="true">
       {links.map((link) => {
         const moreSection =
           link.href === "/more" &&

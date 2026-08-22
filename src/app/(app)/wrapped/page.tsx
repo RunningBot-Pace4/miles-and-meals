@@ -1,5 +1,6 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { FullPageLink as Link } from "@/components/FullPageLink";
+import { WrappedTripSelect } from "@/components/WrappedTripSelect";
 import { db } from "@/db";
 import { expenses, settlements, travelItems } from "@/db/schema";
 import { getActiveTripContext } from "@/lib/active-trip";
@@ -122,17 +123,10 @@ export default async function WrappedPage({
           <p className="muted">A simple snapshot of the miles, meals and money behind this trip.</p>
         </div>
 
-        <form className="wrapped-trip-picker" method="get" action="/wrapped">
-          <label>
-            Trip
-            <select name="tripId" defaultValue={selectedTrip.id}>
-              {context.trips.map((trip) => (
-                <option value={trip.id} key={trip.id}>{trip.name}</option>
-              ))}
-            </select>
-          </label>
-          <button className="button secondary" type="submit">View</button>
-        </form>
+        <WrappedTripSelect
+          trips={context.trips.map((trip) => ({ id: trip.id, name: trip.name }))}
+          selectedId={selectedTrip.id}
+        />
       </div>
 
       <section className="wrapped-hero">
