@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseSplits, expenses } from "@/db/schema";
+import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
 import {
   getActiveTripContext,
   isCountryInActiveTrip,
@@ -12,12 +12,45 @@ import {
 import { recordActivity } from "@/lib/activity";
 import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
+import { buildReceiptItemization, type ReceiptItemizationResult } from "@/lib/receipt-itemization";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { expenseSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+async function replaceExpenseItemization(
+  expenseId: string,
+  itemization: ReceiptItemizationResult | null,
+): Promise<void> {
+  await db.delete(expenseItems).where(eq(expenseItems.expenseId, expenseId));
+  if (!itemization) return;
+
+  for (const item of itemization.items) {
+    const created = await db
+      .insert(expenseItems)
+      .values({
+        expenseId,
+        title: item.title,
+        transactionAmount: item.transactionAmount.toFixed(2),
+        baseAmount: item.baseAmount.toFixed(2),
+      })
+      .returning({ id: expenseItems.id });
+    const itemId = created[0]?.id;
+    if (!itemId) throw new Error("Unable to save receipt itemization.");
+    if (item.assignments.length) {
+      await db.insert(expenseItemAssignments).values(
+        item.assignments.map((assignment) => ({
+          itemId,
+          userId: assignment.userId,
+          shareAmountBase: assignment.shareAmountBase,
+        })),
+      );
+    }
+  }
+}
+
 
 export async function GET() {
   const session = await getSession();
@@ -102,24 +135,32 @@ export async function POST(request: Request) {
     }
 
     let repairPriorRequest = false;
+    let existingSplitCount = 0;
+    let existingItemCount = 0;
+    let existingAssignmentCount = 0;
 
     if (priorRequest) {
-      const existingSplit = await db
-        .select({ expenseId: expenseSplits.expenseId })
-        .from(expenseSplits)
-        .where(eq(expenseSplits.expenseId, priorRequest.id))
-        .limit(1);
+      const [existingSplits, existingItems] = await Promise.all([
+        db
+          .select({ expenseId: expenseSplits.expenseId })
+          .from(expenseSplits)
+          .where(eq(expenseSplits.expenseId, priorRequest.id)),
+        db
+          .select({ id: expenseItems.id })
+          .from(expenseItems)
+          .where(eq(expenseItems.expenseId, priorRequest.id)),
+      ]);
 
-      if (existingSplit.length > 0) {
-        return Response.json({
-          id: priorRequest.id,
-          idempotent: true,
-        });
+      existingSplitCount = existingSplits.length;
+      existingItemCount = existingItems.length;
+
+      if (existingItems.length) {
+        const assignments = await db
+          .select({ itemId: expenseItemAssignments.itemId })
+          .from(expenseItemAssignments)
+          .where(inArray(expenseItemAssignments.itemId, existingItems.map((item) => item.id)));
+        existingAssignmentCount = assignments.length;
       }
-
-      // A previous request created the expense row but did not finish its
-      // split rows. Continue through validation and repair that same record.
-      repairPriorRequest = true;
     }
 
     // A previously accepted idempotent request may finish its split repair even
@@ -209,6 +250,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (input.itemization.some((item) => item.assigneeUserIds.some((userId) => !memberIds.has(userId)))) {
+      return Response.json(
+        { error: "Every receipt item traveler must be assigned to this trip." },
+        { status: 400 },
+      );
+    }
+
     const baseCurrencyTransaction = sameCurrency(
       input.transactionCurrency,
       country.baseCurrency,
@@ -236,17 +284,38 @@ export async function POST(request: Request) {
 
     const settlementBase =
       actualConvertedAmount ?? baseAmount;
+    const itemization = input.itemization.length
+      ? buildReceiptItemization(input.transactionAmount, settlementBase, input.itemization)
+      : null;
+    const calculatedSplits = itemization?.splits ??
+      buildExpenseSplits(settlementBase, input.splitMode, input.splits);
+
+    if (priorRequest) {
+      const expectedItemCount = itemization?.items.length ?? 0;
+      const expectedAssignmentCount = itemization?.items.reduce(
+        (sum, item) => sum + item.assignments.length,
+        0,
+      ) ?? 0;
+      const derivedRowsComplete =
+        existingSplitCount === calculatedSplits.length &&
+        existingItemCount === expectedItemCount &&
+        existingAssignmentCount === expectedAssignmentCount;
+
+      if (derivedRowsComplete) {
+        return Response.json({ id: priorRequest.id, idempotent: true });
+      }
+
+      // A previous idempotent request may have stopped after any derived row
+      // set. Rebuild splits + item rows from the same validated request.
+      repairPriorRequest = true;
+    }
 
     if (repairPriorRequest && priorRequest) {
       await db.delete(expenseSplits).where(eq(expenseSplits.expenseId, priorRequest.id));
       await db.insert(expenseSplits).values(
-        buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(
-          (split) => ({
-            expenseId: priorRequest.id,
-            ...split,
-          }),
-        ),
+        calculatedSplits.map((split) => ({ expenseId: priorRequest.id, ...split })),
       );
+      await replaceExpenseItemization(priorRequest.id, itemization);
 
       await recordActivity({
         actorUserId: session.user.id,
@@ -284,7 +353,7 @@ export async function POST(request: Request) {
           actualConvertedAmount === null
             ? null
             : actualConvertedAmount.toFixed(2),
-        splitMode: input.splitMode,
+        splitMode: itemization ? "EXACT" : input.splitMode,
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
         receiptUrl: input.receiptUrl || null,
@@ -294,13 +363,9 @@ export async function POST(request: Request) {
       .returning({ id: expenses.id });
 
     await db.insert(expenseSplits).values(
-      buildExpenseSplits(settlementBase, input.splitMode, input.splits).map(
-        (split) => ({
-          expenseId: inserted[0].id,
-          ...split,
-        }),
-      ),
+      calculatedSplits.map((split) => ({ expenseId: inserted[0].id, ...split })),
     );
+    await replaceExpenseItemization(inserted[0].id, itemization);
 
     await recordActivity({
       actorUserId: session.user.id,

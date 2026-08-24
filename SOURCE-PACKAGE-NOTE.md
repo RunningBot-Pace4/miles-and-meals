@@ -1,3 +1,26 @@
+# Miles & Meals v77 — Full Source Package
+
+This is the consolidated **v71–v77 mobile-web/PWA enhancement pack** built on the complete v70 source.
+
+Included:
+
+- secure Trip invite/join/revoke flow with private QR generation
+- Journey grouping while preserving 1 Trip = 1 Country
+- auditable receipt itemization with exact cent reconciliation
+- privacy-minimal Trip Inbox and idempotent Add-to-Plan recovery
+- Offline 2.0 trip pack + offline Quick Expense queue
+- Smart Settlement payment-assistance tools
+- regional preference and PWA/mobile-web launch foundation
+- updated Admin backup/restore and keep-login Neon reset coverage for all new v71–v77 tables
+
+**Database migration is required from v70 to v77.** Take a Neon backup/branch and run `npm run db:push`. Never use a reset command as an upgrade mechanism.
+
+The source/regression gates included in this package pass in the packaging environment. A complete dependency-backed Next production build still requires `npm install`; the packaging environment could not reach the npm registry (`EAI_AGAIN`), so `npm run build` must be executed in your normal development/Vercel environment before deployment.
+
+See `V77-FINAL-RELEASE-GATE.md` for the exact validation record.
+
+---
+
 # Miles & Meals v70 — Full Source Package
 
 This package adds an explainable/auditable Smart Settlement layer on top of the complete v69 source.

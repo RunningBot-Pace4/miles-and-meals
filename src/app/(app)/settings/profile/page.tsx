@@ -32,6 +32,8 @@ export default async function ProfileSettingsPage() {
             name={session.user.name}
             initialColor={preferences.avatarColor}
             initialIcon={preferences.avatarIcon}
+            initialLocale={preferences.locale}
+            initialTimeZone={preferences.timeZone}
           />
         </div>
       </section>

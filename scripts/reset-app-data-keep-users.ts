@@ -30,10 +30,14 @@ console.log("Before:", before[0]);
 await sql`
   TRUNCATE TABLE
     location_pings,
+    expense_item_assignments,
+    expense_items,
     expense_splits,
     settlements,
     expenses,
+    trip_inbox_items,
     travel_items,
+    trip_invites,
     notifications,
     activity_logs,
     country_members,
@@ -41,6 +45,7 @@ await sql`
     trip_budgets,
     trip_members,
     trips,
+    journeys,
     push_subscriptions,
     notification_preferences,
     api_metrics,

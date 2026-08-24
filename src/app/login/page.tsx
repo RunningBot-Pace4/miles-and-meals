@@ -2,12 +2,15 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LoginForm } from "@/components/LoginForm";
 import { getSession } from "@/lib/session";
+import { safeInternalPath } from "@/lib/navigation-safety";
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const query = await searchParams;
+  const nextPath = safeInternalPath(query.next);
   const session = await getSession();
 
   if (session) {
-    redirect("/dashboard");
+    redirect(nextPath);
   }
 
   return (
@@ -45,7 +48,7 @@ export default async function LoginPage() {
           <p className="muted auth-intro">
             Sign in to continue to your Miles & Meals trip.
           </p>
-          <LoginForm />
+          <LoginForm nextPath={nextPath} />
         </section>
       </div>
     </main>

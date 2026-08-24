@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { MobileContextBack } from "@/components/MobileContextBack";
 import { NotificationBell } from "@/components/NotificationBell";
 import { OfflineQueueSync } from "@/components/OfflineQueueSync";
+import { OfflinePackWarmup } from "@/components/OfflinePackWarmup";
 import { PasswordChangeGate } from "@/components/PasswordChangeGate";
 import { ProductAnalytics } from "@/components/ProductAnalytics";
 import {
@@ -64,7 +65,7 @@ export default async function AppLayout({
           missingBudgets[0]?.tripId ?? ""
         }
       >
-        <div className="app-shell">
+        <div className="app-shell" data-locale={preferences.locale} data-time-zone={preferences.timeZone}>
           <a className="skip-link" href="#main-content">
             Skip to main content
           </a>
@@ -103,6 +104,7 @@ export default async function AppLayout({
             {children}
           </main>
 
+          <OfflinePackWarmup />
           <OfflineQueueSync />
           <CollaborationPulse />
           <ProductAnalytics />

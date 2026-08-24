@@ -4,10 +4,14 @@ import { db } from "@/db";
 import {
   countries,
   countryMembers,
+  expenseItemAssignments,
+  expenseItems,
   expenseSplits,
   expenses,
+  journeys,
   settlements,
   travelItems,
+  tripInboxItems,
   tripBudgets,
   tripMembers,
   trips,
@@ -35,6 +39,7 @@ const backupSchema = z.object({
   version: z.literal(BACKUP_VERSION),
   exportedAt: z.string(),
   data: z.object({
+    journeys: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     trips: z.array(z.record(z.string(), z.unknown())),
     tripMembers: z.array(z.record(z.string(), z.unknown())),
     tripBudgets: z
@@ -50,8 +55,11 @@ const backupSchema = z.object({
     countryMembers: z.array(z.record(z.string(), z.unknown())),
     expenses: z.array(z.record(z.string(), z.unknown())),
     expenseSplits: z.array(z.record(z.string(), z.unknown())),
+    expenseItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    expenseItemAssignments: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     settlements: z.array(z.record(z.string(), z.unknown())),
     travelItems: z.array(z.record(z.string(), z.unknown())),
+    tripInboxItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   }),
 });
 
@@ -160,6 +168,10 @@ function requiredUserIds(
     }
   }
 
+  for (const row of backup.data.journeys) {
+    add(row, "createdBy");
+  }
+
   for (const row of backup.data.trips) {
     add(row, "createdBy");
     add(row, "financialClosedBy");
@@ -201,6 +213,10 @@ function requiredUserIds(
     add(row, "userId");
   }
 
+  for (const row of backup.data.expenseItemAssignments) {
+    add(row, "userId");
+  }
+
   for (
     const row of
       backup.data.settlements
@@ -219,6 +235,10 @@ function requiredUserIds(
     add(row, "createdBy");
   }
 
+  for (const row of backup.data.tripInboxItems) {
+    add(row, "createdBy");
+  }
+
   return [...ids];
 }
 
@@ -228,6 +248,11 @@ async function validateBackup(
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  const journeyIds = new Set(
+    backup.data.journeys.map((row, index) =>
+      requiredString(row, "id", errors, `journeys[${index}]`),
+    ),
+  );
   const tripIds = new Set(
     backup.data.trips.map(
       (row, index) =>
@@ -252,6 +277,13 @@ async function validateBackup(
   );
   const countryTripIds =
     new Map<string, string>();
+
+  for (const [index, row] of backup.data.trips.entries()) {
+    const journeyId = optionalString(row, "journeyId");
+    if (journeyId && !journeyIds.has(journeyId)) {
+      errors.push(`trips[${index}] references a missing Journey.`);
+    }
+  }
 
   for (
     const [index, row]
@@ -474,6 +506,24 @@ async function validateBackup(
     }
   }
 
+  const expenseItemIds = new Set(
+    backup.data.expenseItems.map((row, index) => {
+      const id = requiredString(row, "id", errors, `expenseItems[${index}]`);
+      const expenseId = requiredString(row, "expenseId", errors, `expenseItems[${index}]`);
+      if (expenseId && !expenseIds.has(expenseId)) {
+        errors.push(`expenseItems[${index}] references a missing expense.`);
+      }
+      return id;
+    }),
+  );
+
+  for (const [index, row] of backup.data.expenseItemAssignments.entries()) {
+    const itemId = requiredString(row, "itemId", errors, `expenseItemAssignments[${index}]`);
+    if (itemId && !expenseItemIds.has(itemId)) {
+      errors.push(`expenseItemAssignments[${index}] references a missing expense item.`);
+    }
+  }
+
   for (
     const [index, row]
     of backup.data.settlements.entries()
@@ -550,6 +600,13 @@ async function validateBackup(
     }
   }
 
+  for (const [index, row] of backup.data.tripInboxItems.entries()) {
+    const tripId = requiredString(row, "tripId", errors, `tripInboxItems[${index}]`);
+    const countryId = requiredString(row, "countryId", errors, `tripInboxItems[${index}]`);
+    if (tripId && !tripIds.has(tripId)) errors.push(`tripInboxItems[${index}] references a missing trip.`);
+    if (countryId && !countryIds.has(countryId)) errors.push(`tripInboxItems[${index}] references a missing country.`);
+  }
+
   const neededUserIds =
     requiredUserIds(backup);
   const currentUsers =
@@ -599,6 +656,7 @@ async function validateBackup(
     errors,
     warnings,
     counts: {
+      journeys: backup.data.journeys.length,
       trips:
         backup.data.trips.length,
       tripMembers:
@@ -618,12 +676,15 @@ async function validateBackup(
       expenseSplits:
         backup.data.expenseSplits
           .length,
+      expenseItems: backup.data.expenseItems.length,
+      itemAssignments: backup.data.expenseItemAssignments.length,
       settlements:
         backup.data.settlements
           .length,
       plannerItems:
         backup.data.travelItems
           .length,
+      inboxItems: backup.data.tripInboxItems.length,
     },
   };
 }
@@ -665,12 +726,24 @@ async function restoreBackup(
   const sql = neon(databaseUrl);
   const queries = [
     sql`DELETE FROM trips`,
+    sql`DELETE FROM journeys`,
   ];
+
+  for (const row of backup.data.journeys) {
+    queries.push(sql`
+      INSERT INTO journeys (id, name, start_date, end_date, created_by, created_at, updated_at)
+      VALUES (
+        ${value(row, "id")}, ${value(row, "name")}, ${value(row, "startDate")}, ${value(row, "endDate")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()}, ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
 
   for (const row of backup.data.trips) {
     queries.push(sql`
       INSERT INTO trips (
         id,
+        journey_id,
         name,
         base_currency,
         budget,
@@ -685,6 +758,7 @@ async function restoreBackup(
         created_at
       ) VALUES (
         ${value(row, "id")},
+        ${value(row, "journeyId")},
         ${value(row, "name")},
         ${value(row, "baseCurrency")},
         ${value(row, "budget")},
@@ -857,6 +931,23 @@ async function restoreBackup(
     `);
   }
 
+  for (const row of backup.data.expenseItems) {
+    queries.push(sql`
+      INSERT INTO expense_items (id, expense_id, title, transaction_amount, base_amount, created_at)
+      VALUES (
+        ${value(row, "id")}, ${value(row, "expenseId")}, ${value(row, "title")},
+        ${value(row, "transactionAmount")}, ${value(row, "baseAmount")}, ${timestamp(row, "createdAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.expenseItemAssignments) {
+    queries.push(sql`
+      INSERT INTO expense_item_assignments (item_id, user_id, share_amount_base)
+      VALUES (${value(row, "itemId")}, ${value(row, "userId")}, ${value(row, "shareAmountBase")})
+    `);
+  }
+
   for (
     const row of
       backup.data.settlements
@@ -947,6 +1038,21 @@ async function restoreBackup(
     `);
   }
 
+  for (const row of backup.data.tripInboxItems) {
+    queries.push(sql`
+      INSERT INTO trip_inbox_items (
+        id, trip_id, country_id, source_type, source_name, kind, title, provider, confirmation_no,
+        booking_date, booking_time, raw_text, status, linked_travel_item_id, created_by, created_at, updated_at
+      ) VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "countryId")}, ${value(row, "sourceType")},
+        ${value(row, "sourceName")}, ${value(row, "kind")}, ${value(row, "title")}, ${value(row, "provider")},
+        ${value(row, "confirmationNo")}, ${value(row, "bookingDate")}, ${value(row, "bookingTime")}, ${value(row, "rawText")},
+        ${value(row, "status")}, ${value(row, "linkedTravelItemId")}, ${value(row, "createdBy")},
+        ${timestamp(row, "createdAt") ?? new Date()}, ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
   await sql.transaction(queries);
 }
 
@@ -978,6 +1084,7 @@ export async function GET() {
   }
 
   const [
+    journeyRows,
     tripRows,
     tripMemberRows,
     tripBudgetRows,
@@ -987,7 +1094,11 @@ export async function GET() {
     splitRows,
     settlementRows,
     plannerRows,
+    expenseItemRows,
+    expenseItemAssignmentRows,
+    inboxRows,
   ] = await Promise.all([
+    db.select().from(journeys),
     db.select().from(trips),
     db.select().from(tripMembers),
     db.select().from(tripBudgets),
@@ -997,6 +1108,9 @@ export async function GET() {
     db.select().from(expenseSplits),
     db.select().from(settlements),
     db.select().from(travelItems),
+    db.select().from(expenseItems),
+    db.select().from(expenseItemAssignments),
+    db.select().from(tripInboxItems),
   ]);
 
   const backup = {
@@ -1022,8 +1136,10 @@ export async function GET() {
       "app_errors",
       "api_metrics",
       "product_events",
+      "trip_invites",
     ],
     data: {
+      journeys: journeyRows,
       trips: tripRows,
       tripMembers:
         tripMemberRows,
@@ -1035,10 +1151,13 @@ export async function GET() {
       expenses: expenseRows,
       expenseSplits:
         splitRows,
+      expenseItems: expenseItemRows,
+      expenseItemAssignments: expenseItemAssignmentRows,
       settlements:
         settlementRows,
       travelItems:
         plannerRows,
+      tripInboxItems: inboxRows,
     },
   };
 

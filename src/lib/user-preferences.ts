@@ -7,12 +7,16 @@ export type UserPreferences = {
   avatarColor: AvatarColor;
   avatarIcon: AvatarIcon;
   mustChangePassword: boolean;
+  locale: string;
+  timeZone: string;
 };
 
 export const defaultUserPreferences: UserPreferences = {
   avatarColor: "teal",
   avatarIcon: "initial",
   mustChangePassword: false,
+  locale: "en-MY",
+  timeZone: "Asia/Kuala_Lumpur",
 };
 
 export async function getUserPreferences(
@@ -23,6 +27,8 @@ export async function getUserPreferences(
       avatarColor: userPreferences.avatarColor,
       avatarIcon: userPreferences.avatarIcon,
       mustChangePassword: userPreferences.mustChangePassword,
+      locale: userPreferences.locale,
+      timeZone: userPreferences.timeZone,
     })
     .from(userPreferences)
     .where(eq(userPreferences.userId, userId))
@@ -38,6 +44,8 @@ export async function getUserPreferences(
     avatarColor: row.avatarColor as AvatarColor,
     avatarIcon: row.avatarIcon as AvatarIcon,
     mustChangePassword: row.mustChangePassword,
+    locale: row.locale,
+    timeZone: row.timeZone,
   };
 }
 
@@ -81,5 +89,24 @@ export async function saveAvatarPreferences(
         avatarIcon,
         updatedAt: new Date(),
       },
+    });
+}
+
+export async function saveRegionalPreferences(
+  userId: string,
+  locale: string,
+  timeZone: string,
+): Promise<void> {
+  await db
+    .insert(userPreferences)
+    .values({
+      userId,
+      locale,
+      timeZone,
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: userPreferences.userId,
+      set: { locale, timeZone, updatedAt: new Date() },
     });
 }

@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { REGIONAL_LOCALE_OPTIONS, REGIONAL_TIME_ZONE_OPTIONS } from "@/lib/regional";
 import {
   avatarColors,
   avatarIcons,
@@ -19,10 +20,14 @@ export function ProfileSettingsForm({
   name: initialName,
   initialColor,
   initialIcon,
+  initialLocale,
+  initialTimeZone,
 }: {
   name: string;
   initialColor: AvatarColor;
   initialIcon: AvatarIcon;
+  initialLocale: string;
+  initialTimeZone: string;
 }) {
   const [name, setName] =
     useState(initialName);
@@ -30,6 +35,8 @@ export function ProfileSettingsForm({
     useState<AvatarColor>(initialColor);
   const [avatarIcon, setAvatarIcon] =
     useState<AvatarIcon>(initialIcon);
+  const [locale, setLocale] = useState(initialLocale);
+  const [timeZone, setTimeZone] = useState(initialTimeZone);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] =
     useState("");
@@ -69,6 +76,8 @@ export function ProfileSettingsForm({
             name,
             avatarColor,
             avatarIcon,
+            locale,
+            timeZone,
           }),
         },
       );
@@ -153,6 +162,27 @@ export function ProfileSettingsForm({
             This changes the name shown to your travel crew. Your login email stays the same.
           </small>
         </label>
+
+
+        <div className="two-col regional-settings-grid">
+          <label>
+            Regional number format
+            <select value={locale} onChange={(event) => setLocale(event.target.value)}>
+              {REGIONAL_LOCALE_OPTIONS.map((option) => (
+                <option value={option.value} key={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Time zone
+            <select value={timeZone} onChange={(event) => setTimeZone(event.target.value)}>
+              {REGIONAL_TIME_ZONE_OPTIONS.map((option) => (
+                <option value={option.value} key={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <small>Used for travel dates and future notification scheduling.</small>
+          </label>
+        </div>
 
         <fieldset className="avatar-picker">
           <legend>Choose an avatar</legend>

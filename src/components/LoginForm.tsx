@@ -4,8 +4,9 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { FormEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { safeInternalPath } from "@/lib/navigation-safety";
 
-export function LoginForm() {
+export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +33,7 @@ export function LoginForm() {
         return;
       }
 
-      window.location.replace("/dashboard");
+      window.location.replace(safeInternalPath(nextPath));
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);
@@ -97,7 +98,7 @@ export function LoginForm() {
 
       <p className="muted" style={{ textAlign: "center", margin: 0 }}>
         New traveler?{" "}
-        <Link className="auth-link" href="/register">
+        <Link className="auth-link" href={`/register?next=${encodeURIComponent(nextPath)}`}>
           Create account
         </Link>
       </p>

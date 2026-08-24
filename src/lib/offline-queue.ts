@@ -11,7 +11,7 @@ export type OfflineMutation = {
   blocked?: boolean;
 };
 
-const STORAGE_KEY = "mnm:offline-mutation-queue:v1";
+export const OFFLINE_MUTATION_STORAGE_KEY = "mnm:offline-mutation-queue:v1";
 const MAX_ITEMS = 60;
 
 function browserStorage(): Storage | null {
@@ -34,7 +34,7 @@ export function readOfflineQueue(): OfflineMutation[] {
   }
 
   try {
-    const parsed = JSON.parse(storage.getItem(STORAGE_KEY) ?? "[]") as unknown;
+    const parsed = JSON.parse(storage.getItem(OFFLINE_MUTATION_STORAGE_KEY) ?? "[]") as unknown;
     return Array.isArray(parsed) ? (parsed as OfflineMutation[]) : [];
   } catch {
     return [];
@@ -48,7 +48,7 @@ function writeOfflineQueue(items: OfflineMutation[]) {
     throw new Error("Offline storage is not available on this device.");
   }
 
-  storage.setItem(STORAGE_KEY, JSON.stringify(items.slice(-MAX_ITEMS)));
+  storage.setItem(OFFLINE_MUTATION_STORAGE_KEY, JSON.stringify(items.slice(-MAX_ITEMS)));
   window.dispatchEvent(new CustomEvent("mnm:offline-queue-changed"));
 }
 
@@ -85,6 +85,17 @@ export function enqueueOfflineMutation(
 
 export function removeOfflineMutation(id: string) {
   writeOfflineQueue(readOfflineQueue().filter((item) => item.id !== id));
+}
+
+export function clearOfflineQueue(): void {
+  const storage = browserStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(OFFLINE_MUTATION_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent("mnm:offline-queue-changed"));
+  } catch {
+    // Browser storage is best-effort.
+  }
 }
 
 function shouldBlockForStatus(status: number): boolean {

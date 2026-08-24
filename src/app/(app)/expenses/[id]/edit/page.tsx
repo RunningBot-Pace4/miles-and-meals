@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseSplits, expenses } from "@/db/schema";
+import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
 import { ExpenseForm } from "@/components/ExpenseForm";
 import { FinancialClosePanel } from "@/components/FinancialClosePanel";
 import { FullPageLink as Link } from "@/components/FullPageLink";
@@ -46,6 +46,41 @@ export default async function EditExpensePage({ params }: Props) {
     })
     .from(expenseSplits)
     .where(eq(expenseSplits.expenseId, id));
+
+  const storedItems = await db
+    .select({
+      id: expenseItems.id,
+      title: expenseItems.title,
+      transactionAmount: expenseItems.transactionAmount,
+      createdAt: expenseItems.createdAt,
+    })
+    .from(expenseItems)
+    .where(eq(expenseItems.expenseId, id));
+
+  const editableItems = storedItems
+    .filter((item) => item.title !== "Tax / service / remaining")
+    .sort((left, right) =>
+      left.createdAt.getTime() - right.createdAt.getTime() ||
+      left.id.localeCompare(right.id),
+    );
+
+  const assignmentRows = editableItems.length
+    ? await db
+        .select({
+          itemId: expenseItemAssignments.itemId,
+          userId: expenseItemAssignments.userId,
+        })
+        .from(expenseItemAssignments)
+        .where(inArray(expenseItemAssignments.itemId, editableItems.map((item) => item.id)))
+    : [];
+
+  const itemization = editableItems.map((item) => ({
+    title: item.title,
+    transactionAmount: Number(item.transactionAmount),
+    assigneeUserIds: assignmentRows
+      .filter((assignment) => assignment.itemId === item.id)
+      .map((assignment) => assignment.userId),
+  }));
 
   const settlementTotal = effectiveConvertedAmount(
     expense.convertedAmount,
@@ -131,6 +166,7 @@ export default async function EditExpensePage({ params }: Props) {
           notes: expense.notes,
           splitUserIds: splits.map((split) => split.userId),
           splitValues,
+          itemization,
         }}
       />
   );

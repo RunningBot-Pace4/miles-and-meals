@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SUPPORTED_REGIONAL_LOCALES, SUPPORTED_REGIONAL_TIME_ZONES } from "@/lib/regional";
 
 export const uuidSchema = z.string().uuid();
 
@@ -76,6 +77,8 @@ export const profilePreferencesSchema = z.object({
     "rose",
     "slate",
   ]),
+  locale: z.enum(SUPPORTED_REGIONAL_LOCALES).default("en-MY"),
+  timeZone: z.enum(SUPPORTED_REGIONAL_TIME_ZONES).default("Asia/Kuala_Lumpur"),
   avatarIcon: z.enum([
     "initial",
     "plane",
@@ -133,6 +136,11 @@ export const expenseSchema = z.object({
   receiptUrl: receiptReferenceSchema.optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
   allowDuplicate: z.coerce.boolean().optional().default(false),
+  itemization: z.array(z.object({
+    title: z.string().trim().min(1).max(120),
+    transactionAmount: z.coerce.number().positive().max(1_000_000_000),
+    assigneeUserIds: z.array(z.string().min(1)).min(1).max(30),
+  })).max(50).optional().default([]),
   splitMode: z.enum(["EQUAL", "PERCENTAGE", "EXACT"]),
   splits: z
     .array(

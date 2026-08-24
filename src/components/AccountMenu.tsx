@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { getAvatarColor, getAvatarSymbol } from "@/lib/avatar";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { readOfflineQueue } from "@/lib/offline-queue";
+import { clearPrivateDeviceData } from "@/lib/private-device-data";
 
 type AccountMenuProps = {
   name: string;
@@ -93,10 +95,21 @@ export function AccountMenu({
   }, []);
 
   async function handleSignOut() {
+    const waiting = readOfflineQueue().length;
+    if (
+      waiting > 0 &&
+      !window.confirm(
+        `You have ${waiting} change${waiting === 1 ? "" : "s"} waiting to sync. Signing out removes those unsynced changes from this device. Sign out anyway?`,
+      )
+    ) {
+      return;
+    }
+
     setSigningOut(true);
 
     try {
       await authClient.signOut();
+      clearPrivateDeviceData();
       window.location.replace("/login");
     } finally {
       setSigningOut(false);

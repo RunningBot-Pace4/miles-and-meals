@@ -4,8 +4,9 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { FormEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { safeInternalPath } from "@/lib/navigation-safety";
 
-export function RegisterForm() {
+export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +41,7 @@ export function RegisterForm() {
         return;
       }
 
-      window.location.replace("/dashboard");
+      window.location.replace(safeInternalPath(nextPath));
     } catch {
       setError("Unable to reach Miles & Meals. Check your connection and try again.");
       setBusy(false);
@@ -127,7 +128,7 @@ export function RegisterForm() {
 
       <p className="muted" style={{ textAlign: "center", margin: 0 }}>
         Already registered?{" "}
-        <Link className="auth-link" href="/login">
+        <Link className="auth-link" href={`/login?next=${encodeURIComponent(nextPath)}`}>
           Sign in
         </Link>
       </p>

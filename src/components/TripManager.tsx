@@ -8,6 +8,7 @@ import {
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { TripInvitePanel } from "@/components/TripInvitePanel";
 
 type CountryCatalogItem = {
   name: string;
@@ -287,6 +288,8 @@ function ManagedTripCard({
           {message}
         </p>
       ) : null}
+
+      <TripInvitePanel tripId={trip.id} tripName={trip.name} />
 
       <details className="owner-trip-section">
         <summary>Edit trip details</summary>

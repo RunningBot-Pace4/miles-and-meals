@@ -2,12 +2,15 @@ import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
 import { RegisterForm } from "@/components/RegisterForm";
 import { getSession } from "@/lib/session";
+import { safeInternalPath } from "@/lib/navigation-safety";
 
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
+  const query = await searchParams;
+  const nextPath = safeInternalPath(query.next);
   const session = await getSession();
 
   if (session) {
-    redirect("/dashboard");
+    redirect(nextPath);
   }
 
   return (
@@ -23,8 +26,7 @@ export default async function RegisterPage() {
               Your assigned trips.
             </h1>
             <p>
-              Create your account first. An Admin will assign the countries
-              and trips you are allowed to see.
+              Create your account, then join a trip from a secure invite link or create your own trip.
             </p>
           </div>
           <div className="auth-feature-strip">
@@ -41,10 +43,9 @@ export default async function RegisterPage() {
           <p className="eyebrow">REGISTER</p>
           <h2 className="auth-title">Create your account</h2>
           <p className="muted auth-intro">
-            After registration, ask your trip Admin to assign you to the
-            correct country.
+            After registration you can join a shared trip immediately from its invite link.
           </p>
-          <RegisterForm />
+          <RegisterForm nextPath={nextPath} />
         </section>
       </div>
     </main>

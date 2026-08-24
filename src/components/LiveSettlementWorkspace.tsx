@@ -13,6 +13,7 @@ import {
   SettlementActionButton,
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
+import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
@@ -347,6 +348,18 @@ function SmartSettlementPanel({
             {formatMoney(transfer.amount, transfer.currency)}
           </strong>
         </div>
+        {isMine ? (
+          <SettlementPaymentTools
+            tripName={transfer.tripName}
+            fromName={transfer.fromName}
+            toName={transfer.toName}
+            amount={transfer.amount}
+            currency={transfer.currency}
+            currentUserId={currentUserId}
+            fromUserId={transfer.fromUserId}
+            toUserId={transfer.toUserId}
+          />
+        ) : null}
         {transferDetails(transfer, index, scope)}
       </article>
     );

@@ -7,7 +7,7 @@ import {
 } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { profilePreferencesSchema } from "@/lib/validation";
-import { saveAvatarPreferences } from "@/lib/user-preferences";
+import { saveAvatarPreferences, saveRegionalPreferences } from "@/lib/user-preferences";
 
 export async function POST(request: Request) {
   if (!isTrustedMutationRequest(request)) {
@@ -43,6 +43,11 @@ export async function POST(request: Request) {
       session.user.id,
       input.avatarColor,
       input.avatarIcon,
+    );
+    await saveRegionalPreferences(
+      session.user.id,
+      input.locale,
+      input.timeZone,
     );
 
     return Response.json({

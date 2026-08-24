@@ -1,5 +1,10 @@
 export type ReceiptConfidence = "HIGH" | "MEDIUM" | "LOW";
 
+export type ReceiptLineItem = {
+  title: string;
+  amount: number;
+};
+
 export type ParsedReceipt = {
   merchantName: string | null;
   merchantCandidates: string[];
@@ -12,6 +17,7 @@ export type ParsedReceipt = {
   receiptDate: string | null;
   dateConfidence: ReceiptConfidence;
   categorySuggestion: string | null;
+  items: ReceiptLineItem[];
   rawText: string;
 };
 
@@ -1012,6 +1018,42 @@ function suggestReceiptCategory(text: string): string | null {
   return null;
 }
 
+
+function extractReceiptItems(text: string, totalAmount: number | null): ReceiptLineItem[] {
+  const ignore = [
+    /\bGRAND\s+TOTAL\b/i, /\bTOTAL\b/i, /\bSUB\s*TOTAL\b/i, /\bTAX\b/i, /\bVAT\b/i,
+    /\bSERVICE\s+CHARGE\b/i, /\bDISCOUNT\b/i, /\bROUNDING\b/i, /\bCHANGE\b/i,
+    /\bCASH\b/i, /\bCARD\b/i, /\bPAYMENT\b/i, /\bBALANCE\b/i, /\bAMOUNT\s+DUE\b/i,
+  ];
+  const items: ReceiptLineItem[] = [];
+  const seen = new Set<string>();
+
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = cleanLine(rawLine);
+    if (!line || ignore.some((rule) => rule.test(line))) continue;
+    if ((line.match(/\p{L}/gu)?.length ?? 0) < 2) continue;
+
+    const numbers = extractNumbers(line);
+    if (!numbers.length) continue;
+    const amount = numbers.at(-1) ?? 0;
+    if (amount <= 0 || (totalAmount && amount > totalAmount * 1.05)) continue;
+
+    const amountToken = rawLine.match(/(?:\d|[OoIl])+(?:[.,](?:\d|[OoIl]){1,2})?\s*$/)?.[0] ?? "";
+    let title = cleanLine(amountToken ? rawLine.slice(0, rawLine.lastIndexOf(amountToken)) : rawLine);
+    title = title.replace(/^\s*\d+(?:[xX*])?\s+/, "").replace(/\s{2,}/g, " ").trim();
+    if (title.length < 2 || title.length > 100) continue;
+    if (/^(QTY|ITEM|DESCRIPTION|PRICE|AMOUNT)$/i.test(title)) continue;
+
+    const key = `${normalizeSearchText(title)}:${amount.toFixed(2)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    items.push({ title, amount });
+    if (items.length >= 25) break;
+  }
+
+  return items;
+}
+
 export function parseReceiptText(
   rawText: string,
   fallbackCurrency: string | null,
@@ -1074,6 +1116,7 @@ export function parseReceiptText(
     receiptDate: receiptDate.value,
     dateConfidence: receiptDate.confidence,
     categorySuggestion: suggestReceiptCategory(combinedText),
+    items: extractReceiptItems(combinedText, totals.total?.amount ?? null),
     rawText: combinedText,
   };
 }

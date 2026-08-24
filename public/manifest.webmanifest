@@ -34,6 +34,11 @@
       "url": "/expenses/new"
     },
     {
+      "name": "Trip Inbox",
+      "short_name": "Inbox",
+      "url": "/inbox"
+    },
+    {
       "name": "Settle up",
       "short_name": "Settle",
       "url": "/settlements"

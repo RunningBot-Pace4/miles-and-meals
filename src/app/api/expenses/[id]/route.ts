@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseSplits, expenses } from "@/db/schema";
+import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
 import {
   isCountryInActiveTrip,
 } from "@/lib/active-trip";
@@ -11,12 +11,37 @@ import {
 import { recordActivity } from "@/lib/activity";
 import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
+import { buildReceiptItemization, type ReceiptItemizationResult } from "@/lib/receipt-itemization";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { expenseUpdateSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
+
+async function replaceExpenseItemization(
+  expenseId: string,
+  itemization: ReceiptItemizationResult | null,
+): Promise<void> {
+  await db.delete(expenseItems).where(eq(expenseItems.expenseId, expenseId));
+  if (!itemization) return;
+  for (const item of itemization.items) {
+    const created = await db.insert(expenseItems).values({
+      expenseId,
+      title: item.title,
+      transactionAmount: item.transactionAmount.toFixed(2),
+      baseAmount: item.baseAmount.toFixed(2),
+    }).returning({ id: expenseItems.id });
+    const itemId = created[0]?.id;
+    if (!itemId) throw new Error("Unable to save receipt itemization.");
+    if (item.assignments.length) {
+      await db.insert(expenseItemAssignments).values(item.assignments.map((assignment) => ({
+        itemId, userId: assignment.userId, shareAmountBase: assignment.shareAmountBase,
+      })));
+    }
+  }
+}
+
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -95,10 +120,11 @@ export async function PUT(request: Request, context: Context) {
 
     if (
       !memberIds.has(input.paidByUserId) ||
-      input.splits.some((split) => !memberIds.has(split.userId))
+      input.splits.some((split) => !memberIds.has(split.userId)) ||
+      input.itemization.some((item) => item.assigneeUserIds.some((userId) => !memberIds.has(userId)))
     ) {
       return Response.json(
-        { error: "Payer and split members must belong to the country." },
+        { error: "Payer, split members and receipt-item travelers must belong to the trip." },
         { status: 400 },
       );
     }
@@ -129,6 +155,13 @@ export async function PUT(request: Request, context: Context) {
         ? input.actualConvertedAmount
         : null;
 
+    const settlementBase = actual ?? baseAmount;
+    const itemization = input.itemization.length
+      ? buildReceiptItemization(input.transactionAmount, settlementBase, input.itemization)
+      : null;
+    const calculatedSplits = itemization?.splits ??
+      buildExpenseSplits(settlementBase, input.splitMode, input.splits);
+
     await db
       .update(expenses)
       .set({
@@ -144,7 +177,7 @@ export async function PUT(request: Request, context: Context) {
         baseCurrency: country.baseCurrency,
         convertedAmount: baseAmount.toFixed(2),
         actualConvertedAmount: actual === null ? null : actual.toFixed(2),
-        splitMode: input.splitMode,
+        splitMode: itemization ? "EXACT" : input.splitMode,
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
         receiptUrl: input.receiptUrl || null,
@@ -156,13 +189,9 @@ export async function PUT(request: Request, context: Context) {
     await db.delete(expenseSplits).where(eq(expenseSplits.expenseId, id));
 
     await db.insert(expenseSplits).values(
-      buildExpenseSplits(actual ?? baseAmount, input.splitMode, input.splits).map(
-        (split) => ({
-          expenseId: id,
-          ...split,
-        }),
-      ),
+      calculatedSplits.map((split) => ({ expenseId: id, ...split })),
     );
+    await replaceExpenseItemization(id, itemization);
 
     await recordActivity({
       actorUserId: session.user.id,

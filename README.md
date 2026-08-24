@@ -1,3 +1,32 @@
+# v77 — Global Mobile-Web / PWA Enhancement Pack (v71–v77)
+
+This source package combines the complete v71–v77 roadmap on top of the stable v70 baseline. It remains a **responsive mobile web + PWA** application; there is no separate native iOS/Android codebase.
+
+- **v71 Invite & Onboarding** — secure expiring invite links, private local QR, Share Sheet/copy, invite-aware login/register, revoke support, and safe return-path handling.
+- **v72 Journeys** — group multiple single-country Trips into one Journey without mixing their currencies or ledgers.
+- **v73 Receipt Itemization** — assign receipt lines to travelers and reconcile tax/service/remaining cents exactly to the final trip-currency expense total.
+- **v74 Trip Inbox** — review/import booking text, images, TXT/EML and best-effort text PDFs, then add a reservation to Plan with idempotent retry protection. Raw imported booking bodies are not stored.
+- **v75 Offline 2.0** — save active-trip essentials locally and queue a Quick Expense while fully offline; private local data is cleared on sign-out.
+- **v76 Settlement Payment UX** — copy/share/request a Smart Settlement amount without moving money or rewriting the ledger.
+- **v77 Global Web/PWA Foundation** — regional locale/time-zone preferences, deep-link/PWA shortcuts and dedicated mobile layouts for the new tools.
+
+### Database upgrade from v70
+
+v77 adds tables/columns. **Back up Neon first**, then run:
+
+```bash
+npm install
+npm run db:push
+npm run release:check
+npm run build
+```
+
+Do **not** run `db:reset` for an upgrade. `db:reset:keep-login` is a separate destructive maintenance tool and should only be used intentionally after a Neon backup/branch.
+
+See `V71-INVITE-ONBOARDING.md` through `V77-GLOBAL-WEB-PWA.md` and `V77-FINAL-RELEASE-GATE.md`.
+
+---
+
 # v70 — Explainable Smart Settlement
 
 - Every Smart Settlement recommendation now has **View details** with transparent payer/receiver net-position math.

@@ -6,274 +6,69 @@
   <meta name="theme-color" content="#12786f">
   <title>Offline · Miles & Meals</title>
   <style>
-    :root {
-      color-scheme: light;
-      font-family:
-        Inter,
-        ui-sans-serif,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-      background: #f7f2e8;
-      color: #203934;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      min-height: 100%;
-      margin: 0;
-    }
-
-    body {
-      min-height: 100svh;
-      display: grid;
-      place-items: center;
-      padding:
-        max(1.25rem, env(safe-area-inset-top))
-        max(1.25rem, env(safe-area-inset-right))
-        max(1.25rem, env(safe-area-inset-bottom))
-        max(1.25rem, env(safe-area-inset-left));
-      background:
-        radial-gradient(
-          circle at 86% 8%,
-          rgb(239 173 88 / 20%),
-          transparent 25rem
-        ),
-        radial-gradient(
-          circle at 12% 92%,
-          rgb(18 120 111 / 13%),
-          transparent 28rem
-        ),
-        linear-gradient(
-          180deg,
-          #fbf7ef,
-          #f7f2e8
-        );
-    }
-
-    main {
-      width: min(100%, 430px);
-      overflow: hidden;
-      border: 1px solid #e5d9c9;
-      border-radius: 30px;
-      background: rgb(255 253 249 / 0.95);
-      box-shadow: 0 24px 70px rgb(76 61 39 / 14%);
-    }
-
-    .hero {
-      position: relative;
-      display: grid;
-      justify-items: center;
-      gap: 1rem;
-      padding: 2rem 1.5rem 1.5rem;
-      text-align: center;
-      background:
-        radial-gradient(
-          circle at 88% 8%,
-          rgb(239 173 88 / 22%),
-          transparent 38%
-        ),
-        linear-gradient(
-          180deg,
-          #fffdf8,
-          #fff8ed
-        );
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      right: -65px;
-      bottom: -82px;
-      width: 170px;
-      height: 170px;
-      border: 1px dashed rgb(18 120 111 / 14%);
-      border-radius: 50%;
-    }
-
-    .logo {
-      width: 84px;
-      height: 84px;
-      display: grid;
-      place-items: center;
-      border-radius: 24px;
-      background: #e7f4ef;
-      box-shadow: 0 16px 30px rgb(18 120 111 / 14%);
-    }
-
-    .logo img {
-      width: 64px;
-      height: 64px;
-      display: block;
-      border-radius: 16px;
-    }
-
-    .eyebrow {
-      margin: 0;
-      color: #a56a21;
-      font-size: 0.72rem;
-      font-weight: 900;
-      letter-spacing: 0.11em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 0;
-      color: #203934;
-      font-size: clamp(1.8rem, 8vw, 2.3rem);
-      letter-spacing: -0.055em;
-      line-height: 1;
-    }
-
-    .intro {
-      margin: 0;
-      color: #746f67;
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .details {
-      display: grid;
-      gap: 1rem;
-      padding: 1.25rem;
-    }
-
-    .offline-note {
-      display: grid;
-      grid-template-columns: 38px minmax(0, 1fr);
-      gap: 0.75rem;
-      align-items: start;
-      padding: 0.9rem;
-      border: 1px solid #e2dbd0;
-      border-radius: 18px;
-      background: #fff;
-    }
-
-    .offline-icon {
-      width: 38px;
-      height: 38px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      color: #12786f;
-      background: #e7f4ef;
-      font-weight: 900;
-    }
-
-    .offline-note strong {
-      display: block;
-      margin-bottom: 0.18rem;
-      color: #203934;
-    }
-
-    .offline-note p {
-      margin: 0;
-      color: #7a776f;
-      font-size: 0.78rem;
-      line-height: 1.5;
-    }
-
-    button {
-      width: 100%;
-      min-height: 50px;
-      border: 0;
-      border-radius: 16px;
-      color: white;
-      background:
-        linear-gradient(
-          135deg,
-          #12786f,
-          #2f8f86
-        );
-      box-shadow: 0 12px 22px rgb(18 120 111 / 20%);
-      font: inherit;
-      font-weight: 850;
-      cursor: pointer;
-    }
-
-    .status {
-      margin: 0;
-      color: #7a776f;
-      font-size: 0.72rem;
-      text-align: center;
-    }
-
-    .status.online {
-      color: #157a59;
-      font-weight: 800;
-    }
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f2e8;color:#203934}*{box-sizing:border-box}html,body{margin:0;min-height:100%}body{min-height:100svh;padding:max(1rem,env(safe-area-inset-top)) max(1rem,env(safe-area-inset-right)) max(1.25rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left));background:radial-gradient(circle at 86% 8%,rgb(239 173 88/18%),transparent 25rem),linear-gradient(180deg,#fbf7ef,#f7f2e8)}main{width:min(100%,560px);margin:auto;display:grid;gap:1rem}.card{padding:1rem;border:1px solid #e5d9c9;border-radius:24px;background:rgb(255 253 249/.96);box-shadow:0 16px 48px rgb(76 61 39/9%)}.hero{display:grid;grid-template-columns:58px minmax(0,1fr);gap:.9rem;align-items:center}.logo{width:58px;height:58px;border-radius:17px}.eyebrow{margin:0;color:#a56a21;font-size:.68rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}h1,h2,p{margin:.15rem 0}h1{font-size:1.7rem;letter-spacing:-.045em}h2{font-size:1.15rem}.muted,small{color:#746f67;line-height:1.45}.pill-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.7rem}.pill{padding:.32rem .55rem;border-radius:999px;background:#e7f4ef;color:#126b64;font-size:.7rem;font-weight:800}.list{display:grid;gap:.55rem;margin-top:.75rem}.row{display:flex;justify-content:space-between;gap:.8rem;padding:.7rem;border:1px solid #ebe3d8;border-radius:14px;background:#fff}.row span{display:grid;gap:.1rem;min-width:0}.row strong{overflow-wrap:anywhere}label{display:grid;gap:.35rem;font-size:.78rem;font-weight:800}input,select{width:100%;min-height:48px;padding:.7rem .75rem;border:1px solid #d9d3ca;border-radius:13px;background:#fff;color:#203934;font:inherit;font-size:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}button{width:100%;min-height:50px;border:0;border-radius:15px;background:linear-gradient(135deg,#12786f,#2f8f86);color:#fff;font:inherit;font-weight:850;cursor:pointer}.secondary{border:1px solid #cfe4df;background:#f4fbf9;color:#126b64}.status{font-size:.75rem;text-align:center}.online{color:#157a59;font-weight:800}.empty{padding:.8rem;border-radius:14px;background:#f8f4ed;color:#746f67;font-size:.8rem}@media(max-width:420px){.grid{grid-template-columns:1fr}.hero{grid-template-columns:48px minmax(0,1fr)}.logo{width:48px;height:48px}.row{align-items:flex-start;flex-direction:column}}
   </style>
 </head>
 <body>
-  <main>
-    <section class="hero">
-      <div class="logo">
-        <img
-          src="/miles-meals-icon-192.png"
-          alt=""
-          width="64"
-          height="64"
-        >
-      </div>
-      <p class="eyebrow">Miles & Meals</p>
-      <h1>You’re offline</h1>
-      <p class="intro">
-        Miles & Meals cannot reach the trip server right now.
-        Reconnect to load balances, locations, plans and expenses.
-      </p>
-    </section>
+<main>
+  <section class="card hero">
+    <img class="logo" src="/miles-meals-icon-192.png" alt="">
+    <div><p class="eyebrow">MILES & MEALS · OFFLINE 2.0</p><h1>You can keep travelling.</h1><p class="muted">The last saved trip essentials on this device are available below.</p></div>
+  </section>
 
-    <section class="details">
-      <div class="offline-note">
-        <span class="offline-icon" aria-hidden="true">⌁</span>
-        <div>
-          <strong>Your private trip data stays online-only</strong>
-          <p>
-            This offline shell does not save authenticated trip pages
-            or payment details into a shared page cache.
-          </p>
-        </div>
-      </div>
+  <section class="card" id="trip-card" hidden>
+    <p class="eyebrow">SAVED TRIP</p><h2 id="trip-name"></h2><p class="muted" id="trip-destination"></p>
+    <div class="pill-row"><span class="pill" id="saved-at"></span><span class="pill" id="queue-count"></span></div>
+  </section>
 
-      <button type="button" id="retry">
-        Try again
-      </button>
+  <section class="card" id="quick-card" hidden>
+    <p class="eyebrow">QUICK EXPENSE</p><h2>Save spending without internet</h2>
+    <form id="quick-form">
+      <label>Description<input id="description" maxlength="250" placeholder="Dinner, taxi, tickets…" required></label>
+      <div class="grid"><label>Amount<input id="amount" inputmode="decimal" placeholder="0.00" required></label><label>Date<input id="expense-date" type="date" required></label></div>
+      <label>Category<select id="category"><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
+      <p class="muted" id="split-note"></p>
+      <button type="submit">Save offline expense</button>
+    </form>
+  </section>
 
-      <p class="status" id="status" role="status">
-        Waiting for a connection…
-      </p>
-    </section>
-  </main>
+  <section class="card" id="plan-card" hidden><p class="eyebrow">SAVED PLAN</p><h2>Travel essentials</h2><div class="list" id="plan-list"></div></section>
+  <section class="card" id="reservations-card" hidden><p class="eyebrow">RESERVATIONS</p><h2>Booking essentials</h2><div class="list" id="reservation-list"></div></section>
 
-  <script>
-    const retry = document.getElementById("retry");
-    const status = document.getElementById("status");
+  <section class="card" id="no-pack">
+    <p class="eyebrow">NO OFFLINE PACK YET</p><h2>Reconnect once to save your active trip.</h2><p class="muted">When online, open More → Offline pack. Miles & Meals will keep plans and booking essentials locally on this device.</p>
+  </section>
 
-    function updateStatus() {
-      if (navigator.onLine) {
-        status.textContent = "Connection restored. Reloading…";
-        status.classList.add("online");
-        window.location.reload();
-        return;
-      }
+  <section class="card"><button class="secondary" type="button" id="retry">Try connection again</button><p class="status" id="status" role="status">Waiting for a connection…</p></section>
+</main>
+<script>
+(() => {
+  const PACK_KEY="mnm:offline-pack:v2";
+  const QUEUE_KEY="mnm:offline-mutation-queue:v1";
+  const $=id=>document.getElementById(id);
+  let pack=null;
+  try{pack=JSON.parse(localStorage.getItem(PACK_KEY)||"null")}catch{}
+  let queue=[];
+  try{queue=JSON.parse(localStorage.getItem(QUEUE_KEY)||"[]");if(!Array.isArray(queue))queue=[]}catch{queue=[]}
+  const today=()=>{const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)};
+  $("expense-date").value=today();
 
-      status.textContent = "Still offline. We’ll retry when your connection returns.";
-      status.classList.remove("online");
-    }
+  function row(title,meta,badge){const article=document.createElement("article");article.className="row";const span=document.createElement("span");const strong=document.createElement("strong");strong.textContent=title;const small=document.createElement("small");small.textContent=meta;span.append(strong,small);const b=document.createElement("small");b.textContent=badge||"";article.append(span,b);return article}
+  function queueLabel(){$("queue-count").textContent=`${queue.length} waiting to sync`}
 
-    retry.addEventListener("click", () => {
-      status.textContent = "Checking connection…";
-      window.location.reload();
-    });
+  if(pack&&pack.version===2&&pack.trip&&pack.currentUserId){
+    $("no-pack").hidden=true;$("trip-card").hidden=false;$("quick-card").hidden=false;$("plan-card").hidden=false;$("reservations-card").hidden=false;
+    $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · ${pack.trip.currencyCode}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
+    $("split-note").textContent=`Paid by you · split equally between ${(pack.members||[]).length} traveler${(pack.members||[]).length===1?"":"s"}. Edit after sync if needed.`;
+    const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
+    const reservations=pack.reservations||[];if(!reservations.length)$("reservation-list").innerHTML='<div class="empty">No saved reservations.</div>';else reservations.forEach(x=>$("reservation-list").append(row(x.title,`${x.date||"Date not detected"}${x.time?` · ${x.time}`:""}${x.confirmationNo?` · Ref ${x.confirmationNo}`:""}`,x.kind)));
 
-    window.addEventListener("online", updateStatus);
-    window.addEventListener("offline", updateStatus);
-  </script>
+    $("quick-form").addEventListener("submit",event=>{event.preventDefault();const description=$("description").value.trim();const amount=Number($("amount").value);const members=(pack.members||[]).map(x=>x.id);if(!description||!Number.isFinite(amount)||amount<=0||!members.length){$("status").textContent="Enter a valid description and amount. The saved pack must include travelers.";return}const rate=pack.trip.currencyCode===pack.trip.baseCurrency?1:Number(pack.trip.defaultExchangeRate)||1;const id=(crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`);queue.push({id,url:"/api/expenses",method:"POST",label:`Quick expense · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:pack.trip.currencyCode,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:"Saved from Offline Pack",allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});queue=queue.slice(-60);localStorage.setItem(QUEUE_KEY,JSON.stringify(queue));queueLabel();$("description").value="";$("amount").value="";$("status").textContent="Expense saved on this device. It will sync when you reconnect."});
+  }
+
+  function updateStatus(){if(navigator.onLine){$("status").textContent="Connection restored. Returning to Miles & Meals…";$("status").classList.add("online");location.href="/dashboard";return}$("status").textContent="Still offline. Saved trip essentials remain available here.";$("status").classList.remove("online")}
+  $("retry").addEventListener("click",()=>{location.href="/dashboard"});window.addEventListener("online",updateStatus);window.addEventListener("offline",updateStatus);
+})();
+</script>
 </body>
 </html>

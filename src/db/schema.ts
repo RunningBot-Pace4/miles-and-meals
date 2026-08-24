@@ -118,6 +118,8 @@ export const userPreferences = pgTable("user_preferences", {
   avatarColor: text("avatar_color").default("teal").notNull(),
   avatarIcon: text("avatar_icon").default("initial").notNull(),
   mustChangePassword: boolean("must_change_password").default(false).notNull(),
+  locale: text("locale").default("en-MY").notNull(),
+  timeZone: text("time_zone").default("Asia/Kuala_Lumpur").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -232,8 +234,27 @@ export const appErrors = pgTable(
   ],
 );
 
+export const journeys = pgTable(
+  "journeys",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: text("name").notNull(),
+    startDate: date("start_date"),
+    endDate: date("end_date"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("journey_creator_idx").on(table.createdBy),
+  ],
+);
+
 export const trips = pgTable("trips", {
   id: uuid("id").defaultRandom().primaryKey(),
+  journeyId: uuid("journey_id").references(() => journeys.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   baseCurrency: text("base_currency").default("MYR").notNull(),
   budget: numeric("budget", { precision: 18, scale: 2 }).default("0").notNull(),
@@ -331,6 +352,29 @@ export const countries = pgTable(
   (table) => [
     uniqueIndex("country_trip_code_uq").on(table.tripId, table.code),
     index("country_trip_idx").on(table.tripId),
+  ],
+);
+
+export const tripInvites = pgTable(
+  "trip_invites",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    useCount: integer("use_count").default(0).notNull(),
+    maxUses: integer("max_uses").default(50).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("trip_invite_token_hash_uq").on(table.tokenHash),
+    index("trip_invite_trip_idx").on(table.tripId),
   ],
 );
 
@@ -485,6 +529,35 @@ export const expenseSplits = pgTable(
   (table) => [primaryKey({ columns: [table.expenseId, table.userId] })],
 );
 
+export const expenseItems = pgTable(
+  "expense_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    transactionAmount: numeric("transaction_amount", { precision: 18, scale: 2 }).notNull(),
+    baseAmount: numeric("base_amount", { precision: 18, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("expense_item_expense_idx").on(table.expenseId)],
+);
+
+export const expenseItemAssignments = pgTable(
+  "expense_item_assignments",
+  {
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => expenseItems.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    shareAmountBase: numeric("share_amount_base", { precision: 18, scale: 2 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.itemId, table.userId] })],
+);
+
 export const settlements = pgTable(
   "settlements",
   {
@@ -556,6 +629,39 @@ export const travelItems = pgTable(
   (table) => [index("travel_item_country_type_idx").on(table.countryId, table.itemType)],
 );
 
+export const tripInboxItems = pgTable(
+  "trip_inbox_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    countryId: uuid("country_id")
+      .notNull()
+      .references(() => countries.id, { onDelete: "cascade" }),
+    sourceType: text("source_type").notNull(),
+    sourceName: text("source_name"),
+    kind: text("kind").default("BOOKING").notNull(),
+    title: text("title").notNull(),
+    provider: text("provider"),
+    confirmationNo: text("confirmation_no"),
+    bookingDate: date("booking_date"),
+    bookingTime: text("booking_time"),
+    rawText: text("raw_text"),
+    status: text("status").default("INBOX").notNull(),
+    linkedTravelItemId: uuid("linked_travel_item_id").references(() => travelItems.id, { onDelete: "set null" }),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("trip_inbox_trip_time_idx").on(table.tripId, table.createdAt),
+    index("trip_inbox_country_idx").on(table.countryId),
+  ],
+);
+
 export const locationPings = pgTable(
   "location_pings",
   {
@@ -594,14 +700,19 @@ export const schema = {
   productEvents,
   activityLogs,
   appErrors,
+  journeys,
   trips,
   tripMembers,
   tripBudgets,
   countries,
+  tripInvites,
   countryMembers,
   expenses,
   expenseSplits,
+  expenseItems,
+  expenseItemAssignments,
   settlements,
   travelItems,
+  tripInboxItems,
   locationPings,
 };

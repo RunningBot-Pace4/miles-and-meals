@@ -83,6 +83,18 @@ export default async function MorePage() {
           <span>Create & manage my trips</span>
           <span>›</span>
         </Link>
+        <Link className="menu-row link-row" href="/journeys">
+          <span>Journeys · group multi-country trips</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/inbox">
+          <span>Trip Inbox · bookings & reservations</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/offline">
+          <span>Offline pack & sync</span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/settings/budgets">
           <span>My trip budgets</span>
           <span>›</span>

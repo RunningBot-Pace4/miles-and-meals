@@ -15967,3 +15967,256 @@ body {
     justify-self: end;
   }
 }
+
+/* v77 — global web/PWA experience pack */
+.trip-invite-panel,
+.journey-create-panel,
+.journey-card,
+.trip-inbox-import,
+.trip-inbox-review,
+.offline-pack-hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.trip-invite-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--brand, #12786f) 18%, #e5ddd0);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgb(18 120 111 / 6%), rgb(255 255 255 / 78%));
+}
+
+.trip-invite-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .8rem 1rem;
+  align-items: center;
+}
+
+.trip-invite-result img {
+  width: 116px;
+  height: 116px;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.trip-invite-result code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: .72rem;
+}
+
+.journey-card-head,
+.receipt-itemization-head,
+.offline-pack-meta,
+.trip-inbox-card,
+.offline-plan-row,
+.settlement-payment-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+}
+
+.journey-trip-picker {
+  display: grid;
+  gap: .55rem;
+  margin: 0;
+  padding: .85rem;
+  border: 1px solid #e8dfd2;
+  border-radius: 18px;
+}
+
+.journey-trip-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .75rem;
+  align-items: center;
+  min-height: 48px;
+  padding: .55rem .65rem;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 70%);
+}
+
+.journey-trip-row input {
+  width: 20px;
+  height: 20px;
+}
+
+.journey-trip-row span,
+.trip-inbox-card > div,
+.offline-plan-row > span {
+  display: grid;
+  min-width: 0;
+  gap: .15rem;
+}
+
+.journey-trip-row small,
+.trip-inbox-card small,
+.offline-plan-row small {
+  color: var(--muted, #746f67);
+}
+
+.booking-upload-button {
+  position: relative;
+  min-height: 50px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed #9fc9c2;
+  border-radius: 16px;
+  background: #f3fbf8;
+  color: #126b64;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.booking-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.trip-inbox-list,
+.offline-plan-list,
+.receipt-item-list {
+  display: grid;
+  gap: .7rem;
+}
+
+.trip-inbox-card,
+.offline-plan-row {
+  min-height: 64px;
+  padding: .8rem .9rem;
+  border: 1px solid #ebe3d8;
+  border-radius: 16px;
+  background: #fffdf9;
+}
+
+.receipt-itemization-panel {
+  display: grid;
+  gap: .8rem;
+  margin-top: .8rem;
+  padding: .9rem;
+  border: 1px solid #d8e9e5;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #f4fbf9, #fffdf8);
+}
+
+.receipt-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(130px, .7fr);
+  gap: .65rem;
+  align-items: center;
+  padding: .65rem .7rem;
+  border: 1px solid #e8e3da;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.receipt-item-row select {
+  min-width: 0;
+}
+
+.offline-pack-meta {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.offline-pack-meta span {
+  padding: .36rem .6rem;
+  border-radius: 999px;
+  background: #eef7f4;
+  color: #315b55;
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.offline-quick-expense .input-with-prefix {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 50px;
+  border: 1px solid #d9d3ca;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.offline-quick-expense .input-with-prefix b {
+  padding: 0 .75rem;
+  color: #12786f;
+  font-size: .78rem;
+}
+
+.offline-quick-expense .input-with-prefix input {
+  border: 0;
+  border-left: 1px solid #e8e1d7;
+  border-radius: 0;
+}
+
+.settlement-payment-tools {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding: .5rem 0 .1rem;
+}
+
+.settlement-payment-tools button {
+  min-height: 40px;
+  padding: .55rem .8rem;
+  border: 1px solid #cfe4df;
+  border-radius: 12px;
+  background: #f4fbf9;
+  color: #126b64;
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.settlement-payment-tools small {
+  width: 100%;
+  color: #5d746f;
+}
+
+.regional-settings-grid select {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .trip-invite-result,
+  .receipt-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-invite-result img {
+    width: 104px;
+    height: 104px;
+  }
+
+  .journey-card-head,
+  .trip-inbox-card,
+  .offline-plan-row {
+    align-items: flex-start;
+  }
+
+  .trip-inbox-card {
+    flex-direction: column;
+  }
+
+  .trip-inbox-card .button,
+  .journey-card > .button,
+  .journey-create-panel .button,
+  .offline-pack-hero .button,
+  .offline-quick-expense .button {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  .settlement-payment-tools button {
+    flex: 1 1 140px;
+    min-height: 44px;
+  }
+}

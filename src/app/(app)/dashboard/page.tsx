@@ -694,7 +694,7 @@ export default async function DashboardPage({
               Start your own trip
             </h2>
             <p>
-              You no longer need a System Admin to begin. Create a trip, choose its destination and assign your travel crew yourself.
+              Create a trip and invite your travel crew, or open a secure Miles & Meals invite link from a friend to join theirs.
             </p>
 
             <div className="dashboard-empty-actions">
@@ -702,7 +702,7 @@ export default async function DashboardPage({
                 className="button primary"
                 href="/trips"
               >
-                Create &amp; manage trips
+                Plan a new trip
               </Link>
 
               {admin ? (
