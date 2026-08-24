@@ -149,8 +149,8 @@ export default async function SettlementsPage({
           <p className="eyebrow">MONEY BETWEEN FRIENDS</p>
           <h1>Settle Up</h1>
           <p className="muted">
-            Choose a trip and it opens instantly. Balances come directly from expenses,
-            personal shares and confirmed payment history.
+            Choose a trip first. Balances come directly from expenses, personal shares and
+            confirmed payment history.
           </p>
         </div>
 

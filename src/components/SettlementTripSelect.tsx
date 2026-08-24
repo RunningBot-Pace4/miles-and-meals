@@ -52,37 +52,42 @@ export function SettlementTripSelect({
 
     syncedRef.current = true;
     void activateTrip(selectedId).catch(() => {
-      // Best-effort only. A future explicit selection retries the active-trip sync.
+      // The settlement page can still read an accessible trip even if this
+      // best-effort active-trip sync fails. The next explicit switch will retry.
     });
   }, [activeTripId, selectedId]);
 
   async function changeTrip(nextTripId: string) {
-    if (!nextTripId || nextTripId === selectedId || switching) {
-      setValue(nextTripId || selectedId);
+    setValue(nextTripId);
+    setError("");
+
+    if (!nextTripId) {
+      setError("Choose a trip to view settlement details.");
       return;
     }
+
+    if (nextTripId === selectedId || switching) return;
 
     if (!navigator.onLine) {
       setValue(selectedId);
-      setError("Trip switching needs a connection. The currently loaded settlement stays available.");
+      window.location.assign("/offline.html");
       return;
     }
 
-    setValue(nextTripId);
     setSwitching(true);
     setError("");
 
     try {
       await activateTrip(nextTripId);
-      window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
+      window.location.assign(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
     } catch (caught) {
-      setValue(selectedId);
       setError(
         caught instanceof Error
           ? caught.message
           : "Unable to open this trip. Please try again.",
       );
       setSwitching(false);
+      setValue(selectedId);
     }
   }
 
@@ -102,7 +107,9 @@ export function SettlementTripSelect({
             value={value}
             aria-label="Choose settlement trip"
             disabled={switching}
-            onChange={(event) => void changeTrip(event.target.value)}
+            onChange={(event) => {
+              void changeTrip(event.target.value);
+            }}
           >
             {trips.map((trip) => (
               <option value={trip.id} key={trip.id}>
@@ -112,7 +119,9 @@ export function SettlementTripSelect({
           </select>
         </label>
 
-        <small className="settle-trip-auto-hint" aria-live="polite">Select a trip and it opens immediately — no extra View button needed.</small>
+        <small className="settle-trip-auto-hint">
+          Select a trip to load its balances immediately.
+        </small>
 
         {error ? (
           <p className="error-text settle-trip-switch-error" role="alert">

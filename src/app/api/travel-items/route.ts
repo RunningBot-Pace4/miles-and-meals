@@ -17,13 +17,6 @@ import { travelItemSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
-function offlineMutationId(request: Request): string | null {
-  const value = request.headers.get("x-mnm-offline-mutation-id")?.trim() ?? "";
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-    ? value
-    : null;
-}
-
 export async function GET() {
   const started = Date.now();
   const session = await getSession();
@@ -114,99 +107,43 @@ export async function POST(request: Request) {
 
   try {
     const input = travelItemSchema.parse(await request.json());
-    const mutationId = offlineMutationId(request);
 
     if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (mutationId) {
-      const prior = await db
-        .select({
-          id: travelItems.id,
-          countryId: travelItems.countryId,
-          createdBy: travelItems.createdBy,
-        })
-        .from(travelItems)
-        .where(eq(travelItems.id, mutationId))
-        .limit(1);
-
-      if (prior[0]) {
-        if (
-          prior[0].createdBy === session.user.id &&
-          prior[0].countryId === input.countryId
-        ) {
-          return Response.json({ id: prior[0].id, idempotent: true });
-        }
-
-        return Response.json(
-          { error: "Offline mutation identifier conflict." },
-          { status: 409 },
-        );
-      }
-    }
-
-    const values = {
-      ...(mutationId ? { id: mutationId } : {}),
-      countryId: input.countryId,
-      itemType: input.itemType,
-      title: input.title,
-      itemDate: input.itemDate || null,
-      itemTime: input.itemTime || null,
-      area: input.area || null,
-      subtype: input.subtype || null,
-      priority: input.priority || null,
-      status: input.status || null,
-      ownerUserId: input.ownerUserId || null,
-      estimatedCost:
-        input.estimatedCost === "" ||
-        input.estimatedCost === null ||
-        input.estimatedCost === undefined
-          ? null
-          : Number(input.estimatedCost).toFixed(2),
-      quantity:
-        input.quantity === "" ||
-        input.quantity === null ||
-        input.quantity === undefined
-          ? null
-          : Number(input.quantity).toFixed(2),
-      provider: input.provider || null,
-      confirmationNo: input.confirmationNo || null,
-      linkUrl: input.linkUrl || null,
-      notes: input.notes || null,
-      createdBy: session.user.id,
-    };
-
-    let created: Array<{ id: string }>;
-    try {
-      created = await db
-        .insert(travelItems)
-        .values(values)
-        .returning({ id: travelItems.id });
-    } catch (error) {
-      // If the server committed an offline create but the response was lost, the
-      // retry uses the same UUID. Resolve that as success instead of duplicating.
-      if (mutationId) {
-        const prior = await db
-          .select({
-            id: travelItems.id,
-            countryId: travelItems.countryId,
-            createdBy: travelItems.createdBy,
-          })
-          .from(travelItems)
-          .where(eq(travelItems.id, mutationId))
-          .limit(1);
-
-        if (
-          prior[0]?.createdBy === session.user.id &&
-          prior[0]?.countryId === input.countryId
-        ) {
-          return Response.json({ id: prior[0].id, idempotent: true });
-        }
-      }
-
-      throw error;
-    }
+    const created = await db
+      .insert(travelItems)
+      .values({
+        countryId: input.countryId,
+        itemType: input.itemType,
+        title: input.title,
+        itemDate: input.itemDate || null,
+        itemTime: input.itemTime || null,
+        area: input.area || null,
+        subtype: input.subtype || null,
+        priority: input.priority || null,
+        status: input.status || null,
+        ownerUserId: input.ownerUserId || null,
+        estimatedCost:
+          input.estimatedCost === "" ||
+          input.estimatedCost === null ||
+          input.estimatedCost === undefined
+            ? null
+            : Number(input.estimatedCost).toFixed(2),
+        quantity:
+          input.quantity === "" ||
+          input.quantity === null ||
+          input.quantity === undefined
+            ? null
+            : Number(input.quantity).toFixed(2),
+        provider: input.provider || null,
+        confirmationNo: input.confirmationNo || null,
+        linkUrl: input.linkUrl || null,
+        notes: input.notes || null,
+        createdBy: session.user.id,
+      })
+      .returning({ id: travelItems.id });
 
     const country = await getCountryWithTrip(input.countryId);
 

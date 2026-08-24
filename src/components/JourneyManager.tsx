@@ -1,35 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import type { JourneySummary } from "@/lib/journeys";
 import { DateRangePicker } from "@/components/DateRangePicker";
+import type { JourneySummary } from "@/lib/journeys";
 
 type TripOption = { id: string; name: string; destination: string; journeyId: string | null };
-
-function JourneyDateRange({
-  initialStart = "",
-  initialEnd = "",
-}: {
-  initialStart?: string;
-  initialEnd?: string;
-}) {
-  const [startDate, setStartDate] = useState(initialStart);
-  const [endDate, setEndDate] = useState(initialEnd);
-
-  return (
-    <DateRangePicker
-      startDate={startDate}
-      endDate={endDate}
-      startName="startDate"
-      endName="endDate"
-      label="Journey dates"
-      onChange={(range) => {
-        setStartDate(range.startDate);
-        setEndDate(range.endDate);
-      }}
-    />
-  );
-}
 
 export function JourneyManager({
   journeys,
@@ -110,12 +85,15 @@ export function JourneyManager({
   return (
     <div className="stack gap-lg">
       <section className="panel journey-create-panel">
-        <p className="eyebrow">NEW JOURNEY</p>
-        <h2>One holiday, several country Trips</h2>
-        <p className="muted">Example: “Europe Holiday 2027” can contain France Trip, Italy Trip and Switzerland Trip. It only groups them for easier viewing; expenses and settlements remain separate.</p>
+        <p className="eyebrow">OPTIONAL · MULTI-COUNTRY HOLIDAY</p>
+        <h2>Put related Trips under one Journey</h2>
+        <p className="muted">
+          Example: “Asia 2027” can contain your separate Vietnam Trip and Japan Trip.
+          It only organizes them together—their currencies, expenses and settlements stay separate.
+        </p>
         <form className="stack" onSubmit={create}>
-          <label>Journey name<input name="name" required minLength={2} maxLength={120} placeholder="Europe 2027" /></label>
-          <JourneyDateRange />
+          <label>Journey name<input name="name" required minLength={2} maxLength={120} placeholder="Asia 2027" /></label>
+          <DateRangePicker startName="startDate" endName="endDate" label="Whole Journey dates" />
           <button className="button primary" disabled={busy} type="submit">Create Journey</button>
         </form>
       </section>
@@ -148,7 +126,13 @@ export function JourneyManager({
           <form className="panel journey-card" key={journey.id} onSubmit={(event) => { event.preventDefault(); void save(journey, event.currentTarget); }}>
             <div className="journey-card-head"><div><p className="eyebrow">JOURNEY</p><h2>{journey.name}</h2></div><span>{journey.trips.length} trip{journey.trips.length === 1 ? "" : "s"}</span></div>
             <label>Journey name<input name="name" defaultValue={journey.name} required minLength={2} maxLength={120} /></label>
-            <JourneyDateRange initialStart={journey.startDate ?? ""} initialEnd={journey.endDate ?? ""} />
+            <DateRangePicker
+              defaultStartDate={journey.startDate ?? ""}
+              defaultEndDate={journey.endDate ?? ""}
+              startName="startDate"
+              endName="endDate"
+              label="Whole Journey dates"
+            />
             <fieldset className="journey-trip-picker">
               <legend>Trips in this Journey</legend>
               {trips.length ? trips.map((trip) => (
