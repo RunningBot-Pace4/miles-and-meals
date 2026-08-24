@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { DateRangePicker } from "@/components/DateRangePicker";
 import { countryCatalog } from "@/lib/country-catalog";
 
 type Trip = {
@@ -106,6 +107,8 @@ export function AdminForms({
   users: UserOption[];
 }) {
   const [busyForm, setBusyForm] = useState<FormKey | null>(null);
+  const [createTripStartDate, setCreateTripStartDate] = useState("");
+  const [createTripEndDate, setCreateTripEndDate] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const initialCountryTripId =
@@ -538,8 +541,8 @@ export function AdminForms({
               (form) => ({
                 name: String(form.get("name") ?? ""),
                 baseCurrency: String(form.get("baseCurrency") ?? "MYR"),
-                startDate: String(form.get("startDate") ?? ""),
-                endDate: String(form.get("endDate") ?? ""),
+                startDate: createTripStartDate,
+                endDate: createTripEndDate,
               }),
               "Trip created.",
             )
@@ -579,16 +582,17 @@ export function AdminForms({
             </div>
           </div>
 
-          <div className="two-col">
-            <label>
-              Start
-              <input name="startDate" type="date" />
-            </label>
-            <label>
-              End
-              <input name="endDate" type="date" />
-            </label>
-          </div>
+          <DateRangePicker
+            startDate={createTripStartDate}
+            endDate={createTripEndDate}
+            startName="startDate"
+            endName="endDate"
+            label="Trip dates"
+            onChange={(range) => {
+              setCreateTripStartDate(range.startDate);
+              setCreateTripEndDate(range.endDate);
+            }}
+          />
 
           <SubmitButton
             active={busyForm === "create-trip"}

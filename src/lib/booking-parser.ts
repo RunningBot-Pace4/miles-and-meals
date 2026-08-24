@@ -5,6 +5,8 @@ export type BookingImport = {
   confirmationNo: string;
   bookingDate: string;
   bookingTime: string;
+  flightNumber: string;
+  route: string;
   rawText: string;
 };
 
@@ -86,24 +88,118 @@ export function extractPdfTextBestEffort(bytes: Uint8Array): string {
   return readableCharacters >= 8 ? output : "";
 }
 
+
+const AIRLINE_BY_CODE: Record<string, string> = {
+  AK: "AirAsia",
+  D7: "AirAsia X",
+  MH: "Malaysia Airlines",
+  OD: "Batik Air Malaysia",
+  TR: "Scoot",
+  SQ: "Singapore Airlines",
+  VJ: "VietJet Air",
+  VN: "Vietnam Airlines",
+  TG: "Thai Airways",
+  FD: "Thai AirAsia",
+  QZ: "Indonesia AirAsia",
+  EK: "Emirates",
+  QR: "Qatar Airways",
+  CX: "Cathay Pacific",
+  JQ: "Jetstar",
+  "5J": "Cebu Pacific",
+  "3K": "Jetstar Asia",
+  FY: "Firefly",
+  JL: "Japan Airlines",
+  NH: "ANA",
+  GA: "Garuda Indonesia",
+  BR: "EVA Air",
+  CI: "China Airlines",
+  KE: "Korean Air",
+  OZ: "Asiana Airlines",
+  PR: "Philippine Airlines",
+};
+
+function detectFlightNumber(text: string): string {
+  const explicit = text.match(
+    /(?:FLIGHT(?:\s*(?:NO|NUMBER))?|FLT)\s*[:#-]?\s*([A-Z0-9]{2,3})\s*[- ]?\s*(\d{1,4}[A-Z]?)/i,
+  );
+  if (explicit) return `${explicit[1].toUpperCase()}${explicit[2].toUpperCase()}`;
+
+  const standaloneLine = text.toUpperCase().match(
+    /(?:^|\n)\s*([A-Z0-9]{2})\s*[- ]?\s*(\d{1,4}[A-Z]?)\s*(?=$|\n)/,
+  );
+  if (standaloneLine) {
+    return `${standaloneLine[1]}${standaloneLine[2]}`;
+  }
+
+  const trimmed = text.trim().toUpperCase();
+  const onlyCode = /^([A-Z0-9]{2})\s*[- ]?\s*(\d{1,4}[A-Z]?)$/.exec(trimmed);
+  if (!onlyCode) return "";
+
+  const prefix = onlyCode[1];
+  // Bare flight lookup uses the 2-character IATA-style airline prefix.
+  // A value such as ABC123 remains ambiguous and is treated as a booking ref.
+  return `${prefix}${onlyCode[2]}`;
+}
+
+function detectBareBookingReference(text: string, flightNumber: string): string {
+  if (flightNumber) return "";
+  const trimmed = text.trim().toUpperCase();
+  return /^[A-Z0-9][A-Z0-9-]{3,11}$/.test(trimmed) ? trimmed : "";
+}
+
+function detectRoute(text: string): string {
+  const match = text.toUpperCase().match(
+    /\b([A-Z]{3})\s*(?:→|->|TO)\s*([A-Z]{3})\b/,
+  );
+  return match ? `${match[1]} → ${match[2]}` : "";
+}
+
 export function parseBookingText(input: string): BookingImport {
   const rawText = input.replace(/\u0000/g, " ").slice(0, 30_000);
   const rows = lines(rawText);
   const upper = rawText.toUpperCase();
+  const flightNumber = detectFlightNumber(rawText);
+  const route = detectRoute(rawText);
+  const bareBookingReference = detectBareBookingReference(rawText, flightNumber);
 
   let kind: BookingImport["kind"] = "BOOKING";
-  if (/\bFLIGHT\b|\bAIRLINE\b|\bBOARDING\b|\bDEPARTURE\b.*\bARRIVAL\b/.test(upper)) kind = "FLIGHT";
+  if (flightNumber || /\bFLIGHT\b|\bAIRLINE\b|\bBOARDING\b|\bDEPARTURE\b.*\bARRIVAL\b/.test(upper)) kind = "FLIGHT";
   else if (/\bHOTEL\b|\bCHECK[- ]?IN\b|\bCHECK[- ]?OUT\b|\bROOM\b/.test(upper)) kind = "HOTEL";
   else if (/\bTRAIN\b|\bRAIL\b|\bSTATION\b/.test(upper)) kind = "TRAIN";
   else if (/\bTICKET\b|\bADMISSION\b|\bATTRACTION\b/.test(upper)) kind = "TICKET";
 
-  const confirmation = rawText.match(/(?:CONFIRMATION|BOOKING|RESERVATION|PNR|REFERENCE|REF)\s*(?:NO\.?|NUMBER|#|:)??\s*[:#-]?\s*([A-Z0-9-]{4,18})/i)?.[1] ?? "";
+  const confirmation =
+    rawText.match(/(?:CONFIRMATION|BOOKING|RESERVATION|PNR|REFERENCE|REF)\s*(?:NO\.?|NUMBER|#|:)??\s*[:#-]?\s*([A-Z0-9-]{4,18})/i)?.[1] ??
+    bareBookingReference;
   const time = rawText.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/)?.[0] ?? "";
 
   const providerRow = rows.find((line) => /AIR|HOTEL|RESORT|HOSTEL|RAIL|TRAIN|BOOKING|AIRASIA|MALAYSIA|SCOOT|AGODA|EXPEDIA/i.test(line));
-  const provider = (providerRow ?? rows[0] ?? "").slice(0, 160);
-  const titleCandidate = rows.find((line) => line.length >= 4 && line.length <= 100 && !/^(BOOKING|CONFIRMATION|DATE|TIME|TOTAL|AMOUNT)$/i.test(line));
-  const fallbackTitle = kind === "FLIGHT" ? "Flight reservation" : kind === "HOTEL" ? "Hotel reservation" : kind === "TRAIN" ? "Train booking" : kind === "TICKET" ? "Ticket booking" : "Travel booking";
+  const flightCode =
+    Object.keys(AIRLINE_BY_CODE).find(
+      (code) =>
+        flightNumber.startsWith(code) &&
+        /^\d/.test(flightNumber.slice(code.length)),
+    ) ??
+    flightNumber.match(/^([A-Z]{2,3})(?=\d)/)?.[1] ??
+    "";
+  const airlineName = flightCode ? AIRLINE_BY_CODE[flightCode] ?? "" : "";
+  const provider = (providerRow || airlineName || rows[0] || "").slice(0, 160);
+  const titleCandidate = rows.find((line) =>
+    line.length >= 4 &&
+    line.length <= 100 &&
+    !/^(BOOKING|CONFIRMATION|DATE|TIME|TOTAL|AMOUNT)$/i.test(line) &&
+    line.trim().toUpperCase() !== flightNumber,
+  );
+  const fallbackTitle =
+    kind === "FLIGHT"
+      ? `Flight${flightNumber ? ` ${flightNumber}` : ""}${route ? ` · ${route}` : ""}`
+      : kind === "HOTEL"
+        ? "Hotel reservation"
+        : kind === "TRAIN"
+          ? "Train booking"
+          : kind === "TICKET"
+            ? "Ticket booking"
+            : "Travel booking";
 
   return {
     kind,
@@ -112,6 +208,8 @@ export function parseBookingText(input: string): BookingImport {
     confirmationNo: confirmation,
     bookingDate: isoDate(rawText),
     bookingTime: time,
+    flightNumber,
+    route,
     rawText,
   };
 }

@@ -19,11 +19,33 @@ type Context = {
   params: Promise<{ id: string }>;
 };
 
+function offlineMutationId(request: Request): string | null {
+  const value = request.headers.get("x-mnm-offline-mutation-id")?.trim() ?? "";
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null;
+}
+
 async function getExistingItem(id: string) {
   const rows = await db
     .select({
       id: travelItems.id,
       countryId: travelItems.countryId,
+      itemType: travelItems.itemType,
+      title: travelItems.title,
+      itemDate: travelItems.itemDate,
+      itemTime: travelItems.itemTime,
+      area: travelItems.area,
+      subtype: travelItems.subtype,
+      priority: travelItems.priority,
+      status: travelItems.status,
+      ownerUserId: travelItems.ownerUserId,
+      estimatedCost: travelItems.estimatedCost,
+      quantity: travelItems.quantity,
+      provider: travelItems.provider,
+      confirmationNo: travelItems.confirmationNo,
+      linkUrl: travelItems.linkUrl,
+      notes: travelItems.notes,
       updatedAt: travelItems.updatedAt,
     })
     .from(travelItems)
@@ -31,6 +53,35 @@ async function getExistingItem(id: string) {
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+function normalizedNumber(value: number | string | null | undefined): string | null {
+  if (value === "" || value === null || value === undefined) return null;
+  return Number(value).toFixed(2);
+}
+
+function plannerPayloadAlreadyApplied(
+  existing: NonNullable<Awaited<ReturnType<typeof getExistingItem>>>,
+  input: ReturnType<typeof travelItemUpdateSchema.parse>,
+): boolean {
+  return (
+    existing.countryId === input.countryId &&
+    existing.itemType === input.itemType &&
+    existing.title === input.title &&
+    existing.itemDate === (input.itemDate || null) &&
+    existing.itemTime === (input.itemTime || null) &&
+    existing.area === (input.area || null) &&
+    existing.subtype === (input.subtype || null) &&
+    existing.priority === (input.priority || null) &&
+    existing.status === (input.status || null) &&
+    existing.ownerUserId === (input.ownerUserId || null) &&
+    normalizedNumber(existing.estimatedCost) === normalizedNumber(input.estimatedCost) &&
+    normalizedNumber(existing.quantity) === normalizedNumber(input.quantity) &&
+    existing.provider === (input.provider || null) &&
+    existing.confirmationNo === (input.confirmationNo || null) &&
+    existing.linkUrl === (input.linkUrl || null) &&
+    existing.notes === (input.notes || null)
+  );
 }
 
 export async function PATCH(request: Request, context: Context) {
@@ -57,6 +108,7 @@ export async function PATCH(request: Request, context: Context) {
     }
 
     const input = travelItemUpdateSchema.parse(await request.json());
+    const mutationId = offlineMutationId(request);
 
     if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
       return Response.json(
@@ -70,6 +122,13 @@ export async function PATCH(request: Request, context: Context) {
       const current = existing.updatedAt.getTime();
 
       if (!Number.isFinite(expected) || Math.abs(expected - current) > 1) {
+        // Offline retries can arrive after the first request was committed but its
+        // response was lost. If the desired state is already present, treat the
+        // retry as success instead of surfacing a false stale-edit conflict.
+        if (mutationId && plannerPayloadAlreadyApplied(existing, input)) {
+          return Response.json({ ok: true, idempotent: true });
+        }
+
         return Response.json(
           {
             error:
@@ -166,6 +225,9 @@ export async function DELETE(request: Request, context: Context) {
   const existing = await getExistingItem(id);
 
   if (!existing) {
+    if (offlineMutationId(request)) {
+      return Response.json({ ok: true, idempotent: true });
+    }
     return Response.json({ error: "Not found." }, { status: 404 });
   }
 

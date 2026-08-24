@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 
 type SettlementTripOption = {
@@ -52,31 +52,31 @@ export function SettlementTripSelect({
 
     syncedRef.current = true;
     void activateTrip(selectedId).catch(() => {
-      // The settlement page can still read an accessible trip even if this
-      // best-effort active-trip sync fails. The next explicit switch will retry.
+      // Best-effort only. A future explicit selection retries the active-trip sync.
     });
   }, [activeTripId, selectedId]);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!value) {
-      setError("Choose a trip to view settlement details.");
+  async function changeTrip(nextTripId: string) {
+    if (!nextTripId || nextTripId === selectedId || switching) {
+      setValue(nextTripId || selectedId);
       return;
     }
 
     if (!navigator.onLine) {
-      window.location.assign("/offline.html");
+      setValue(selectedId);
+      setError("Trip switching needs a connection. The currently loaded settlement stays available.");
       return;
     }
 
+    setValue(nextTripId);
     setSwitching(true);
     setError("");
 
     try {
-      await activateTrip(value);
-      window.location.assign(`/settlements?tripId=${encodeURIComponent(value)}`);
+      await activateTrip(nextTripId);
+      window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
     } catch (caught) {
+      setValue(selectedId);
       setError(
         caught instanceof Error
           ? caught.message
@@ -95,17 +95,14 @@ export function SettlementTripSelect({
         />
       ) : null}
 
-      <form className="settle-country-filter" onSubmit={(event) => void submit(event)}>
+      <div className="settle-country-filter settle-country-filter-auto">
         <label>
           Trip
           <select
             value={value}
             aria-label="Choose settlement trip"
             disabled={switching}
-            onChange={(event) => {
-              setValue(event.target.value);
-              setError("");
-            }}
+            onChange={(event) => void changeTrip(event.target.value)}
           >
             {trips.map((trip) => (
               <option value={trip.id} key={trip.id}>
@@ -115,16 +112,14 @@ export function SettlementTripSelect({
           </select>
         </label>
 
-        <button className="button primary" type="submit" disabled={switching}>
-          View trip
-        </button>
+        <small className="settle-trip-auto-hint" aria-live="polite">Select a trip and it opens immediately — no extra View button needed.</small>
 
         {error ? (
           <p className="error-text settle-trip-switch-error" role="alert">
             {error}
           </p>
         ) : null}
-      </form>
+      </div>
     </>
   );
 }

@@ -1,3 +1,19 @@
+# v78 — Trip Switching, Friendly Dates, Offline Resync & PWA Polish
+
+v78 is the UX/reliability release on top of the complete v77 web/PWA source.
+
+- **Settle Up** trip selection now opens immediately when the dropdown changes; the extra **View trip** button is removed.
+- Trip/Journey dates now use one **two-tap range calendar**: first tap = Start, second tap = End, with the selected range highlighted.
+- **Multi-country Journey** is explained as an optional folder for one holiday containing several single-country Trips; it never merges expenses or settlements.
+- **Trip Inbox** distinguishes a public flight number from a private booking/PNR reference. It extracts details from uploaded/pasted confirmations but does not invent private reservation data or live status.
+- **Offline resync** is serialized across sync controls, preserves newly queued work, uses backoff/review states, prevents silent queue overflow, and makes Planner create/update/delete retries idempotent after lost responses.
+- Mobile/PWA coverage targets **320 / 360 / 375 / 390 / 412 / 430px**, safe-area insets, no horizontal overflow, touch-friendly controls and the installed PWA shell.
+- No new database schema is introduced by v78. If the v77 schema is already applied, no extra `db:push` is required specifically for v78.
+
+See `V78-TRIP-DATES-OFFLINE-PWA-POLISH.md`.
+
+---
+
 # v77 — Global Mobile-Web / PWA Enhancement Pack (v71–v77)
 
 This source package combines the complete v71–v77 roadmap on top of the stable v70 baseline. It remains a **responsive mobile web + PWA** application; there is no separate native iOS/Android codebase.

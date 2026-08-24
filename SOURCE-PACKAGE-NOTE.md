@@ -1,3 +1,24 @@
+# Miles & Meals v78 — Full Source Package
+
+This package contains the complete v71–v77 enhancement set plus the v78 UX/reliability pass.
+
+Key v78 behavior:
+
+- Settle Up changes Trip immediately from the dropdown; no second View button.
+- Trip/Journey dates use a two-tap Start → End calendar.
+- Journey wording is simplified as an optional multi-country holiday folder.
+- Trip Inbox safely distinguishes flight numbers from ambiguous/private booking references.
+- Offline queue flushing is serialized, queue capacity fails safely instead of dropping old work, and offline Planner retries are idempotent across response loss.
+- PWA/mobile audit targets 320–430px widths with safe-area-aware layouts.
+
+**Database:** v78 adds no schema beyond v77. If upgrading from v70 or earlier, apply the v77 schema after taking a Neon backup/branch.
+
+A dependency-backed Next production build still requires `npm install` in a network-enabled development/deployment environment.
+
+See `V78-TRIP-DATES-OFFLINE-PWA-POLISH.md`.
+
+---
+
 # Miles & Meals v77 — Full Source Package
 
 This is the consolidated **v71–v77 mobile-web/PWA enhancement pack** built on the complete v70 source.

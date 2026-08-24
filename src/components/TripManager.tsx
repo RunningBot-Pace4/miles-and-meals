@@ -9,6 +9,7 @@ import {
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { TripInvitePanel } from "@/components/TripInvitePanel";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
 type CountryCatalogItem = {
   name: string;
@@ -303,29 +304,15 @@ function ManagedTripCard({
             />
           </label>
 
-          <div className="two-col">
-            <label>
-              Start
-              <input
-                type="date"
-                value={startDate}
-                onChange={(event) =>
-                  setStartDate(event.target.value)
-                }
-              />
-            </label>
-
-            <label>
-              End
-              <input
-                type="date"
-                value={endDate}
-                onChange={(event) =>
-                  setEndDate(event.target.value)
-                }
-              />
-            </label>
-          </div>
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(range) => {
+              setStartDate(range.startDate);
+              setEndDate(range.endDate);
+            }}
+            label="Trip dates"
+          />
 
           <div className="two-col">
             <label>
@@ -539,6 +526,8 @@ export function TripManager({
 
   const [createBaseCurrency, setCreateBaseCurrency] =
     useState("MYR");
+  const [createStartDate, setCreateStartDate] = useState("");
+  const [createEndDate, setCreateEndDate] = useState("");
   const [createCountryCode, setCreateCountryCode] =
     useState("");
   const [createFxRate, setCreateFxRate] = useState("");
@@ -701,8 +690,8 @@ export function TripManager({
       const created = await mutation("/api/trips", "POST", {
         name: String(form.get("name") ?? ""),
         baseCurrency: createBaseCurrency,
-        startDate: String(form.get("startDate") ?? ""),
-        endDate: String(form.get("endDate") ?? ""),
+        startDate: createStartDate,
+        endDate: createEndDate,
         firstCountry: {
           code: selectedCreateCountry.code,
           defaultExchangeRate: createFxRate,
@@ -868,17 +857,17 @@ export function TripManager({
             </div>
           ) : null}
 
-          <div className="two-col">
-            <label>
-              Start
-              <input name="startDate" type="date" />
-            </label>
-
-            <label>
-              End
-              <input name="endDate" type="date" />
-            </label>
-          </div>
+          <DateRangePicker
+            startDate={createStartDate}
+            endDate={createEndDate}
+            onChange={(range) => {
+              setCreateStartDate(range.startDate);
+              setCreateEndDate(range.endDate);
+            }}
+            startName="startDate"
+            endName="endDate"
+            label="Trip dates"
+          />
 
           {error ? (
             <p className="form-error" role="alert">

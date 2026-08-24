@@ -2,8 +2,34 @@
 
 import { FormEvent, useState } from "react";
 import type { JourneySummary } from "@/lib/journeys";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
 type TripOption = { id: string; name: string; destination: string; journeyId: string | null };
+
+function JourneyDateRange({
+  initialStart = "",
+  initialEnd = "",
+}: {
+  initialStart?: string;
+  initialEnd?: string;
+}) {
+  const [startDate, setStartDate] = useState(initialStart);
+  const [endDate, setEndDate] = useState(initialEnd);
+
+  return (
+    <DateRangePicker
+      startDate={startDate}
+      endDate={endDate}
+      startName="startDate"
+      endName="endDate"
+      label="Journey dates"
+      onChange={(range) => {
+        setStartDate(range.startDate);
+        setEndDate(range.endDate);
+      }}
+    />
+  );
+}
 
 export function JourneyManager({
   journeys,
@@ -85,11 +111,11 @@ export function JourneyManager({
     <div className="stack gap-lg">
       <section className="panel journey-create-panel">
         <p className="eyebrow">NEW JOURNEY</p>
-        <h2>Group related country trips</h2>
-        <p className="muted">A Journey can contain Malaysia, Vietnam, Japan and other single-country Trips without mixing their currencies or ledgers.</p>
+        <h2>One holiday, several country Trips</h2>
+        <p className="muted">Example: “Europe Holiday 2027” can contain France Trip, Italy Trip and Switzerland Trip. It only groups them for easier viewing; expenses and settlements remain separate.</p>
         <form className="stack" onSubmit={create}>
           <label>Journey name<input name="name" required minLength={2} maxLength={120} placeholder="Europe 2027" /></label>
-          <div className="two-col"><label>Start<input type="date" name="startDate" /></label><label>End<input type="date" name="endDate" /></label></div>
+          <JourneyDateRange />
           <button className="button primary" disabled={busy} type="submit">Create Journey</button>
         </form>
       </section>
@@ -122,7 +148,7 @@ export function JourneyManager({
           <form className="panel journey-card" key={journey.id} onSubmit={(event) => { event.preventDefault(); void save(journey, event.currentTarget); }}>
             <div className="journey-card-head"><div><p className="eyebrow">JOURNEY</p><h2>{journey.name}</h2></div><span>{journey.trips.length} trip{journey.trips.length === 1 ? "" : "s"}</span></div>
             <label>Journey name<input name="name" defaultValue={journey.name} required minLength={2} maxLength={120} /></label>
-            <div className="two-col"><label>Start<input type="date" name="startDate" defaultValue={journey.startDate ?? ""} /></label><label>End<input type="date" name="endDate" defaultValue={journey.endDate ?? ""} /></label></div>
+            <JourneyDateRange initialStart={journey.startDate ?? ""} initialEnd={journey.endDate ?? ""} />
             <fieldset className="journey-trip-picker">
               <legend>Trips in this Journey</legend>
               {trips.length ? trips.map((trip) => (

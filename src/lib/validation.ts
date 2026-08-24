@@ -1,22 +1,47 @@
 import { z } from "zod";
 import { SUPPORTED_REGIONAL_LOCALES, SUPPORTED_REGIONAL_TIME_ZONES } from "@/lib/regional";
 
+const optionalIsoDate = z
+  .string()
+  .trim()
+  .max(10)
+  .refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+    message: "Use a valid YYYY-MM-DD date.",
+  });
+
+function validateTripDateOrder(
+  value: { startDate: string; endDate: string },
+  context: { addIssue: (issue: { code: "custom"; path: string[]; message: string }) => void },
+) {
+  if (value.startDate && value.endDate && value.endDate < value.startDate) {
+    context.addIssue({
+      code: "custom",
+      path: ["endDate"],
+      message: "Trip end date cannot be before the start date.",
+    });
+  }
+}
+
 export const uuidSchema = z.string().uuid();
 
-export const createTripSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  baseCurrency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
-  budget: z.coerce.number().min(0).max(1_000_000_000).default(0),
-  startDate: z.string().optional().default(""),
-  endDate: z.string().optional().default(""),
-});
+export const createTripSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    baseCurrency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+    budget: z.coerce.number().min(0).max(1_000_000_000).default(0),
+    startDate: optionalIsoDate.optional().default(""),
+    endDate: optionalIsoDate.optional().default(""),
+  })
+  .superRefine(validateTripDateOrder);
 
-export const updateTripSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  budget: z.coerce.number().min(0).max(1_000_000_000),
-  startDate: z.string().optional().default(""),
-  endDate: z.string().optional().default(""),
-});
+export const updateTripSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    budget: z.coerce.number().min(0).max(1_000_000_000),
+    startDate: optionalIsoDate.optional().default(""),
+    endDate: optionalIsoDate.optional().default(""),
+  })
+  .superRefine(validateTripDateOrder);
 
 export const createCountrySchema = z.object({
   tripId: uuidSchema,
@@ -203,14 +228,8 @@ export const selfServiceTripSchema = z.object({
     .transform((value) =>
       value.toUpperCase(),
     ),
-  startDate: z
-    .string()
-    .optional()
-    .default(""),
-  endDate: z
-    .string()
-    .optional()
-    .default(""),
+  startDate: optionalIsoDate.optional().default(""),
+  endDate: optionalIsoDate.optional().default(""),
   firstCountry: z.object({
     code: z
       .string()
@@ -234,19 +253,15 @@ export const selfServiceTripSchema = z.object({
       .optional()
       .default(""),
   }),
-});
+}).superRefine(validateTripDateOrder);
 
-export const selfServiceTripUpdateSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  startDate: z
-    .string()
-    .optional()
-    .default(""),
-  endDate: z
-    .string()
-    .optional()
-    .default(""),
-});
+export const selfServiceTripUpdateSchema = z
+  .object({
+    name: z.string().trim().min(2).max(120),
+    startDate: optionalIsoDate.optional().default(""),
+    endDate: optionalIsoDate.optional().default(""),
+  })
+  .superRefine(validateTripDateOrder);
 
 export const personalTripBudgetSchema = z.object({
   tripId: uuidSchema,

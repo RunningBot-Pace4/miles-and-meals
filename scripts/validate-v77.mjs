@@ -50,7 +50,11 @@ must(manifest, '"Trip Inbox"', "v77 PWA Trip Inbox shortcut missing");
 for (const href of ['/journeys', '/inbox', '/offline']) must(more, `href="${href}"`, `v77 More menu missing ${href}`);
 for (const marker of ["journeyRows", "expenseItemRows", "expenseItemAssignmentRows", "inboxRows"]) must(backup, marker, `v77 backup missing ${marker}`);
 for (const table of ["expense_item_assignments", "expense_items", "trip_inbox_items", "trip_invites", "journeys"]) must(reset, table, `v77 keep-login reset missing ${table}`);
-must(packageJson, '"version": "1.77.0"', "v77 package version missing");
+const packageVersion = JSON.parse(packageJson).version ?? "0.0.0";
+const [major, minor] = packageVersion.split(".").map(Number);
+if (major < 1 || (major === 1 && minor < 77)) {
+  throw new Error("v77 package version missing");
+}
 must(packageJson, '"v77:check"', "v77 validator script missing");
 
 must(navigationSafety, "safeInternalPath", "v77 auth return-path sanitizer missing");

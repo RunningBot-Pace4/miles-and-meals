@@ -84,7 +84,7 @@ export default async function MorePage() {
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/journeys">
-          <span>Journeys · group multi-country trips</span>
+          <span>Multi-country Journey · optional</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/inbox">
