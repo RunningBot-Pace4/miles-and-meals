@@ -1,3 +1,16 @@
+# v70 — Explainable Smart Settlement
+
+- Every Smart Settlement recommendation now has **View details** with transparent payer/receiver net-position math.
+- Added **Smart Settlement / Original Balances / History** audit views.
+- Original Balances expands to the exact expense shares that created each traveler-to-traveler obligation.
+- Recommended-transfer detail shows direct opposing balances when they exist, plus contributing expenses and recorded payments.
+- Expense-level audit rows link back to the original expense.
+- Whole-group netting is explained honestly instead of forcing an optimized transfer onto one arbitrary receipt.
+- Existing Mark Paid / Mark Received / completed history behavior remains unchanged.
+- No database migration is required from v69 to v70 (assuming the v67 schema is already applied).
+
+See `V70-EXPLAINABLE-SMART-SETTLEMENT.md`.
+
 # v69 — Mobile Flow, Navigation & Safe Neon Reset
 
 - Added a context-aware mobile **Back** control on secondary screens while keeping the five main tabs clean.

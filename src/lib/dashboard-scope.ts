@@ -177,6 +177,29 @@ function convertSmartPlan(
     optimizedTransfers: plan.optimizedTransfers.map((transfer) =>
       convertTransfer(transfer, factor, displayCurrency),
     ),
+    originalExpenseBalances: plan.originalExpenseBalances.map((balance) => ({
+      ...balance,
+      amount: balance.amount * factor,
+      expenses: balance.expenses.map((expense) => ({
+        ...expense,
+        shareAmount: expense.shareAmount * factor,
+        expenseTotal: expense.expenseTotal * factor,
+        currency: displayCurrency,
+      })),
+    })),
+    recordedPayments: plan.recordedPayments.map((payment) => ({
+      ...payment,
+      amount: payment.amount * factor,
+      currency: displayCurrency,
+    })),
+    netPositions: plan.netPositions.map((position) => ({
+      ...position,
+      grossOwes: position.grossOwes * factor,
+      grossReceives: position.grossReceives * factor,
+      recordedSent: position.recordedSent * factor,
+      recordedReceived: position.recordedReceived * factor,
+      remainingNet: position.remainingNet * factor,
+    })),
   };
 }
 

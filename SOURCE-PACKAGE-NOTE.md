@@ -1,3 +1,20 @@
+# Miles & Meals v70 — Full Source Package
+
+This package adds an explainable/auditable Smart Settlement layer on top of the complete v69 source.
+
+Key v70 behavior:
+
+- Every recommended transfer has a **View details** drill-down.
+- Users can switch between **Smart Settlement**, **Original Balances** and **History** without leaving Settle Up.
+- Original balances expand into the exact expense-share transactions that created the obligation.
+- Recommended-transfer details show transparent net-position math and direct opposing balances when applicable.
+- Recorded settlement payments remain separate from original expense evidence so group-netted payments are never falsely assigned to one receipt.
+- Original expense and settlement records are not rewritten.
+
+No new schema migration is required from v69 to v70. The v67 schema changes must already exist.
+
+See `V70-EXPLAINABLE-SMART-SETTLEMENT.md`.
+
 # Miles & Meals v69 — Full Source Package
 
 This package adds the v69 mobile-flow/navigation reliability pass on top of the complete v68/v67 launch-candidate source.

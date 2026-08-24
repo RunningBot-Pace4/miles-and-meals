@@ -15376,3 +15376,594 @@ body {
     display: none !important;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* v70 Smart Settlement audit trail                                            */
+/* -------------------------------------------------------------------------- */
+
+.smart-settlement-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0 1.4rem 1.15rem;
+}
+
+.smart-settlement-tabs button {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+  min-height: 54px;
+  padding: 0.7rem 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: rgb(255 255 255 / 78%);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.smart-settlement-tabs button:hover {
+  transform: translateY(-1px);
+  border-color: rgb(13 148 136 / 30%);
+}
+
+.smart-settlement-tabs button.active {
+  border-color: rgb(13 148 136 / 34%);
+  background: var(--primary-soft);
+  color: var(--primary);
+  box-shadow: 0 8px 24px rgb(13 148 136 / 8%);
+}
+
+.smart-settlement-tabs button small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-settlement-tab-panel {
+  border-top: 1px solid var(--border);
+}
+
+.smart-transfer-card.with-details {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+
+.smart-transfer-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  min-width: 0;
+  padding: 0.82rem 0.9rem 0.58rem;
+}
+
+.smart-transfer-details {
+  border-top: 1px solid rgb(18 58 53 / 8%);
+}
+
+.smart-transfer-details > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  margin: 0 0.9rem 0.68rem;
+  padding: 0.3rem 0;
+  color: var(--primary);
+  font-size: 0.73rem;
+  font-weight: 850;
+  cursor: pointer;
+  list-style: none;
+}
+
+.smart-transfer-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.smart-transfer-details > summary::after {
+  content: "↓";
+  margin-left: 0.38rem;
+  font-size: 0.72rem;
+}
+
+.smart-transfer-details[open] > summary::after {
+  content: "↑";
+}
+
+.smart-transfer-details-body {
+  display: grid;
+  gap: 0.9rem;
+  padding: 0.95rem;
+  border-top: 1px solid var(--border);
+  background:
+    linear-gradient(145deg, rgb(246 251 250 / 96%), rgb(255 255 255 / 96%));
+}
+
+.smart-transfer-detail-heading {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.smart-transfer-detail-heading > span {
+  color: var(--primary-2);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.smart-transfer-detail-heading > strong {
+  font-size: 0.94rem;
+}
+
+.smart-transfer-detail-heading > small {
+  max-width: 760px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.smart-transfer-net-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.smart-transfer-net-grid article {
+  min-width: 0;
+  padding: 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.smart-transfer-net-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  margin-bottom: 0.55rem;
+}
+
+.smart-transfer-net-head > span {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.46rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.smart-transfer-net-head > span.receive {
+  background: rgb(22 133 91 / 10%);
+  color: #126d4d;
+}
+
+.smart-transfer-net-head > span.pay {
+  background: rgb(180 35 24 / 9%);
+  color: #9e2f28;
+}
+
+.smart-transfer-net-grid dl {
+  display: grid;
+  gap: 0.32rem;
+  margin: 0;
+}
+
+.smart-transfer-net-grid dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding-top: 0.3rem;
+  border-top: 1px dashed rgb(18 58 53 / 10%);
+}
+
+.smart-transfer-net-grid dt,
+.smart-transfer-net-grid dd {
+  margin: 0;
+  font-size: 0.68rem;
+}
+
+.smart-transfer-net-grid dt {
+  color: var(--muted);
+}
+
+.smart-transfer-net-grid dd {
+  flex: 0 0 auto;
+  font-weight: 780;
+}
+
+.smart-transfer-pair-proof,
+.smart-transfer-expense-proof,
+.smart-transfer-no-direct-balance,
+.smart-settlement-audit-note {
+  border: 1px solid rgb(13 148 136 / 13%);
+  border-radius: 14px;
+  background: rgb(230 244 241 / 42%);
+}
+
+.smart-transfer-pair-proof {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.72rem 0.78rem;
+}
+
+.smart-transfer-pair-proof > strong {
+  margin-bottom: 0.1rem;
+  font-size: 0.72rem;
+}
+
+.smart-transfer-pair-proof > span {
+  font-size: 0.7rem;
+  font-weight: 720;
+}
+
+.smart-transfer-no-direct-balance {
+  margin: 0;
+  padding: 0.7rem 0.78rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.45;
+}
+
+.smart-transfer-expense-proof {
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.smart-transfer-expense-proof > div:first-child {
+  display: grid;
+  gap: 0.08rem;
+  padding: 0.72rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.smart-transfer-expense-proof > div:first-child strong {
+  font-size: 0.75rem;
+}
+
+.smart-transfer-expense-proof > div:first-child small {
+  font-size: 0.66rem;
+}
+
+.smart-proof-list {
+  display: grid;
+}
+
+.smart-proof-row,
+.smart-original-expense-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.72rem 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.smart-proof-row:first-child,
+.smart-original-expense-row:first-child {
+  border-top: 0;
+}
+
+.smart-proof-row > span:first-child,
+.smart-original-expense-row > span:first-child,
+.smart-proof-amount {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.smart-proof-row > span:first-child strong,
+.smart-original-expense-row > span:first-child strong {
+  overflow: hidden;
+  font-size: 0.73rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-proof-row small,
+.smart-original-expense-row small,
+.smart-proof-amount small {
+  color: var(--muted);
+  font-size: 0.63rem;
+}
+
+.smart-proof-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.smart-proof-amount strong {
+  font-size: 0.75rem;
+}
+
+.smart-proof-link {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.54rem;
+  border: 1px solid rgb(13 148 136 / 20%);
+  border-radius: 10px;
+  color: var(--primary);
+  font-size: 0.67rem;
+  font-weight: 820;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.smart-settlement-audit-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 1rem 1.4rem 1.2rem;
+  padding: 0.78rem 0.85rem;
+  color: var(--muted);
+}
+
+.smart-settlement-audit-note > span {
+  color: var(--primary);
+  font-weight: 900;
+}
+
+.smart-settlement-audit-note p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.48;
+}
+
+.smart-audit-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1rem 1.4rem 0.8rem;
+}
+
+.smart-audit-heading > div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.smart-audit-heading > div strong {
+  font-size: 0.9rem;
+}
+
+.smart-audit-heading > div small {
+  max-width: 760px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.smart-audit-heading > span {
+  flex: 0 0 auto;
+  padding: 0.34rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 780;
+}
+
+.smart-original-balance-list,
+.smart-payment-audit-list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0 1.4rem 1rem;
+}
+
+.smart-original-balance-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.smart-original-balance-card > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 58px;
+  padding: 0.76rem 0.82rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.smart-original-balance-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.smart-original-balance-card > summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.smart-original-balance-card > summary > span strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-original-balance-card > summary small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.smart-original-balance-card > summary > strong {
+  white-space: nowrap;
+}
+
+.smart-original-expenses {
+  border-top: 1px solid var(--border);
+  background: rgb(250 252 251 / 82%);
+}
+
+.smart-audit-footnote {
+  margin: 0;
+  padding: 0 1.4rem 1.15rem;
+  line-height: 1.45;
+}
+
+.smart-payment-audit-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.78rem 0.82rem;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.smart-payment-audit-row > span:first-child {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-weight: 900;
+}
+
+.smart-payment-audit-row > span:first-child.settled {
+  background: rgb(22 133 91 / 10%);
+  color: #126d4d;
+}
+
+.smart-payment-audit-row > span:first-child.sent {
+  background: rgb(191 124 20 / 10%);
+  color: #936014;
+}
+
+.smart-payment-audit-row > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.smart-payment-audit-row > span:nth-child(2) strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-payment-audit-row small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.smart-payment-audit-row > strong {
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .smart-settlement-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.32rem;
+    padding: 0 1.05rem 1rem;
+  }
+
+  .smart-settlement-tabs button {
+    grid-template-columns: 1fr;
+    align-content: center;
+    justify-items: center;
+    min-height: 58px;
+    padding: 0.48rem 0.28rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .smart-settlement-tabs button small {
+    font-size: 0.56rem;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .smart-transfer-card-main {
+    display: grid;
+    align-items: flex-start;
+    gap: 0.55rem;
+    padding-inline: 0.82rem;
+  }
+
+  .smart-transfer-card-main .smart-transfer-amount {
+    justify-self: end;
+  }
+
+  .smart-transfer-details > summary {
+    margin-inline: 0.82rem;
+    min-height: 44px;
+  }
+
+  .smart-transfer-details-body {
+    padding: 0.82rem;
+  }
+
+  .smart-transfer-net-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-proof-row,
+  .smart-original-expense-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+  }
+
+  .smart-proof-link {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-height: 40px;
+    padding-inline: 0.7rem;
+  }
+
+  .smart-settlement-audit-note {
+    margin-inline: 1.05rem;
+  }
+
+  .smart-audit-heading {
+    padding-inline: 1.05rem;
+  }
+
+  .smart-original-balance-list,
+  .smart-payment-audit-list {
+    padding-inline: 1.05rem;
+  }
+
+  .smart-audit-footnote {
+    padding-inline: 1.05rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .smart-transfer-card-main {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .smart-transfer-card-main .smart-transfer-amount {
+    justify-self: end;
+  }
+
+  .smart-transfer-net-grid dl > div {
+    align-items: flex-start;
+  }
+
+  .smart-payment-audit-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .smart-payment-audit-row > strong {
+    grid-column: 2;
+    justify-self: end;
+  }
+}
