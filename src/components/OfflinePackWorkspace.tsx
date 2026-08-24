@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { enqueueOfflineMutation, readOfflineQueue } from "@/lib/offline-queue";
+import { enqueueOfflineMutation, flushOfflineQueue, readOfflineQueue } from "@/lib/offline-queue";
 import {
   readOfflinePack,
   writeOfflinePack,
@@ -26,6 +26,7 @@ export function OfflinePackWorkspace() {
   const [pack, setPack] = useState<OfflineTripPack | null>(null);
   const [queueCount, setQueueCount] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -69,6 +70,35 @@ export function OfflinePackWorkspace() {
       setMessage(error instanceof Error ? error.message : "Unable to refresh the offline trip pack.");
     } finally {
       setBusy(false);
+    }
+  }
+
+
+  async function syncPending() {
+    if (!navigator.onLine) {
+      setMessage("Still offline. Pending changes remain safely stored on this device.");
+      return;
+    }
+
+    setSyncing(true);
+    setMessage("");
+    try {
+      const result = await flushOfflineQueue();
+      setQueueCount(result.remaining);
+      if (result.synced > 0) {
+        setMessage(`${result.synced} offline change${result.synced === 1 ? "" : "s"} synced successfully.`);
+        window.dispatchEvent(new CustomEvent("mnm:data-synced"));
+      } else if (result.blocked > 0) {
+        setMessage(`${result.blocked} offline change${result.blocked === 1 ? "" : "s"} needs review. Open the sync badge to retry or discard it.`);
+      } else if (result.remaining > 0) {
+        setMessage("Pending changes are waiting for their next automatic retry. You can try again shortly.");
+      } else {
+        setMessage("Everything on this device is already synced.");
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to sync offline changes right now.");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -132,9 +162,16 @@ export function OfflinePackWorkspace() {
             Plans and booking essentials are stored only in this browser on this device. Financial balances and live locations stay server-only.
           </p>
         </div>
-        <button className="button secondary" type="button" disabled={busy} onClick={() => void refreshPack()}>
-          {busy ? "Refreshing…" : pack ? "Refresh offline pack" : "Save active trip"}
-        </button>
+        <div className="offline-pack-actions">
+          <button className="button secondary" type="button" disabled={busy || syncing} onClick={() => void refreshPack()}>
+            {busy ? "Refreshing…" : pack ? "Refresh offline pack" : "Save active trip"}
+          </button>
+          {queueCount > 0 ? (
+            <button className="button primary" type="button" disabled={busy || syncing} onClick={() => void syncPending()}>
+              {syncing ? "Syncing…" : `Sync ${queueCount} pending`}
+            </button>
+          ) : null}
+        </div>
         {pack ? (
           <div className="offline-pack-meta">
             <span>{pack.trip.destination}</span>

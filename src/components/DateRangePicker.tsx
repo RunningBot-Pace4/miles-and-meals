@@ -1,171 +1,266 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import {
-  selectDateRange,
-  type DateRangeValue,
-} from "@/lib/date-range";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type DateRangePickerProps = {
+  startDate: string;
+  endDate: string;
+  onChange: (range: { startDate: string; endDate: string }) => void;
+  startName?: string;
+  endName?: string;
+  label?: string;
+  minDate?: string;
+};
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function parseDate(value: string): Date | null {
+function parseIsoDate(value: string): Date | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return null;
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
 }
 
-function toIsoDate(year: number, month: number, day: number): string {
-  return `${year.toString().padStart(4, "0")}-${(month + 1)
-    .toString()
-    .padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+function toIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-function displayDate(value: string): string {
-  const date = parseDate(value);
-  if (!date) return "";
-  return new Intl.DateTimeFormat("en-MY", {
+function sameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+function startOfDay(date: Date): number {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
+function formatDisplayDate(value: string): string {
+  const date = parseIsoDate(value);
+  if (!date) return "Choose date";
+  return new Intl.DateTimeFormat(undefined, {
     day: "numeric",
     month: "short",
     year: "numeric",
   }).format(date);
 }
 
+function monthLabel(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function calendarDays(viewMonth: Date): Date[] {
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const first = new Date(year, month, 1, 12);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const start = new Date(year, month, 1 - mondayOffset, 12);
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date;
+  });
+}
+
 export function DateRangePicker({
-  defaultStartDate = "",
-  defaultEndDate = "",
+  startDate,
+  endDate,
+  onChange,
   startName,
   endName,
-  onChange,
-  label = "Trip dates",
-}: {
-  defaultStartDate?: string;
-  defaultEndDate?: string;
-  startName?: string;
-  endName?: string;
-  onChange?: (value: DateRangeValue) => void;
-  label?: string;
-}) {
-  const initialDate = parseDate(defaultStartDate) ?? new Date();
-  const [range, setRange] = useState<DateRangeValue>({
-    startDate: defaultStartDate,
-    endDate: defaultEndDate,
-  });
-  const [month, setMonth] = useState(
-    new Date(initialDate.getFullYear(), initialDate.getMonth(), 1),
-  );
+  label = "Travel dates",
+  minDate = "",
+}: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const [pickingEnd, setPickingEnd] = useState(Boolean(startDate && !endDate));
+  const initialMonth = parseIsoDate(startDate) ?? parseIsoDate(endDate) ?? new Date();
+  const [viewMonth, setViewMonth] = useState(
+    () => new Date(initialMonth.getFullYear(), initialMonth.getMonth(), 1, 12),
+  );
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const days = useMemo(() => {
-    const year = month.getFullYear();
-    const monthIndex = month.getMonth();
-    const count = new Date(year, monthIndex + 1, 0).getDate();
-    const mondayOffset = (new Date(year, monthIndex, 1).getDay() + 6) % 7;
+  const start = useMemo(() => parseIsoDate(startDate), [startDate]);
+  const end = useMemo(() => parseIsoDate(endDate), [endDate]);
+  const minimum = useMemo(() => parseIsoDate(minDate), [minDate]);
+  const days = useMemo(() => calendarDays(viewMonth), [viewMonth]);
 
-    return [
-      ...Array.from({ length: mondayOffset }, () => null),
-      ...Array.from({ length: count }, (_, index) => ({
-        day: index + 1,
-        value: toIsoDate(year, monthIndex, index + 1),
-      })),
-    ];
-  }, [month]);
+  useEffect(() => {
+    if (!open) return;
 
-  function update(next: DateRangeValue) {
-    setRange(next);
-    onChange?.(next);
+    function onPointerDown(event: PointerEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  function openPicker() {
+    const anchor = start ?? end ?? new Date();
+    setViewMonth(new Date(anchor.getFullYear(), anchor.getMonth(), 1, 12));
+    setPickingEnd(Boolean(start && !end));
+    setOpen(true);
   }
 
-  function choose(value: string) {
-    const next = selectDateRange(range, value);
-    update(next);
-    if (next.startDate && next.endDate) setOpen(false);
+  function choose(date: Date) {
+    if (minimum && startOfDay(date) < startOfDay(minimum)) return;
+
+    const next = toIsoDate(date);
+
+    if (!pickingEnd || !startDate || endDate) {
+      onChange({ startDate: next, endDate: "" });
+      setPickingEnd(true);
+      return;
+    }
+
+    const existingStart = parseIsoDate(startDate);
+    if (!existingStart || startOfDay(date) < startOfDay(existingStart)) {
+      onChange({ startDate: next, endDate: "" });
+      setPickingEnd(true);
+      return;
+    }
+
+    onChange({ startDate, endDate: next });
+    setPickingEnd(false);
+    setOpen(false);
   }
 
-  function moveMonth(offset: number) {
-    setMonth(
-      (current) =>
-        new Date(current.getFullYear(), current.getMonth() + offset, 1),
+  function shiftMonth(delta: number) {
+    setViewMonth((current) =>
+      new Date(current.getFullYear(), current.getMonth() + delta, 1, 12),
     );
   }
 
-  const summary = range.startDate
-    ? range.endDate
-      ? `${displayDate(range.startDate)} – ${displayDate(range.endDate)}`
-      : `${displayDate(range.startDate)} – choose end date`
-    : "Choose start and end dates";
+  function clearRange() {
+    onChange({ startDate: "", endDate: "" });
+    setPickingEnd(false);
+  }
 
   return (
-    <div className="date-range-picker" ref={panelRef}>
-      {startName ? (
-        <input type="hidden" name={startName} value={range.startDate} />
-      ) : null}
-      {endName ? (
-        <input type="hidden" name={endName} value={range.endDate} />
-      ) : null}
+    <div className="date-range-picker" ref={rootRef}>
+      {startName ? <input type="hidden" name={startName} value={startDate} /> : null}
+      {endName ? <input type="hidden" name={endName} value={endDate} /> : null}
 
       <span className="date-range-label">{label}</span>
       <button
         className="date-range-trigger"
         type="button"
-        aria-expanded={open}
+        onClick={openPicker}
         aria-haspopup="dialog"
-        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-label={`${label}: ${startDate ? formatDisplayDate(startDate) : "choose start"} to ${endDate ? formatDisplayDate(endDate) : "choose end"}`}
       >
-        <span aria-hidden="true">▣</span>
-        <strong>{summary}</strong>
-        <small>{range.startDate && !range.endDate ? "Now tap the last day" : "Tap once for start, once for end"}</small>
+        <span className={startDate ? "date-range-value filled" : "date-range-value"}>
+          <small>Start</small>
+          <strong>{formatDisplayDate(startDate)}</strong>
+        </span>
+        <span className="date-range-arrow" aria-hidden="true">→</span>
+        <span className={endDate ? "date-range-value filled" : "date-range-value"}>
+          <small>End</small>
+          <strong>{formatDisplayDate(endDate)}</strong>
+        </span>
+        <span className="date-range-calendar-icon" aria-hidden="true">▣</span>
       </button>
+      <div className="date-range-guidance" aria-live="polite">
+        <span className={startDate ? "done" : "active"}><b>1</b> Start</span>
+        <span aria-hidden="true">→</span>
+        <span className={endDate ? "done" : startDate ? "active" : ""}><b>2</b> End</span>
+      </div>
+      <small className="date-range-help">
+        Tap one day for the start, then tap another day for the end. The dates between them are highlighted automatically.
+      </small>
 
       {open ? (
-        <section className="date-range-popover" role="dialog" aria-label={label}>
-          <header>
-            <button type="button" aria-label="Previous month" onClick={() => moveMonth(-1)}>‹</button>
-            <strong>
-              {new Intl.DateTimeFormat("en-MY", {
-                month: "long",
-                year: "numeric",
-              }).format(month)}
-            </strong>
-            <button type="button" aria-label="Next month" onClick={() => moveMonth(1)}>›</button>
-          </header>
+        <section className="date-range-popover" role="dialog" aria-modal="true" aria-label={`${label} calendar`}>
+          <div className="date-range-popover-head">
+            <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">‹</button>
+            <div>
+              <strong>{monthLabel(viewMonth)}</strong>
+              <small>{pickingEnd && startDate ? "Now choose the end date" : "Choose the start date"}</small>
+            </div>
+            <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month">›</button>
+          </div>
 
           <div className="date-range-weekdays" aria-hidden="true">
-            {WEEKDAYS.map((weekday) => <span key={weekday}>{weekday}</span>)}
+            {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}
           </div>
-          <div className="date-range-days">
-            {days.map((item, index) => {
-              if (!item) return <span key={`blank-${index}`} />;
-              const isStart = item.value === range.startDate;
-              const isEnd = item.value === range.endDate;
+
+          <div className="date-range-grid">
+            {days.map((date) => {
+              const time = startOfDay(date);
+              const disabled = Boolean(minimum && time < startOfDay(minimum));
+              const isStart = Boolean(start && sameDay(date, start));
+              const isEnd = Boolean(end && sameDay(date, end));
               const inRange = Boolean(
-                range.startDate &&
-                  range.endDate &&
-                  item.value > range.startDate &&
-                  item.value < range.endDate,
+                start && end && time > startOfDay(start) && time < startOfDay(end),
               );
+              const outside = date.getMonth() !== viewMonth.getMonth();
+              const classes = [
+                "date-range-day",
+                outside ? "outside" : "",
+                inRange ? "in-range" : "",
+                isStart ? "selected start" : "",
+                isEnd ? "selected end" : "",
+              ].filter(Boolean).join(" ");
+
               return (
                 <button
+                  key={toIsoDate(date)}
+                  className={classes}
                   type="button"
-                  data-date={item.value}
-                  className={`${isStart ? "range-start " : ""}${isEnd ? "range-end " : ""}${inRange ? "in-range" : ""}`.trim()}
-                  aria-label={displayDate(item.value)}
+                  disabled={disabled}
+                  onClick={() => choose(date)}
                   aria-pressed={isStart || isEnd}
-                  onClick={() => choose(item.value)}
-                  key={item.value}
+                  aria-label={new Intl.DateTimeFormat(undefined, {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }).format(date)}
                 >
-                  {item.day}
+                  {date.getDate()}
                 </button>
               );
             })}
           </div>
 
-          <footer>
-            <span>{range.startDate ? summary : "Select the first day"}</span>
-            <button type="button" onClick={() => update({ startDate: "", endDate: "" })}>
-              Clear
-            </button>
-          </footer>
+          <div className="date-range-popover-foot">
+            <div className="date-range-foot-actions">
+              <button className="text-button" type="button" onClick={() => choose(new Date())}>Today</button>
+              <button className="text-button" type="button" onClick={clearRange}>Clear dates</button>
+            </div>
+            <span>{startDate ? formatDisplayDate(startDate) : "Start"} → {endDate ? formatDisplayDate(endDate) : "End"}</span>
+          </div>
         </section>
       ) : null}
     </div>

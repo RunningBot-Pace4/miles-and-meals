@@ -1,33 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flushOfflineQueue,
   readOfflineQueue,
   removeOfflineMutation,
+  retryOfflineMutation,
   type OfflineMutation,
 } from "@/lib/offline-queue";
+
+function retryText(item: OfflineMutation): string {
+  if (item.blocked) return "Needs review before it can sync.";
+  if (!item.nextAttemptAt) return "Waiting for connection.";
+
+  const next = Date.parse(item.nextAttemptAt);
+  if (!Number.isFinite(next) || next <= Date.now()) return "Ready to retry.";
+
+  const seconds = Math.max(1, Math.ceil((next - Date.now()) / 1000));
+  if (seconds < 60) return `Automatic retry in about ${seconds}s.`;
+  return `Automatic retry in about ${Math.ceil(seconds / 60)} min.`;
+}
 
 export function OfflineQueueSync() {
   const [items, setItems] = useState<OfflineMutation[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
 
-  function announce(type: "restored" | "warning", message: string) {
-    window.dispatchEvent(
-      new CustomEvent("mnm:network-message", {
-        detail: { type, message },
-      }),
-    );
-  }
+  const blocked = useMemo(
+    () => items.filter((item) => item.blocked).length,
+    [items],
+  );
 
   useEffect(() => {
     let disposed = false;
 
     function refreshItems() {
-      if (!disposed) {
-        setItems(readOfflineQueue());
-      }
+      if (!disposed) setItems(readOfflineQueue());
     }
 
     async function sync(forceBlocked = false) {
@@ -37,18 +46,27 @@ export function OfflineQueueSync() {
       }
 
       setSyncing(true);
-      const result = await flushOfflineQueue({ forceBlocked }).catch(() => null);
+      try {
+        const result = await flushOfflineQueue({ forceBlocked });
+        if (disposed) return;
 
-      if (disposed) {
-        return;
-      }
+        refreshItems();
 
-      setSyncing(false);
-      refreshItems();
-
-      if (result && result.synced > 0) {
-        announce("restored", `${result.synced} offline change${result.synced === 1 ? "" : "s"} synced successfully.`);
-        window.dispatchEvent(new CustomEvent("mnm:data-synced"));
+        if (result.synced > 0) {
+          window.dispatchEvent(
+            new CustomEvent("mnm:network-message", {
+              detail: {
+                type: "restored",
+                message: `${result.synced} offline change${
+                  result.synced === 1 ? "" : "s"
+                } synced successfully.`,
+              },
+            }),
+          );
+          window.dispatchEvent(new CustomEvent("mnm:data-synced"));
+        }
+      } finally {
+        if (!disposed) setSyncing(false);
       }
     }
 
@@ -56,9 +74,7 @@ export function OfflineQueueSync() {
     void sync();
 
     function onVisible() {
-      if (document.visibilityState === "visible") {
-        void sync();
-      }
+      if (document.visibilityState === "visible") void sync();
     }
 
     function onQueueChanged() {
@@ -69,8 +85,15 @@ export function OfflineQueueSync() {
       void sync();
     }
 
+    function onStorage(event: StorageEvent) {
+      if (event.key === "mnm:offline-mutation-queue:v1") {
+        refreshItems();
+      }
+    }
+
     window.addEventListener("online", onOnline);
     window.addEventListener("focus", onVisible);
+    window.addEventListener("storage", onStorage);
     window.addEventListener("mnm:offline-queue-changed", onQueueChanged);
     document.addEventListener("visibilitychange", onVisible);
 
@@ -81,19 +104,20 @@ export function OfflineQueueSync() {
       window.clearInterval(timer);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener("storage", onStorage);
       window.removeEventListener("mnm:offline-queue-changed", onQueueChanged);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 
-  if (items.length === 0) {
-    return null;
-  }
-
-  const blocked = items.filter((item) => item.blocked).length;
+  if (items.length === 0) return null;
 
   function discard(id: string) {
-    if (!window.confirm("Discard this offline change? It will not be sent to the trip.")) {
+    if (
+      !window.confirm(
+        "Discard this offline change? It will not be sent to the trip.",
+      )
+    ) {
       return;
     }
 
@@ -101,48 +125,92 @@ export function OfflineQueueSync() {
     setItems(readOfflineQueue());
   }
 
+  async function retryOne(id: string) {
+    if (!navigator.onLine) {
+      window.dispatchEvent(
+        new CustomEvent("mnm:network-message", {
+          detail: {
+            type: "warning",
+            message:
+              "You are still offline. This change remains safely stored on this device.",
+          },
+        }),
+      );
+      return;
+    }
+
+    setRetryingId(id);
+    try {
+      const result = await retryOfflineMutation(id);
+      setItems(readOfflineQueue());
+      if (result.synced > 0) {
+        window.dispatchEvent(new CustomEvent("mnm:data-synced"));
+      }
+    } finally {
+      setRetryingId(null);
+    }
+  }
+
   async function retryAll() {
     if (!navigator.onLine) {
-      announce("warning", "You are still offline. Your changes remain safely stored on this device.");
+      window.dispatchEvent(
+        new CustomEvent("mnm:network-message", {
+          detail: {
+            type: "warning",
+            message:
+              "You are still offline. Your changes remain safely stored on this device.",
+          },
+        }),
+      );
       return;
     }
 
     setSyncing(true);
     try {
-      const result = await flushOfflineQueue({ forceBlocked: true });
+      await flushOfflineQueue({ forceBlocked: true });
       setItems(readOfflineQueue());
-
-      if (result.remaining === 0) {
-        announce("restored", `All offline changes synced successfully${result.synced ? ` · ${result.synced} sent` : ""}.`);
-        window.dispatchEvent(new CustomEvent("mnm:data-synced"));
-      } else if (result.blocked > 0) {
-        announce("warning", `${result.blocked} offline change${result.blocked === 1 ? " still needs" : "s still need"} review. Open Offline changes to see the server message.`);
-      } else {
-        announce("warning", "The connection is not stable yet. Your remaining changes are still stored safely and will retry automatically.");
-      }
-    } catch {
-      announce("warning", "Resync could not start. Your offline changes remain stored safely on this device.");
+      window.dispatchEvent(new CustomEvent("mnm:data-synced"));
     } finally {
       setSyncing(false);
     }
   }
 
   return (
-    <div className={expanded ? "offline-queue-manager open" : "offline-queue-manager"}>
+    <div
+      className={
+        expanded ? "offline-queue-manager open" : "offline-queue-manager"
+      }
+    >
       <button
-        className={blocked > 0 ? "offline-queue-pill needs-attention" : "offline-queue-pill"}
+        className={
+          blocked > 0
+            ? "offline-queue-pill needs-attention"
+            : "offline-queue-pill"
+        }
         type="button"
         onClick={() => setExpanded((value) => !value)}
         aria-expanded={expanded}
-        aria-label={`${items.length} offline change${items.length === 1 ? "" : "s"}${blocked > 0 ? `, ${blocked} needs attention` : ", waiting to sync"}`}
+        aria-label={`${items.length} offline change${
+          items.length === 1 ? "" : "s"
+        }${
+          blocked > 0
+            ? `, ${blocked} needs attention`
+            : ", waiting to sync"
+        }`}
       >
-        <span aria-hidden="true">{blocked > 0 ? "!" : "↻"}</span>
+        <span aria-hidden="true">{blocked > 0 ? "!" : syncing ? "…" : "↻"}</span>
         <strong>{items.length}</strong>
-        <small>{blocked > 0 ? "needs attention" : "waiting to sync"}</small>
+        <small>
+          {blocked > 0 ? "needs attention" : syncing ? "syncing" : "waiting to sync"}
+        </small>
       </button>
 
       {expanded ? (
-        <section className="offline-queue-sheet" aria-label="Offline changes" aria-live="polite">
+        <section
+          className="offline-queue-sheet"
+          aria-label="Offline changes"
+          aria-live="polite"
+        >
           <div className="offline-queue-sheet-head">
             <div>
               <strong>Offline changes</strong>
@@ -152,31 +220,65 @@ export function OfflineQueueSync() {
                   : "Stored safely on this device until sync completes."}
               </small>
             </div>
-            <button type="button" onClick={() => setExpanded(false)} aria-label="Close offline changes">×</button>
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label="Close offline changes"
+            >
+              ×
+            </button>
           </div>
 
           <div className="offline-queue-items">
             {items.map((item) => (
-              <article className={item.blocked ? "offline-queue-item blocked" : "offline-queue-item"} key={item.id}>
+              <article
+                className={
+                  item.blocked
+                    ? "offline-queue-item blocked"
+                    : "offline-queue-item"
+                }
+                key={item.id}
+              >
                 <div>
                   <strong>{item.label}</strong>
-                  <small>
-                    {item.lastError ?? (item.blocked ? "This change needs review before retrying." : "Waiting for connection.")}
-                  </small>
-                  {item.attempts ? (
-                    <small className="offline-attempt-meta">
-                      Tried {item.attempts} time{item.attempts === 1 ? "" : "s"}
-                      {item.lastAttemptAt ? ` · ${new Date(item.lastAttemptAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}
+                  <small>{item.lastError ?? retryText(item)}</small>
+                  {item.lastAttemptAt ? (
+                    <small className="offline-queue-attempt-meta">
+                      Attempt {item.attempts ?? 0} · last tried {new Intl.DateTimeFormat("en-MY", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }).format(new Date(item.lastAttemptAt))}
                     </small>
                   ) : null}
                 </div>
-                <button type="button" onClick={() => discard(item.id)}>Discard</button>
+
+                <div className="offline-queue-item-actions">
+                  <button
+                    type="button"
+                    disabled={retryingId === item.id || syncing}
+                    onClick={() => void retryOne(item.id)}
+                  >
+                    {retryingId === item.id ? "Retrying…" : "Retry"}
+                  </button>
+                  <button type="button" onClick={() => discard(item.id)}>
+                    Discard
+                  </button>
+                </div>
               </article>
             ))}
           </div>
 
-          <button className="button primary offline-retry-button" type="button" disabled={syncing} onClick={() => void retryAll()}>
-            {syncing ? "Retrying…" : blocked > 0 ? "Retry reviewed changes" : "Retry now"}
+          <button
+            className="button primary offline-retry-button"
+            type="button"
+            disabled={syncing || retryingId !== null}
+            onClick={() => void retryAll()}
+          >
+            {syncing
+              ? "Syncing…"
+              : blocked > 0
+                ? "Retry reviewed changes"
+                : "Sync now"}
           </button>
         </section>
       ) : null}

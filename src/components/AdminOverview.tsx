@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
 type AdminUserOverview = {
   id: string;
@@ -1564,69 +1565,21 @@ export function AdminOverview({
                           Group budget is now the sum of traveler personal budgets. The old trip-level budget is retained only for backward-compatible data history.
                         </p>
 
-                        <div className="two-col">
-                          <label>
-                            <span>
-                              Start
-                            </span>
-                            <input
-                              type="date"
-                              value={
-                                draft.startDate
-                              }
-                              onChange={(
-                                event,
-                              ) =>
-                                setTripDrafts(
-                                  (
-                                    current,
-                                  ) => ({
-                                    ...current,
-                                    [trip.id]:
-                                      {
-                                        ...draft,
-                                        startDate:
-                                          event
-                                            .target
-                                            .value,
-                                      },
-                                  }),
-                                )
-                              }
-                            />
-                          </label>
-
-                          <label>
-                            <span>
-                              End
-                            </span>
-                            <input
-                              type="date"
-                              value={
-                                draft.endDate
-                              }
-                              onChange={(
-                                event,
-                              ) =>
-                                setTripDrafts(
-                                  (
-                                    current,
-                                  ) => ({
-                                    ...current,
-                                    [trip.id]:
-                                      {
-                                        ...draft,
-                                        endDate:
-                                          event
-                                            .target
-                                            .value,
-                                      },
-                                  }),
-                                )
-                              }
-                            />
-                          </label>
-                        </div>
+                        <DateRangePicker
+                          startDate={draft.startDate}
+                          endDate={draft.endDate}
+                          label="Trip dates"
+                          onChange={(range) =>
+                            setTripDrafts((current) => ({
+                              ...current,
+                              [trip.id]: {
+                                ...draft,
+                                startDate: range.startDate,
+                                endDate: range.endDate,
+                              },
+                            }))
+                          }
+                        />
 
                         <p className="admin-config-note">
                           Base currency stays locked after creation so historical expenses keep the same accounting basis.

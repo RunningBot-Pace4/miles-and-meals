@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { isIsoCalendarDate, isValidDateRange } from "@/lib/date-range";
 
 const optionalIsoDate = z
   .string()
   .trim()
   .max(10)
-  .refine((value) => value === "" || isIsoCalendarDate(value), {
+  .refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), {
     message: "Use a valid YYYY-MM-DD date.",
   });
 
@@ -13,16 +12,11 @@ function validateDateOrder(
   value: { startDate: string; endDate: string },
   context: { addIssue: (issue: { code: "custom"; path: string[]; message: string }) => void },
 ) {
-  if (!isValidDateRange(value.startDate, value.endDate)) {
+  if (value.startDate && value.endDate && value.endDate < value.startDate) {
     context.addIssue({
       code: "custom",
-      path: [value.startDate ? "endDate" : "startDate"],
-      message:
-        value.startDate && !value.endDate
-          ? "Choose the Journey end date."
-          : !value.startDate && value.endDate
-            ? "Choose the Journey start date."
-            : "Journey end date cannot be before the start date.",
+      path: ["endDate"],
+      message: "Journey end date cannot be before the start date.",
     });
   }
 }

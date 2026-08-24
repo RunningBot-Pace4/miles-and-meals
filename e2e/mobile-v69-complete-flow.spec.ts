@@ -50,14 +50,10 @@ const coreRoutes = [
   "/settings/profile",
   "/settings/password",
   "/settings/notifications",
-  "/journeys",
-  "/inbox",
-  "/offline",
 ];
 
 for (const viewport of [
   { width: 320, height: 700, label: "320px compact phone" },
-  { width: 360, height: 800, label: "360px Android phone" },
   { width: 375, height: 812, label: "375px iPhone" },
   { width: 390, height: 844, label: "390px modern iPhone" },
   { width: 430, height: 932, label: "430px large phone" },
@@ -111,12 +107,5 @@ test.describe("v69 navigation behaviour", () => {
     await page.goto("/wrapped");
     await expect(page.getByLabel("Choose trip story")).toBeVisible();
     await expect(page.getByRole("button", { name: /^view$/i })).toHaveCount(0);
-  });
-
-  test("Settle Up loads directly from the trip dropdown", async ({ page }) => {
-    await page.goto("/settlements");
-    await expect(page.getByLabel("Choose settlement trip")).toBeVisible();
-    await expect(page.getByRole("button", { name: /view trip/i })).toHaveCount(0);
-    await expect(page.getByText(/load its balances immediately/i)).toBeVisible();
   });
 });

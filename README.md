@@ -1,15 +1,16 @@
-# v78 — Trip Selection, Date Range, Offline Resync & PWA QA
+# v78 — Trip Switching, Friendly Dates, Offline Resync & PWA Polish
 
-v78 is the completed improvement round on top of the consolidated v77 source.
+v78 is the UX/reliability release on top of the complete v77 web/PWA source.
 
-- Settle Up now loads a Trip immediately when it is selected; the extra **View trip** button is removed.
-- Trip and Journey dates use one accessible calendar: first click = start, second click = end.
-- Journeys are explained as an optional organizer for one holiday containing several single-country Trips; wallets and ledgers never merge.
-- Trip Inbox clearly states that it extracts a full confirmation supplied by the traveler and cannot retrieve private airline/hotel records from a number alone.
-- Offline resync is serialized and preserves changes added or discarded while a sync is running.
-- Responsive E2E coverage now includes 320, 360, 375, 390 and 430px phones plus tablet and desktop checks, including Journeys, Trip Inbox and Offline Pack.
+- **Settle Up** trip selection now opens immediately when the dropdown changes; the extra **View trip** button is removed.
+- Trip/Journey dates now use one **two-tap range calendar**: first tap = Start, second tap = End, with the selected range highlighted.
+- **Multi-country Journey** is explained as an optional folder for one holiday containing several single-country Trips; it never merges expenses or settlements.
+- **Trip Inbox** distinguishes a public flight number from a private booking/PNR reference. It extracts details from uploaded/pasted confirmations but does not invent private reservation data or live status.
+- **Offline resync** is serialized across sync controls, preserves newly queued work, uses backoff/review states, prevents silent queue overflow, and makes Planner create/update/delete retries idempotent after lost responses.
+- Mobile/PWA coverage targets **320 / 360 / 375 / 390 / 412 / 430px**, safe-area insets, no horizontal overflow, touch-friendly controls and the installed PWA shell.
+- No new database schema is introduced by v78. If the v77 schema is already applied, no extra `db:push` is required specifically for v78.
 
-See `V78-REQUESTED-UX-PWA.md`, `V78-FINAL-RELEASE-GATE.md` and `E2E-TESTING-GUIDE.md`.
+See `V78-TRIP-DATES-OFFLINE-PWA-POLISH.md`.
 
 ---
 

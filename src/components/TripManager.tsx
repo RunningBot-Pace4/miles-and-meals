@@ -6,10 +6,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { DateRangePicker } from "@/components/DateRangePicker";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { TripInvitePanel } from "@/components/TripInvitePanel";
+import { DateRangePicker } from "@/components/DateRangePicker";
 
 type CountryCatalogItem = {
   name: string;
@@ -305,12 +305,13 @@ function ManagedTripCard({
           </label>
 
           <DateRangePicker
-            defaultStartDate={startDate}
-            defaultEndDate={endDate}
-            onChange={(next) => {
-              setStartDate(next.startDate);
-              setEndDate(next.endDate);
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(range) => {
+              setStartDate(range.startDate);
+              setEndDate(range.endDate);
             }}
+            label="Trip dates"
           />
 
           <div className="two-col">
@@ -525,6 +526,8 @@ export function TripManager({
 
   const [createBaseCurrency, setCreateBaseCurrency] =
     useState("MYR");
+  const [createStartDate, setCreateStartDate] = useState("");
+  const [createEndDate, setCreateEndDate] = useState("");
   const [createCountryCode, setCreateCountryCode] =
     useState("");
   const [createFxRate, setCreateFxRate] = useState("");
@@ -687,8 +690,8 @@ export function TripManager({
       const created = await mutation("/api/trips", "POST", {
         name: String(form.get("name") ?? ""),
         baseCurrency: createBaseCurrency,
-        startDate: String(form.get("startDate") ?? ""),
-        endDate: String(form.get("endDate") ?? ""),
+        startDate: createStartDate,
+        endDate: createEndDate,
         firstCountry: {
           code: selectedCreateCountry.code,
           defaultExchangeRate: createFxRate,
@@ -855,8 +858,15 @@ export function TripManager({
           ) : null}
 
           <DateRangePicker
+            startDate={createStartDate}
+            endDate={createEndDate}
+            onChange={(range) => {
+              setCreateStartDate(range.startDate);
+              setCreateEndDate(range.endDate);
+            }}
             startName="startDate"
             endName="endDate"
+            label="Trip dates"
           />
 
           {error ? (
