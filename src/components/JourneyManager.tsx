@@ -5,7 +5,7 @@ import type { JourneySummary } from "@/lib/journeys";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 
-type TripOption = { id: string; name: string; destination: string; journeyId: string | null };
+type TripOption = { id: string; name: string; destination: string; journeyId: string | null; financialStatus: string };
 
 function JourneyDateRange({
   initialStart = "",
@@ -155,8 +155,8 @@ export function JourneyManager({
               <legend>Trips in this Journey</legend>
               {trips.length ? trips.map((trip) => (
                 <label key={trip.id} className="journey-trip-row">
-                  <input type="checkbox" name="tripIds" value={trip.id} defaultChecked={trip.journeyId === journey.id} />
-                  <span><strong>{trip.name}</strong><small>{trip.destination}</small></span>
+                  <input type="checkbox" name="tripIds" value={trip.id} defaultChecked={trip.journeyId === journey.id} disabled={trip.financialStatus === "CLOSED"} />
+                  <span><strong>{trip.name}</strong><small>{trip.destination}{trip.financialStatus === "CLOSED" ? " · Closed · read-only" : ""}</small></span>
                 </label>
               )) : <p className="muted">Create or own a Trip before adding it to a Journey.</p>}
             </fieldset>

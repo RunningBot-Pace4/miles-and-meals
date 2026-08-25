@@ -125,6 +125,35 @@ export async function isTripExpenseLedgerOpen(tripId: string): Promise<boolean> 
   return normalizeStatus(rows[0]?.status) === "OPEN";
 }
 
+export async function closedTripReadOnlyResponse(
+  tripId: string,
+): Promise<Response | null> {
+  if (await isTripExpenseLedgerOpen(tripId)) return null;
+
+  return Response.json(
+    {
+      error:
+        "This Trip is closed and read-only. Reopen it from Settlement before changing Trip details, travelers, invites, budgets, Plan, Inbox, expenses or live location.",
+      code: "TRIP_CLOSED_READ_ONLY",
+    },
+    { status: 423 },
+  );
+}
+
+export async function closedCountryReadOnlyResponse(
+  countryId: string,
+): Promise<Response | null> {
+  const row = (
+    await db
+      .select({ tripId: countries.tripId })
+      .from(countries)
+      .where(eq(countries.id, countryId))
+      .limit(1)
+  )[0];
+
+  return row ? closedTripReadOnlyResponse(row.tripId) : null;
+}
+
 export async function expenseLedgerLockedResponse(
   tripId: string,
 ): Promise<Response | null> {
@@ -159,7 +188,7 @@ export async function closeTripFinancials(
   tripId: string,
 ): Promise<TripFinancialState> {
   if (!(await canManageTrip(currentUser, tripId))) {
-    throw new Error("Only the Trip Owner or System Admin can lock trip expenses.");
+    throw new Error("Only the Trip Owner or System Admin can close this Trip.");
   }
 
   const current = await getTripFinancialState(tripId);
@@ -247,7 +276,7 @@ export async function closeTripFinancials(
     entityType: "TRIP",
     entityId: tripId,
     tripId,
-    summary: `${currentUser.name ?? "Trip Owner"} locked trip expenses for final settlement.`,
+    summary: `${currentUser.name ?? "Trip Owner"} closed the Trip as read-only for final settlement.`,
     metadata: {
       financialVersion: nextVersion,
       snapshotHash: snapshot.checksum,
@@ -257,8 +286,8 @@ export async function closeTripFinancials(
   await Promise.all(
     countryRows.map((country) =>
       sendPushToCountry(country.id, currentUser.id, "TRIPS", {
-        title: "Trip expenses locked",
-        body: `${current.tripName} is ready for final settlement. New expense changes are paused until the owner reopens the ledger.`,
+        title: "Trip closed · read-only",
+        body: `${current.tripName} is ready for final settlement. Trip changes are paused until the owner reopens it.`,
         url: `/settlements?tripId=${encodeURIComponent(tripId)}`,
         tag: `trip-financial-close-${tripId}`,
       }),
@@ -279,7 +308,7 @@ export async function reopenTripFinancials(
   tripId: string,
 ): Promise<TripFinancialState> {
   if (!(await canManageTrip(currentUser, tripId))) {
-    throw new Error("Only the Trip Owner or System Admin can reopen trip expenses.");
+    throw new Error("Only the Trip Owner or System Admin can reopen this Trip.");
   }
 
   const current = await getTripFinancialState(tripId);
@@ -309,7 +338,7 @@ export async function reopenTripFinancials(
     entityType: "TRIP",
     entityId: tripId,
     tripId,
-    summary: `${currentUser.name ?? "Trip Owner"} reopened trip expenses for corrections.`,
+    summary: `${currentUser.name ?? "Trip Owner"} reopened the Trip for corrections.`,
     metadata: {
       priorFinancialVersion: current.version,
       priorSnapshotHash: current.snapshotHash,
@@ -319,8 +348,8 @@ export async function reopenTripFinancials(
   await Promise.all(
     countryRows.map((country) =>
       sendPushToCountry(country.id, currentUser.id, "TRIPS", {
-        title: "Trip expenses reopened",
-        body: `${current.tripName} can accept expense changes again. Smart Settlement will update automatically.`,
+        title: "Trip reopened",
+        body: `${current.tripName} can accept Trip, Plan and expense changes again. Smart Settlement will update automatically.`,
         url: "/expenses",
         tag: `trip-financial-reopen-${tripId}`,
       }),

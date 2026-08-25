@@ -49,7 +49,7 @@ must(workspace, "payment.tripName", "v68 settlement history still displays count
 // Live GPS trip selector should also use trip names.
 must(locationPage, "activeTrip.allCountries.filter", "v68 location page should expose accessible trips");
 must(locationTracker, ">\n            Trip\n            <select", "v68 location selector label must be Trip");
-must(locationTracker, "compactOptionText(country.tripName", "v68 location selector must display trip name");
+must(locationTracker, "country.tripName}${country.financialStatus", "v68 location selector must display trip name");
 must(locationTracker, "Destination:", "v68 location selector should retain destination context outside dropdown");
 must(locationRead, "canAccessCountry", "v68 location read access should support selected accessible trip");
 must(locationWrite, "canAccessCountry", "v68 location write access should support selected accessible trip");

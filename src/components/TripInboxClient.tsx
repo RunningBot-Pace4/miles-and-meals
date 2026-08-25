@@ -8,6 +8,7 @@ import {
 } from "@/lib/booking-parser";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { compactOptionText } from "@/lib/display-text";
+import type { FlightScheduleResult } from "@/lib/flight-schedule";
 
 type CountryOption = {
   id: string;
@@ -15,6 +16,8 @@ type CountryOption = {
   tripName: string;
   name: string;
   currencyCode: string;
+  startDate: string | null;
+  financialStatus: string;
 };
 
 type InboxItem = {
@@ -51,11 +54,16 @@ export function TripInboxClient({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [lookupDate, setLookupDate] = useState("");
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [scheduleMessage, setScheduleMessage] = useState("");
 
   const countryById = useMemo(
     () => new Map(countries.map((country) => [country.id, country])),
     [countries],
   );
+  const selectedCountry = countryById.get(countryId);
+  const tripClosed = selectedCountry?.financialStatus === "CLOSED";
 
   function analyze(value = text) {
     if (!value.trim()) {
@@ -63,8 +71,55 @@ export function TripInboxClient({
       return;
     }
 
-    setDraft(parseBookingText(value));
+    const parsed = parseBookingText(value);
+    setDraft(parsed);
+    if (parsed.flightNumber) {
+      setLookupDate(parsed.bookingDate || selectedCountry?.startDate || "");
+    }
+    setScheduleMessage("");
     setError("");
+  }
+
+  async function lookupFlightSchedule() {
+    if (!draft?.flightNumber) return;
+    if (!lookupDate) {
+      setError("Choose the flight date first. A flight number repeats on different days.");
+      return;
+    }
+
+    setLookupBusy(true);
+    setError("");
+    setScheduleMessage("");
+    try {
+      const response = await fetch(
+        `/api/flight-lookup?flightNumber=${encodeURIComponent(draft.flightNumber)}&date=${encodeURIComponent(lookupDate)}`,
+        { cache: "no-store" },
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        schedule?: FlightScheduleResult;
+      };
+      if (!response.ok || !payload.schedule) {
+        throw new Error(payload.error ?? "Unable to retrieve this flight schedule.");
+      }
+
+      const schedule = payload.schedule;
+      setDraft({
+        ...draft,
+        title: `Flight ${schedule.flightNumber}${schedule.route ? ` · ${schedule.route}` : ""}`,
+        provider: schedule.airline || draft.provider,
+        bookingDate: schedule.flightDate,
+        bookingTime: schedule.departureTime,
+        route: schedule.route || draft.route,
+      });
+      setScheduleMessage(
+        `Schedule retrieved: departure ${schedule.flightDate} ${schedule.departureTime}${schedule.arrivalTime ? ` · arrival ${schedule.arrivalDate || schedule.flightDate} ${schedule.arrivalTime}` : ""}. Airport-local times.`,
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to retrieve this flight schedule.");
+    } finally {
+      setLookupBusy(false);
+    }
   }
 
   async function filePicked(event: ChangeEvent<HTMLInputElement>) {
@@ -107,8 +162,12 @@ export function TripInboxClient({
         }
       }
 
+      const parsed = parseBookingText(content);
       setText(content.slice(0, 30_000));
-      setDraft(parseBookingText(content));
+      setDraft(parsed);
+      if (parsed.flightNumber) {
+        setLookupDate(parsed.bookingDate || selectedCountry?.startDate || "");
+      }
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Unable to read this booking file.",
@@ -259,11 +318,10 @@ export function TripInboxClient({
           <div>
             <strong>Flight number vs booking number</strong>
             <p>
-              You can type a flight number such as <b>AK6128</b> and Miles & Meals
-              will recognize the flight code. To auto-fill date, time and route,
-              paste/upload the booking confirmation. A booking/PNR number by itself
-              cannot securely retrieve a private airline reservation. Live flight status
-              would require a separate authorized flight-data provider/API.
+              Enter a flight number such as <b>AK6128</b> plus its flight date to
+              retrieve the matching schedule when the flight-data service is enabled.
+              Booking confirmations are parsed using the departure section—not the
+              booking-issued timestamp. Miles & Meals cannot securely retrieve a private airline reservation from a PNR/booking number alone.
             </p>
           </div>
         </div>
@@ -272,15 +330,26 @@ export function TripInboxClient({
           Trip
           <select
             value={countryId}
-            onChange={(event) => setCountryId(event.target.value)}
+            onChange={(event) => {
+              const nextId = event.target.value;
+              setCountryId(nextId);
+              setLookupDate(countryById.get(nextId)?.startDate ?? "");
+              setScheduleMessage("");
+            }}
           >
             {countries.map((country) => (
-              <option key={country.id} value={country.id} title={country.tripName}>
-                {compactOptionText(country.tripName, 32)}
+              <option key={country.id} value={country.id} title={`${country.tripName} · ${country.name}`}>
+                {compactOptionText(`${country.tripName} · ${country.name}${country.financialStatus === "CLOSED" ? " · Closed" : ""}`, 42)}
               </option>
             ))}
           </select>
         </label>
+
+        {tripClosed ? (
+          <p className="form-warning" role="status">
+            This Trip is closed and read-only. Existing reservations remain visible, but imports and Add to Plan are disabled until the Trip Owner reopens it from Settlement.
+          </p>
+        ) : null}
 
         <label className="booking-upload-button">
           Upload booking
@@ -288,6 +357,7 @@ export function TripInboxClient({
             type="file"
             accept="image/*,.pdf,.txt,.eml,text/plain,message/rfc822,application/pdf"
             onChange={(event) => void filePicked(event)}
+            disabled={tripClosed}
           />
         </label>
 
@@ -301,10 +371,11 @@ export function TripInboxClient({
               setSourceType("PASTE");
             }}
             placeholder="Example: AK6128, or paste the full flight / hotel / train / ticket confirmation here…"
+            disabled={tripClosed}
           />
         </label>
 
-        <button className="button secondary" type="button" onClick={() => analyze()}>
+        <button className="button secondary" type="button" disabled={tripClosed} onClick={() => analyze()}>
           Read details
         </button>
       </section>
@@ -312,19 +383,33 @@ export function TripInboxClient({
       {draft ? (
         <section className="panel trip-inbox-review">
           <p className="eyebrow">REVIEW BEFORE SAVE</p>
+          <fieldset className="owner-readonly-fieldset" disabled={tripClosed}>
 
           {draft.flightNumber ? (
-            <div className="trip-inbox-detected-flight">
-              <span>Flight</span>
-              <strong>{draft.flightNumber}</strong>
-              {draft.route ? <small>{draft.route}</small> : null}
-            </div>
+            <>
+              <div className="trip-inbox-detected-flight">
+                <span>Flight</span>
+                <strong>{draft.flightNumber}</strong>
+                {draft.route ? <small>{draft.route}</small> : null}
+              </div>
+              <div className="flight-schedule-lookup">
+                <label>
+                  Flight date
+                  <input type="date" value={lookupDate} onChange={(event) => setLookupDate(event.target.value)} />
+                </label>
+                <button className="button secondary" type="button" disabled={lookupBusy || tripClosed} onClick={() => void lookupFlightSchedule()}>
+                  {lookupBusy ? "Retrieving…" : "Retrieve schedule"}
+                </button>
+                <small>Flight number + date are required because airline flight numbers repeat.</small>
+              </div>
+              {scheduleMessage ? <p className="form-success" role="status">{scheduleMessage}</p> : null}
+            </>
           ) : null}
 
           {onlyBasicFlightCode ? (
             <p className="form-warning" role="status">
-              Flight code detected. Date, time, route and live status are not guessed
-              from the internet. Upload/paste the confirmation to fill those safely.
+              Flight code detected. Choose the flight date and retrieve the exact
+              matching schedule, or upload/paste the confirmation.
             </p>
           ) : null}
 
@@ -387,7 +472,7 @@ export function TripInboxClient({
 
           <div className="two-col">
             <label>
-              Date
+              Departure date
               <input
                 type="date"
                 value={draft.bookingDate}
@@ -397,20 +482,21 @@ export function TripInboxClient({
               />
             </label>
             <label>
-              Time
+              Departure time · airport local
               <input
+                type="time"
                 value={draft.bookingTime}
                 onChange={(event) =>
                   setDraft({ ...draft, bookingTime: event.target.value })
                 }
-                placeholder="07:30"
               />
             </label>
           </div>
 
-          <button className="button primary" type="button" onClick={() => void save()}>
+          <button className="button primary" type="button" disabled={tripClosed} onClick={() => void save()}>
             Save to Trip Inbox
           </button>
+          </fieldset>
         </section>
       ) : null}
 
@@ -454,9 +540,10 @@ export function TripInboxClient({
                     <button
                       className="button secondary"
                       type="button"
+                      disabled={country?.financialStatus === "CLOSED"}
                       onClick={() => void addToPlan(item.id)}
                     >
-                      Add to Plan
+                      {country?.financialStatus === "CLOSED" ? "Trip closed" : "Add to Plan"}
                     </button>
                   )}
                 </article>

@@ -108,6 +108,7 @@ export async function getTripInvitePreview(token: string): Promise<TripInvitePre
       and(
         eq(tripInvites.tokenHash, hashInviteToken(token)),
         isNull(tripInvites.revokedAt),
+        eq(trips.financialStatus, "OPEN"),
         gt(tripInvites.expiresAt, now),
         gt(tripInvites.createdAt, earliestValidTripInviteCreatedAt(now)),
       ),

@@ -25,6 +25,7 @@ import {
   canManageTrip,
 } from "@/lib/trip-management";
 import { tripCountryMemberSchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 type Context = {
   params: Promise<{
@@ -97,6 +98,9 @@ export async function POST(
       { status: 403 },
     );
   }
+
+  const locked = await closedTripReadOnlyResponse(tripId);
+  if (locked) return locked;
 
   try {
     const input =
@@ -268,6 +272,9 @@ export async function DELETE(
       { status: 403 },
     );
   }
+
+  const locked = await closedTripReadOnlyResponse(tripId);
+  if (locked) return locked;
 
   try {
     const input =

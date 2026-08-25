@@ -14,6 +14,7 @@ import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { travelItemSchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 export const runtime = "nodejs";
 
@@ -120,6 +121,9 @@ export async function POST(request: Request) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const country = await getCountryWithTrip(input.countryId);
+    if (!country) return Response.json({ error: "Trip not found." }, { status: 404 });
+
     if (mutationId) {
       const prior = await db
         .select({
@@ -145,6 +149,9 @@ export async function POST(request: Request) {
         );
       }
     }
+
+    const locked = await closedTripReadOnlyResponse(country.tripId);
+    if (locked) return locked;
 
     const values = {
       ...(mutationId ? { id: mutationId } : {}),
@@ -207,8 +214,6 @@ export async function POST(request: Request) {
 
       throw error;
     }
-
-    const country = await getCountryWithTrip(input.countryId);
 
     await recordActivity({
       actorUserId: session.user.id,

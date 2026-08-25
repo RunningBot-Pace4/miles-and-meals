@@ -12320,7 +12320,6 @@ body {
   }
 }
 
-
 /* -------------------------------------------------------------------------- */
 /* v48 — Notification details + multi-country owner trips                    */
 /* -------------------------------------------------------------------------- */
@@ -17135,5 +17134,73 @@ select {
   .owner-create-trip .date-range-day {
     min-height: 38px;
     padding-inline: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* v81 — closed-Trip states and full mobile form containment                  */
+
+.owner-readonly-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.owner-readonly-fieldset:disabled,
+.trip-budget-entry.is-readonly {
+  opacity: 0.72;
+}
+
+.flight-schedule-lookup,
+.flight-schedule-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(form, fieldset, label, .two-col, .three-col, .form-grid) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"]) {
+  min-inline-size: 0;
+}
+
+.owner-create-trip,
+.owner-create-trip > form,
+.owner-create-trip .date-range-picker,
+.owner-create-trip .date-range-popover,
+.owner-create-trip .date-range-grid {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  contain: none;
+  clip-path: none;
+}
+
+@media (max-width: 719px) {
+  :where(.two-col, .three-col, .form-grid, .flight-schedule-lookup, .flight-schedule-fields) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :where(.panel, .card, .empty-card, .planner-shell, .offline-pack-workspace) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :where(.button-row, .form-actions, .planner-card-buttons, .live-location-actions) > * {
+    min-width: 0;
+    max-width: 100%;
   }
 }

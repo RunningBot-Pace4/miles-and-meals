@@ -14,6 +14,7 @@ import {
   canManageTrip,
 } from "@/lib/trip-management";
 import { updateCountrySchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 type Context = {
   params: Promise<{
@@ -56,6 +57,9 @@ export async function PATCH(
       { status: 403 },
     );
   }
+
+  const locked = await closedTripReadOnlyResponse(tripId);
+  if (locked) return locked;
 
   try {
     const input =

@@ -14,6 +14,46 @@ function lines(text: string): string[] {
   return text.split(/\r?\n/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
+const MONTH_NUMBER: Record<string, number> = {
+  JAN: 1,
+  JANUARY: 1,
+  FEB: 2,
+  FEBRUARY: 2,
+  MAR: 3,
+  MARCH: 3,
+  APR: 4,
+  APRIL: 4,
+  MAY: 5,
+  JUN: 6,
+  JUNE: 6,
+  JUL: 7,
+  JULY: 7,
+  AUG: 8,
+  AUGUST: 8,
+  SEP: 9,
+  SEPT: 9,
+  SEPTEMBER: 9,
+  OCT: 10,
+  OCTOBER: 10,
+  NOV: 11,
+  NOVEMBER: 11,
+  DEC: 12,
+  DECEMBER: 12,
+};
+
+function validIsoDate(year: number, month: number, day: number): string {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return "";
+  }
+
+  return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+}
+
 function isoDate(text: string): string {
   const patterns = [
     /\b(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})\b/,
@@ -25,12 +65,96 @@ function isoDate(text: string): string {
     const [year, month, day] = index === 0
       ? [Number(match[1]), Number(match[2]), Number(match[3])]
       : [Number(match[3]), Number(match[2]), Number(match[1])];
-    const date = new Date(Date.UTC(year, month - 1, day));
-    if (date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day) {
-      return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
-    }
+    const result = validIsoDate(year, month, day);
+    if (result) return result;
   }
+
+  const dayFirst = text.match(
+    /\b(\d{1,2})(?:ST|ND|RD|TH)?\s+([A-Z]{3,9})\s*,?\s*(20\d{2})\b/i,
+  );
+  if (dayFirst) {
+    const result = validIsoDate(
+      Number(dayFirst[3]),
+      MONTH_NUMBER[dayFirst[2].toUpperCase()] ?? 0,
+      Number(dayFirst[1]),
+    );
+    if (result) return result;
+  }
+
+  const monthFirst = text.match(
+    /\b([A-Z]{3,9})\s+(\d{1,2})(?:ST|ND|RD|TH)?\s*,?\s*(20\d{2})\b/i,
+  );
+  if (monthFirst) {
+    return validIsoDate(
+      Number(monthFirst[3]),
+      MONTH_NUMBER[monthFirst[1].toUpperCase()] ?? 0,
+      Number(monthFirst[2]),
+    );
+  }
+
   return "";
+}
+
+function clockTime(text: string): string {
+  const twelveHour = text.match(/\b(\d{1,2})(?::([0-5]\d))?\s*([AP])\.?M\.?\b/i);
+  if (twelveHour) {
+    let hour = Number(twelveHour[1]);
+    if (hour < 1 || hour > 12) return "";
+    const minute = Number(twelveHour[2] ?? "0");
+    if (twelveHour[3].toUpperCase() === "A") hour %= 12;
+    else if (hour < 12) hour += 12;
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  }
+
+  const twentyFourHour = text.match(/\b([01]?\d|2[0-3])[:.]([0-5]\d)\b/);
+  return twentyFourHour
+    ? `${String(Number(twentyFourHour[1])).padStart(2, "0")}:${twentyFourHour[2]}`
+    : "";
+}
+
+function departureDateTime(text: string): { date: string; time: string } {
+  const rows = lines(text);
+  const excludedClockLabel = /\b(BOARD(?:ING)?|CHECK[ -]?IN|GATE\s*CLOSE|ARRIV(?:AL|E|ING))\b/i;
+  const labeledDepartureClock = (nearby: string[]) => {
+    for (const row of nearby) {
+      if (
+        /\b(SCHEDULED\s*DEPARTURE|DEPARTURE\s*TIME|DEPART(?:URE|ING)?)\b/i.test(row) &&
+        !excludedClockLabel.test(row)
+      ) {
+        const value = clockTime(row);
+        if (value) return value;
+      }
+    }
+    for (const row of nearby) {
+      if (excludedClockLabel.test(row)) continue;
+      const value = clockTime(row);
+      if (value) return value;
+    }
+    return "";
+  };
+  const preferred = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) =>
+      /\b(DEPART(?:URE|ING)?|FLIGHT\s*DATE|OUTBOUND|TAKE[ -]?OFF|BOARDING\s*DATE|SCHEDULED\s*DEPARTURE)\b/i.test(row) &&
+      !/\b(BOOKED|BOOKING\s*DATE|ISSUED|PURCHASED|CREATED|PAYMENT|TRANSACTION)\b/i.test(row),
+    );
+
+  for (const { index } of preferred) {
+    const nearby = rows.slice(index, index + 5);
+    const context = nearby.join("\n");
+    const date = isoDate(context);
+    const time = labeledDepartureClock(nearby);
+    if (date || time) return { date, time };
+  }
+
+  const safeRows = rows.filter(
+    (row) => !/\b(BOOKED|BOOKING\s*DATE|ISSUED|PURCHASED|CREATED|PAYMENT|TRANSACTION|EMAIL\s*SENT)\b/i.test(row),
+  );
+  const safeText = safeRows.join("\n");
+  return {
+    date: isoDate(safeText),
+    time: labeledDepartureClock(safeRows),
+  };
 }
 
 
@@ -148,10 +272,26 @@ function detectBareBookingReference(text: string, flightNumber: string): string 
 }
 
 function detectRoute(text: string): string {
-  const match = text.toUpperCase().match(
-    /\b([A-Z]{3})\s*(?:→|->|TO)\s*([A-Z]{3})\b/,
+  const upper = text.toUpperCase();
+  const match = upper.match(
+    /\b([A-Z]{3})\s*(?:→|->|TO|–|—|-)\s*([A-Z]{3})\b/,
   );
-  return match ? `${match[1]} → ${match[2]}` : "";
+  if (match) return `${match[1]} → ${match[2]}`;
+
+  const labeledDeparture = upper.match(
+    /\b(?:DEPARTURE|DEPARTING|FROM)\b[^\n]{0,100}?\(([A-Z]{3})\)/,
+  )?.[1] ?? upper.match(/\b(?:DEPARTURE|DEPARTING|FROM)\s*[:#-]?\s*([A-Z]{3})\b/)?.[1];
+  const labeledArrival = upper.match(
+    /\b(?:ARRIVAL|ARRIVING|TO)\b[^\n]{0,100}?\(([A-Z]{3})\)/,
+  )?.[1] ?? upper.match(/\b(?:ARRIVAL|ARRIVING|TO)\s*[:#-]?\s*([A-Z]{3})\b/)?.[1];
+  if (labeledDeparture && labeledArrival && labeledDeparture !== labeledArrival) {
+    return `${labeledDeparture} → ${labeledArrival}`;
+  }
+
+  const parenthesizedCodes = [...upper.matchAll(/\(([A-Z]{3})\)/g)].map((item) => item[1]);
+  return parenthesizedCodes.length >= 2 && parenthesizedCodes[0] !== parenthesizedCodes[1]
+    ? `${parenthesizedCodes[0]} → ${parenthesizedCodes[1]}`
+    : "";
 }
 
 export function parseBookingText(input: string): BookingImport {
@@ -160,6 +300,7 @@ export function parseBookingText(input: string): BookingImport {
   const upper = rawText.toUpperCase();
   const flightNumber = detectFlightNumber(rawText);
   const route = detectRoute(rawText);
+  const departure = departureDateTime(rawText);
   const bareBookingReference = detectBareBookingReference(rawText, flightNumber);
 
   let kind: BookingImport["kind"] = "BOOKING";
@@ -171,8 +312,6 @@ export function parseBookingText(input: string): BookingImport {
   const confirmation =
     rawText.match(/(?:CONFIRMATION|BOOKING|RESERVATION|PNR|REFERENCE|REF)\s*(?:NO\.?|NUMBER|#|:)??\s*[:#-]?\s*([A-Z0-9-]{4,18})/i)?.[1] ??
     bareBookingReference;
-  const time = rawText.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/)?.[0] ?? "";
-
   const providerRow = rows.find((line) => /AIR|HOTEL|RESORT|HOSTEL|RAIL|TRAIN|BOOKING|AIRASIA|MALAYSIA|SCOOT|AGODA|EXPEDIA/i.test(line));
   const flightCode =
     Object.keys(AIRLINE_BY_CODE).find(
@@ -183,7 +322,7 @@ export function parseBookingText(input: string): BookingImport {
     flightNumber.match(/^([A-Z]{2,3})(?=\d)/)?.[1] ??
     "";
   const airlineName = flightCode ? AIRLINE_BY_CODE[flightCode] ?? "" : "";
-  const provider = (providerRow || airlineName || rows[0] || "").slice(0, 160);
+  const provider = (airlineName || providerRow || rows[0] || "").slice(0, 160);
   const titleCandidate = rows.find((line) =>
     line.length >= 4 &&
     line.length <= 100 &&
@@ -203,11 +342,11 @@ export function parseBookingText(input: string): BookingImport {
 
   return {
     kind,
-    title: (titleCandidate ?? fallbackTitle).slice(0, 250),
+    title: (kind === "FLIGHT" ? fallbackTitle : titleCandidate ?? fallbackTitle).slice(0, 250),
     provider,
     confirmationNo: confirmation,
-    bookingDate: isoDate(rawText),
-    bookingTime: time,
+    bookingDate: departure.date,
+    bookingTime: departure.time,
     flightNumber,
     route,
     rawText,

@@ -19,6 +19,7 @@ export type MissingTripBudget = {
   tripId: string;
   tripName: string;
   baseCurrency: string;
+  financialStatus: string;
 };
 
 export type UserTripBudget = {
@@ -26,6 +27,7 @@ export type UserTripBudget = {
   tripName: string;
   baseCurrency: string;
   amount: number | null;
+  financialStatus: string;
 };
 
 export type TripBudgetSummary = {
@@ -49,6 +51,8 @@ export async function listMissingTripBudgets(
             tripName: trips.name,
             baseCurrency:
               trips.baseCurrency,
+            financialStatus:
+              trips.financialStatus,
           })
           .from(countryMembers)
           .innerJoin(
@@ -73,9 +77,10 @@ export async function listMissingTripBudgets(
           )
       ).filter(
         (trip) =>
-          !tripId ||
-          trip.tripId ===
-            tripId,
+          trip.financialStatus === "OPEN" &&
+          (!tripId ||
+            trip.tripId ===
+              tripId),
       );
 
     if (
@@ -134,6 +139,8 @@ export async function listUserTripBudgets(
       tripName: trips.name,
       baseCurrency:
         trips.baseCurrency,
+      financialStatus:
+        trips.financialStatus,
     })
     .from(countryMembers)
     .innerJoin(

@@ -31,6 +31,42 @@ describe("v78 Trip Inbox quick flight recognition", () => {
     expect(parsed.bookingDate).toBe("2026-11-05");
     expect(parsed.bookingTime).toBe("09:30");
   });
+
+  it("uses departure details instead of an earlier booking-issued timestamp", () => {
+    const parsed = parseBookingText(`
+      Booking created: 20/08/2026 21:44
+      Flight AK6128
+      Kuala Lumpur (KUL) to Ho Chi Minh City (SGN)
+      Departure: 25 Aug 2026, 7:05 AM
+      Arrival: 25 Aug 2026, 8:10 AM
+    `);
+
+    expect(parsed.flightNumber).toBe("AK6128");
+    expect(parsed.route).toBe("KUL → SGN");
+    expect(parsed.bookingDate).toBe("2026-08-25");
+    expect(parsed.bookingTime).toBe("07:05");
+    expect(parsed.provider).toBe("AirAsia");
+  });
+
+  it("supports month-first departure dates and 12-hour afternoon times", () => {
+    const parsed = parseBookingText(`Flight MH123\nDeparture Aug 25, 2026 at 2:35 PM\nKUL - NRT`);
+    expect(parsed.bookingDate).toBe("2026-08-25");
+    expect(parsed.bookingTime).toBe("14:35");
+    expect(parsed.route).toBe("KUL → NRT");
+  });
+
+  it("does not mistake boarding or arrival time for scheduled departure time", () => {
+    const parsed = parseBookingText(`
+      Flight AK6128
+      KUL → SGN
+      Flight date 25 Aug 2026
+      Boarding time 06:20
+      Scheduled departure 07:05
+      Arrival 08:10
+    `);
+    expect(parsed.bookingDate).toBe("2026-08-25");
+    expect(parsed.bookingTime).toBe("07:05");
+  });
 });
 
 describe("v78 trip date integrity", () => {

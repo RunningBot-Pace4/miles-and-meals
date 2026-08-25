@@ -109,20 +109,41 @@ export async function updateJourneyTrips(input: {
     throw new Error("Journey not found or you cannot edit it.");
   }
 
+  const current = await db
+    .select({ id: trips.id, financialStatus: trips.financialStatus })
+    .from(trips)
+    .where(eq(trips.journeyId, input.journeyId));
+  const currentIds = new Set(current.map((row) => row.id));
+  const requestedRows = input.tripIds.length
+    ? await db
+        .select({ id: trips.id, financialStatus: trips.financialStatus })
+        .from(trips)
+        .where(inArray(trips.id, input.tripIds))
+    : [];
+  const requestedById = new Map(requestedRows.map((row) => [row.id, row]));
+
   for (const tripId of input.tripIds) {
     if (!(await canManageTrip(input.currentUser, tripId))) {
       throw new Error("You can only add trips you manage to a Journey.");
     }
+    if (requestedById.get(tripId)?.financialStatus === "CLOSED" && !currentIds.has(tripId)) {
+      throw new Error("A closed Trip is read-only and cannot be added to a Journey until it is reopened.");
+    }
   }
 
-  const current = await db.select({ id: trips.id }).from(trips).where(eq(trips.journeyId, input.journeyId));
   const selected = new Set(input.tripIds);
   for (const row of current) {
-    if (!selected.has(row.id) && (await canManageTrip(input.currentUser, row.id))) {
+    if (
+      row.financialStatus !== "CLOSED" &&
+      !selected.has(row.id) &&
+      (await canManageTrip(input.currentUser, row.id))
+    ) {
       await db.update(trips).set({ journeyId: null }).where(eq(trips.id, row.id));
     }
   }
   for (const tripId of input.tripIds) {
-    await db.update(trips).set({ journeyId: input.journeyId }).where(eq(trips.id, tripId));
+    if (requestedById.get(tripId)?.financialStatus !== "CLOSED") {
+      await db.update(trips).set({ journeyId: input.journeyId }).where(eq(trips.id, tripId));
+    }
   }
 }

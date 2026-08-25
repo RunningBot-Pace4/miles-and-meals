@@ -10,17 +10,15 @@ import { getActiveTripContext } from "@/lib/active-trip";
 import type { OfflineTripPack } from "@/lib/offline-pack";
 import { getSession } from "@/lib/session";
 
-export async function GET(request: Request) {
-  const session = await getSession();
-  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  const active = await getActiveTripContext(session.user);
-  const requestedTripId = new URL(request.url).searchParams.get("tripId") ?? "";
-  const targetTripId = requestedTripId || active.tripId;
+async function buildPack(
+  active: Awaited<ReturnType<typeof getActiveTripContext>>,
+  targetTripId: string,
+  currentUserId: string,
+): Promise<OfflineTripPack | null> {
   const country = active.allCountries.find((row) => row.tripId === targetTripId);
 
   if (!country || !targetTripId) {
-    return Response.json({ pack: null });
+    return null;
   }
 
   const countryIds = active.allCountries
@@ -52,7 +50,7 @@ export async function GET(request: Request) {
   const pack: OfflineTripPack = {
     version: 2,
     savedAt: new Date().toISOString(),
-    currentUserId: session.user.id,
+    currentUserId,
     trip: {
       id: country.tripId,
       name: country.tripName,
@@ -90,5 +88,28 @@ export async function GET(request: Request) {
     })),
   };
 
-  return Response.json({ pack }, { headers: { "cache-control": "no-store" } });
+  return pack;
+}
+
+export async function GET(request: Request) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const active = await getActiveTripContext(session.user);
+  const parameters = new URL(request.url).searchParams;
+  const requestedTripId = parameters.get("tripId") ?? "";
+
+  if (parameters.get("all") === "1") {
+    const tripIds = [...new Set(active.allCountries.map((country) => country.tripId))];
+    const packs = (await Promise.all(
+      tripIds.map((tripId) => buildPack(active, tripId, session.user.id)),
+    )).filter((pack): pack is OfflineTripPack => Boolean(pack));
+
+    return Response.json({ packs }, { headers: { "cache-control": "private, no-store" } });
+  }
+
+  const targetTripId = requestedTripId || active.tripId;
+  const pack = await buildPack(active, targetTripId, session.user.id);
+
+  return Response.json({ pack }, { headers: { "cache-control": "private, no-store" } });
 }

@@ -12,6 +12,7 @@ import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { travelItemUpdateSchema } from "@/lib/validation";
+import { closedCountryReadOnlyResponse } from "@/lib/financial-close";
 
 export const runtime = "nodejs";
 
@@ -107,6 +108,9 @@ export async function PATCH(request: Request, context: Context) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const existingLocked = await closedCountryReadOnlyResponse(existing.countryId);
+    if (existingLocked) return existingLocked;
+
     const input = travelItemUpdateSchema.parse(await request.json());
     const mutationId = offlineMutationId(request);
 
@@ -116,6 +120,10 @@ export async function PATCH(request: Request, context: Context) {
         { status: 403 },
       );
     }
+
+
+    const targetLocked = await closedCountryReadOnlyResponse(input.countryId);
+    if (targetLocked) return targetLocked;
 
     if (input.expectedUpdatedAt) {
       const expected = new Date(input.expectedUpdatedAt).getTime();
@@ -234,6 +242,9 @@ export async function DELETE(request: Request, context: Context) {
   if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const locked = await closedCountryReadOnlyResponse(existing.countryId);
+  if (locked) return locked;
 
   const country = await getCountryWithTrip(existing.countryId);
 

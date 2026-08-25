@@ -19,6 +19,7 @@ type BudgetTrip = {
   tripName: string;
   baseCurrency: string;
   amount: number | null;
+  financialStatus: string;
 };
 
 export function TripBudgetForm({
@@ -123,7 +124,7 @@ export function TripBudgetForm({
     setMessage("");
 
     try {
-      for (const trip of trips) {
+      for (const trip of trips.filter((item) => item.financialStatus === "OPEN")) {
         const amount =
           values[
             trip.tripId
@@ -238,9 +239,11 @@ export function TripBudgetForm({
 
         <div className="trip-budget-entry-list">
           {trips.map(
-            (trip) => (
+            (trip) => {
+              const closed = trip.financialStatus === "CLOSED";
+              return (
               <label
-                className="trip-budget-entry"
+                className={closed ? "trip-budget-entry is-readonly" : "trip-budget-entry"}
                 key={
                   trip.tripId
                 }
@@ -252,7 +255,7 @@ export function TripBudgetForm({
                     }
                   </strong>
                   <small>
-                    Personal budget ·{" "}
+                    {closed ? "Closed · read-only" : "Personal budget"} ·{" "}
                     {
                       trip.baseCurrency
                     }
@@ -271,6 +274,7 @@ export function TripBudgetForm({
                     min="0.01"
                     step="0.01"
                     required
+                    disabled={closed}
                     value={
                       values[
                         trip.tripId
@@ -297,7 +301,8 @@ export function TripBudgetForm({
                   />
                 </div>
               </label>
-            ),
+              );
+            },
           )}
         </div>
 
@@ -322,7 +327,7 @@ export function TripBudgetForm({
         <button
           className="button primary"
           type="submit"
-          disabled={busy}
+          disabled={busy || !trips.some((trip) => trip.financialStatus === "OPEN")}
         >
           {onboarding
             ? "Start my trip"

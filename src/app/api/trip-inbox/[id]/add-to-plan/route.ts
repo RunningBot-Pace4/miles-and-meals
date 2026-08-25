@@ -4,6 +4,7 @@ import { travelItems, tripInboxItems } from "@/db/schema";
 import { canAccessCountry } from "@/lib/access";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
+import { closedCountryReadOnlyResponse } from "@/lib/financial-close";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   if (!isTrustedMutationRequest(request)) return mutationRejectedResponse();
@@ -14,6 +15,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!item) return Response.json({ error: "Inbox item not found." }, { status: 404 });
   if (!(await canAccessCountry(session.user, item.countryId))) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (item.linkedTravelItemId) return Response.json({ ok: true, travelItemId: item.linkedTravelItemId, idempotent: true });
+
+  const locked = await closedCountryReadOnlyResponse(item.countryId);
+  if (locked) return locked;
 
   // Use the Inbox UUID as the Planner UUID. This gives Add to Plan a stable
   // idempotency key: a double tap, browser retry or interrupted first request

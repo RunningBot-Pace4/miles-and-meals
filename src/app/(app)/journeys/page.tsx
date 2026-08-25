@@ -12,7 +12,7 @@ export default async function JourneysPage() {
   const managedIds = managed.map((trip) => trip.id);
   const tripRows = managedIds.length
     ? await db
-        .select({ id: trips.id, name: trips.name, journeyId: trips.journeyId, destination: countries.name })
+        .select({ id: trips.id, name: trips.name, journeyId: trips.journeyId, destination: countries.name, financialStatus: trips.financialStatus })
         .from(trips)
         .leftJoin(countries, eq(countries.tripId, trips.id))
         .where(inArray(trips.id, managedIds))

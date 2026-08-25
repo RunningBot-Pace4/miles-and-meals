@@ -123,18 +123,42 @@ export function writeOfflineSelectedTripId(tripId: string): void {
 }
 
 export function writeOfflinePack(pack: OfflineTripPack): void {
+  writeOfflinePacks([pack], pack.trip.id);
+}
+
+export function writeOfflinePacks(
+  incoming: OfflineTripPack[],
+  selectedTripId = "",
+  replaceExisting = false,
+): void {
   const localStorage = storage();
   if (!localStorage) return;
 
-  const next = [normalizePack(pack), ...readOfflinePacks().filter((item) => item.trip.id !== pack.trip.id)]
-    .sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt))
-    .slice(0, 12);
+  const incomingIds = new Set(incoming.map((pack) => pack.trip.id));
+  const retained = replaceExisting
+    ? []
+    : readOfflinePacks().filter((item) => !incomingIds.has(item.trip.id));
+  const next = [...incoming.map(normalizePack), ...retained]
+    .sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt));
+
+  const previousSelectedId = readOfflineSelectedTripId();
+  const nextSelectedId =
+    (selectedTripId && next.some((pack) => pack.trip.id === selectedTripId) && selectedTripId) ||
+    (previousSelectedId && next.some((pack) => pack.trip.id === previousSelectedId) && previousSelectedId) ||
+    next[0]?.trip.id ||
+    "";
+  const selectedPack = next.find((pack) => pack.trip.id === nextSelectedId) ?? next[0];
 
   localStorage.setItem(OFFLINE_PACKS_STORAGE_KEY, JSON.stringify(next));
   // Keep the selected single-pack mirror for the standalone offline shell and
   // for devices upgrading from Offline Pack 2.0.
-  localStorage.setItem(OFFLINE_PACK_STORAGE_KEY, JSON.stringify(pack));
-  localStorage.setItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY, pack.trip.id);
+  if (selectedPack) {
+    localStorage.setItem(OFFLINE_PACK_STORAGE_KEY, JSON.stringify(selectedPack));
+    localStorage.setItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY, selectedPack.trip.id);
+  } else {
+    localStorage.removeItem(OFFLINE_PACK_STORAGE_KEY);
+    localStorage.removeItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY);
+  }
   window.dispatchEvent(new CustomEvent("mnm:offline-pack-updated"));
 }
 

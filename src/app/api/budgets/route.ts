@@ -9,6 +9,7 @@ import {
   savePersonalTripBudget,
 } from "@/lib/trip-budget";
 import { personalTripBudgetSchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 
 export async function GET() {
@@ -55,6 +56,9 @@ export async function POST(
       personalTripBudgetSchema.parse(
         await request.json(),
       );
+
+    const locked = await closedTripReadOnlyResponse(input.tripId);
+    if (locked) return locked;
 
     await savePersonalTripBudget(
       session.user.id,

@@ -31,6 +31,7 @@ export type ManagedTrip = {
   startDate: string | null;
   endDate: string | null;
   createdBy: string;
+  financialStatus: string;
   countries: Array<{
     id: string;
     name: string;
@@ -65,6 +66,8 @@ export async function canManageTrip(
     .select({
       createdBy:
         trips.createdBy,
+      financialStatus:
+        trips.financialStatus,
     })
     .from(trips)
     .where(
@@ -154,6 +157,8 @@ export async function listManagedTrips(
         trips.endDate,
       createdBy:
         trips.createdBy,
+      financialStatus:
+        trips.financialStatus,
     })
     .from(trips);
 
@@ -346,6 +351,7 @@ export async function listJoinedTrips(
     name: string;
     baseCurrency: string;
     role: string;
+    financialStatus: string;
   }>
 > {
   const rows = await db
@@ -358,6 +364,8 @@ export async function listJoinedTrips(
         tripMembers.role,
       createdBy:
         trips.createdBy,
+      financialStatus:
+        trips.financialStatus,
     })
     .from(tripMembers)
     .innerJoin(
@@ -385,6 +393,8 @@ export async function listJoinedTrips(
         row.createdBy === userId
           ? "OWNER"
           : row.role,
+      financialStatus:
+        row.financialStatus,
     }),
   );
 }

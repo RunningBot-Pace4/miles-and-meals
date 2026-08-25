@@ -29,6 +29,7 @@ type CountryOption = {
 type TripOption = {
   id: string;
   name: string;
+  financialStatus: string;
 };
 
 type PlannerItem = {
@@ -685,6 +686,8 @@ export function PlannerClient({
   const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
 
   const meta = tabMeta[tab];
+  const activeTrip = trips.find((trip) => trip.id === activeTripId);
+  const activeClosed = activeTrip?.financialStatus === "CLOSED";
 
   const visible = useMemo(() => {
     return itemsState
@@ -830,6 +833,11 @@ export function PlannerClient({
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (activeClosed) {
+      setError("This Trip is closed and its Plan is read-only. Reopen it from Settlement before adding anything.");
+      return;
+    }
+
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const payload = formPayload(form, tab);
@@ -899,6 +907,11 @@ export function PlannerClient({
 
   async function saveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (activeClosed) {
+      setError("This Trip is closed and its Plan is read-only.");
+      return;
+    }
 
     if (!editingItem) {
       return;
@@ -986,6 +999,11 @@ export function PlannerClient({
   }
 
   async function remove(id: string) {
+    if (activeClosed) {
+      setError("This Trip is closed and its Plan is read-only.");
+      return;
+    }
+
     if (!window.confirm("Delete this item?")) {
       return;
     }
@@ -1056,6 +1074,11 @@ export function PlannerClient({
   }
 
   function startEdit(item: PlannerItem) {
+    if (activeClosed) {
+      setError("This Trip is closed and its Plan is read-only.");
+      return;
+    }
+
     setShowForm(false);
     setDetailItem(null);
     setError("");
@@ -1189,10 +1212,17 @@ export function PlannerClient({
             setShowForm((value) => !value);
           }}
           type="button"
+          disabled={activeClosed}
         >
-          {showForm ? "Close" : `＋ ${meta.addLabel}`}
+          {activeClosed ? "Closed · Read-only" : showForm ? "Close" : `＋ ${meta.addLabel}`}
         </button>
       </section>
+
+      {activeClosed ? (
+        <p className="form-warning" role="status">
+          This Trip is closed. You can review Plan details, but adding, editing, deleting and creating expenses are disabled until the Trip is reopened from Settlement.
+        </p>
+      ) : null}
 
       <div className="planner-filter">
         <label>
@@ -1211,7 +1241,7 @@ export function PlannerClient({
           >
             {trips.map((trip) => (
               <option value={trip.id} key={trip.id} title={trip.name}>
-                {compactOptionText(trip.name, 32)}
+                {compactOptionText(`${trip.name}${trip.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
               </option>
             ))}
           </select>
@@ -1222,7 +1252,7 @@ export function PlannerClient({
         </span>
       </div>
 
-      {showForm ? (
+      {showForm && !activeClosed ? (
         <PlannerItemForm
           countries={countries}
           itemType={tab}
@@ -1241,7 +1271,7 @@ export function PlannerClient({
         />
       ) : null}
 
-      {editingItem ? (
+      {editingItem && !activeClosed ? (
         <div id="planner-edit-panel">
           <PlannerItemForm
             countries={countries}
@@ -1389,28 +1419,32 @@ export function PlannerClient({
                       View details
                     </button>
 
-                    <a
-                      className="planner-expense-button"
-                      href={expenseHrefForItem(item)}
-                    >
-                      Add expense
-                    </a>
+                    {!activeClosed ? (
+                      <>
+                        <a
+                          className="planner-expense-button"
+                          href={expenseHrefForItem(item)}
+                        >
+                          Add expense
+                        </a>
 
-                    <button
-                      className="planner-edit-button"
-                      onClick={() => startEdit(item)}
-                      type="button"
-                    >
-                      Edit
-                    </button>
+                        <button
+                          className="planner-edit-button"
+                          onClick={() => startEdit(item)}
+                          type="button"
+                        >
+                          Edit
+                        </button>
 
-                    <button
-                      className="text-danger"
-                      onClick={() => remove(item.id)}
-                      type="button"
-                    >
-                      Delete
-                    </button>
+                        <button
+                          className="text-danger"
+                          onClick={() => remove(item.id)}
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -1431,13 +1465,15 @@ export function PlannerClient({
               yet
             </h2>
             <p>{meta.subtitle}</p>
-            <button
-              className="button primary"
-              onClick={() => setShowForm(true)}
-              type="button"
-            >
-              {meta.addLabel}
-            </button>
+            {!activeClosed ? (
+              <button
+                className="button primary"
+                onClick={() => setShowForm(true)}
+                type="button"
+              >
+                {meta.addLabel}
+              </button>
+            ) : null}
           </article>
         ) : null}
       </section>

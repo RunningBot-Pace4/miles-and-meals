@@ -1,3 +1,22 @@
+# Miles & Meals v81 — Audited Full Source Package
+
+This package contains the complete application through v80 plus the v81 flight-accuracy, whole-Trip read-only, automatic all-Trip offline and mobile containment fixes.
+
+Key v81 behavior:
+
+- departure dates/times are parsed from the departure section instead of booking-issued metadata;
+- exact flight number + date live lookup is available when `AVIATIONSTACK_API_KEY` is configured;
+- a closed Trip is read-only across Trip, travelers, invites, budget, Plan, Inbox, expenses and location writes, while settlement repayment confirmation remains available;
+- all accessible Trips are automatically refreshed into the device’s private offline packs and remain Trip/currency-bound during resync;
+- phone form controls, native date fields, long selects and the standalone offline screen are contained at 320–430px;
+- the service-worker cache is bumped to v81 so stale layout assets are replaced.
+
+**Database:** v81 adds no schema beyond v77. If the v77 schema is already applied, do not run a database reset or migration specifically for v81.
+
+See `V81-FLIGHT-CLOSED-OFFLINE-MOBILE.md`.
+
+---
+
 # Miles & Meals v80 — Audited Full Source Package
 
 This package contains the complete application through v79 plus the v80 locked-Trip, Journey-result, multi-Trip offline and PWA cache-reliability fixes.

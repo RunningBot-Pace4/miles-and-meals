@@ -36,6 +36,7 @@ type ManagedTrip = {
   startDate: string | null;
   endDate: string | null;
   createdBy: string;
+  financialStatus: string;
   countries: ManagedCountry[];
 };
 
@@ -50,6 +51,7 @@ type JoinedTrip = {
   name: string;
   baseCurrency: string;
   role: string;
+  financialStatus: string;
 };
 
 type ApiPayload = {
@@ -241,6 +243,7 @@ function ManagedTripCard({
     0,
     trip.countries.length - 1,
   );
+  const closed = trip.financialStatus === "CLOSED";
 
   return (
     <article className="panel owner-trip-card">
@@ -276,8 +279,16 @@ function ManagedTripCard({
           </span>
         </div>
 
-        <span className="admin-status-pill active">Owner</span>
+        <span className={closed ? "admin-status-pill inactive" : "admin-status-pill active"}>
+          {closed ? "Closed · Read-only" : "Owner"}
+        </span>
       </header>
+
+      {closed ? (
+        <p className="form-warning" role="status">
+          This Trip is closed and read-only. Trip details, dates, FX, travelers, invites, budgets, Plan, Inbox and expenses cannot change until it is reopened from Settlement.
+        </p>
+      ) : null}
 
       {error ? (
         <p className="form-error" role="alert">
@@ -291,12 +302,12 @@ function ManagedTripCard({
         </p>
       ) : null}
 
-      <TripInvitePanel tripId={trip.id} tripName={trip.name} />
+      <TripInvitePanel tripId={trip.id} tripName={trip.name} readOnly={closed} />
 
       <details className="owner-trip-section">
         <summary>Edit trip details</summary>
 
-        <div className="owner-trip-section-body">
+        <fieldset className="owner-trip-section-body owner-readonly-fieldset" disabled={closed}>
           <label>
             Trip name
             <input
@@ -344,7 +355,7 @@ function ManagedTripCard({
           >
             Save trip details
           </button>
-        </div>
+        </fieldset>
       </details>
 
       <section className="owner-destinations-section">
@@ -386,7 +397,7 @@ function ManagedTripCard({
                   <b>{assigned.size} trip travelers · Manage</b>
                 </summary>
 
-                <div className="owner-country-members">
+                <fieldset className="owner-country-members owner-readonly-fieldset" disabled={closed}>
                   <div className="owner-country-fx-edit">
                     <label>
                       <span>
@@ -484,7 +495,7 @@ function ManagedTripCard({
                       </label>
                     );
                   })}
-                </div>
+                </fieldset>
               </details>
             );
           })() : (

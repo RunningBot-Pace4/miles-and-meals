@@ -4,6 +4,7 @@ import { canAccessCountry } from "@/lib/access";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { locationSchema } from "@/lib/validation";
+import { closedCountryReadOnlyResponse } from "@/lib/financial-close";
 
 export async function POST(request: Request) {
   if (!isTrustedMutationRequest(request)) {
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
     if (!(await canAccessCountry(session.user, input.countryId))) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const locked = await closedCountryReadOnlyResponse(input.countryId);
+    if (locked) return locked;
 
     const inserted = await db
       .insert(locationPings)

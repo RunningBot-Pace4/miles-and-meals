@@ -6,6 +6,7 @@ import { getCountryCatalogItem } from "@/lib/country-catalog";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { createCountrySchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 export async function POST(request: Request) {
   if (!isTrustedMutationRequest(request)) {
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
         { status: 404 },
       );
     }
+
+    const locked = await closedTripReadOnlyResponse(input.tripId);
+    if (locked) return locked;
 
     const existingDestination = await db
       .select({ id: countries.id })

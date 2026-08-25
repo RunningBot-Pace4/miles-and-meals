@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { writeOfflinePack, type OfflineTripPack } from "@/lib/offline-pack";
+import { writeOfflinePacks, type OfflineTripPack } from "@/lib/offline-pack";
 
 export function OfflinePackWarmup() {
   useEffect(() => {
@@ -10,13 +10,13 @@ export function OfflinePackWarmup() {
     async function refresh() {
       if (!navigator.onLine) return;
       try {
-        const response = await fetch("/api/offline-pack", {
+        const response = await fetch("/api/offline-pack?all=1", {
           cache: "no-store",
           credentials: "same-origin",
         });
         if (!response.ok) return;
-        const payload = (await response.json()) as { pack?: OfflineTripPack | null };
-        if (!disposed && payload.pack) writeOfflinePack(payload.pack);
+        const payload = (await response.json()) as { packs?: OfflineTripPack[] };
+        if (!disposed) writeOfflinePacks(payload.packs ?? [], "", true);
       } catch {
         // Existing cached pack remains available.
       }

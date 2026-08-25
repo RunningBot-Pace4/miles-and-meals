@@ -31,6 +31,6 @@ export default async function TripInboxPage() {
         .orderBy(desc(tripInboxItems.createdAt))
         .limit(100)
     : [];
-  const options = countries.map((country) => ({ id: country.id, tripId: country.tripId, tripName: country.tripName, name: country.name, currencyCode: country.currencyCode }));
+  const options = countries.map((country) => ({ id: country.id, tripId: country.tripId, tripName: country.tripName, name: country.name, currencyCode: country.currencyCode, startDate: country.startDate, financialStatus: country.financialStatus }));
   return <div className="stack gap-lg"><div className="page-heading"><div><p className="eyebrow">RESERVATIONS</p><h1>Trip Inbox</h1><p className="muted">Turn booking confirmations into travel-ready cards without hunting through your email during the trip.</p></div></div><TripInboxClient countries={options} initialItems={items} /></div>;
 }

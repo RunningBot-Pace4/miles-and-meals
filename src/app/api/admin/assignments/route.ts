@@ -9,6 +9,7 @@ import { recordActivity } from "@/lib/activity";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession, isSystemAdmin } from "@/lib/session";
 import { assignmentSchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 export async function POST(request: Request) {
   if (!isTrustedMutationRequest(request)) {
@@ -36,6 +37,9 @@ export async function POST(request: Request) {
     if (!countryRows[0]) {
       return Response.json({ error: "Country not found." }, { status: 404 });
     }
+
+    const locked = await closedTripReadOnlyResponse(countryRows[0].tripId);
+    if (locked) return locked;
 
     await ensureTripMember(countryRows[0].tripId, input.userId);
 
@@ -91,6 +95,9 @@ export async function DELETE(request: Request) {
     if (!countryRows[0]) {
       return Response.json({ error: "Country not found." }, { status: 404 });
     }
+
+    const locked = await closedTripReadOnlyResponse(countryRows[0].tripId);
+    if (locked) return locked;
 
     await db
       .delete(countryMembers)

@@ -23,7 +23,7 @@ export default async function BudgetSettingsPage() {
             Personal budgets
           </h1>
           <p className="muted">
-            Your budget belongs to you and the trip. You can change it whenever your travel plan changes.
+            Your budget belongs to you and the trip. Open Trips can be updated; closed Trips remain visible as read-only history.
           </p>
         </div>
       </div>

@@ -19,6 +19,7 @@ type CountryOption = {
   name: string;
   tripId: string;
   tripName: string;
+  financialStatus: string;
 };
 
 type MemberLocation = {
@@ -163,6 +164,8 @@ export function LocationTracker({
   const [mapError, setMapError] = useState("");
   const [lastUploadedAt, setLastUploadedAt] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const selectedCountry = countries.find((country) => country.id === countryId);
+  const activeClosed = selectedCountry?.financialStatus === "CLOSED";
 
   const watchId = useRef<number | null>(null);
   const heartbeatId = useRef<number | null>(null);
@@ -222,7 +225,7 @@ export function LocationTracker({
 
   const sendPosition = useCallback(
     async (position: GeolocationPosition) => {
-      if (!countryId || sending.current) {
+      if (!countryId || activeClosed || sending.current) {
         return;
       }
 
@@ -280,7 +283,7 @@ export function LocationTracker({
         sending.current = false;
       }
     },
-    [countryId, refreshLocations],
+    [activeClosed, countryId, refreshLocations],
   );
 
   const clearSharingResources = useCallback(() => {
@@ -313,6 +316,11 @@ export function LocationTracker({
   );
 
   const startSharing = useCallback(() => {
+    if (activeClosed) {
+      setGpsMessage("This Trip is closed. Live location sharing is read-only until it is reopened.");
+      return;
+    }
+
     if (!secureContext) {
       setGpsMessage(
         "Live GPS requires HTTPS. Open the deployed Vercel site on your phone.",
@@ -366,6 +374,7 @@ export function LocationTracker({
       }
     }, HEARTBEAT_MS);
   }, [
+    activeClosed,
     clearSharingResources,
     countryId,
     secureContext,
@@ -731,7 +740,7 @@ export function LocationTracker({
             >
               {countries.map((country) => (
                 <option value={country.id} key={country.id} title={country.tripName}>
-                  {compactOptionText(country.tripName, 32)}
+                  {compactOptionText(`${country.tripName}${country.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
                 </option>
               ))}
             </select>
@@ -748,6 +757,7 @@ export function LocationTracker({
                   : "button primary"
               }
               type="button"
+              disabled={activeClosed}
               onClick={() => {
                 if (sharing) {
                   stopSharing();
@@ -758,7 +768,9 @@ export function LocationTracker({
             >
               {sharing
                 ? "■ Stop live sharing"
-                : "● Share live location"}
+                : activeClosed
+                  ? "Closed · Read-only"
+                  : "● Share live location"}
             </button>
 
             <button
@@ -780,6 +792,12 @@ export function LocationTracker({
             </button>
           </div>
         </div>
+
+        {activeClosed ? (
+          <p className="form-warning" role="status">
+            This Trip is closed. Saved locations remain visible, but new live-location updates are disabled.
+          </p>
+        ) : null}
 
         <div className="live-location-status-grid">
           <div className="location-status-tile">

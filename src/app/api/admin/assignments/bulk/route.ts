@@ -1,4 +1,5 @@
 import {
+  and,
   eq,
   inArray,
 } from "drizzle-orm";
@@ -7,6 +8,7 @@ import { db } from "@/db";
 import {
   countries,
   countryMembers,
+  trips,
   user,
 } from "@/db/schema";
 import {
@@ -91,22 +93,27 @@ export async function POST(
       );
     }
 
-    const countryRows =
+    const [countryRows, allCountryRows, existingAssignments] = await Promise.all([
       uniqueCountryIds.length === 0
-        ? []
-        : await db
+        ? Promise.resolve([])
+        : db
             .select({
               id: countries.id,
-              tripId:
-                countries.tripId,
+              tripId: countries.tripId,
+              financialStatus: trips.financialStatus,
             })
             .from(countries)
-            .where(
-              inArray(
-                countries.id,
-                uniqueCountryIds,
-              ),
-            );
+            .innerJoin(trips, eq(countries.tripId, trips.id))
+            .where(inArray(countries.id, uniqueCountryIds)),
+      db
+        .select({ id: countries.id, financialStatus: trips.financialStatus })
+        .from(countries)
+        .innerJoin(trips, eq(countries.tripId, trips.id)),
+      db
+        .select({ countryId: countryMembers.countryId })
+        .from(countryMembers)
+        .where(eq(countryMembers.userId, input.userId)),
+    ]);
 
     if (
       countryRows.length !==
@@ -121,32 +128,63 @@ export async function POST(
       );
     }
 
-    await db
-      .delete(countryMembers)
-      .where(
-        eq(
-          countryMembers.userId,
-          input.userId,
-        ),
+    const selectedIds = new Set(uniqueCountryIds);
+    const existingIds = new Set(existingAssignments.map((row) => row.countryId));
+    const closedCountryIds = allCountryRows
+      .filter((country) => country.financialStatus === "CLOSED")
+      .map((country) => country.id);
+    const changesClosedTrip = closedCountryIds.some(
+      (countryId) => selectedIds.has(countryId) !== existingIds.has(countryId),
+    );
+
+    if (changesClosedTrip) {
+      return Response.json(
+        {
+          error: "Closed Trips are read-only. Reopen the affected Trip before changing its traveler access.",
+          code: "TRIP_CLOSED_READ_ONLY",
+        },
+        { status: 423 },
       );
+    }
+
+    const openCountryIds = allCountryRows
+      .filter((country) => country.financialStatus !== "CLOSED")
+      .map((country) => country.id);
+    const selectedOpenCountryIds = countryRows
+      .filter((country) => country.financialStatus !== "CLOSED")
+      .map((country) => country.id);
+
+    if (openCountryIds.length) {
+      await db
+        .delete(countryMembers)
+        .where(
+          and(
+            eq(countryMembers.userId, input.userId),
+            inArray(countryMembers.countryId, openCountryIds),
+          ),
+        );
+    }
 
     if (
-      uniqueCountryIds.length > 0
+      selectedOpenCountryIds.length > 0
     ) {
       await db
         .insert(countryMembers)
         .values(
-          uniqueCountryIds.map(
+          selectedOpenCountryIds.map(
             (countryId) => ({
               countryId,
               userId: input.userId,
             }),
           ),
-        );
+        )
+        .onConflictDoNothing();
 
       const tripIds = [
         ...new Set(
-          countryRows.map(
+          countryRows
+            .filter((country) => country.financialStatus !== "CLOSED")
+            .map(
             (country) =>
               country.tripId,
           ),

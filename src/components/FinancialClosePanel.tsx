@@ -79,11 +79,11 @@ export function FinancialClosePanel({
     <>
       {busy ? (
         <SavingOverlay
-          title={closed ? "Reopening trip expenses" : "Locking trip expenses"}
+          title={closed ? "Reopening Trip" : "Closing Trip"}
           message={
             closed
-              ? "Restoring expense editing and recalculating the live settlement view."
-              : "Creating a settlement snapshot and protecting the final expense ledger."
+              ? "Restoring Trip editing and recalculating the live settlement view."
+              : "Creating a settlement snapshot and making the Trip read-only."
           }
         />
       ) : null}
@@ -100,17 +100,17 @@ export function FinancialClosePanel({
             <p className="eyebrow">FINANCIAL CHECKPOINT · {state.tripName}</p>
             <h2 id="financial-close-title">
               {closed
-                ? `${state.tripName} expenses are locked`
-                : `${state.tripName} expenses are still open`}
+                ? `${state.tripName} is closed · expenses are locked`
+                : `${state.tripName} is open`}
             </h2>
             <p className="muted">
               {closed
-                ? "The expense ledger is protected while the group completes final settlement. Existing balances and Smart Settlement continue to update as repayments are confirmed."
-                : "Travelers can still add, edit and remove expenses. Lock the ledger only when everyone has finished entering spending."}
+                ? "The whole Trip is read-only: details, travelers, invites, budgets, Plan, Inbox, expenses and live-location updates cannot change. Existing balances and repayment confirmation remain available."
+                : "Travelers can still update the Trip and add plans or spending. Close it only when the travel record is complete and the group is ready to settle."}
             </p>
           </div>
           <span className={`financial-close-status ${closed ? "closed" : "open"}`}>
-            {closed ? `Locked · v${state.version}` : "Open"}
+            {closed ? `Closed · v${state.version}` : "Open"}
           </span>
         </div>
 
@@ -141,7 +141,7 @@ export function FinancialClosePanel({
                 type="button"
                 onClick={() => setPendingAction(closed ? "REOPEN" : "CLOSE")}
               >
-                {closed ? "Reopen for corrections" : "Lock trip expenses"}
+                {closed ? "Reopen Trip" : "Close Trip"}
               </button>
             ) : (
               <div className="financial-close-confirm" role="group" aria-label="Confirm financial checkpoint">
@@ -153,8 +153,8 @@ export function FinancialClosePanel({
                   </strong>
                   <p>
                     {pendingAction === "CLOSE"
-                      ? "Add, edit and delete expense actions will pause. Repayment confirmation remains available."
-                      : "Expense editing will reopen and the Smart Settlement recommendation may change."}
+                      ? "All Trip changes will pause, including details, travelers, budgets, Plan, Inbox, expenses and location sharing. Repayment confirmation remains available."
+                      : "Trip editing will reopen and the Smart Settlement recommendation may change."}
                   </p>
                 </div>
                 <div className="financial-close-confirm-buttons">
@@ -173,7 +173,7 @@ export function FinancialClosePanel({
                       if (pendingAction) void mutate(pendingAction);
                     }}
                   >
-                    {pendingAction === "CLOSE" ? "Confirm & lock" : "Confirm reopen"}
+                    {pendingAction === "CLOSE" ? "Confirm & close Trip" : "Confirm reopen"}
                   </button>
                 </div>
               </div>
@@ -182,8 +182,8 @@ export function FinancialClosePanel({
         ) : (
           <p className="financial-close-owner-note">
             {closed
-              ? "Only the Trip Owner or System Admin can reopen the expense ledger."
-              : "The Trip Owner can lock expenses when the group is ready to settle."}
+              ? "Only the Trip Owner or System Admin can reopen this Trip."
+              : "The Trip Owner can close the Trip when the group is ready to settle."}
           </p>
         )}
 

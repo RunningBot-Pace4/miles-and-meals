@@ -54,6 +54,6 @@ test.describe("v67 mobile launch-candidate journey", () => {
     await signIn(page);
     await page.goto("/settlements");
     await expect(page.getByText(/Financial checkpoint/i)).toBeVisible();
-    await expect(page.getByText(/Expenses are still open|Trip expenses are locked/i)).toBeVisible();
+    await expect(page.getByText(/is open|is closed · expenses are locked/i)).toBeVisible();
   });
 });

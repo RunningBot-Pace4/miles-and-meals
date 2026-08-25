@@ -5,6 +5,7 @@ import { tripInboxItems } from "@/db/schema";
 import { canAccessCountry, getCountryWithTrip, listAccessibleCountries } from "@/lib/access";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 const inputSchema = z.object({
   countryId: z.string().uuid(),
@@ -58,6 +59,8 @@ export async function POST(request: Request) {
     if (!(await canAccessCountry(session.user, input.countryId))) return Response.json({ error: "Forbidden" }, { status: 403 });
     const country = await getCountryWithTrip(input.countryId);
     if (!country) return Response.json({ error: "Trip not found." }, { status: 404 });
+    const locked = await closedTripReadOnlyResponse(country.tripId);
+    if (locked) return locked;
     const rows = await db.insert(tripInboxItems).values({
       tripId: country.tripId,
       countryId: input.countryId,

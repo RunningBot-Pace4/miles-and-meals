@@ -227,7 +227,7 @@ export function OfflinePackWorkspace({
     <div className="stack gap-lg offline-pack-workspace">
       <section className="panel offline-pack-hero">
         <div>
-          <p className="eyebrow">OFFLINE 3.0 · MULTI-TRIP</p>
+          <p className="eyebrow">OFFLINE 3.1 · ALL TRIPS</p>
           <h2>{pack ? pack.trip.name : "Choose a Trip to save offline"}</h2>
           <p className="muted">Each saved pack keeps its own Trip ID, destination currency and base currency, so queued expenses return to the correct ledger after reconnection.</p>
         </div>
@@ -237,7 +237,7 @@ export function OfflinePackWorkspace({
           <select value={selectedTripId} onChange={(event) => chooseTrip(event.target.value)}>
             {tripOptions.map((trip) => (
               <option key={trip.id} value={trip.id} title={`${trip.name} · ${trip.destination}`}>
-                {compactOptionText(`${trip.name} · ${trip.destination}`, 44)}
+                {compactOptionText(`${trip.name} · ${trip.destination}${trip.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
               </option>
             ))}
           </select>
@@ -273,7 +273,7 @@ export function OfflinePackWorkspace({
           <section className="panel">
             <div className="panel-title"><div><p className="eyebrow">QUICK EXPENSE</p><h2>Works without internet</h2></div></div>
             {pack.trip.financialStatus === "CLOSED" ? (
-              <p className="form-warning">Expenses are locked for this Trip. Its plan remains available offline, but new spending cannot be queued.</p>
+              <p className="form-warning">This Trip is closed and read-only. Its saved Plan and bookings remain available offline, but no new spending can be queued.</p>
             ) : (
               <form className="stack gap-md offline-quick-expense" onSubmit={queueQuickExpense}>
                 <label>Description<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Dinner, taxi, tickets…" maxLength={250} /></label>
@@ -310,7 +310,7 @@ export function OfflinePackWorkspace({
           </section>
         </>
       ) : (
-        <section className="panel"><h2>No pack saved for this Trip</h2><p className="muted">While online, choose the Trip above and tap Save selected Trip. Repeat for every Trip you want available without internet.</p></section>
+        <section className="panel"><h2>This Trip is still preparing</h2><p className="muted">Stay online briefly and Miles & Meals will refresh every accessible Trip automatically. You can also refresh the selected Trip now.</p></section>
       )}
     </div>
   );

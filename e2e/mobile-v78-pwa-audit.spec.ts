@@ -23,7 +23,7 @@ async function expectNoHorizontalOverflow(page: Page) {
 
 async function expectFormControlsInsideViewport(page: Page) {
   const violations = await page
-    .locator("input:visible, select:visible, textarea:visible, button.button:visible")
+    .locator("input:visible, select:visible, textarea:visible, button:visible")
     .evaluateAll((elements) => {
       const viewport = document.documentElement.clientWidth;
       return elements.flatMap((element) => {
@@ -196,3 +196,49 @@ test.describe("v79 tablet and browser-zoom containment", () => {
     });
   }
 });
+
+for (const width of [320, 390, 430]) {
+  test(`v81 standalone offline shell contains two saved Trips at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 850 });
+    await page.addInitScript(() => {
+      const makePack = (id: string, name: string, destination: string) => ({
+        version: 2,
+        savedAt: "2026-08-25T04:01:53.000Z",
+        currentUserId: "user-1",
+        trip: {
+          id,
+          name,
+          destination,
+          countryId: `country-${id}`,
+          currencyCode: id === "trip-1" ? "VND" : "JPY",
+          baseCurrency: "MYR",
+          defaultExchangeRate: 0.00016,
+          startDate: "2026-08-25",
+          endDate: "2026-08-29",
+          financialStatus: "OPEN",
+        },
+        members: [{ id: "user-1", name: "Traveler" }],
+        plan: [],
+        reservations: [],
+      });
+      localStorage.setItem(
+        "mnm:offline-packs:v3",
+        JSON.stringify([
+          makePack("trip-1", "Vietnam Working With A Very Long Trip Name", "Vietnam"),
+          makePack("trip-2", "Japan Autumn Holiday", "Japan"),
+        ]),
+      );
+      localStorage.setItem("mnm:offline-selected-trip:v1", "trip-1");
+    });
+
+    await page.goto("/offline.html");
+    await expect(page.locator("#saved-trip option")).toHaveCount(2);
+    await expectNoHorizontalOverflow(page);
+    await expectFormControlsInsideViewport(page);
+
+    const gridColumns = await page.locator("#quick-form .grid").first().evaluate(
+      (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    );
+    expect(gridColumns).toBe(1);
+  });
+}

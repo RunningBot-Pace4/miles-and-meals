@@ -1,3 +1,20 @@
+# v81 — Flight Accuracy, Closed Trips, Offline All-Trips & Mobile QA
+
+v81 is the requested whole-function and whole-layout reliability pass on top of v80.
+
+- Booking imports now prefer the **departure** section and ignore earlier booking-created, issued, payment and email timestamps. Month-name dates and 12-hour times are normalized safely.
+- A flight number is never treated as unique by itself. Users choose a flight date, and an optional server-side Aviationstack lookup accepts only the exact flight-number/date result while preserving airport-local scheduled times.
+- Closing a Trip now makes the full Trip read-only across details/dates/FX, travelers, invites, budgets, Plan, Trip Inbox, expenses, Journey membership changes and live-location writes. Historical viewing, settlement calculations and repayment confirmation remain available; reopening restores writes.
+- Every accessible Trip is refreshed into private device storage while online. The standalone offline screen can choose among Trips and carries the original Trip ID, country, destination currency and base currency into the queued change.
+- The mobile/PWA containment audit now includes all visible form controls plus the standalone offline shell at 320, 390 and 430px. Date inputs and two-column grids collapse before they can overflow.
+- No database schema change is introduced by v81.
+
+For live flight retrieval, set the server-only `AVIATIONSTACK_API_KEY`. The provider plan must support the dates/features you use; without a key or an exact match, the UI keeps manual/uploaded details and explains the limitation.
+
+See `V81-FLIGHT-CLOSED-OFFLINE-MOBILE.md`.
+
+---
+
 # v80 — Locked Trips, Journey Results & Offline 3.0
 
 v80 completes the workflow and PWA audit on top of v79.

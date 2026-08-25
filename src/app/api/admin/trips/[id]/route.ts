@@ -14,6 +14,7 @@ import {
   deleteTripSchema,
   updateTripSchema,
 } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 type Context = {
   params: Promise<{
@@ -46,6 +47,8 @@ export async function PATCH(
   }
 
   const { id } = await context.params;
+  const locked = await closedTripReadOnlyResponse(id);
+  if (locked) return locked;
 
   try {
     const input = updateTripSchema.parse(
@@ -139,6 +142,8 @@ export async function DELETE(
   }
 
   const { id } = await context.params;
+  const locked = await closedTripReadOnlyResponse(id);
+  if (locked) return locked;
 
   try {
     const input =

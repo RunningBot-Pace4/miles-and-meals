@@ -14,6 +14,7 @@ import {
   isSystemAdmin,
 } from "@/lib/session";
 import { updateCountrySchema } from "@/lib/validation";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 type Context = {
   params: Promise<{
@@ -76,6 +77,9 @@ export async function PATCH(
         { status: 404 },
       );
     }
+
+    const locked = await closedTripReadOnlyResponse(country.tripId);
+    if (locked) return locked;
 
     await db
       .update(countries)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export function TripInvitePanel({ tripId, tripName }: { tripId: string; tripName: string }) {
+export function TripInvitePanel({ tripId, tripName, readOnly = false }: { tripId: string; tripName: string; readOnly?: boolean }) {
   const [link, setLink] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -106,7 +106,10 @@ export function TripInvitePanel({ tripId, tripName }: { tripId: string; tripName
         <h3>Bring the group in</h3>
         <p className="muted">Create a secure link, then share it in WhatsApp, Telegram or your group chat. The link and QR code are valid for 12 hours.</p>
       </div>
-      {!link ? (
+      {readOnly ? (
+        <p className="form-warning">Invites are disabled while this Trip is closed.</p>
+      ) : null}
+      {!readOnly && !link ? (
         <div className="button-row">
           <button className="button secondary" type="button" onClick={() => void createLink()} disabled={busy}>
             {busy ? "Creating…" : "Create invite link"}
@@ -115,7 +118,7 @@ export function TripInvitePanel({ tripId, tripName }: { tripId: string; tripName
             Revoke old links
           </button>
         </div>
-      ) : (
+      ) : !readOnly ? (
         <div className="trip-invite-result">
           <input value={link} readOnly aria-label="Trip invite link" />
           <p className="muted">
@@ -131,7 +134,7 @@ export function TripInvitePanel({ tripId, tripName }: { tripId: string; tripName
             <small>Generated privately on this device. Scan to open this trip invite.</small>
           </div>
         </div>
-      )}
+      ) : null}
       {status ? <p className="success-text" role="status">{status}</p> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
     </section>

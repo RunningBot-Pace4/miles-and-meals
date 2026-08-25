@@ -1,6 +1,7 @@
 import { createTripInvite, revokeTripInvites } from "@/lib/trip-invites";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
+import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 
 export async function POST(
   request: Request,
@@ -17,6 +18,8 @@ export async function POST(
 
   try {
     const { id } = await context.params;
+    const locked = await closedTripReadOnlyResponse(id);
+    if (locked) return locked;
     const { token, expiresAt } = await createTripInvite({
       currentUser: session.user,
       tripId: id,
@@ -45,6 +48,8 @@ export async function DELETE(
 
   try {
     const { id } = await context.params;
+    const locked = await closedTripReadOnlyResponse(id);
+    if (locked) return locked;
     await revokeTripInvites({ currentUser: session.user, tripId: id });
     return Response.json({ ok: true });
   } catch (error) {
