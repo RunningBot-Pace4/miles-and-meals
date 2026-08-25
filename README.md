@@ -1,3 +1,19 @@
+# v82 — Offline Sync Recovery & Inbox Removal
+
+v82 fixes the reconnection retry loop and removes the unused Trip Inbox / booking-reservation workflow.
+
+- Offline Expense and Plan changes sync to the Trip stored with each queued mutation, even if another Trip is active after reconnection.
+- Closed Trips and other permanent 4xx failures stop after one attempt and are shown as action-required instead of retrying forever.
+- Generic `Forbidden` errors are replaced with clear Trip-access guidance; valid accessible Trips are no longer rejected merely because they are not active.
+- An older queued item already stuck on raw `Forbidden` gets one recovery retry after v82 loads.
+- Trip Inbox, booking import/live lookup, the Planner Bookings tab, offline Reservations and the PWA Inbox shortcut are removed.
+- The Add Expense sentence about financially locked Trips being hidden is removed.
+- No database migration is required; legacy Inbox rows remain only for backup compatibility.
+
+See `V82-OFFLINE-SYNC-INBOX-REMOVAL.md`.
+
+---
+
 # v81 — Flight Accuracy, Closed Trips, Offline All-Trips & Mobile QA
 
 v81 is the requested whole-function and whole-layout reliability pass on top of v80.

@@ -34,7 +34,6 @@
   </section>
 
   <section class="card" id="plan-card" hidden><p class="eyebrow">SAVED PLAN</p><h2>Travel essentials</h2><div class="list" id="plan-list"></div></section>
-  <section class="card" id="reservations-card" hidden><p class="eyebrow">RESERVATIONS</p><h2>Booking essentials</h2><div class="list" id="reservation-list"></div></section>
 
   <section class="card" id="no-pack">
     <p class="eyebrow">NO OFFLINE PACK YET</p><h2>Reconnect once to prepare your Trips.</h2><p class="muted">When you are signed in and online, Miles & Meals securely refreshes every Trip you can access on this device.</p>
@@ -66,7 +65,7 @@
   function renderPack(){
     pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
     const has=Boolean(pack&&pack.currentUserId);
-    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;$("reservations-card").hidden=!has;
+    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;
     if(!has)return;
     selectedId=pack.trip.id;localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack));
     $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · trip ${pack.trip.currencyCode} · base ${pack.trip.baseCurrency}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
@@ -74,7 +73,6 @@
     const currencyCodes=[...new Set([String(pack.trip.currencyCode).toUpperCase(),String(pack.trip.baseCurrency).toUpperCase()])];$("currency").replaceChildren(...currencyCodes.map(code=>{const option=document.createElement("option");option.value=code;option.textContent=`${code}${code===String(pack.trip.currencyCode).toUpperCase()?" · destination":" · base"}`;return option}));
     $("quick-form").querySelector("button").disabled=pack.trip.financialStatus==="CLOSED";
     $("plan-list").replaceChildren();const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
-    $("reservation-list").replaceChildren();const reservations=pack.reservations||[];if(!reservations.length)$("reservation-list").innerHTML='<div class="empty">No saved reservations.</div>';else reservations.forEach(x=>$("reservation-list").append(row(x.title,`${x.date||"Date not detected"}${x.time?` · ${x.time}`:""}${x.confirmationNo?` · Ref ${x.confirmationNo}`:""}`,x.kind)));
   }
   $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>{selectedId=event.target.value;renderPack()});renderPack();
 

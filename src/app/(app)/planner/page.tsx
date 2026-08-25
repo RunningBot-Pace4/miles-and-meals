@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
 import { PlannerClient } from "@/components/PlannerClient";
@@ -49,7 +49,7 @@ export default async function PlannerPage() {
           })
           .from(travelItems)
           .leftJoin(user, eq(travelItems.createdBy, user.id))
-          .where(inArray(travelItems.countryId, ids))
+          .where(and(inArray(travelItems.countryId, ids), ne(travelItems.itemType, "BOOKING")))
           .orderBy(desc(travelItems.itemDate), desc(travelItems.createdAt));
 
   return (

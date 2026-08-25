@@ -600,7 +600,7 @@ export function NotificationSettings() {
               <span>
                 <strong>Planner</strong>
                 <small>
-                  New and changed itinerary, food, shopping and bookings
+                  New and changed plans, places, meals and shopping
                 </small>
               </span>
               <input

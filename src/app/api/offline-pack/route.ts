@@ -1,9 +1,8 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   countryMembers,
   travelItems,
-  tripInboxItems,
   user,
 } from "@/db/schema";
 import { getActiveTripContext } from "@/lib/active-trip";
@@ -24,7 +23,7 @@ async function buildPack(
   const countryIds = active.allCountries
     .filter((row) => row.tripId === targetTripId)
     .map((row) => row.id);
-  const [memberRows, planRows, reservationRows] = await Promise.all([
+  const [memberRows, planRows] = await Promise.all([
     db
       .select({ id: user.id, name: user.name })
       .from(countryMembers)
@@ -34,13 +33,8 @@ async function buildPack(
     db
       .select()
       .from(travelItems)
-      .where(inArray(travelItems.countryId, countryIds))
+      .where(and(inArray(travelItems.countryId, countryIds), ne(travelItems.itemType, "BOOKING")))
       .orderBy(asc(travelItems.itemDate), asc(travelItems.itemTime)),
-    db
-      .select()
-      .from(tripInboxItems)
-      .where(inArray(tripInboxItems.countryId, countryIds))
-      .orderBy(asc(tripInboxItems.bookingDate), asc(tripInboxItems.bookingTime)),
   ]);
 
   const members = [
@@ -75,16 +69,6 @@ async function buildPack(
       provider: item.provider ?? "",
       confirmationNo: item.confirmationNo ?? "",
       notes: item.notes ?? "",
-    })),
-    reservations: reservationRows.map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      title: item.title,
-      provider: item.provider ?? "",
-      confirmationNo: item.confirmationNo ?? "",
-      date: item.bookingDate,
-      time: item.bookingTime ?? "",
-      status: item.status,
     })),
   };
 

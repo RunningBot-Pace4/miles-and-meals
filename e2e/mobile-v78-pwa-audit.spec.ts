@@ -56,7 +56,6 @@ const pwaRoutes = [
   "/settlements",
   "/trips",
   "/journeys",
-  "/inbox",
   "/offline",
   "/location",
   "/notifications",
@@ -161,11 +160,6 @@ test.describe("v78 interaction upgrades", () => {
     }
   });
 
-  test("Trip Inbox explains flight-number and booking-number privacy", async ({ page }) => {
-    await page.goto("/inbox");
-    await expect(page.getByText(/flight number vs booking number/i)).toBeVisible();
-    await expect(page.getByText(/cannot securely retrieve a private airline reservation/i)).toBeVisible();
-  });
 });
 
 test.describe("v79 tablet and browser-zoom containment", () => {
@@ -219,7 +213,6 @@ for (const width of [320, 390, 430]) {
         },
         members: [{ id: "user-1", name: "Traveler" }],
         plan: [],
-        reservations: [],
       });
       localStorage.setItem(
         "mnm:offline-packs:v3",

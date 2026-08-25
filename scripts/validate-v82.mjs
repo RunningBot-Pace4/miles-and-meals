@@ -1,0 +1,77 @@
+import fs from "node:fs";
+
+function read(file) { return fs.readFileSync(file, "utf8"); }
+function must(text, needle, message) { if (!text.includes(needle)) throw new Error(message); }
+
+const packageJson = read("package.json");
+const worker = read("public/sw.js");
+const expenseRoute = read("src/app/api/expenses/route.ts");
+const expenseItemRoute = read("src/app/api/expenses/[id]/route.ts");
+const travelRoute = read("src/app/api/travel-items/route.ts");
+const travelItemRoute = read("src/app/api/travel-items/[id]/route.ts");
+const queue = read("src/lib/offline-queue.ts");
+const sync = read("src/components/OfflineQueueSync.tsx");
+const offlineWorkspace = read("src/components/OfflinePackWorkspace.tsx");
+const offlinePack = read("src/lib/offline-pack.ts");
+const offlineApi = read("src/app/api/offline-pack/route.ts");
+const expenseForm = read("src/components/ExpenseForm.tsx");
+const planner = read("src/components/PlannerClient.tsx");
+const validation = read("src/lib/validation.ts");
+const more = read("src/app/(app)/more/page.tsx");
+const manifest = read("public/manifest.webmanifest");
+const offlineShell = read("public/offline.html");
+const queueTests = read("tests/offline-queue.test.ts");
+const e2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
+
+must(packageJson, '"version": "1.82.0"', "v82 package version missing");
+must(packageJson, '"v82:check"', "v82 validator command missing");
+must(worker, "miles-meals-static-v82", "v82 service-worker cache bump missing");
+
+for (const source of [expenseRoute, expenseItemRoute, travelRoute, travelItemRoute]) {
+  must(source, "canAccessCountry", "cross-Trip offline sync must verify durable Trip access");
+  if (source.includes("isCountryInActiveTrip")) {
+    throw new Error("offline-capable mutation is still tied to the currently active Trip");
+  }
+}
+must(expenseRoute, "TRIP_ACCESS_REMOVED", "expense access failures need an actionable error code");
+must(queue, "status >= 400 && status < 500", "4xx offline failures are not classified safely");
+must(queue, "![408, 425, 429].includes(status)", "retryable 4xx exception list missing");
+must(queue, "if (item.blocked) continue", "blocked offline changes can still be retried forever");
+must(queue, "This Trip is closed and read-only", "closed-Trip sync guidance missing");
+must(sync, "Sync retryable changes", "offline sync control does not distinguish permanent failures");
+if (`${sync}\n${offlineWorkspace}`.includes("forceBlocked")) {
+  throw new Error("offline UI can still force blocked changes into a retry loop");
+}
+for (const marker of ["stops retrying a closed Trip response", "generic Forbidden response", "toHaveBeenCalledTimes(1)"]) {
+  must(queueTests, marker, `offline retry regression coverage missing: ${marker}`);
+}
+must(queueTests, "recovers one legacy raw Forbidden item", "attempt-6 legacy recovery test missing");
+must(queue, "Ready to retry with corrected Trip access", "legacy Forbidden queue recovery missing");
+
+const removedFiles = [
+  "src/app/(app)/inbox/page.tsx",
+  "src/components/TripInboxClient.tsx",
+  "src/app/api/trip-inbox/route.ts",
+  "src/app/api/trip-inbox/[id]/add-to-plan/route.ts",
+  "src/app/api/flight-lookup/route.ts",
+  "src/lib/booking-parser.ts",
+  "src/lib/flight-schedule.ts",
+];
+for (const file of removedFiles) {
+  if (fs.existsSync(file)) throw new Error(`retired Trip Inbox source still exists: ${file}`);
+}
+for (const [source, name] of [[more, "More menu"], [manifest, "manifest"], [e2e, "mobile E2E"]]) {
+  if (source.includes("/inbox")) throw new Error(`${name} still links to retired Trip Inbox`);
+}
+if (planner.includes('["BOOKING"') || validation.includes('"BOOKING"')) {
+  throw new Error("Planner still exposes the retired Bookings item type");
+}
+for (const [source, name] of [[offlineWorkspace, "offline workspace"], [offlinePack, "offline pack"], [offlineApi, "offline API"], [offlineShell, "offline shell"]]) {
+  if (source.includes("reservations")) throw new Error(`${name} still exposes retired reservations`);
+}
+if (expenseForm.includes("financially locked trip")) {
+  throw new Error("removed locked-Trip wording is still visible in Add Expense");
+}
+must(expenseForm, "friendlyExpenseSaveError", "Add Expense lacks friendly access-error handling");
+
+console.log("v82 offline resync, access guidance and Trip Inbox removal validation passed.");

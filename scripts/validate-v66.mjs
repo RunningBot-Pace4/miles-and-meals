@@ -65,7 +65,8 @@ must(plannerUpdate, 'code: "STALE_EDIT"', "v66 planner stale-edit rejection miss
 must(offlineQueue, "blocked?: boolean", "v66 blocked offline mutation state missing");
 must(offlineQueue, "shouldBlockForStatus", "v66 offline conflict classification missing");
 must(offlineUi, "needs attention", "v66 offline review UI missing");
-must(offlineUi, "Retry reviewed changes", "v66 offline manual retry action missing");
+must(offlineUi, "Sync retryable changes", "offline manual retry action missing");
+must(offlineQueue, "if (item.blocked) continue", "permanent offline failures can still loop");
 must(offlineUi, "Discard", "v66 offline discard recovery missing");
 
 // Settlement actions should tolerate harmless retries.

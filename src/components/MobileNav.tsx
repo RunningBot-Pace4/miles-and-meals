@@ -83,7 +83,6 @@ export function MobileNav() {
             "/search",
             "/wrapped",
             "/journeys",
-            "/inbox",
             "/offline",
           ].some(
             (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),

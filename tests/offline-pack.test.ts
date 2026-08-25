@@ -39,7 +39,6 @@ function pack(id: string, savedAt: string): OfflineTripPack {
     },
     members: [],
     plan: [],
-    reservations: [],
   };
 }
 

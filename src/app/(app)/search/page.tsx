@@ -1,4 +1,4 @@
-import { and, desc, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, ilike, inArray, ne, or } from "drizzle-orm";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { db } from "@/db";
 import { expenses, travelItems } from "@/db/schema";
@@ -68,6 +68,7 @@ export default async function SearchPage({
             .where(
               and(
                 inArray(travelItems.countryId, countryIds),
+                ne(travelItems.itemType, "BOOKING"),
                 or(
                   ilike(travelItems.title, pattern),
                   ilike(travelItems.area, pattern),
@@ -110,7 +111,7 @@ export default async function SearchPage({
           type="search"
           name="q"
           defaultValue={q}
-          placeholder="Merchant, place, booking, category…"
+          placeholder="Merchant, place, category…"
           maxLength={80}
           enterKeyHint="search"
           aria-label="Search across your trips"
@@ -203,7 +204,7 @@ export default async function SearchPage({
         <section className="planner-empty search-empty">
           <div>⌕</div>
           <h2>No match yet</h2>
-          <p>Try a shop name, destination, category, booking provider or traveler action.</p>
+          <p>Try a shop name, destination, category or traveler action.</p>
         </section>
       ) : null}
     </div>

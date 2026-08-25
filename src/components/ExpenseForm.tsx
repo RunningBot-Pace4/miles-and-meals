@@ -215,6 +215,18 @@ function localDateString() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+function friendlyExpenseSaveError(status: number, serverError?: string): string {
+  if (serverError && serverError !== "Forbidden") return serverError;
+  if (status === 401) return "Your sign-in expired. Sign in again, then save the expense.";
+  if (status === 403) {
+    return "You no longer have access to this Trip. Ask the Trip Owner to add you again, then retry.";
+  }
+  if (status === 423) {
+    return "This Trip is closed and read-only. Reopen it before adding expenses.";
+  }
+  return "Unable to save expense. Check your connection and Trip access, then try again.";
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -228,14 +240,12 @@ export function ExpenseForm({
   countries,
   activeTripId,
   currentUserId,
-  lockedTripCount = 0,
   initial,
   prefill,
 }: {
   countries: CountryOption[];
   activeTripId: string;
   currentUserId: string;
-  lockedTripCount?: number;
   initial?: ExpenseInitial;
   prefill?: ExpensePrefill;
 }) {
@@ -1542,7 +1552,7 @@ export function ExpenseForm({
         }
 
         trackProductEvent("expense_save_failed", "/expenses/new");
-        failSubmit(payload.error ?? "Unable to save expense.");
+        failSubmit(friendlyExpenseSaveError(response.status, payload.error));
         return;
       }
 
@@ -1724,11 +1734,6 @@ export function ExpenseForm({
                 </option>
               ))}
             </select>
-            {lockedTripCount > 0 ? (
-              <small className="muted">
-                {lockedTripCount} financially locked trip{lockedTripCount === 1 ? " is" : "s are"} hidden. Reopen expenses from Settlement to add spending.
-              </small>
-            ) : null}
           </label>
 
           <label>

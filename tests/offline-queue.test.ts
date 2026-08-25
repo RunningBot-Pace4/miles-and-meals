@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  OFFLINE_MUTATION_STORAGE_KEY,
   enqueueOfflineMutation,
   flushOfflineQueue,
   readOfflineQueue,
@@ -54,7 +55,7 @@ describe("offline mutation resync", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const result = await flushOfflineQueue({ forceBlocked: true });
+    const result = await flushOfflineQueue();
 
     expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
     expect(readOfflineQueue()).toEqual([]);
@@ -81,7 +82,7 @@ describe("offline mutation resync", () => {
       ),
     );
 
-    const result = await flushOfflineQueue({ forceBlocked: true });
+    const result = await flushOfflineQueue();
     const [remaining] = readOfflineQueue();
 
     expect(result).toEqual({ synced: 0, remaining: 1, blocked: 1 });
@@ -93,7 +94,7 @@ describe("offline mutation resync", () => {
     queueOne();
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
 
-    const result = await flushOfflineQueue({ forceBlocked: true });
+    const result = await flushOfflineQueue();
     const [remaining] = readOfflineQueue();
 
     expect(result).toEqual({ synced: 0, remaining: 1, blocked: 0 });
@@ -115,5 +116,63 @@ describe("offline mutation resync", () => {
     const result = await flushOfflineQueue({ forceRetry: true });
     expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops retrying a closed Trip response", async () => {
+    queueOne();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: "This Trip is closed and read-only." }), {
+        status: 423,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const first = await flushOfflineQueue({ forceRetry: true });
+    const second = await flushOfflineQueue({ forceRetry: true });
+
+    expect(first).toEqual({ synced: 0, remaining: 1, blocked: 1 });
+    expect(second).toEqual({ synced: 0, remaining: 1, blocked: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(readOfflineQueue()[0]?.attempts).toBe(1);
+  });
+
+  it("turns a generic Forbidden response into a useful Trip access message", async () => {
+    queueOne();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await flushOfflineQueue();
+
+    expect(readOfflineQueue()[0]?.lastError).toMatch(/no longer have access to the Trip/i);
+  });
+
+  it("recovers one legacy raw Forbidden item after the Trip-access fix", async () => {
+    const item = queueOne();
+    window.localStorage.setItem(
+      OFFLINE_MUTATION_STORAGE_KEY,
+      JSON.stringify([{
+        ...item,
+        attempts: 6,
+        blocked: true,
+        lastError: "Forbidden",
+      }]),
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await flushOfflineQueue({ forceRetry: true });
+
+    expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

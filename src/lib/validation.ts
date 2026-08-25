@@ -183,7 +183,7 @@ export const expenseUpdateSchema = expenseSchema.extend({
 
 export const travelItemSchema = z.object({
   countryId: uuidSchema,
-  itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING", "BOOKING"]),
+  itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING"]),
   title: z.string().trim().min(1).max(250),
   itemDate: z.string().optional().default(""),
   itemTime: z.string().trim().max(30).optional().default(""),

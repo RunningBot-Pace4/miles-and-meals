@@ -38,11 +38,6 @@ export default async function NewExpensePage({
   const openCountries = activeTrip.allCountries.filter(
     (country) => country.financialStatus !== "CLOSED",
   );
-  const lockedTripCount = new Set(
-    activeTrip.allCountries
-      .filter((country) => country.financialStatus === "CLOSED")
-      .map((country) => country.tripId),
-  ).size;
   const accessibleCountryIds = new Set(
     openCountries.map((country) => country.id),
   );
@@ -84,7 +79,6 @@ export default async function NewExpensePage({
           ? activeTrip.tripId
           : openCountries[0]?.tripId ?? ""
       }
-      lockedTripCount={lockedTripCount}
       currentUserId={
         session.user.id
       }

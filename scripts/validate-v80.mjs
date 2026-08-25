@@ -26,10 +26,10 @@ const sync = read("src/components/OfflineQueueSync.tsx");
 const css = read("src/app/globals.css");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.81.0"', "v80-or-newer package version missing");
+must(packageJson, '"version": "1.82.0"', "v80-or-newer package version missing");
 must(packageJson, '"v80:check"', "v80 validator command missing");
 must(newExpense, 'financialStatus !== "CLOSED"', "closed Trips are not removed from Add Expense");
-must(newExpense, "lockedTripCount", "locked Trip feedback missing from Add Expense");
+if (expenseForm.includes("financially locked trip")) throw new Error("retired locked Trip wording is still visible");
 must(expenseForm, "tripName} · ${country.name", "expense selector must identify Trip and country");
 
 for (const marker of ["TRIP_INVITE_VALIDITY_HOURS = 12", "43_200_000"]) {
@@ -55,12 +55,12 @@ must(offlineApi, 'parameters.get("tripId")', "offline API is not Trip-selectable
 must(offlineShell, 'mnm:offline-packs:v3', "standalone offline shell lacks multi-Trip packs");
 must(offlineShell, 'id="currency"', "standalone offline currency selector missing");
 must(offlineQueue, "forceRetry?: boolean", "reconnect retry bypass missing");
-must(sync, "sync(false, true)", "online event does not force immediate retry");
+must(sync, "sync(true)", "online event does not force immediate retry");
 
 for (const marker of ["v80 — calendar containment", "position: relative !important", ".journey-route-card", ".offline-trip-picker"]) {
   must(css, marker, `v80 responsive CSS missing: ${marker}`);
 }
-must(worker, 'miles-meals-static-v81', "v80-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v82', "v80-or-newer service-worker cache bump missing");
 must(worker, ".then(() => self.skipWaiting())", "v80 worker does not activate immediately");
 
 console.log("v80 locked Trip, invite, Journey, offline and calendar validation passed.");

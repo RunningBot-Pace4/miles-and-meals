@@ -2,9 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
 import {
-  isCountryInActiveTrip,
-} from "@/lib/active-trip";
-import {
+  canAccessCountry,
   getCountryWithTrip,
   listCountryMembers,
 } from "@/lib/access";
@@ -75,8 +73,11 @@ export async function PUT(request: Request, context: Context) {
     return Response.json({ error: "Expense not found." }, { status: 404 });
   }
 
-  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await canAccessCountry(session.user, existing.countryId))) {
+    return Response.json(
+      { error: "You no longer have access to this Trip.", code: "TRIP_ACCESS_REMOVED" },
+      { status: 403 },
+    );
   }
 
   const locked = await expenseLedgerLockedResponse(existing.tripId);
@@ -88,8 +89,11 @@ export async function PUT(request: Request, context: Context) {
   try {
     const input = expenseUpdateSchema.parse(await request.json());
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+    if (!(await canAccessCountry(session.user, input.countryId))) {
+      return Response.json(
+        { error: "You no longer have access to the selected Trip.", code: "TRIP_ACCESS_REMOVED" },
+        { status: 403 },
+      );
     }
 
     if (input.expectedUpdatedAt) {
@@ -241,8 +245,11 @@ export async function DELETE(request: Request, context: Context) {
     return Response.json({ error: "Expense not found." }, { status: 404 });
   }
 
-  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await canAccessCountry(session.user, existing.countryId))) {
+    return Response.json(
+      { error: "You no longer have access to this Trip.", code: "TRIP_ACCESS_REMOVED" },
+      { status: 403 },
+    );
   }
 
   const locked = await expenseLedgerLockedResponse(existing.tripId);

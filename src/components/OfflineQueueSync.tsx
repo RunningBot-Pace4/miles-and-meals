@@ -39,7 +39,7 @@ export function OfflineQueueSync() {
       if (!disposed) setItems(readOfflineQueue());
     }
 
-    async function sync(forceBlocked = false, forceRetry = false) {
+    async function sync(forceRetry = false) {
       if (!navigator.onLine) {
         refreshItems();
         return;
@@ -47,7 +47,7 @@ export function OfflineQueueSync() {
 
       setSyncing(true);
       try {
-        const result = await flushOfflineQueue({ forceBlocked, forceRetry });
+        const result = await flushOfflineQueue({ forceRetry });
         if (disposed) return;
 
         refreshItems();
@@ -73,7 +73,7 @@ export function OfflineQueueSync() {
     refreshItems();
     // A page load immediately after connectivity returns must not inherit a
     // future backoff timestamp from the failed offline request.
-    void sync(false, navigator.onLine);
+    void sync(navigator.onLine);
 
     function onVisible() {
       if (document.visibilityState === "visible") void sync();
@@ -84,7 +84,7 @@ export function OfflineQueueSync() {
     }
 
     function onOnline() {
-      void sync(false, true);
+      void sync(true);
     }
 
     function onStorage(event: StorageEvent) {
@@ -169,7 +169,7 @@ export function OfflineQueueSync() {
 
     setSyncing(true);
     try {
-      await flushOfflineQueue({ forceBlocked: true, forceRetry: true });
+      await flushOfflineQueue({ forceRetry: true });
       setItems(readOfflineQueue());
       window.dispatchEvent(new CustomEvent("mnm:data-synced"));
     } finally {
@@ -244,7 +244,7 @@ export function OfflineQueueSync() {
                 <div>
                   <strong>{item.label}</strong>
                   <small>{item.lastError ?? retryText(item)}</small>
-                  {item.lastAttemptAt ? (
+                  {item.lastAttemptAt && !item.blocked ? (
                     <small className="offline-queue-attempt-meta">
                       Attempt {item.attempts ?? 0} · last tried {new Intl.DateTimeFormat("en-MY", {
                         hour: "2-digit",
@@ -255,13 +255,15 @@ export function OfflineQueueSync() {
                 </div>
 
                 <div className="offline-queue-item-actions">
-                  <button
-                    type="button"
-                    disabled={retryingId === item.id || syncing}
-                    onClick={() => void retryOne(item.id)}
-                  >
-                    {retryingId === item.id ? "Retrying…" : "Retry"}
-                  </button>
+                  {!item.blocked ? (
+                    <button
+                      type="button"
+                      disabled={retryingId === item.id || syncing}
+                      onClick={() => void retryOne(item.id)}
+                    >
+                      {retryingId === item.id ? "Retrying…" : "Retry"}
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => discard(item.id)}>
                     Discard
                   </button>
@@ -278,9 +280,7 @@ export function OfflineQueueSync() {
           >
             {syncing
               ? "Syncing…"
-              : blocked > 0
-                ? "Retry reviewed changes"
-                : "Sync now"}
+              : "Sync retryable changes"}
           </button>
         </section>
       ) : null}

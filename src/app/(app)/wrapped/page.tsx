@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { WrappedTripSelect } from "@/components/WrappedTripSelect";
 import { db } from "@/db";
@@ -87,7 +87,7 @@ export default async function WrappedPage({
             status: travelItems.status,
           })
           .from(travelItems)
-          .where(inArray(travelItems.countryId, countryIds))
+          .where(and(inArray(travelItems.countryId, countryIds), ne(travelItems.itemType, "BOOKING")))
       : Promise.resolve([]),
     db
       .select({
@@ -107,7 +107,7 @@ export default async function WrappedPage({
     }))
     .sort((a, b) => b.effective - a.effective)[0] ?? null;
   const donePlans = plannerRows.filter((item) =>
-    /done|confirmed|booked/i.test(item.status ?? ""),
+    /done|confirmed|complete/i.test(item.status ?? ""),
   ).length;
   const completedSettlements = settlementRows.filter((item) => item.status === "SETTLED").length;
   const days = tripDays(selectedTrip.startDate, selectedTrip.endDate);

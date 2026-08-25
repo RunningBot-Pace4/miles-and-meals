@@ -20,17 +20,6 @@ export type OfflineTravelItem = {
   notes: string;
 };
 
-export type OfflineReservation = {
-  id: string;
-  kind: string;
-  title: string;
-  provider: string;
-  confirmationNo: string;
-  date: string | null;
-  time: string;
-  status: string;
-};
-
 export type OfflineTripPack = {
   version: 2;
   savedAt: string;
@@ -49,7 +38,6 @@ export type OfflineTripPack = {
   };
   members: OfflineTripMember[];
   plan: OfflineTravelItem[];
-  reservations: OfflineReservation[];
 };
 
 export type OfflineTripOption = {

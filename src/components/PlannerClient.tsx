@@ -60,7 +60,6 @@ const tabs = [
   ["PLACE", "Places", "📍"],
   ["FOOD", "Meals", "🍜"],
   ["SHOPPING", "Shop", "🛍️"],
-  ["BOOKING", "Bookings", "🎫"],
 ] as const;
 
 type TabValue = (typeof tabs)[number][0];
@@ -107,14 +106,6 @@ const tabMeta: Record<
     titleLabel: "Item",
     titlePlaceholder: "Coffee beans, souvenir…",
     typePlaceholder: "Gift / Snack / Fashion",
-  },
-  BOOKING: {
-    title: "Bookings without the inbox hunt",
-    subtitle: "Keep flights, hotels and confirmation details close at hand.",
-    addLabel: "Add booking",
-    titleLabel: "Booking name",
-    titlePlaceholder: "Hotel, flight, attraction…",
-    typePlaceholder: "Hotel / Flight / Ticket",
   },
 };
 
@@ -479,29 +470,8 @@ function PlannerItemForm({
           </label>
         ) : null}
 
-        {itemType === "BOOKING" ? (
-          <>
-            <label>
-              Provider
-              <input
-                name="provider"
-                placeholder="AirAsia / Agoda…"
-                defaultValue={initial?.provider ?? ""}
-              />
-            </label>
-
-            <label>
-              Confirmation no.
-              <input
-                name="confirmationNo"
-                defaultValue={initial?.confirmationNo ?? ""}
-              />
-            </label>
-          </>
-        ) : null}
-
         <label className="span-2">
-          Map / booking link
+          Map / external link
           <input
             name="linkUrl"
             type="url"
@@ -634,7 +604,7 @@ function PlannerDetailsModal({
           </div>
 
           <div className="planner-detail-block">
-            <small>Map / booking link</small>
+            <small>Map / external link</small>
             {item.linkUrl ? (
               <a
                 className="button secondary planner-detail-link"
@@ -1370,7 +1340,7 @@ export function PlannerClient({
                 ) : null}
 
                 {item.provider || item.confirmationNo ? (
-                  <div className="booking-strip">
+                  <div className="provider-strip">
                     {item.provider ? (
                       <span>{item.provider}</span>
                     ) : null}
@@ -1392,9 +1362,7 @@ export function PlannerClient({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {tab === "BOOKING"
-                        ? "Open booking ↗"
-                        : "Open map ↗"}
+                      Open link ↗
                     </a>
                   </div>
                 ) : null}

@@ -3,9 +3,9 @@ import { db } from "@/db";
 import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
 import {
   getActiveTripContext,
-  isCountryInActiveTrip,
 } from "@/lib/active-trip";
 import {
+  canAccessCountry,
   getCountryWithTrip,
   listCountryMembers,
 } from "@/lib/access";
@@ -96,8 +96,15 @@ export async function POST(request: Request) {
   try {
     const input = expenseSchema.parse(await request.json());
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+    if (!(await canAccessCountry(session.user, input.countryId))) {
+      return Response.json(
+        {
+          error:
+            "You no longer have access to this Trip. Ask the Trip Owner to add you again, or discard this offline change.",
+          code: "TRIP_ACCESS_REMOVED",
+        },
+        { status: 403 },
+      );
     }
 
     const country = await getCountryWithTrip(input.countryId);

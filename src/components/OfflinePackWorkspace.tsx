@@ -144,13 +144,13 @@ export function OfflinePackWorkspace({
     setSyncing(true);
     setMessage("");
     try {
-      const result = await flushOfflineQueue({ forceBlocked: true, forceRetry: true });
+      const result = await flushOfflineQueue({ forceRetry: true });
       setQueueCount(result.remaining);
       if (result.synced > 0) {
         setMessage(`${result.synced} offline change${result.synced === 1 ? "" : "s"} synced to its original Trip.`);
         window.dispatchEvent(new CustomEvent("mnm:data-synced"));
       } else if (result.blocked > 0) {
-        setMessage(`${result.blocked} offline change${result.blocked === 1 ? "" : "s"} needs review. Open the sync badge to retry or discard it.`);
+        setMessage(`${result.blocked} offline change${result.blocked === 1 ? "" : "s"} cannot sync automatically. Open the sync badge to review and discard it if it is no longer valid.`);
       } else if (result.remaining > 0) {
         setMessage("The connection failed again. Your changes remain stored on this device.");
       } else {
@@ -273,7 +273,7 @@ export function OfflinePackWorkspace({
           <section className="panel">
             <div className="panel-title"><div><p className="eyebrow">QUICK EXPENSE</p><h2>Works without internet</h2></div></div>
             {pack.trip.financialStatus === "CLOSED" ? (
-              <p className="form-warning">This Trip is closed and read-only. Its saved Plan and bookings remain available offline, but no new spending can be queued.</p>
+              <p className="form-warning">This Trip is closed and read-only. Its saved Plan remains available offline, but no new spending can be queued.</p>
             ) : (
               <form className="stack gap-md offline-quick-expense" onSubmit={queueQuickExpense}>
                 <label>Description<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Dinner, taxi, tickets…" maxLength={250} /></label>
@@ -300,14 +300,6 @@ export function OfflinePackWorkspace({
             </div>
           </section>
 
-          <section className="panel">
-            <div className="panel-title"><div><p className="eyebrow">RESERVATIONS</p><h2>Booking essentials</h2></div><span>{pack.reservations.length}</span></div>
-            <div className="offline-plan-list">
-              {pack.reservations.length ? pack.reservations.map((item) => (
-                <article key={item.id} className="offline-plan-row"><span><strong>{item.title}</strong><small>{item.date ?? "Date not detected"}{item.time ? ` · ${item.time}` : ""}</small><small>{item.provider}{item.confirmationNo ? ` · Ref ${item.confirmationNo}` : ""}</small></span><small>{item.kind}</small></article>
-              )) : <p className="muted">No saved reservations.</p>}
-            </div>
-          </section>
         </>
       ) : (
         <section className="panel"><h2>This Trip is still preparing</h2><p className="muted">Stay online briefly and Miles & Meals will refresh every accessible Trip automatically. You can also refresh the selected Trip now.</p></section>

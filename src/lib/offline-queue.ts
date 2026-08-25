@@ -42,7 +42,23 @@ export function readOfflineQueue(): OfflineMutation[] {
     const parsed = JSON.parse(
       storage.getItem(OFFLINE_MUTATION_STORAGE_KEY) ?? "[]",
     ) as unknown;
-    return Array.isArray(parsed) ? (parsed as OfflineMutation[]) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return (parsed as OfflineMutation[]).map((item) => {
+      // v81 could block a valid cross-Trip mutation with the raw message
+      // "Forbidden" when another Trip was active. Give only that exact legacy
+      // failure one clean retry under v82's durable membership check.
+      if (item.blocked && item.lastError?.trim().toLowerCase() === "forbidden") {
+        return {
+          ...item,
+          blocked: false,
+          nextAttemptAt: undefined,
+          lastError: "Ready to retry with corrected Trip access.",
+        };
+      }
+
+      return item;
+    });
   } catch {
     return [];
   }
@@ -160,7 +176,9 @@ export function clearOfflineQueue(): void {
 }
 
 function shouldBlockForStatus(status: number): boolean {
-  return [400, 401, 403, 404, 409, 422].includes(status);
+  // Most client errors require a user decision, not an endless retry loop.
+  // Only timeout/rate-limit style responses are safe to retry automatically.
+  return status >= 400 && status < 500 && ![408, 425, 429].includes(status);
 }
 
 async function responseError(response: Response): Promise<string> {
@@ -168,7 +186,17 @@ async function responseError(response: Response): Promise<string> {
     | { error?: string }
     | null;
 
-  return payload?.error ?? `Server returned ${response.status}.`;
+  if (payload?.error && payload.error !== "Forbidden") return payload.error;
+  if (response.status === 401) {
+    return "Your sign-in expired. Sign in again, then sync this change.";
+  }
+  if (response.status === 403) {
+    return "You no longer have access to the Trip saved with this change. Discard it, or ask the Trip Owner to restore your access.";
+  }
+  if (response.status === 423) {
+    return "This Trip is closed and read-only. Reopen it before adding changes, or discard this saved change.";
+  }
+  return `The server could not accept this change (${response.status}).`;
 }
 
 function retryDelayMs(attempts: number): number {
@@ -186,7 +214,9 @@ function markFailure(
   input: { message: string; blocked: boolean },
 ) {
   updateOfflineMutation(id, (current) => {
-    const attempts = (current.attempts ?? 0) + 1;
+    const attempts = input.blocked && current.blocked
+      ? current.attempts ?? 1
+      : (current.attempts ?? 0) + 1;
     const now = new Date();
     const nextAttemptAt = input.blocked
       ? undefined
@@ -212,7 +242,6 @@ function clearRetryState(item: OfflineMutation): OfflineMutation {
 }
 
 async function performFlush(options: {
-  forceBlocked?: boolean;
   forceRetry?: boolean;
   onlyId?: string;
 }): Promise<OfflineFlushResult> {
@@ -237,14 +266,12 @@ async function performFlush(options: {
     const item = readOfflineQueue().find((candidate) => candidate.id === id);
     if (!item) continue;
 
-    const forceBlocked = Boolean(options.forceBlocked || options.onlyId);
-    const forceDue = Boolean(options.forceRetry || forceBlocked);
-    if (item.blocked && !forceBlocked) continue;
+    const forceDue = Boolean(options.forceRetry);
+    if (item.blocked) continue;
     if (!retryDue(item, forceDue)) continue;
 
     if (
-      (forceBlocked && item.blocked) ||
-      (forceDue && !item.blocked && item.nextAttemptAt)
+      forceDue && item.nextAttemptAt
     ) {
       updateOfflineMutation(id, clearRetryState);
     }
@@ -291,9 +318,9 @@ async function performFlush(options: {
 }
 
 export async function flushOfflineQueue(
-  options: { forceBlocked?: boolean; forceRetry?: boolean; onlyId?: string } = {},
+  options: { forceRetry?: boolean; onlyId?: string } = {},
 ): Promise<OfflineFlushResult> {
-  const manual = Boolean(options.forceBlocked || options.forceRetry || options.onlyId);
+  const manual = Boolean(options.forceRetry || options.onlyId);
 
   if (!manual && automaticFlush) {
     return automaticFlush;
@@ -318,5 +345,14 @@ export async function flushOfflineQueue(
 }
 
 export async function retryOfflineMutation(id: string): Promise<OfflineFlushResult> {
-  return flushOfflineQueue({ forceBlocked: true, onlyId: id });
+  const item = readOfflineQueue().find((candidate) => candidate.id === id);
+  if (item?.blocked) {
+    const remaining = readOfflineQueue();
+    return {
+      synced: 0,
+      remaining: remaining.length,
+      blocked: remaining.filter((candidate) => candidate.blocked).length,
+    };
+  }
+  return flushOfflineQueue({ forceRetry: true, onlyId: id });
 }

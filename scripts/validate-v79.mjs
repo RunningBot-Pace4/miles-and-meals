@@ -13,15 +13,14 @@ const css = read("src/app/globals.css");
 const dateRange = read("src/components/DateRangePicker.tsx");
 const offlineWorkspace = read("src/components/OfflinePackWorkspace.tsx");
 const displayText = read("src/lib/display-text.ts");
-const bookingParser = read("src/lib/booking-parser.ts");
 const vitestConfig = read("vitest.config.ts");
 const mobileE2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
 const offlineTests = read("tests/offline-queue.test.ts");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.81.0"', "v79-or-newer package version missing");
+must(packageJson, '"version": "1.82.0"', "v79-or-newer package version missing");
 must(packageJson, '"v79:check"', "v79 validator command missing");
-must(worker, 'miles-meals-static-v81', "v79-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v82', "v79-or-newer service-worker cache bump missing");
 
 for (const marker of [
   "v79 — complete responsive control",
@@ -45,7 +44,7 @@ for (const marker of [
 
 must(
   offlineWorkspace,
-  "forceBlocked: true",
+  "forceRetry: true",
   "v79 explicit Offline Pack sync must force an immediate retry",
 );
 must(offlineWorkspace, "This offline expense could not be saved", "v79 offline storage failure feedback missing");
@@ -59,15 +58,10 @@ for (const file of [
   "src/components/PlannerClient.tsx",
   "src/components/ExpenseForm.tsx",
   "src/components/LocationTracker.tsx",
-  "src/components/TripInboxClient.tsx",
   "src/components/AdminForms.tsx",
   "src/components/ProfileSettingsForm.tsx",
 ]) {
   must(read(file), "compactOptionText", `v79 long dropdown protection missing in ${file}`);
-}
-
-for (const marker of ["flightNumber: string", "route: string"]) {
-  must(bookingParser, marker, `v79 BookingImport type regression: ${marker}`);
 }
 
 must(vitestConfig, 'exclude: ["e2e/**"', "v79 Vitest/Playwright separation missing");

@@ -3,6 +3,7 @@ import {
   asc,
   eq,
   inArray,
+  ne,
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -182,9 +183,9 @@ export async function GET(request: Request) {
       .select()
       .from(travelItems)
       .where(
-        inArray(
-          travelItems.countryId,
-          countryIds,
+        and(
+          inArray(travelItems.countryId, countryIds),
+          ne(travelItems.itemType, "BOOKING"),
         ),
       )
       .orderBy(

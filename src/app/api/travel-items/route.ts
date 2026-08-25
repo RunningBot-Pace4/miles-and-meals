@@ -1,11 +1,11 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems, user } from "@/db/schema";
 import {
   getActiveTripContext,
-  isCountryInActiveTrip,
 } from "@/lib/active-trip";
 import {
+  canAccessCountry,
   getCountryWithTrip,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
@@ -88,7 +88,7 @@ export async function GET() {
     })
     .from(travelItems)
     .leftJoin(user, eq(travelItems.createdBy, user.id))
-    .where(inArray(travelItems.countryId, ids))
+    .where(and(inArray(travelItems.countryId, ids), ne(travelItems.itemType, "BOOKING")))
     .orderBy(desc(travelItems.itemDate), desc(travelItems.createdAt));
 
   await recordApiMetric({
@@ -117,8 +117,11 @@ export async function POST(request: Request) {
     const input = travelItemSchema.parse(await request.json());
     const mutationId = offlineMutationId(request);
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+    if (!(await canAccessCountry(session.user, input.countryId))) {
+      return Response.json(
+        { error: "You no longer have access to this Trip.", code: "TRIP_ACCESS_REMOVED" },
+        { status: 403 },
+      );
     }
 
     const country = await getCountryWithTrip(input.countryId);

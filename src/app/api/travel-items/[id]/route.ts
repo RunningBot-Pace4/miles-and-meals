@@ -2,9 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { travelItems } from "@/db/schema";
 import {
-  isCountryInActiveTrip,
-} from "@/lib/active-trip";
-import {
+  canAccessCountry,
   getCountryWithTrip,
 } from "@/lib/access";
 import { recordActivity } from "@/lib/activity";
@@ -104,8 +102,11 @@ export async function PATCH(request: Request, context: Context) {
       return Response.json({ error: "Not found." }, { status: 404 });
     }
 
-    if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+    if (!(await canAccessCountry(session.user, existing.countryId))) {
+      return Response.json(
+        { error: "You no longer have access to this Trip.", code: "TRIP_ACCESS_REMOVED" },
+        { status: 403 },
+      );
     }
 
     const existingLocked = await closedCountryReadOnlyResponse(existing.countryId);
@@ -114,7 +115,7 @@ export async function PATCH(request: Request, context: Context) {
     const input = travelItemUpdateSchema.parse(await request.json());
     const mutationId = offlineMutationId(request);
 
-    if (!(await isCountryInActiveTrip(session.user, input.countryId))) {
+    if (!(await canAccessCountry(session.user, input.countryId))) {
       return Response.json(
         { error: "You do not have access to the selected country." },
         { status: 403 },
@@ -239,8 +240,11 @@ export async function DELETE(request: Request, context: Context) {
     return Response.json({ error: "Not found." }, { status: 404 });
   }
 
-  if (!(await isCountryInActiveTrip(session.user, existing.countryId))) {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+  if (!(await canAccessCountry(session.user, existing.countryId))) {
+    return Response.json(
+      { error: "You no longer have access to this Trip.", code: "TRIP_ACCESS_REMOVED" },
+      { status: 403 },
+    );
   }
 
   const locked = await closedCountryReadOnlyResponse(existing.countryId);

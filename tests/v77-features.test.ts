@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { extractPdfTextBestEffort, parseBookingText } from "@/lib/booking-parser";
 import { safeInternalPath } from "@/lib/navigation-safety";
 import { buildReceiptItemization } from "@/lib/receipt-itemization";
 
@@ -21,32 +20,6 @@ describe("v77 navigation safety", () => {
     ]) {
       expect(safeInternalPath(value)).toBe("/dashboard");
     }
-  });
-});
-
-describe("v77 Trip Inbox parsing", () => {
-  it("extracts readable text from a simple uncompressed PDF text object", () => {
-    const source = `%PDF-1.4\n1 0 obj\n<<>>\nstream\nBT\n(AirAsia Flight AK123) Tj\n(Booking Ref ABC123) Tj\n(2026-12-13 07:30) Tj\nET\nendstream\nendobj\n%%EOF`;
-    const text = extractPdfTextBestEffort(new TextEncoder().encode(source));
-    expect(text).toContain("AirAsia Flight AK123");
-    expect(text).toContain("Booking Ref ABC123");
-  });
-
-  it("returns empty text for non-PDF or unreadable PDF data", () => {
-    expect(extractPdfTextBestEffort(new TextEncoder().encode("not a pdf"))).toBe("");
-    expect(
-      extractPdfTextBestEffort(
-        new TextEncoder().encode("%PDF-1.7\nstream\nx\\x9c binary compressed data\nendstream"),
-      ),
-    ).toBe("");
-  });
-
-  it("extracts common booking fields without exposing more than the parser input", () => {
-    const parsed = parseBookingText(`AirAsia Flight\nBooking Ref: ABC123\n2026-12-13\n07:30`);
-    expect(parsed.kind).toBe("FLIGHT");
-    expect(parsed.confirmationNo).toBe("ABC123");
-    expect(parsed.bookingDate).toBe("2026-12-13");
-    expect(parsed.bookingTime).toBe("07:30");
   });
 });
 

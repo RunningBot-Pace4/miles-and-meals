@@ -17,8 +17,6 @@ const adminOverview = read("src/components/AdminOverview.tsx");
 const journeyManager = read("src/components/JourneyManager.tsx");
 const journeyPage = read("src/app/(app)/journeys/page.tsx");
 const morePage = read("src/app/(app)/more/page.tsx");
-const bookingParser = read("src/lib/booking-parser.ts");
-const tripInbox = read("src/components/TripInboxClient.tsx");
 const offlineQueue = read("src/lib/offline-queue.ts");
 const offlineSync = read("src/components/OfflineQueueSync.tsx");
 const offlineWorkspace = read("src/components/OfflinePackWorkspace.tsx");
@@ -54,14 +52,6 @@ must(validation, "Trip end date cannot be before the start date.", "v78 server t
 
 must(journeyPage, "You do not need a Journey for a normal one-country holiday", "v78 Journey explanation missing");
 must(morePage, "Multi-country Journey · optional", "v78 More menu should explain Journey is optional");
-
-for (const marker of ["detectFlightNumber", "AIRLINE_BY_CODE", "flightNumber", "route"]) {
-  must(bookingParser, marker, `v78 Trip Inbox flight recognition missing: ${marker}`);
-}
-must(tripInbox, "Flight number vs booking number", "v78 Trip Inbox flight/booking explanation missing");
-must(tripInbox, "cannot securely retrieve a private airline reservation", "v78 Trip Inbox privacy limitation missing");
-must(tests, 'parseBookingText("AK6128")', "v78 typed-flight-number regression test missing");
-must(tests, 'parseBookingText("ABC123")', "v78 booking-reference ambiguity regression test missing");
 
 for (const marker of [
   "automaticFlush",

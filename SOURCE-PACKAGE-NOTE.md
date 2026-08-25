@@ -1,3 +1,22 @@
+# Miles & Meals v82 — Audited Full Source Package
+
+This package contains the complete application through v81 plus the v82 offline-resync correction and Trip Inbox removal.
+
+Key v82 behavior:
+
+- queued Expense and Plan changes remain bound to their original Trip after reconnection;
+- permanent 4xx failures, including closed Trips, stop retrying and require review/discard;
+- valid Trip members no longer receive a raw `Forbidden` error because another Trip is active;
+- Trip Inbox, booking/reservation UI, APIs, parser, flight lookup, Planner tab and offline reservation card are removed;
+- the financially locked Trip sentence is removed from Add Expense;
+- the service-worker cache is bumped to v82.
+
+**Database:** v82 adds no schema and deliberately preserves legacy Inbox rows for backup compatibility.
+
+See `V82-OFFLINE-SYNC-INBOX-REMOVAL.md`.
+
+---
+
 # Miles & Meals v81 — Audited Full Source Package
 
 This package contains the complete application through v80 plus the v81 flight-accuracy, whole-Trip read-only, automatic all-Trip offline and mobile containment fixes.
