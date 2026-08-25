@@ -1,3 +1,11 @@
+# v82.1 — Vercel Overlay Build Hotfix
+
+v82.1 removes retired Trip Inbox / flight files during `prebuild`. This supports deployments where the full-source ZIP is extracted over an older checkout, which replaces changed files but otherwise leaves deleted routes behind.
+
+The cleanup runs before v82 validation and Next.js route discovery, so stale `/inbox`, `/api/trip-inbox` and `/api/flight-lookup` sources cannot reappear or break the Vercel build.
+
+---
+
 # v82 — Offline Sync Recovery & Inbox Removal
 
 v82 fixes the reconnection retry loop and removes the unused Trip Inbox / booking-reservation workflow.

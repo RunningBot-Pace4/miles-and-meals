@@ -22,10 +22,11 @@ const manifest = read("public/manifest.webmanifest");
 const offlineShell = read("public/offline.html");
 const queueTests = read("tests/offline-queue.test.ts");
 const e2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
+const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
-must(packageJson, '"version": "1.82.0"', "v82 package version missing");
+must(packageJson, '"version": "1.82.1"', "v82.1 package version missing");
 must(packageJson, '"v82:check"', "v82 validator command missing");
-must(worker, "miles-meals-static-v82", "v82 service-worker cache bump missing");
+must(worker, "miles-meals-static-v82-1", "v82.1 service-worker cache bump missing");
 
 for (const source of [expenseRoute, expenseItemRoute, travelRoute, travelItemRoute]) {
   must(source, "canAccessCountry", "cross-Trip offline sync must verify durable Trip access");
@@ -59,6 +60,17 @@ const removedFiles = [
 ];
 for (const file of removedFiles) {
   if (fs.existsSync(file)) throw new Error(`retired Trip Inbox source still exists: ${file}`);
+}
+for (const target of [
+  "src/app/(app)/inbox",
+  "src/app/api/trip-inbox",
+  "src/app/api/flight-lookup",
+  "src/components/TripInboxClient.tsx",
+  "src/lib/booking-parser.ts",
+  "src/lib/flight-schedule.ts",
+  "tests/flight-schedule.test.ts",
+]) {
+  must(cleanup, `"${target}"`, `overlay cleanup does not remove retired source: ${target}`);
 }
 for (const [source, name] of [[more, "More menu"], [manifest, "manifest"], [e2e, "mobile E2E"]]) {
   if (source.includes("/inbox")) throw new Error(`${name} still links to retired Trip Inbox`);

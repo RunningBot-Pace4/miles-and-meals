@@ -1,3 +1,9 @@
+# Miles & Meals v82.1 — Audited Full Source Package
+
+v82.1 adds an overlay-safe prebuild cleanup for the Trip Inbox, booking parser and flight lookup files retired in v82. This prevents stale files from an older extracted checkout from failing Vercel validation or recreating removed routes.
+
+---
+
 # Miles & Meals v82 — Audited Full Source Package
 
 This package contains the complete application through v81 plus the v82 offline-resync correction and Trip Inbox removal.

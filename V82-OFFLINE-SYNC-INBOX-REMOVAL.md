@@ -1,5 +1,7 @@
 # v82 — Offline Sync Recovery & Trip Inbox Removal
 
+> v82.1 deployment hotfix: `prebuild` now removes any retired Inbox/flight files left behind when this source is extracted over an older checkout.
+
 This release removes the Trip Inbox / booking-reservation workflow and fixes the offline retry loop reported after reconnection.
 
 ## Offline sync
