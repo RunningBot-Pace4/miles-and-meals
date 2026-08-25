@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { countryCatalog } from "@/lib/country-catalog";
+import { compactOptionText } from "@/lib/display-text";
 
 type Trip = {
   id: string;
@@ -495,8 +496,12 @@ export function AdminForms({
             <select name="userId" required>
               <option value="">Choose user</option>
               {users.map((member) => (
-                <option value={member.id} key={member.id}>
-                  {member.name} · {member.email}
+                <option
+                  value={member.id}
+                  key={member.id}
+                  title={`${member.name} · ${member.email}`}
+                >
+                  {compactOptionText(`${member.name} · ${member.email}`, 38)}
                 </option>
               ))}
             </select>
@@ -658,8 +663,12 @@ export function AdminForms({
             >
               <option value="">Choose trip</option>
               {trips.map((trip) => (
-                <option value={trip.id} key={trip.id}>
-                  {trip.name} · Base {trip.baseCurrency}
+                <option
+                  value={trip.id}
+                  key={trip.id}
+                  title={`${trip.name} · Base ${trip.baseCurrency}`}
+                >
+                  {compactOptionText(`${trip.name} · Base ${trip.baseCurrency}`, 36)}
                 </option>
               ))}
             </select>
@@ -680,8 +689,9 @@ export function AdminForms({
                 <option
                   value={country.code}
                   key={country.code}
+                  title={country.name}
                 >
-                  {country.name}
+                  {compactOptionText(country.name, 36)}
                 </option>
               ))}
             </select>

@@ -12,6 +12,7 @@ import type {
   Marker as MapLibreMarker,
 } from "maplibre-gl";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { compactOptionText } from "@/lib/display-text";
 
 type CountryOption = {
   id: string;
@@ -729,8 +730,8 @@ export function LocationTracker({
               }}
             >
               {countries.map((country) => (
-                <option value={country.id} key={country.id}>
-                  {country.tripName}
+                <option value={country.id} key={country.id} title={country.tripName}>
+                  {compactOptionText(country.tripName, 32)}
                 </option>
               ))}
             </select>

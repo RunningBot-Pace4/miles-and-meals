@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { compactOptionText } from "@/lib/display-text";
 
 type SettlementTripOption = {
   id: string;
@@ -105,8 +106,12 @@ export function SettlementTripSelect({
             onChange={(event) => void changeTrip(event.target.value)}
           >
             {trips.map((trip) => (
-              <option value={trip.id} key={trip.id}>
-                {trip.name} · {trip.statusLabel}
+              <option
+                value={trip.id}
+                key={trip.id}
+                title={`${trip.name} · ${trip.statusLabel}`}
+              >
+                {compactOptionText(`${trip.name} · ${trip.statusLabel}`, 36)}
               </option>
             ))}
           </select>

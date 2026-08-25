@@ -21,6 +21,33 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(geometry.body).toBeLessThanOrEqual(geometry.viewport + 1);
 }
 
+async function expectFormControlsInsideViewport(page: Page) {
+  const violations = await page
+    .locator("input:visible, select:visible, textarea:visible, button.button:visible")
+    .evaluateAll((elements) => {
+      const viewport = document.documentElement.clientWidth;
+      return elements.flatMap((element) => {
+        const rect = element.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return [];
+        if (rect.left >= -1 && rect.right <= viewport + 1) return [];
+        return [
+          {
+            tag: element.tagName,
+            label:
+              element.getAttribute("aria-label") ??
+              element.textContent?.trim().slice(0, 60) ??
+              "",
+            left: Math.round(rect.left),
+            right: Math.round(rect.right),
+            viewport,
+          },
+        ];
+      });
+    });
+
+  expect(violations).toEqual([]);
+}
+
 const pwaRoutes = [
   "/dashboard",
   "/planner",
@@ -33,12 +60,15 @@ const pwaRoutes = [
   "/offline",
   "/location",
   "/notifications",
+  "/activity",
+  "/export",
   "/search",
   "/wrapped",
   "/more",
   "/settings/budgets",
   "/settings/profile",
   "/settings/notifications",
+  "/settings/password",
 ];
 
 for (const viewport of [
@@ -61,6 +91,7 @@ for (const viewport of [
         await expect(page.locator("main#main-content")).toBeVisible();
         await expect(page.locator(".mobile-nav")).toBeVisible();
         await expectNoHorizontalOverflow(page);
+        await expectFormControlsInsideViewport(page);
 
         const formFontSizes = await page.locator("input:visible, select:visible, textarea:visible").evaluateAll(
           (elements) => elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize)),
@@ -95,6 +126,19 @@ test.describe("v78 interaction upgrades", () => {
     const calendar = page.getByRole("dialog", { name: /trip dates calendar/i });
     await expect(calendar).toBeVisible();
     await expect(page.getByText(/choose the start date/i)).toBeVisible();
+    await expect(calendar.locator(".date-range-day")).toHaveCount(42);
+
+    const calendarBox = await calendar.boundingBox();
+    const createButtonBox = await page
+      .getByRole("button", { name: /^create trip$/i })
+      .boundingBox();
+    expect(calendarBox).not.toBeNull();
+    expect(createButtonBox).not.toBeNull();
+    expect(calendarBox!.x).toBeGreaterThanOrEqual(-1);
+    expect(calendarBox!.x + calendarBox!.width).toBeLessThanOrEqual(391);
+    expect(calendarBox!.y + calendarBox!.height).toBeLessThanOrEqual(
+      createButtonBox!.y + 1,
+    );
 
     const enabledDays = calendar.locator(".date-range-day:not([disabled])");
     if ((await enabledDays.count()) >= 2) {
@@ -105,9 +149,50 @@ test.describe("v78 interaction upgrades", () => {
     }
   });
 
+  test("long native-select labels stay contained", async ({ page }) => {
+    await page.goto("/dashboard");
+    const tripSelect = page.getByLabel("Change dashboard trip");
+    await expect(tripSelect).toBeVisible();
+    await expectFormControlsInsideViewport(page);
+
+    const labels = await tripSelect.locator("option").allTextContents();
+    for (const label of labels) {
+      expect(label.trim().length).toBeLessThanOrEqual(32);
+    }
+  });
+
   test("Trip Inbox explains flight-number and booking-number privacy", async ({ page }) => {
     await page.goto("/inbox");
     await expect(page.getByText(/flight number vs booking number/i)).toBeVisible();
     await expect(page.getByText(/cannot securely retrieve a private airline reservation/i)).toBeVisible();
   });
+});
+
+test.describe("v79 tablet and browser-zoom containment", () => {
+  test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD for authenticated layout audit.");
+
+  for (const width of [720, 768, 960]) {
+    test(`trip calendar stays in-flow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await signIn(page);
+      await page.goto("/trips");
+      await page.getByRole("button", { name: /trip dates/i }).first().click();
+
+      const calendar = page.getByRole("dialog", { name: /trip dates calendar/i });
+      const calendarBox = await calendar.boundingBox();
+      const createButtonBox = await page
+        .getByRole("button", { name: /^create trip$/i })
+        .boundingBox();
+
+      expect(calendarBox).not.toBeNull();
+      expect(createButtonBox).not.toBeNull();
+      expect(calendarBox!.x).toBeGreaterThanOrEqual(-1);
+      expect(calendarBox!.x + calendarBox!.width).toBeLessThanOrEqual(width + 1);
+      expect(calendarBox!.y + calendarBox!.height).toBeLessThanOrEqual(
+        createButtonBox!.y + 1,
+      );
+      await expectNoHorizontalOverflow(page);
+      await expectFormControlsInsideViewport(page);
+    });
+  }
 });

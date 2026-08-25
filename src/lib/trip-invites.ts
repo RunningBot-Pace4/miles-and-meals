@@ -11,6 +11,10 @@ import {
   user,
 } from "@/db/schema";
 import { canManageTrip } from "@/lib/trip-management";
+import {
+  earliestValidTripInviteCreatedAt,
+  tripInviteExpiresAt,
+} from "@/lib/invite-validity";
 
 export function hashInviteToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -31,7 +35,6 @@ export type TripInvitePreview = {
 export async function createTripInvite(input: {
   currentUser: { id: string; role?: string | null };
   tripId: string;
-  expiresInDays?: number;
 }): Promise<{ token: string; expiresAt: Date }> {
   if (!(await canManageTrip(input.currentUser, input.tripId))) {
     throw new Error("You do not have permission to invite travelers to this trip.");
@@ -50,9 +53,7 @@ export async function createTripInvite(input: {
   }
 
   const token = randomBytes(24).toString("base64url");
-  const expiresAt = new Date(
-    Date.now() + Math.max(1, Math.min(input.expiresInDays ?? 14, 30)) * 86_400_000,
-  );
+  const expiresAt = tripInviteExpiresAt();
 
   await db.insert(tripInvites).values({
     tripId: input.tripId,
@@ -108,6 +109,7 @@ export async function getTripInvitePreview(token: string): Promise<TripInvitePre
         eq(tripInvites.tokenHash, hashInviteToken(token)),
         isNull(tripInvites.revokedAt),
         gt(tripInvites.expiresAt, now),
+        gt(tripInvites.createdAt, earliestValidTripInviteCreatedAt(now)),
       ),
     )
     .limit(1);
@@ -149,6 +151,10 @@ export async function acceptTripInvite(
           eq(tripInvites.id, preview.inviteId),
           isNull(tripInvites.revokedAt),
           gt(tripInvites.expiresAt, new Date()),
+          gt(
+            tripInvites.createdAt,
+            earliestValidTripInviteCreatedAt(),
+          ),
           lt(tripInvites.useCount, tripInvites.maxUses),
         ),
       )

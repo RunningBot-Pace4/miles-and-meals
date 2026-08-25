@@ -18,6 +18,7 @@ import {
   writeDraft,
 } from "@/lib/draft-storage";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import { compactOptionText } from "@/lib/display-text";
 
 type CountryOption = {
   id: string;
@@ -371,8 +372,8 @@ function PlannerItemForm({
             defaultValue={initial?.countryId ?? defaultCountryId}
           >
             {countries.map((country) => (
-              <option value={country.id} key={country.id}>
-                {country.tripName}
+              <option value={country.id} key={country.id} title={country.tripName}>
+                {compactOptionText(country.tripName, 32)}
               </option>
             ))}
           </select>
@@ -1209,8 +1210,8 @@ export function PlannerClient({
             }}
           >
             {trips.map((trip) => (
-              <option value={trip.id} key={trip.id}>
-                {trip.name}
+              <option value={trip.id} key={trip.id} title={trip.name}>
+                {compactOptionText(trip.name, 32)}
               </option>
             ))}
           </select>

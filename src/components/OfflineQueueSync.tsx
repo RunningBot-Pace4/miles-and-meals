@@ -39,7 +39,7 @@ export function OfflineQueueSync() {
       if (!disposed) setItems(readOfflineQueue());
     }
 
-    async function sync(forceBlocked = false) {
+    async function sync(forceBlocked = false, forceRetry = false) {
       if (!navigator.onLine) {
         refreshItems();
         return;
@@ -47,7 +47,7 @@ export function OfflineQueueSync() {
 
       setSyncing(true);
       try {
-        const result = await flushOfflineQueue({ forceBlocked });
+        const result = await flushOfflineQueue({ forceBlocked, forceRetry });
         if (disposed) return;
 
         refreshItems();
@@ -71,7 +71,9 @@ export function OfflineQueueSync() {
     }
 
     refreshItems();
-    void sync();
+    // A page load immediately after connectivity returns must not inherit a
+    // future backoff timestamp from the failed offline request.
+    void sync(false, navigator.onLine);
 
     function onVisible() {
       if (document.visibilityState === "visible") void sync();
@@ -82,7 +84,7 @@ export function OfflineQueueSync() {
     }
 
     function onOnline() {
-      void sync();
+      void sync(false, true);
     }
 
     function onStorage(event: StorageEvent) {
@@ -167,7 +169,7 @@ export function OfflineQueueSync() {
 
     setSyncing(true);
     try {
-      await flushOfflineQueue({ forceBlocked: true });
+      await flushOfflineQueue({ forceBlocked: true, forceRetry: true });
       setItems(readOfflineQueue());
       window.dispatchEvent(new CustomEvent("mnm:data-synced"));
     } finally {

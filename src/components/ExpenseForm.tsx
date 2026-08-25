@@ -20,6 +20,7 @@ import { parseTravelNumber } from "@/lib/numbers";
 import { buildReceiptItemization } from "@/lib/receipt-itemization";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { trackProductEvent } from "@/lib/product-analytics-client";
+import { compactOptionText } from "@/lib/display-text";
 
 type CountryOption = {
   id: string;
@@ -227,12 +228,14 @@ export function ExpenseForm({
   countries,
   activeTripId,
   currentUserId,
+  lockedTripCount = 0,
   initial,
   prefill,
 }: {
   countries: CountryOption[];
   activeTripId: string;
   currentUserId: string;
+  lockedTripCount?: number;
   initial?: ExpenseInitial;
   prefill?: ExpensePrefill;
 }) {
@@ -1712,11 +1715,20 @@ export function ExpenseForm({
               }
             >
               {countries.map((country) => (
-                <option value={country.id} key={country.id}>
-                  {country.tripName}
+                <option
+                  value={country.id}
+                  key={country.id}
+                  title={`${country.tripName} · ${country.name}`}
+                >
+                  {compactOptionText(`${country.tripName} · ${country.name}`, 38)}
                 </option>
               ))}
             </select>
+            {lockedTripCount > 0 ? (
+              <small className="muted">
+                {lockedTripCount} financially locked trip{lockedTripCount === 1 ? " is" : "s are"} hidden. Reopen expenses from Settlement to add spending.
+              </small>
+            ) : null}
           </label>
 
           <label>
@@ -1811,8 +1823,12 @@ export function ExpenseForm({
                 disabled={busy || fxRateLoading}
               >
                 {currencyOptions.map((option) => (
-                  <option value={option.code} key={option.code}>
-                    {option.code} — {option.label}
+                  <option
+                    value={option.code}
+                    key={option.code}
+                    title={`${option.code} — ${option.label}`}
+                  >
+                    {compactOptionText(`${option.code} — ${option.label}`, 36)}
                   </option>
                 ))}
               </select>
@@ -2222,7 +2238,11 @@ export function ExpenseForm({
                       }}
                     >
                       <option value="ALL">Everyone</option>
-                      {members.map((member) => <option value={member.id} key={member.id}>{member.name}</option>)}
+                      {members.map((member) => (
+                        <option value={member.id} key={member.id} title={member.name}>
+                          {compactOptionText(member.name, 32)}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 ))}

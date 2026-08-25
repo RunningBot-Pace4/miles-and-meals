@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import type { JourneySummary } from "@/lib/journeys";
 import { DateRangePicker } from "@/components/DateRangePicker";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 
 type TripOption = { id: string; name: string; destination: string; journeyId: string | null };
 
@@ -140,6 +141,7 @@ export function JourneyManager({
                   </div>
                 )) : <p className="muted">No linked Trips are currently visible to you.</p>}
               </div>
+              <Link className="button secondary" href={`/journeys/${journey.id}`}>View Journey</Link>
             </article>
           );
         }
@@ -160,6 +162,7 @@ export function JourneyManager({
             </fieldset>
             <div className="button-row">
               <button className="button primary" disabled={busy} type="submit">Save Journey</button>
+              <Link className="button secondary" href={`/journeys/${journey.id}`}>View Journey</Link>
               <button className="button secondary" disabled={busy} type="button" onClick={() => void remove(journey)}>Delete Journey</button>
             </div>
           </form>

@@ -1,3 +1,41 @@
+# Miles & Meals v80 — Audited Full Source Package
+
+This package contains the complete application through v79 plus the v80 locked-Trip, Journey-result, multi-Trip offline and PWA cache-reliability fixes.
+
+Key v80 behavior:
+
+- financially closed Trips cannot be chosen for a new expense;
+- invite link/QR tokens expire after exactly 12 hours;
+- Journey grouping has a dedicated route result with direct Trip navigation;
+- Offline 3.0 stores/selects several Trip packs and queues the correct Trip/currency;
+- reconnect immediately retries network-failed mutations;
+- the full calendar remains in form flow and the service worker replaces stale cached layouts immediately.
+
+**Database:** v80 adds no schema beyond v77. If the v77 schema is already applied, do not run a database reset or migration specifically for v80.
+
+See `V80-LOCKED-TRIPS-JOURNEYS-OFFLINE.md`.
+
+---
+
+# Miles & Meals v79 — Audited Full Source Package
+
+This package contains the full application through v78 plus the v79 responsive/function reliability audit.
+
+Key v79 behavior:
+
+- the trip/Journey calendar is in normal document flow and cannot be clipped or overlap a submit button;
+- complete date values wrap safely instead of being hidden by ellipsis;
+- native trip/user/currency/region dropdown labels are compact on narrow screens;
+- explicit offline resync bypasses automatic backoff and retries immediately;
+- Vitest and Playwright are correctly separated;
+- the release gate includes unit, TypeScript, PWA, route, source, legacy-regression and v79-specific validators.
+
+**Database:** v79 adds no schema beyond v77. If the v77 schema is already applied, do not run a database reset or migration specifically for v79.
+
+See `V79-UX-RESPONSIVE-AUDIT.md`.
+
+---
+
 # Miles & Meals v78 — Full Source Package
 
 This package contains the complete v71–v77 enhancement set plus the v78 UX/reliability pass.

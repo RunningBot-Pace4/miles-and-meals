@@ -1,3 +1,35 @@
+# v80 — Locked Trips, Journey Results & Offline 3.0
+
+v80 completes the workflow and PWA audit on top of v79.
+
+- Financially closed Trips are hidden from Add Expense; open Trips remain available and are labeled `Trip · Destination`.
+- Invite links and their QR codes now have one enforced **12-hour** validity window, including an expiry time in the UI.
+- Multi-country Journey now has a dedicated **View Journey** route overview with ordered stops and direct Trip opening.
+- Offline packs support multiple Trips, explicit Trip/currency selection and correct Trip-bound resync after reconnect.
+- Reconnection forces an immediate safe retry, while validation/conflict failures remain reviewable.
+- The full 42-day calendar is contained in normal form flow, and the PWA worker activates v80 immediately to replace stale cached CSS.
+- No database schema change is introduced by v80.
+
+See `V80-LOCKED-TRIPS-JOURNEYS-OFFLINE.md`.
+
+---
+
+# v79 — Full UX, Responsive and Reliability Audit
+
+v79 is a complete design/function audit on top of v78.
+
+- The Start → End calendar now expands **inside the form**, displays all 42 day cells, shows full date values and can never cover the Create/Save button.
+- Forms, cards, grids, dialogs and controls have a final global containment layer for phone, tablet, desktop and browser-zoom layouts.
+- Long native dropdown choices are compacted for mobile while the full original label remains available as the option title and stored value.
+- A deliberate **Sync pending** tap now retries immediately; automatic background sync keeps its safe backoff behavior.
+- Vitest now resolves the `@/` source alias and excludes Playwright files, so `npm test` is a valid unit-test gate.
+- Browser checks now verify control bounding boxes, 42 visible calendar cells, calendar/submit non-overlap, long-option limits and 320–960px containment.
+- No database schema change is introduced by v79.
+
+See `V79-UX-RESPONSIVE-AUDIT.md` for the audited screen/function matrix and exact E2E instructions.
+
+---
+
 # v78 — Trip Switching, Friendly Dates, Offline Resync & PWA Polish
 
 v78 is the UX/reliability release on top of the complete v77 web/PWA source.

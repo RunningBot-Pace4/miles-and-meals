@@ -213,6 +213,7 @@ function clearRetryState(item: OfflineMutation): OfflineMutation {
 
 async function performFlush(options: {
   forceBlocked?: boolean;
+  forceRetry?: boolean;
   onlyId?: string;
 }): Promise<OfflineFlushResult> {
   if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -236,11 +237,15 @@ async function performFlush(options: {
     const item = readOfflineQueue().find((candidate) => candidate.id === id);
     if (!item) continue;
 
-    const forced = Boolean(options.forceBlocked || options.onlyId);
-    if (item.blocked && !forced) continue;
-    if (!retryDue(item, forced)) continue;
+    const forceBlocked = Boolean(options.forceBlocked || options.onlyId);
+    const forceDue = Boolean(options.forceRetry || forceBlocked);
+    if (item.blocked && !forceBlocked) continue;
+    if (!retryDue(item, forceDue)) continue;
 
-    if (forced && (item.blocked || item.nextAttemptAt)) {
+    if (
+      (forceBlocked && item.blocked) ||
+      (forceDue && !item.blocked && item.nextAttemptAt)
+    ) {
       updateOfflineMutation(id, clearRetryState);
     }
 
@@ -286,9 +291,9 @@ async function performFlush(options: {
 }
 
 export async function flushOfflineQueue(
-  options: { forceBlocked?: boolean; onlyId?: string } = {},
+  options: { forceBlocked?: boolean; forceRetry?: boolean; onlyId?: string } = {},
 ): Promise<OfflineFlushResult> {
-  const manual = Boolean(options.forceBlocked || options.onlyId);
+  const manual = Boolean(options.forceBlocked || options.forceRetry || options.onlyId);
 
   if (!manual && automaticFlush) {
     return automaticFlush;

@@ -35,8 +35,16 @@ export default async function NewExpensePage({
     await getActiveTripContext(
       session.user,
     );
+  const openCountries = activeTrip.allCountries.filter(
+    (country) => country.financialStatus !== "CLOSED",
+  );
+  const lockedTripCount = new Set(
+    activeTrip.allCountries
+      .filter((country) => country.financialStatus === "CLOSED")
+      .map((country) => country.tripId),
+  ).size;
   const accessibleCountryIds = new Set(
-    activeTrip.allCountries.map((country) => country.id),
+    openCountries.map((country) => country.id),
   );
   const category =
     query.category && allowedCategories.has(query.category)
@@ -47,7 +55,7 @@ export default async function NewExpensePage({
     activeTrip.tripId ? canManageTrip(session.user, activeTrip.tripId) : Promise.resolve(false),
   ]);
 
-  if (financialState?.status === "CLOSED") {
+  if (openCountries.length === 0 && financialState?.status === "CLOSED") {
     return (
       <div className="stack gap-lg">
         <div className="page-heading">
@@ -69,11 +77,14 @@ export default async function NewExpensePage({
   return (
     <ExpenseForm
       countries={
-        activeTrip.allCountries
+        openCountries
       }
       activeTripId={
-        activeTrip.tripId
+        openCountries.some((country) => country.tripId === activeTrip.tripId)
+          ? activeTrip.tripId
+          : openCountries[0]?.tripId ?? ""
       }
+      lockedTripCount={lockedTripCount}
       currentUserId={
         session.user.id
       }

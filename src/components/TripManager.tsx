@@ -10,6 +10,7 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { TripInvitePanel } from "@/components/TripInvitePanel";
 import { DateRangePicker } from "@/components/DateRangePicker";
+import { compactOptionText } from "@/lib/display-text";
 
 type CountryCatalogItem = {
   name: string;
@@ -786,8 +787,8 @@ export function TripManager({
                   Choose country
                 </option>
                 {countryCatalog.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
+                  <option key={country.code} value={country.code} title={country.name}>
+                    {compactOptionText(country.name, 36)}
                   </option>
                 ))}
               </select>

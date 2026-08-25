@@ -7,6 +7,7 @@ import {
 } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { REGIONAL_LOCALE_OPTIONS, REGIONAL_TIME_ZONE_OPTIONS } from "@/lib/regional";
+import { compactOptionText } from "@/lib/display-text";
 import {
   avatarColors,
   avatarIcons,
@@ -169,7 +170,7 @@ export function ProfileSettingsForm({
             Regional number format
             <select value={locale} onChange={(event) => setLocale(event.target.value)}>
               {REGIONAL_LOCALE_OPTIONS.map((option) => (
-                <option value={option.value} key={option.value}>{option.label}</option>
+                <option value={option.value} key={option.value} title={option.label}>{compactOptionText(option.label, 38)}</option>
               ))}
             </select>
           </label>
@@ -177,7 +178,7 @@ export function ProfileSettingsForm({
             Time zone
             <select value={timeZone} onChange={(event) => setTimeZone(event.target.value)}>
               {REGIONAL_TIME_ZONE_OPTIONS.map((option) => (
-                <option value={option.value} key={option.value}>{option.label}</option>
+                <option value={option.value} key={option.value} title={option.label}>{compactOptionText(option.label, 38)}</option>
               ))}
             </select>
             <small>Used for travel dates and future notification scheduling.</small>

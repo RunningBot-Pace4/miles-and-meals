@@ -16322,12 +16322,10 @@ body {
 }
 
 .date-range-popover {
-  position: absolute;
-  z-index: 260;
-  top: calc(100% - 0.2rem);
-  left: 0;
-  width: min(390px, 100%);
-  min-width: 320px;
+  position: static;
+  z-index: auto;
+  width: min(520px, 100%);
+  min-width: 0;
   display: grid;
   gap: 0.55rem;
   padding: 0.8rem;
@@ -16617,17 +16615,14 @@ body {
   }
 
   .date-range-popover {
-    position: fixed;
-    z-index: 360;
-    top: auto;
-    right: max(0.62rem, env(safe-area-inset-right));
-    bottom: calc(5.7rem + env(safe-area-inset-bottom));
-    left: max(0.62rem, env(safe-area-inset-left));
-    width: auto;
+    position: static;
+    z-index: auto;
+    inset: auto;
+    width: 100%;
     min-width: 0;
-    max-height: min(610px, calc(100dvh - 7rem));
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
     border-radius: 24px;
   }
 
@@ -16823,5 +16818,322 @@ body {
 
   .date-range-guidance span:not([aria-hidden]) {
     padding-inline: 0.38rem;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* v79 — complete responsive control and in-flow date calendar audit          */
+/* -------------------------------------------------------------------------- */
+
+html,
+body,
+.app-shell,
+main,
+.page-container {
+  max-inline-size: 100%;
+}
+
+.page-container > *,
+.stack > *,
+.panel > *,
+form > *,
+fieldset > *,
+details > *,
+.page-heading > *,
+.panel-title > *,
+[class*="-grid"] > * {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-container :is(h1, h2, h3, h4, p, code),
+.menu-row > *,
+.list-row > *,
+.panel-title > *,
+.owner-trip-head > *,
+.owner-destinations-toolbar > *,
+.admin-trip-edit-head > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The calendar belongs to the form flow. It must never cover Create trip,
+   escape a clipped card, or be cut off by browser zoom. */
+.date-range-picker {
+  width: 100%;
+  max-width: 100%;
+}
+
+.date-range-trigger {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.date-range-value strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.22;
+}
+
+.date-range-popover {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  width: min(100%, 520px);
+  min-width: 0;
+  max-width: 100%;
+  max-height: none;
+  justify-self: start;
+  margin-top: 0.28rem;
+  overflow: visible;
+  overscroll-behavior: auto;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.date-range-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+.date-range-day {
+  aspect-ratio: 1;
+  min-height: 40px;
+}
+
+@media (max-width: 719px) {
+  .page-container {
+    overflow-x: clip;
+  }
+
+  .hero-card form,
+  .panel-title,
+  .list-row,
+  .owner-trip-head,
+  .owner-destinations-toolbar,
+  .admin-trip-edit-head,
+  .joined-trip-list article {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .hero-card form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-title,
+  .owner-trip-head,
+  .owner-destinations-toolbar,
+  .admin-trip-edit-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .card-actions,
+  .button-row,
+  .form-actions,
+  .offline-pack-actions,
+  .settlement-payment-tools {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .destination-switcher,
+  .destination-switcher select,
+  .planner-filter,
+  .planner-filter select,
+  .settle-country-filter,
+  .settle-country-filter select,
+  .live-location-country,
+  .live-location-country select,
+  .wrapped-trip-picker,
+  .wrapped-trip-picker select {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .date-range-popover {
+    position: static;
+    inset: auto;
+    width: 100%;
+    max-height: none;
+    padding: clamp(0.58rem, 2.8vw, 0.78rem);
+    overflow: visible;
+    border-radius: 20px;
+    box-shadow: 0 14px 36px rgb(31 47 42 / 13%);
+  }
+
+  .date-range-day {
+    min-height: 42px;
+  }
+
+  .date-range-popover-foot {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .date-range-popover-foot span {
+    text-align: left;
+  }
+}
+
+@media (max-width: 390px) {
+  .date-range-trigger {
+    grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  }
+
+  .date-range-popover-head {
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+  }
+
+  .date-range-popover-head strong,
+  .date-range-popover-head small {
+    white-space: normal;
+  }
+
+  .date-range-day {
+    min-height: 38px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* v80 — calendar containment, Journey result and multi-Trip offline packs    */
+
+.owner-create-trip,
+.owner-create-trip > form,
+.owner-create-trip .date-range-picker {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.owner-create-trip > form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.owner-create-trip .date-range-popover {
+  position: relative !important;
+  inset: auto !important;
+  z-index: auto !important;
+  width: min(100%, 620px) !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.owner-create-trip .date-range-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.owner-create-trip .date-range-day {
+  width: 100%;
+  min-width: 0;
+}
+
+.offline-trip-picker {
+  width: min(100%, 620px);
+}
+
+.offline-trip-picker small {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.journey-overview-explainer {
+  display: grid;
+  gap: 0.35rem;
+  border-color: rgb(18 120 111 / 18%);
+  background: linear-gradient(145deg, #f0faf7, #fffaf2);
+}
+
+.journey-overview-explainer p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.journey-route-list {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.journey-route-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.journey-route-number {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--primary);
+  font-weight: 900;
+}
+
+.journey-route-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.journey-route-copy h2,
+.journey-route-copy p {
+  margin: 0;
+}
+
+.journey-trip-open {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: end;
+}
+
+@media (max-width: 640px) {
+  .journey-route-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+  }
+
+  .journey-route-number {
+    width: 38px;
+    height: 38px;
+  }
+
+  .journey-trip-open {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .journey-trip-open .button {
+    width: 100%;
+  }
+
+  .owner-create-trip .date-range-day {
+    min-height: 38px;
+    padding-inline: 0;
   }
 }

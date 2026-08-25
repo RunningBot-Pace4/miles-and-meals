@@ -19,7 +19,7 @@ must(expenseForm, 'className="advanced-amount-shell"', "v64 large amount input s
 must(expenseForm, 'className="advanced-currency-control"', "v64 full currency selector missing");
 must(expenseForm, "Trip default", "v64 trip default currency indicator missing");
 must(expenseForm, "Estimated trip amount", "v64 conversion preview missing");
-must(expenseForm, "{option.code} — {option.label}", "v64 currency code + label options missing");
+must(expenseForm, "${option.code} — ${option.label}", "v64 currency code + label options missing");
 must(css, ".advanced-money-card", "v64 money card CSS missing");
 must(css, ".advanced-amount-shell:focus-within", "v64 amount focus treatment missing");
 must(css, "font-size: clamp(1.8rem, 5vw, 2.35rem)", "v64 large amount typography missing");

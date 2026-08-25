@@ -5,6 +5,7 @@ import {
   useState,
 } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { compactOptionText } from "@/lib/display-text";
 
 type TripOption = {
   id: string;
@@ -162,10 +163,9 @@ export function TripQuickSelect({
                 value={
                   trip.id
                 }
+                title={trip.name}
               >
-                {
-                  trip.name
-                }
+                {compactOptionText(trip.name, 32)}
               </option>
             ),
           )}

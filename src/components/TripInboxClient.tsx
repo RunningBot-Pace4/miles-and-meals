@@ -7,6 +7,7 @@ import {
   type BookingImport,
 } from "@/lib/booking-parser";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { compactOptionText } from "@/lib/display-text";
 
 type CountryOption = {
   id: string;
@@ -274,8 +275,8 @@ export function TripInboxClient({
             onChange={(event) => setCountryId(event.target.value)}
           >
             {countries.map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.tripName}
+              <option key={country.id} value={country.id} title={country.tripName}>
+                {compactOptionText(country.tripName, 32)}
               </option>
             ))}
           </select>

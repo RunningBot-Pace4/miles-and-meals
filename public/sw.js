@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v78";
+const CACHE_NAME = "miles-meals-static-v80";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -14,13 +14,9 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      .then(() => {
-        if (!self.registration.active) {
-          return self.skipWaiting();
-        }
-
-        return undefined;
-      }),
+      // Activate every release immediately. Leaving a new worker waiting kept
+      // old cached CSS alive and could reproduce already-fixed calendar layouts.
+      .then(() => self.skipWaiting()),
   );
 });
 

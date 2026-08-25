@@ -13,9 +13,11 @@ export type JourneySummary = {
     id: string;
     name: string;
     destination: string;
+    countryId: string;
     startDate: string | null;
     endDate: string | null;
     baseCurrency: string;
+    financialStatus: string;
   }>;
 };
 
@@ -54,6 +56,8 @@ export async function listJourneysForUser(userId: string): Promise<JourneySummar
       startDate: trips.startDate,
       endDate: trips.endDate,
       baseCurrency: trips.baseCurrency,
+      financialStatus: trips.financialStatus,
+      countryId: countries.id,
       destination: countries.name,
     })
     .from(trips)
@@ -76,11 +80,21 @@ export async function listJourneysForUser(userId: string): Promise<JourneySummar
         id: trip.id,
         name: trip.name,
         destination: trip.destination ?? "Destination",
+        countryId: trip.countryId ?? "",
         startDate: trip.startDate,
         endDate: trip.endDate,
         baseCurrency: trip.baseCurrency,
+        financialStatus: trip.financialStatus,
       })),
   }));
+}
+
+export async function getJourneyForUser(
+  journeyId: string,
+  userId: string,
+): Promise<JourneySummary | null> {
+  const journeysForUser = await listJourneysForUser(userId);
+  return journeysForUser.find((journey) => journey.id === journeyId) ?? null;
 }
 
 export async function updateJourneyTrips(input: {

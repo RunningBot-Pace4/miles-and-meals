@@ -1,114 +1,119 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  enqueueOfflineMutation,
+  flushOfflineQueue,
+  readOfflineQueue,
+} from "@/lib/offline-queue";
 
-class MemoryStorage {
-  private readonly values = new Map<string, string>();
-
-  getItem(key: string) {
-    return this.values.get(key) ?? null;
-  }
-
-  setItem(key: string, value: string) {
-    this.values.set(key, value);
-  }
-
-  removeItem(key: string) {
-    this.values.delete(key);
-  }
+function memoryStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    get length() {
+      return values.size;
+    },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    removeItem: (key) => void values.delete(key),
+    setItem: (key, value) => void values.set(key, value),
+  };
 }
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((next) => {
-    resolve = next;
+beforeEach(() => {
+  vi.restoreAllMocks();
+  vi.stubGlobal("window", {
+    localStorage: memoryStorage(),
+    dispatchEvent: vi.fn(),
   });
-  return { promise, resolve };
+  vi.stubGlobal("navigator", { onLine: true });
+  vi.stubGlobal(
+    "CustomEvent",
+    class {
+      constructor(
+        public type: string,
+        public init?: { detail?: unknown },
+      ) {}
+    },
+  );
+});
+
+function queueOne() {
+  return enqueueOfflineMutation({
+    url: "/api/expenses",
+    method: "POST",
+    label: "Offline dinner",
+    body: { description: "Dinner" },
+  });
 }
 
-describe("offline resync reliability", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    const storage = new MemoryStorage();
-    Object.defineProperty(globalThis, "window", {
-      configurable: true,
-      value: { localStorage: storage, dispatchEvent: vi.fn() },
-    });
-    Object.defineProperty(globalThis, "navigator", {
-      configurable: true,
-      value: { onLine: true },
-    });
-    Object.defineProperty(globalThis, "CustomEvent", {
-      configurable: true,
-      value: class {
-        constructor(public type: string, public init?: unknown) {}
-      },
-    });
-  });
+describe("offline mutation resync", () => {
+  it("removes a mutation only after the server accepts it", async () => {
+    const item = queueOne();
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    Reflect.deleteProperty(globalThis, "window");
-    Reflect.deleteProperty(globalThis, "navigator");
-    Reflect.deleteProperty(globalThis, "CustomEvent");
-    Reflect.deleteProperty(globalThis, "fetch");
-  });
+    const result = await flushOfflineQueue({ forceBlocked: true });
 
-  it("does not lose a new change queued while an earlier change is syncing", async () => {
-    const queue = await import("@/lib/offline-queue");
-    queue.enqueueOfflineMutation({
-      url: "/api/expenses",
-      method: "POST",
-      label: "First expense",
-      body: { value: 1 },
-    });
-
-    const started = deferred<void>();
-    const response = deferred<Response>();
-    Object.defineProperty(globalThis, "fetch", {
-      configurable: true,
-      value: vi.fn(async () => {
-        started.resolve();
-        return response.promise;
+    expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
+    expect(readOfflineQueue()).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/expenses",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "x-mnm-offline-mutation-id": item.id,
+        }),
       }),
-    });
-
-    const flushing = queue.flushOfflineQueue();
-    await started.promise;
-    queue.enqueueOfflineMutation({
-      url: "/api/expenses",
-      method: "POST",
-      label: "Second expense",
-      body: { value: 2 },
-    });
-    response.resolve(new Response("{}", { status: 200 }));
-    await flushing;
-
-    expect(queue.readOfflineQueue().map((item) => item.label)).toEqual([
-      "Second expense",
-    ]);
+    );
   });
 
-  it("serializes overlapping automatic resync calls", async () => {
-    const queue = await import("@/lib/offline-queue");
-    queue.enqueueOfflineMutation({
-      url: "/api/expenses",
-      method: "POST",
-      label: "Only once",
-      body: { value: 1 },
-    });
+  it("keeps validation failures visible for review", async () => {
+    queueOne();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: "Trip is closed." }), {
+          status: 409,
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
 
-    const response = deferred<Response>();
-    const fetchMock = vi.fn(async () => response.promise);
-    Object.defineProperty(globalThis, "fetch", {
-      configurable: true,
-      value: fetchMock,
-    });
+    const result = await flushOfflineQueue({ forceBlocked: true });
+    const [remaining] = readOfflineQueue();
 
-    const first = queue.flushOfflineQueue();
-    const second = queue.flushOfflineQueue();
-    response.resolve(new Response("{}", { status: 200 }));
-    await Promise.all([first, second]);
+    expect(result).toEqual({ synced: 0, remaining: 1, blocked: 1 });
+    expect(remaining.blocked).toBe(true);
+    expect(remaining.lastError).toBe("Trip is closed.");
+  });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(queue.readOfflineQueue()).toHaveLength(0);
+  it("retains connection failures for a later automatic retry", async () => {
+    queueOne();
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+
+    const result = await flushOfflineQueue({ forceBlocked: true });
+    const [remaining] = readOfflineQueue();
+
+    expect(result).toEqual({ synced: 0, remaining: 1, blocked: 0 });
+    expect(remaining.attempts).toBe(1);
+    expect(remaining.nextAttemptAt).toBeTruthy();
+    expect(remaining.lastError).toMatch(/still safe on this device/i);
+  });
+
+  it("retries immediately when connectivity returns even during backoff", async () => {
+    queueOne();
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("offline"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await flushOfflineQueue({ forceRetry: true });
+    expect(readOfflineQueue()[0]?.nextAttemptAt).toBeTruthy();
+
+    const result = await flushOfflineQueue({ forceRetry: true });
+    expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

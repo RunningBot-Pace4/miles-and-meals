@@ -10,18 +10,22 @@ import { getActiveTripContext } from "@/lib/active-trip";
 import type { OfflineTripPack } from "@/lib/offline-pack";
 import { getSession } from "@/lib/session";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getSession();
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const active = await getActiveTripContext(session.user);
-  const country = active.countries[0];
+  const requestedTripId = new URL(request.url).searchParams.get("tripId") ?? "";
+  const targetTripId = requestedTripId || active.tripId;
+  const country = active.allCountries.find((row) => row.tripId === targetTripId);
 
-  if (!country || !active.tripId) {
+  if (!country || !targetTripId) {
     return Response.json({ pack: null });
   }
 
-  const countryIds = active.countries.map((row) => row.id);
+  const countryIds = active.allCountries
+    .filter((row) => row.tripId === targetTripId)
+    .map((row) => row.id);
   const [memberRows, planRows, reservationRows] = await Promise.all([
     db
       .select({ id: user.id, name: user.name })
@@ -59,6 +63,7 @@ export async function GET() {
       defaultExchangeRate: Number(country.defaultExchangeRate),
       startDate: country.startDate,
       endDate: country.endDate,
+      financialStatus: country.financialStatus,
     },
     members,
     plan: planRows.map((item) => ({

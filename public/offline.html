@@ -17,7 +17,8 @@
   </section>
 
   <section class="card" id="trip-card" hidden>
-    <p class="eyebrow">SAVED TRIP</p><h2 id="trip-name"></h2><p class="muted" id="trip-destination"></p>
+    <p class="eyebrow">SAVED TRIPS</p><h2 id="trip-name"></h2><p class="muted" id="trip-destination"></p>
+    <label>Trip<select id="saved-trip" aria-label="Choose saved offline trip"></select></label>
     <div class="pill-row"><span class="pill" id="saved-at"></span><span class="pill" id="queue-count"></span></div>
   </section>
 
@@ -26,7 +27,7 @@
     <form id="quick-form">
       <label>Description<input id="description" maxlength="250" placeholder="Dinner, taxi, tickets…" required></label>
       <div class="grid"><label>Amount<input id="amount" inputmode="decimal" placeholder="0.00" required></label><label>Date<input id="expense-date" type="date" required></label></div>
-      <label>Category<select id="category"><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
+      <div class="grid"><label>Currency<select id="currency"></select></label><label>Category<select id="category"><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label></div>
       <p class="muted" id="split-note"></p>
       <button type="submit">Save offline expense</button>
     </form>
@@ -44,10 +45,15 @@
 <script>
 (() => {
   const PACK_KEY="mnm:offline-pack:v2";
+  const PACKS_KEY="mnm:offline-packs:v3";
+  const SELECTED_KEY="mnm:offline-selected-trip:v1";
   const QUEUE_KEY="mnm:offline-mutation-queue:v1";
   const $=id=>document.getElementById(id);
-  let pack=null;
-  try{pack=JSON.parse(localStorage.getItem(PACK_KEY)||"null")}catch{}
+  let packs=[];
+  try{const parsed=JSON.parse(localStorage.getItem(PACKS_KEY)||"[]");if(Array.isArray(parsed))packs=parsed.filter(x=>x&&x.version===2&&x.trip&&x.trip.id)}catch{}
+  if(!packs.length){try{const legacy=JSON.parse(localStorage.getItem(PACK_KEY)||"null");if(legacy&&legacy.version===2&&legacy.trip&&legacy.trip.id)packs=[legacy]}catch{}}
+  let selectedId=localStorage.getItem(SELECTED_KEY)||packs[0]?.trip?.id||"";
+  let pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
   let queue=[];
   try{queue=JSON.parse(localStorage.getItem(QUEUE_KEY)||"[]");if(!Array.isArray(queue))queue=[]}catch{queue=[]}
   const today=()=>{const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)};
@@ -57,15 +63,22 @@
   function queueLabel(){$("queue-count").textContent=`${queue.length} waiting to sync`}
   function createId(){if(crypto.randomUUID)return crypto.randomUUID();const bytes=new Uint8Array(16);if(crypto.getRandomValues)crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i+=1)bytes[i]=Math.floor(Math.random()*256);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const hex=Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`}
 
-  if(pack&&pack.version===2&&pack.trip&&pack.currentUserId){
-    $("no-pack").hidden=true;$("trip-card").hidden=false;$("quick-card").hidden=false;$("plan-card").hidden=false;$("reservations-card").hidden=false;
-    $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · ${pack.trip.currencyCode}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
-    $("split-note").textContent=`Paid by you · split equally between ${(pack.members||[]).length} traveler${(pack.members||[]).length===1?"":"s"}. Edit after sync if needed.`;
-    const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
-    const reservations=pack.reservations||[];if(!reservations.length)$("reservation-list").innerHTML='<div class="empty">No saved reservations.</div>';else reservations.forEach(x=>$("reservation-list").append(row(x.title,`${x.date||"Date not detected"}${x.time?` · ${x.time}`:""}${x.confirmationNo?` · Ref ${x.confirmationNo}`:""}`,x.kind)));
-
-    $("quick-form").addEventListener("submit",event=>{event.preventDefault();const description=$("description").value.trim();const amount=Number($("amount").value);const members=(pack.members||[]).map(x=>x.id);if(!description||!Number.isFinite(amount)||amount<=0||!members.length){$("status").textContent="Enter a valid description and amount. The saved pack must include travelers.";return}if(queue.length>=60){$("status").textContent="This device already has 60 unsynced changes. Reconnect and sync them before adding more so no offline data is lost.";return}const rate=pack.trip.currencyCode===pack.trip.baseCurrency?1:Number(pack.trip.defaultExchangeRate)||1;const id=createId();queue.push({id,url:"/api/expenses",method:"POST",label:`Quick expense · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:pack.trip.currencyCode,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:"Saved from Offline Pack",allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});localStorage.setItem(QUEUE_KEY,JSON.stringify(queue));queueLabel();$("description").value="";$("amount").value="";$("status").textContent="Expense saved on this device. It will sync when you reconnect."});
+  function renderPack(){
+    pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
+    const has=Boolean(pack&&pack.currentUserId);
+    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;$("reservations-card").hidden=!has;
+    if(!has)return;
+    selectedId=pack.trip.id;localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack));
+    $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · trip ${pack.trip.currencyCode} · base ${pack.trip.baseCurrency}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
+    $("split-note").textContent=pack.trip.financialStatus==="CLOSED"?"Expenses are locked for this Trip. Reopen them from Settlement when online.":`Saving to ${pack.trip.name} · paid by you · split equally between ${(pack.members||[]).length} traveler${(pack.members||[]).length===1?"":"s"}.`;
+    const currencyCodes=[...new Set([String(pack.trip.currencyCode).toUpperCase(),String(pack.trip.baseCurrency).toUpperCase()])];$("currency").replaceChildren(...currencyCodes.map(code=>{const option=document.createElement("option");option.value=code;option.textContent=`${code}${code===String(pack.trip.currencyCode).toUpperCase()?" · destination":" · base"}`;return option}));
+    $("quick-form").querySelector("button").disabled=pack.trip.financialStatus==="CLOSED";
+    $("plan-list").replaceChildren();const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
+    $("reservation-list").replaceChildren();const reservations=pack.reservations||[];if(!reservations.length)$("reservation-list").innerHTML='<div class="empty">No saved reservations.</div>';else reservations.forEach(x=>$("reservation-list").append(row(x.title,`${x.date||"Date not detected"}${x.time?` · ${x.time}`:""}${x.confirmationNo?` · Ref ${x.confirmationNo}`:""}`,x.kind)));
   }
+  $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>{selectedId=event.target.value;renderPack()});renderPack();
+
+  $("quick-form").addEventListener("submit",event=>{event.preventDefault();if(!pack)return;if(pack.trip.financialStatus==="CLOSED"){$("status").textContent="This Trip is financially locked. No expense was queued.";return}const description=$("description").value.trim();const amount=Number($("amount").value);const members=(pack.members||[]).map(x=>x.id);const currency=$("currency").value;if(!description||!Number.isFinite(amount)||amount<=0||!members.length){$("status").textContent="Enter a valid description and amount. The saved pack must include travelers.";return}if(queue.length>=60){$("status").textContent="This device already has 60 unsynced changes. Reconnect and sync them before adding more so no offline data is lost.";return}const rate=currency===String(pack.trip.baseCurrency).toUpperCase()?1:Number(pack.trip.defaultExchangeRate)||1;const id=createId();queue.push({id,url:"/api/expenses",method:"POST",label:`${pack.trip.name} · ${currency} · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:currency,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:`Saved offline for ${pack.trip.name}`,allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});localStorage.setItem(QUEUE_KEY,JSON.stringify(queue));queueLabel();$("description").value="";$("amount").value="";$("status").textContent=`Expense saved for ${pack.trip.name} in ${currency}. It will sync when you reconnect.`});
 
   function updateStatus(){if(navigator.onLine){$("status").textContent="Connection restored. Returning to Miles & Meals…";$("status").classList.add("online");location.href="/dashboard";return}$("status").textContent="Still offline. Saved trip essentials remain available here.";$("status").classList.remove("online")}
   $("retry").addEventListener("click",()=>{location.href="/dashboard"});window.addEventListener("online",updateStatus);window.addEventListener("offline",updateStatus);

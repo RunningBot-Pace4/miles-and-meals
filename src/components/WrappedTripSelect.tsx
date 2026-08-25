@@ -2,6 +2,7 @@
 
 import { type ChangeEvent, useState } from "react";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { compactOptionText } from "@/lib/display-text";
 
 type TripOption = {
   id: string;
@@ -77,8 +78,8 @@ export function WrappedTripSelect({
             onChange={(event: ChangeEvent<HTMLSelectElement>) => void changeTrip(event.target.value)}
           >
             {trips.map((trip) => (
-              <option value={trip.id} key={trip.id}>
-                {trip.name}
+              <option value={trip.id} key={trip.id} title={trip.name}>
+                {compactOptionText(trip.name, 32)}
               </option>
             ))}
           </select>

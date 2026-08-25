@@ -27,7 +27,7 @@ const packageJson = read("package.json");
 
 // Settle Up must be trip-first, not country/destination-first.
 must(settlementPage, "SettlementTripSelect", "v68 settlement trip selector missing");
-must(settlementPicker, "{trip.name} · {trip.statusLabel}", "v68 settlement dropdown must show trip name + readiness");
+must(settlementPicker, "${trip.name} · ${trip.statusLabel}", "v68 settlement dropdown must show trip name + readiness");
 must(settlementPicker, "activateTrip", "v68 settlement trip picker must keep active-trip context in sync");
 must(settlementPage, 'label: "Ready to lock"', "v68 ready-to-lock status missing");
 must(settlementPage, 'className="settlement-trip-context"', "v68 selected-trip context card missing");
@@ -49,7 +49,7 @@ must(workspace, "payment.tripName", "v68 settlement history still displays count
 // Live GPS trip selector should also use trip names.
 must(locationPage, "activeTrip.allCountries.filter", "v68 location page should expose accessible trips");
 must(locationTracker, ">\n            Trip\n            <select", "v68 location selector label must be Trip");
-must(locationTracker, "{country.tripName}", "v68 location selector must display trip name");
+must(locationTracker, "compactOptionText(country.tripName", "v68 location selector must display trip name");
 must(locationTracker, "Destination:", "v68 location selector should retain destination context outside dropdown");
 must(locationRead, "canAccessCountry", "v68 location read access should support selected accessible trip");
 must(locationWrite, "canAccessCountry", "v68 location write access should support selected accessible trip");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 type DateRangePickerProps = {
   startDate: string;
@@ -95,6 +95,7 @@ export function DateRangePicker({
   const [viewMonth, setViewMonth] = useState(
     () => new Date(initialMonth.getFullYear(), initialMonth.getMonth(), 1, 12),
   );
+  const calendarId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const start = useMemo(() => parseIsoDate(startDate), [startDate]);
@@ -130,6 +131,15 @@ export function DateRangePicker({
     setViewMonth(new Date(anchor.getFullYear(), anchor.getMonth(), 1, 12));
     setPickingEnd(Boolean(start && !end));
     setOpen(true);
+  }
+
+  function togglePicker() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+
+    openPicker();
   }
 
   function choose(date: Date) {
@@ -175,9 +185,10 @@ export function DateRangePicker({
       <button
         className="date-range-trigger"
         type="button"
-        onClick={openPicker}
+        onClick={togglePicker}
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-controls={calendarId}
         aria-label={`${label}: ${startDate ? formatDisplayDate(startDate) : "choose start"} to ${endDate ? formatDisplayDate(endDate) : "choose end"}`}
       >
         <span className={startDate ? "date-range-value filled" : "date-range-value"}>
@@ -201,7 +212,13 @@ export function DateRangePicker({
       </small>
 
       {open ? (
-        <section className="date-range-popover" role="dialog" aria-modal="true" aria-label={`${label} calendar`}>
+        <section
+          className="date-range-popover"
+          id={calendarId}
+          role="dialog"
+          aria-modal="false"
+          aria-label={`${label} calendar`}
+        >
           <div className="date-range-popover-head">
             <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">‹</button>
             <div>
@@ -258,6 +275,7 @@ export function DateRangePicker({
             <div className="date-range-foot-actions">
               <button className="text-button" type="button" onClick={() => choose(new Date())}>Today</button>
               <button className="text-button" type="button" onClick={clearRange}>Clear dates</button>
+              <button className="text-button" type="button" onClick={() => setOpen(false)}>Close</button>
             </div>
             <span>{startDate ? formatDisplayDate(startDate) : "Start"} → {endDate ? formatDisplayDate(endDate) : "End"}</span>
           </div>
