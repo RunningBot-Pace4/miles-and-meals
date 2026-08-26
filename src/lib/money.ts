@@ -51,7 +51,7 @@ export function formatMoney(amount: number, currency = "MYR"): string {
   }).format(amount);
 }
 
-export type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
+export type SplitMode = "EQUAL" | "PERCENTAGE" | "SHARES" | "EXACT";
 
 export type RequestedSplit = {
   userId: string;
@@ -141,6 +141,20 @@ export function buildExpenseSplits(
     }
 
     return distributeByWeights(total, splits, 100);
+  }
+
+  if (mode === "SHARES") {
+    const sharesTotal = splits.reduce((sum, split) => sum + split.value, 0);
+
+    if (!Number.isFinite(sharesTotal) || sharesTotal <= 0) {
+      throw new Error("Share weights must add up to more than zero.");
+    }
+
+    if (splits.some((split) => split.value <= 0)) {
+      throw new Error("Each selected traveler needs a share weight above zero.");
+    }
+
+    return distributeByWeights(total, splits, sharesTotal);
   }
 
   const requestedTotal = roundMoney(

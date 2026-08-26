@@ -43,6 +43,8 @@ export default async function PlannerPage() {
             confirmationNo: travelItems.confirmationNo,
             linkUrl: travelItems.linkUrl,
             notes: travelItems.notes,
+            sortOrder: travelItems.sortOrder,
+            durationMinutes: travelItems.durationMinutes,
             createdBy: travelItems.createdBy,
             updatedAt: travelItems.updatedAt,
             proposedByName: user.name,

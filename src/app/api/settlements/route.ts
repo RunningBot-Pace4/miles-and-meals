@@ -89,6 +89,14 @@ export async function POST(request: Request) {
         );
       }
 
+      const paymentAmount = input.amount ?? transfer.amount;
+      if (paymentAmount > transfer.amount + 0.009) {
+        return Response.json(
+          { error: `Payment cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.` },
+          { status: 400 },
+        );
+      }
+
       const inserted = await db
         .insert(settlements)
         .values({
@@ -96,7 +104,7 @@ export async function POST(request: Request) {
           countryId: ledger.countryId,
           fromUserId: session.user.id,
           toUserId: input.counterpartyUserId,
-          amount: transfer.amount.toFixed(2),
+          amount: paymentAmount.toFixed(2),
           currency: ledger.currency,
           status: "SENT",
           initiatedBy: session.user.id,
@@ -110,7 +118,7 @@ export async function POST(request: Request) {
         entityId: inserted[0]?.id ?? null,
         tripId: ledger.tripId,
         countryId: ledger.countryId,
-        summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
+        summary: `${session.user.name} marked ${ledger.currency} ${paymentAmount.toFixed(2)} as paid.`,
       });
 
       await sendPushToUsers(
@@ -118,7 +126,7 @@ export async function POST(request: Request) {
         "PAYMENTS",
         {
           title: "Payment marked as paid",
-          body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as paid.`,
+          body: `${session.user.name} marked ${ledger.currency} ${paymentAmount.toFixed(2)} as paid.`,
           url: `/settlements?tripId=${encodeURIComponent(ledger.tripId)}`,
           countryId: ledger.countryId,
           tag: `settlement-${inserted[0]?.id ?? "sent"}`,
@@ -216,6 +224,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const receivedAmount = input.amount ?? transfer.amount;
+    if (receivedAmount > transfer.amount + 0.009) {
+      return Response.json(
+        { error: `Received amount cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.` },
+        { status: 400 },
+      );
+    }
+
     const now = new Date();
     const inserted = await db
       .insert(settlements)
@@ -224,7 +240,7 @@ export async function POST(request: Request) {
         countryId: ledger.countryId,
         fromUserId: input.counterpartyUserId,
         toUserId: session.user.id,
-        amount: transfer.amount.toFixed(2),
+        amount: receivedAmount.toFixed(2),
         currency: ledger.currency,
         status: "SETTLED",
         initiatedBy: session.user.id,
@@ -241,7 +257,7 @@ export async function POST(request: Request) {
       entityId: inserted[0]?.id ?? null,
       tripId: ledger.tripId,
       countryId: ledger.countryId,
-      summary: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received; the payer side was completed automatically.`,
+      summary: `${session.user.name} marked ${ledger.currency} ${receivedAmount.toFixed(2)} as received; the payer side was completed automatically.`,
     });
 
     await sendPushToUsers(
@@ -249,7 +265,7 @@ export async function POST(request: Request) {
       "PAYMENTS",
       {
         title: "Payment completed",
-        body: `${session.user.name} marked ${ledger.currency} ${transfer.amount.toFixed(2)} as received. Your payment was marked completed automatically.`,
+        body: `${session.user.name} marked ${ledger.currency} ${receivedAmount.toFixed(2)} as received. Your payment was marked completed automatically.`,
         url: `/settlements?tripId=${encodeURIComponent(ledger.tripId)}`,
         countryId: ledger.countryId,
         tag: `settlement-${inserted[0]?.id ?? "received"}`,

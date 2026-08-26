@@ -1,6 +1,6 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
+import { expenseItemAssignments, expenseItems, expensePayers, expenseSplits, expenses } from "@/db/schema";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
@@ -13,6 +13,7 @@ import { recordActivity } from "@/lib/activity";
 import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { buildReceiptItemization, type ReceiptItemizationResult } from "@/lib/receipt-itemization";
+import { buildExpensePayers } from "@/lib/expense-payers";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
@@ -49,6 +50,16 @@ async function replaceExpenseItemization(
       );
     }
   }
+}
+
+async function replaceExpensePayers(
+  expenseId: string,
+  payers: Array<{ userId: string; amountBase: string }>,
+): Promise<void> {
+  await db.delete(expensePayers).where(eq(expensePayers.expenseId, expenseId));
+  await db.insert(expensePayers).values(
+    payers.map((payer) => ({ expenseId, ...payer })),
+  );
 }
 
 
@@ -145,9 +156,10 @@ export async function POST(request: Request) {
     let existingSplitCount = 0;
     let existingItemCount = 0;
     let existingAssignmentCount = 0;
+    let existingPayerCount = 0;
 
     if (priorRequest) {
-      const [existingSplits, existingItems] = await Promise.all([
+      const [existingSplits, existingItems, existingPayers] = await Promise.all([
         db
           .select({ expenseId: expenseSplits.expenseId })
           .from(expenseSplits)
@@ -156,10 +168,15 @@ export async function POST(request: Request) {
           .select({ id: expenseItems.id })
           .from(expenseItems)
           .where(eq(expenseItems.expenseId, priorRequest.id)),
+        db
+          .select({ expenseId: expensePayers.expenseId })
+          .from(expensePayers)
+          .where(eq(expensePayers.expenseId, priorRequest.id)),
       ]);
 
       existingSplitCount = existingSplits.length;
       existingItemCount = existingItems.length;
+      existingPayerCount = existingPayers.length;
 
       if (existingItems.length) {
         const assignments = await db
@@ -250,6 +267,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (input.payers.some((payer) => !memberIds.has(payer.userId))) {
+      return Response.json(
+        { error: "Every payer must be assigned to this Trip." },
+        { status: 400 },
+      );
+    }
+
     if (input.splits.some((split) => !memberIds.has(split.userId))) {
       return Response.json(
         { error: "Every split member must be assigned to this country." },
@@ -296,6 +320,11 @@ export async function POST(request: Request) {
       : null;
     const calculatedSplits = itemization?.splits ??
       buildExpenseSplits(settlementBase, input.splitMode, input.splits);
+    const calculatedPayers = buildExpensePayers(
+      settlementBase,
+      input.paidByUserId,
+      input.payers,
+    );
 
     if (priorRequest) {
       const expectedItemCount = itemization?.items.length ?? 0;
@@ -306,7 +335,8 @@ export async function POST(request: Request) {
       const derivedRowsComplete =
         existingSplitCount === calculatedSplits.length &&
         existingItemCount === expectedItemCount &&
-        existingAssignmentCount === expectedAssignmentCount;
+        existingAssignmentCount === expectedAssignmentCount &&
+        existingPayerCount === calculatedPayers.length;
 
       if (derivedRowsComplete) {
         return Response.json({ id: priorRequest.id, idempotent: true });
@@ -323,6 +353,7 @@ export async function POST(request: Request) {
         calculatedSplits.map((split) => ({ expenseId: priorRequest.id, ...split })),
       );
       await replaceExpenseItemization(priorRequest.id, itemization);
+      await replaceExpensePayers(priorRequest.id, calculatedPayers);
 
       await recordActivity({
         actorUserId: session.user.id,
@@ -364,6 +395,14 @@ export async function POST(request: Request) {
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
         receiptUrl: input.receiptUrl || null,
+        receiptReviewStatus: input.receiptUrl
+          ? input.receiptReviewStatus
+          : "NOT_REQUIRED",
+        receiptConfidence: input.receiptConfidence ?? null,
+        receiptReviewedAt:
+          input.receiptUrl && input.receiptReviewStatus === "REVIEWED"
+            ? new Date()
+            : null,
         notes: input.notes || null,
         createdBy: session.user.id,
       })
@@ -372,6 +411,7 @@ export async function POST(request: Request) {
     await db.insert(expenseSplits).values(
       calculatedSplits.map((split) => ({ expenseId: inserted[0].id, ...split })),
     );
+    await replaceExpensePayers(inserted[0].id, calculatedPayers);
     await replaceExpenseItemization(inserted[0].id, itemization);
 
     await recordActivity({

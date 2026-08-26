@@ -1,3 +1,15 @@
+# Miles & Meals V85 Combined — Audited Full Source Package
+
+This is the complete V83 + V84 + V85 release, versioned `1.85.0`.
+
+It includes the Trip Command Centre, reliable Sync Centre, advanced Plan tools, reviewed confirmation import, multiple expense payers, weighted/saved splits, category budgets, comments, receipt review and partial settlements. The 10-point acceptance matrix and deployment order are in `V85-COMBINED-10-POINT-RELEASE.md`.
+
+**Database:** this release adds schema. Back up or branch Neon, then run `neon-upgrade-v85-combined.sql` before deployment. Never use a reset script as an upgrade.
+
+**Validated:** 80/80 unit tests, all historical source gates, route/source integrity, TypeScript and the Next.js production build pass in the packaging environment.
+
+---
+
 # Miles & Meals v82.2 — Audited Full Source Package
 
 v82.2 removes closed Trips from every offline-pack layer, adds traveler selection for offline expense sharing, refreshes Home and Settlement data silently after a successful reconnect sync, and mounts mobile navigation at the document viewport so it cannot float inside long Settlement content.

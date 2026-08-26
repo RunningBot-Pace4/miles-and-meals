@@ -857,6 +857,8 @@ function SettlementStatus({
                     transfer.toUserId
                   }
                   label="Mark paid"
+                  maximumAmount={transfer.amount}
+                  currency={transfer.currency}
                 />
               ) : transfer.toUserId ===
                 currentUserId ? (
@@ -869,6 +871,8 @@ function SettlementStatus({
                     transfer.fromUserId
                   }
                   label="Mark received"
+                  maximumAmount={transfer.amount}
+                  currency={transfer.currency}
                 />
               ) : null}
             </article>

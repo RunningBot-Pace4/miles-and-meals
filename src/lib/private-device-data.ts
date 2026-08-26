@@ -1,5 +1,5 @@
 import { clearOfflinePack } from "@/lib/offline-pack";
-import { clearOfflineQueue } from "@/lib/offline-queue";
+import { clearOfflineQueue, clearOfflineSyncHistory } from "@/lib/offline-queue";
 
 /**
  * Remove private travel data that is intentionally cached in this browser.
@@ -12,6 +12,7 @@ export function clearPrivateDeviceData(): void {
 
   clearOfflinePack();
   clearOfflineQueue();
+  clearOfflineSyncHistory();
 
   try {
     const draftKeys: string[] = [];

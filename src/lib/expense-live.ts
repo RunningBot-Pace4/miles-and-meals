@@ -7,6 +7,7 @@ import {
 import { db } from "@/db";
 import {
   countries,
+  expensePayers,
   expenseSplits,
   expenses,
   user,
@@ -26,6 +27,12 @@ export type ExpenseLiveSplit = {
   share: number;
 };
 
+export type ExpenseLivePayer = {
+  userId: string;
+  name: string;
+  amount: number;
+};
+
 export type ExpenseLiveRow = {
   id: string;
   expenseDate: string;
@@ -40,6 +47,7 @@ export type ExpenseLiveRow = {
   countryName: string;
   tripName: string;
   paidByName: string;
+  payers: ExpenseLivePayer[];
   hasReceipt: boolean;
   splits: ExpenseLiveSplit[];
 };
@@ -160,38 +168,47 @@ export async function loadExpenseLiveData(
   const expenseIds =
     rows.map((row) => row.id);
 
-  const splitRows =
+  const [splitRows, payerRows] =
     expenseIds.length === 0
-      ? []
-      : await db
-          .select({
-            expenseId:
-              expenseSplits.expenseId,
-            userId:
-              expenseSplits.userId,
-            name: user.name,
-            shareAmountBase:
-              expenseSplits.shareAmountBase,
-          })
-          .from(expenseSplits)
-          .innerJoin(
-            user,
-            eq(
-              expenseSplits.userId,
-              user.id,
-            ),
-          )
-          .where(
-            inArray(
-              expenseSplits.expenseId,
-              expenseIds,
-            ),
-          );
+      ? [[], []] as const
+      : await Promise.all([
+          db
+            .select({
+              expenseId: expenseSplits.expenseId,
+              userId: expenseSplits.userId,
+              name: user.name,
+              shareAmountBase: expenseSplits.shareAmountBase,
+            })
+            .from(expenseSplits)
+            .innerJoin(user, eq(expenseSplits.userId, user.id))
+            .where(inArray(expenseSplits.expenseId, expenseIds)),
+          db
+            .select({
+              expenseId: expensePayers.expenseId,
+              userId: expensePayers.userId,
+              name: user.name,
+              amountBase: expensePayers.amountBase,
+            })
+            .from(expensePayers)
+            .innerJoin(user, eq(expensePayers.userId, user.id))
+            .where(inArray(expensePayers.expenseId, expenseIds)),
+        ]);
 
   const splitsByExpense = new Map<
     string,
     ExpenseLiveSplit[]
   >();
+  const payersByExpense = new Map<string, ExpenseLivePayer[]>();
+
+  for (const payer of payerRows) {
+    const current = payersByExpense.get(payer.expenseId) ?? [];
+    current.push({
+      userId: payer.userId,
+      name: payer.name,
+      amount: toNumber(payer.amountBase),
+    });
+    payersByExpense.set(payer.expenseId, current);
+  }
 
   let myShare = 0;
 
@@ -260,7 +277,10 @@ export async function loadExpenseLiveData(
           row.countryId,
         )?.tripName ?? "Trip",
       paidByName:
-        row.paidByName,
+        (payersByExpense.get(row.id)?.length ?? 0) > 1
+          ? "Multiple travelers"
+          : row.paidByName,
+      payers: payersByExpense.get(row.id) ?? [],
       hasReceipt:
         Boolean(row.hasReceipt),
       splits:

@@ -40,6 +40,18 @@ describe("buildExpenseSplits", () => {
     ]);
   });
 
+  it("supports share weights without losing cents", () => {
+    expect(
+      buildExpenseSplits(100, "SHARES", [
+        { userId: "a", value: 2 },
+        { userId: "b", value: 1 },
+      ]),
+    ).toEqual([
+      { userId: "a", shareAmountBase: "66.67" },
+      { userId: "b", shareAmountBase: "33.33" },
+    ]);
+  });
+
   it("rejects invalid percentages", () => {
     expect(() =>
       buildExpenseSplits(100, "PERCENTAGE", [

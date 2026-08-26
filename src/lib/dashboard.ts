@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   expenseSplits,
+  expensePayers,
   expenses,
   user,
 } from "@/db/schema";
@@ -71,22 +72,42 @@ export async function buildExpenseSummary(countryIds: string[]) {
       row.category,
       (categories.get(row.category) ?? 0) + amount,
     );
+  }
+
+  const [splits, payerRows] =
+    expenseIds.length === 0
+      ? [[], []] as const
+      : await Promise.all([
+          db
+            .select({
+              userId: expenseSplits.userId,
+              shareAmountBase: expenseSplits.shareAmountBase,
+            })
+            .from(expenseSplits)
+            .where(inArray(expenseSplits.expenseId, expenseIds)),
+          db
+            .select({
+              expenseId: expensePayers.expenseId,
+              userId: expensePayers.userId,
+              amountBase: expensePayers.amountBase,
+            })
+            .from(expensePayers)
+            .where(inArray(expensePayers.expenseId, expenseIds)),
+        ]);
+
+  const expensesWithPayerRows = new Set(payerRows.map((row) => row.expenseId));
+  for (const payer of payerRows) {
     paid.set(
-      row.paidByUserId,
-      (paid.get(row.paidByUserId) ?? 0) + amount,
+      payer.userId,
+      (paid.get(payer.userId) ?? 0) + toNumber(payer.amountBase),
     );
   }
 
-  const splits =
-    expenseIds.length === 0
-      ? []
-      : await db
-          .select({
-            userId: expenseSplits.userId,
-            shareAmountBase: expenseSplits.shareAmountBase,
-          })
-          .from(expenseSplits)
-          .where(inArray(expenseSplits.expenseId, expenseIds));
+  for (const row of rows) {
+    if (expensesWithPayerRows.has(row.id)) continue;
+    const amount = effectiveConvertedAmount(row.convertedAmount, row.actualConvertedAmount);
+    paid.set(row.paidByUserId, (paid.get(row.paidByUserId) ?? 0) + amount);
+  }
 
   const owed = new Map<string, number>();
 

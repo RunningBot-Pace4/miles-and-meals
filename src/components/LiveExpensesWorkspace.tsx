@@ -282,6 +282,15 @@ export function LiveExpensesWorkspace({
                           expense.paidByName
                         }
                       </p>
+                      {expense.payers.length > 1 ? (
+                        <p className="expense-payer-line">
+                          {expense.payers.map((payer) => (
+                            <span key={payer.userId}>
+                              {payer.name} · {formatMoney(payer.amount, expense.baseCurrency)}
+                            </span>
+                          ))}
+                        </p>
+                      ) : null}
                     </div>
 
                     <strong>

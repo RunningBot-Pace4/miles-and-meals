@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
+import { expenseComments, expenseItemAssignments, expenseItems, expensePayers, expenseSplits, expenses, user } from "@/db/schema";
 import { ExpenseForm } from "@/components/ExpenseForm";
+import { ExpenseComments } from "@/components/ExpenseComments";
 import { FinancialClosePanel } from "@/components/FinancialClosePanel";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import {
@@ -47,6 +48,30 @@ export default async function EditExpensePage({ params }: Props) {
     .from(expenseSplits)
     .where(eq(expenseSplits.expenseId, id));
 
+  const payers = await db
+    .select({
+      userId: expensePayers.userId,
+      amountBase: expensePayers.amountBase,
+    })
+    .from(expensePayers)
+    .where(eq(expensePayers.expenseId, id));
+
+  const comments = await db
+    .select({
+      id: expenseComments.id,
+      body: expenseComments.body,
+      userId: expenseComments.userId,
+      userName: user.name,
+      createdAt: expenseComments.createdAt,
+    })
+    .from(expenseComments)
+    .innerJoin(user, eq(expenseComments.userId, user.id))
+    .where(eq(expenseComments.expenseId, id));
+  const commentViews = comments.map((comment) => ({
+    ...comment,
+    createdAt: comment.createdAt.toISOString(),
+  }));
+
   const storedItems = await db
     .select({
       id: expenseItems.id,
@@ -87,7 +112,9 @@ export default async function EditExpensePage({ params }: Props) {
     expense.actualConvertedAmount,
   );
   const splitMode =
-    expense.splitMode === "PERCENTAGE" || expense.splitMode === "EXACT"
+    expense.splitMode === "PERCENTAGE" ||
+    expense.splitMode === "SHARES" ||
+    expense.splitMode === "EXACT"
       ? expense.splitMode
       : "EQUAL";
   const splitValues = Object.fromEntries(
@@ -101,6 +128,10 @@ export default async function EditExpensePage({ params }: Props) {
       }
 
       if (splitMode === "EXACT") {
+        return [split.userId, Number(split.shareAmountBase).toFixed(2)];
+      }
+
+      if (splitMode === "SHARES") {
         return [split.userId, Number(split.shareAmountBase).toFixed(2)];
       }
 
@@ -130,11 +161,13 @@ export default async function EditExpensePage({ params }: Props) {
           initialState={financialState}
           canManage={canManageFinancials}
         />
+        <ExpenseComments expenseId={id} initialComments={commentViews} readOnly />
       </div>
     );
   }
 
   return (
+    <div className="stack gap-lg">
       <ExpenseForm
         countries={countries}
         activeTripId={activeTrip.tripId}
@@ -161,13 +194,20 @@ export default async function EditExpensePage({ params }: Props) {
               : null,
           splitMode,
           paidByUserId: expense.paidByUserId,
+          payers: payers.length
+            ? payers
+            : [{ userId: expense.paidByUserId, amountBase: settlementTotal.toFixed(2) }],
           paymentMethod: expense.paymentMethod,
           receiptUrl: expense.receiptUrl,
+          receiptReviewStatus: expense.receiptReviewStatus as "NOT_REQUIRED" | "NEEDS_REVIEW" | "REVIEWED",
+          receiptConfidence: expense.receiptConfidence,
           notes: expense.notes,
           splitUserIds: splits.map((split) => split.userId),
           splitValues,
           itemization,
         }}
       />
+      <ExpenseComments expenseId={id} initialComments={commentViews} />
+    </div>
   );
 }

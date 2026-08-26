@@ -54,7 +54,7 @@ export default async function MorePage() {
         </div>
       </div>
 
-      <section className="panel menu-list">
+      <section className="panel menu-list account-summary-menu">
         <div className="menu-row">
           <span>Signed in as</span>
           <strong>{session.user.name}</strong>
@@ -63,57 +63,24 @@ export default async function MorePage() {
           <span>Email</span>
           <strong>{session.user.email}</strong>
         </div>
-        {admin ? (
-          <>
-            <Link className="menu-row link-row" href="/admin">
-              <span>Admin: people, trips & countries</span>
-              <span>›</span>
-            </Link>
-            <Link className="menu-row link-row" href="/admin/health">
-              <span>Admin: app health</span>
-              <span>›</span>
-            </Link>
-            <Link className="menu-row link-row" href="/admin/backup">
-              <span>Admin: backup & restore</span>
-              <span>›</span>
-            </Link>
-          </>
-        ) : null}
+      </section>
+
+      <section className="panel menu-list">
+        <div className="menu-section-title"><p className="eyebrow">TRIP TOOLS</p><h2>Plan, protect and review</h2></div>
         <Link className="menu-row link-row" href="/trips">
           <span>Create & manage my trips</span>
           <span>›</span>
         </Link>
-        <Link className="menu-row link-row" href="/journeys">
-          <span>Multi-country Journey · optional</span>
-          <span>›</span>
-        </Link>
         <Link className="menu-row link-row" href="/offline">
-          <span>Offline pack & sync</span>
+          <span>Offline packs & Sync Centre</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/settings/budgets">
-          <span>My trip budgets</span>
+          <span>Budgets & category limits</span>
           <span>›</span>
         </Link>
-        <Link className="menu-row link-row" href="/settings/profile">
-          <span>Profile & avatar</span>
-          <span>›</span>
-        </Link>
-        <Link className="menu-row link-row" href="/settings/password">
-          <span>Change password</span>
-          <span>›</span>
-        </Link>
-        <Link className="menu-row link-row" href="/notifications">
-          <span>
-            Notification center
-            {unreadNotificationCount > 0
-              ? ` · ${unreadNotificationCount} new`
-              : ""}
-          </span>
-          <span>›</span>
-        </Link>
-        <Link className="menu-row link-row" href="/settings/notifications">
-          <span>Notification settings</span>
+        <Link className="menu-row link-row" href="/receipts">
+          <span>Receipt review</span>
           <span>›</span>
         </Link>
         <Link className="menu-row link-row" href="/search">
@@ -132,19 +99,54 @@ export default async function MorePage() {
           <span>Export trip data</span>
           <span>›</span>
         </Link>
-        <Link className="menu-row link-row" href="/planner">
-          <span>Planner sections</span>
-          <span>›</span>
-        </Link>
-        <Link className="menu-row link-row" href="/expenses">
-          <span>All trip expenses</span>
-          <span>›</span>
-        </Link>
-        <Link className="menu-row link-row" href="/settlements">
-          <span>Settle Up · paid & received</span>
+        <Link className="menu-row link-row" href="/journeys">
+          <span>Multi-country Journey · optional</span>
           <span>›</span>
         </Link>
       </section>
+
+      <section className="panel menu-list">
+        <div className="menu-section-title"><p className="eyebrow">ACCOUNT</p><h2>Your preferences</h2></div>
+        <Link className="menu-row link-row" href="/settings/profile">
+          <span>Profile & avatar</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/notifications">
+          <span>
+            Notification center
+            {unreadNotificationCount > 0
+              ? ` · ${unreadNotificationCount} new`
+              : ""}
+          </span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settings/notifications">
+          <span>Notification settings</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settings/password">
+          <span>Change password</span>
+          <span>›</span>
+        </Link>
+      </section>
+
+      {admin ? (
+        <section className="panel menu-list">
+          <div className="menu-section-title"><p className="eyebrow">SYSTEM ADMIN</p><h2>Operations</h2></div>
+          <Link className="menu-row link-row" href="/admin">
+            <span>People, trips & countries</span>
+            <span>›</span>
+          </Link>
+          <Link className="menu-row link-row" href="/admin/health">
+            <span>App health</span>
+            <span>›</span>
+          </Link>
+          <Link className="menu-row link-row" href="/admin/backup">
+            <span>Backup & restore</span>
+            <span>›</span>
+          </Link>
+        </section>
+      ) : null}
 
       <InstallAppCard />
     </div>

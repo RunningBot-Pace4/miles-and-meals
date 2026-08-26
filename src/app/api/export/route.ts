@@ -8,10 +8,14 @@ import {
 import { db } from "@/db";
 import {
   countries,
+  expenseComments,
+  expensePayers,
   expenses,
   settlements,
   travelItems,
   tripBudgets,
+  tripCategoryBudgets,
+  splitPresets,
   user,
 } from "@/db/schema";
 import {
@@ -98,6 +102,10 @@ export async function GET(request: Request) {
       planner: [],
       settlements: [],
       personalBudgets: [],
+      categoryBudgets: [],
+      expensePayers: [],
+      expenseComments: [],
+      splitPresets: [],
     };
 
     if (format === "json") {
@@ -138,6 +146,8 @@ export async function GET(request: Request) {
     plannerRows,
     settlementRows,
     personalBudgetRows,
+    categoryBudgetRows,
+    splitPresetRows,
   ] = await Promise.all([
     db
       .select({
@@ -218,7 +228,29 @@ export async function GET(request: Request) {
           ),
         ),
       ),
+    db.select().from(tripCategoryBudgets).where(inArray(tripCategoryBudgets.tripId, tripIds)),
+    db.select().from(splitPresets).where(inArray(splitPresets.tripId, tripIds)),
   ]);
+
+  const allowedExpenseIds = new Set(expenseRows.map((row) => row.id));
+  const [scopedPayers, scopedComments] = expenseRows.length
+    ? await Promise.all([
+        db
+          .select({
+            expenseId: expensePayers.expenseId,
+            userId: expensePayers.userId,
+            name: user.name,
+            amountBase: expensePayers.amountBase,
+          })
+          .from(expensePayers)
+          .innerJoin(user, eq(expensePayers.userId, user.id))
+          .where(inArray(expensePayers.expenseId, [...allowedExpenseIds])),
+        db
+          .select()
+          .from(expenseComments)
+          .where(inArray(expenseComments.expenseId, [...allowedExpenseIds])),
+      ])
+    : [[], []] as const;
 
   const exportData = {
     exportedAt: new Date().toISOString(),
@@ -237,6 +269,14 @@ export async function GET(request: Request) {
           row.userId ===
           session.user.id,
       ),
+    categoryBudgets: categoryBudgetRows,
+    expensePayers: scopedPayers,
+    expenseComments: scopedComments,
+    splitPresets: splitPresetRows.map((preset) => ({
+      ...preset,
+      shares: JSON.parse(preset.sharesJson) as unknown,
+      sharesJson: undefined,
+    })),
   };
 
   if (format === "json") {
@@ -288,7 +328,7 @@ export async function GET(request: Request) {
         expense.transactionAmount,
         expense.transactionCurrency,
         "",
-        expense.paidByName ?? "",
+        (scopedPayers.filter((payer) => payer.expenseId === expense.id).map((payer) => payer.name).join(" + ")) || expense.paidByName || "",
       ]),
     );
   }

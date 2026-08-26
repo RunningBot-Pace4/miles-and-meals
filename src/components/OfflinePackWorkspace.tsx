@@ -248,6 +248,13 @@ export function OfflinePackWorkspace({
           splitMode: "EQUAL",
           splits: memberIds.map((userId) => ({ userId, value: 0 })),
         },
+        meta: {
+          tripId: pack.trip.id,
+          tripName: pack.trip.name,
+          currency: selectedCurrency,
+          sharing: `${memberIds.length} traveler${memberIds.length === 1 ? "" : "s"}`,
+          description: description.trim(),
+        },
       });
     } catch (caught) {
       setMessage(caught instanceof Error ? caught.message : "This offline expense could not be saved on this device.");

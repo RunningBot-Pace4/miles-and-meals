@@ -1,4 +1,5 @@
 import { TripBudgetForm } from "@/components/TripBudgetForm";
+import { CategoryBudgetManager } from "@/components/CategoryBudgetManager";
 import { requirePageSession } from "@/lib/session";
 import {
   listUserTripBudgets,
@@ -29,11 +30,16 @@ export default async function BudgetSettingsPage() {
       </div>
 
       {trips.length ? (
-        <section className="panel">
-          <TripBudgetForm
-            trips={trips}
-          />
-        </section>
+        <>
+          <section className="panel">
+            <TripBudgetForm
+              trips={trips}
+            />
+          </section>
+          <section className="panel">
+            <CategoryBudgetManager trips={trips} />
+          </section>
+        </>
       ) : (
         <section className="empty-card empty-card-feature">
           <div className="empty-icon">

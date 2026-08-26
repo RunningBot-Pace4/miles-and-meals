@@ -19,6 +19,7 @@ import {
 } from "@/lib/draft-storage";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { compactOptionText } from "@/lib/display-text";
+import { PlanImport } from "@/components/PlanImport";
 
 type CountryOption = {
   id: string;
@@ -50,6 +51,8 @@ type PlannerItem = {
   confirmationNo: string | null;
   linkUrl: string | null;
   notes: string | null;
+  sortOrder: number;
+  durationMinutes: number | null;
   createdBy: string;
   updatedAt: string;
   proposedByName: string | null;
@@ -60,6 +63,8 @@ const tabs = [
   ["PLACE", "Places", "📍"],
   ["FOOD", "Meals", "🍜"],
   ["SHOPPING", "Shop", "🛍️"],
+  ["CHECKLIST", "Tasks", "✓"],
+  ["PACKING", "Pack", "🧳"],
 ] as const;
 
 type TabValue = (typeof tabs)[number][0];
@@ -106,6 +111,22 @@ const tabMeta: Record<
     titleLabel: "Item",
     titlePlaceholder: "Coffee beans, souvenir…",
     typePlaceholder: "Gift / Snack / Fashion",
+  },
+  CHECKLIST: {
+    title: "Ready before you go",
+    subtitle: "Share visas, bookings and preparation tasks with the whole crew.",
+    addLabel: "Add task",
+    titleLabel: "Task",
+    titlePlaceholder: "Check passport, buy insurance…",
+    typePlaceholder: "Document / Booking / Group task",
+  },
+  PACKING: {
+    title: "Pack once, travel lighter",
+    subtitle: "Keep a shared packing list with quantities and completion status.",
+    addLabel: "Add packing item",
+    titleLabel: "Packing item",
+    titlePlaceholder: "Passport, charger, running shoes…",
+    typePlaceholder: "Essential / Clothing / Electronics",
   },
 };
 
@@ -201,6 +222,8 @@ function formPayload(
     confirmationNo: String(form.get("confirmationNo") ?? ""),
     linkUrl: String(form.get("linkUrl") ?? ""),
     notes: String(form.get("notes") ?? ""),
+    sortOrder: String(form.get("sortOrder") ?? "0"),
+    durationMinutes: String(form.get("durationMinutes") ?? ""),
   };
 }
 
@@ -356,6 +379,7 @@ function PlannerItemForm({
       </div>
 
       <div className="form-grid">
+        <input type="hidden" name="sortOrder" value={initial?.sortOrder ?? 0} />
         <label>
           Trip
           <select
@@ -400,6 +424,21 @@ function PlannerItemForm({
             defaultValue={initial?.itemTime ?? ""}
           />
         </label>
+
+        {itemType === "ITINERARY" ? (
+          <label>
+            Duration
+            <select name="durationMinutes" defaultValue={initial?.durationMinutes ?? 60}>
+              <option value="30">30 minutes</option>
+              <option value="60">1 hour</option>
+              <option value="90">1.5 hours</option>
+              <option value="120">2 hours</option>
+              <option value="180">3 hours</option>
+              <option value="240">4 hours</option>
+              <option value="480">Full day</option>
+            </select>
+          </label>
+        ) : null}
 
         <label>
           City / area
@@ -457,7 +496,7 @@ function PlannerItemForm({
           />
         </label>
 
-        {itemType === "SHOPPING" ? (
+        {itemType === "SHOPPING" || itemType === "PACKING" ? (
           <label>
             Quantity
             <input
@@ -468,6 +507,27 @@ function PlannerItemForm({
               defaultValue={initial?.quantity ?? ""}
             />
           </label>
+        ) : null}
+
+        {itemType === "ITINERARY" ? (
+          <>
+            <label>
+              Provider
+              <input
+                name="provider"
+                placeholder="Airline, hotel, tour…"
+                defaultValue={initial?.provider ?? ""}
+              />
+            </label>
+            <label>
+              Confirmation number
+              <input
+                name="confirmationNo"
+                placeholder="Optional"
+                defaultValue={initial?.confirmationNo ?? ""}
+              />
+            </label>
+          </>
         ) : null}
 
         <label className="span-2">
@@ -673,11 +733,37 @@ export function PlannerClient({
           return dateA.localeCompare(dateB);
         }
 
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+
         return (a.itemTime ?? "99:99").localeCompare(
           b.itemTime ?? "99:99",
         );
       });
   }, [itemsState, tab]);
+
+  const itineraryRouteUrl = useMemo(() => {
+    const stops = itemsState
+      .filter((item) => item.itemType === "ITINERARY" && item.area)
+      .sort((left, right) => {
+        const dateCompare = (left.itemDate ?? "9999-12-31").localeCompare(right.itemDate ?? "9999-12-31");
+        if (dateCompare !== 0) return dateCompare;
+        if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
+        return (left.itemTime ?? "99:99").localeCompare(right.itemTime ?? "99:99");
+      })
+      .slice(0, 10)
+      .map((item) => item.area as string);
+    if (stops.length < 2) return "";
+    const params = new URLSearchParams({
+      api: "1",
+      origin: stops[0],
+      destination: stops.at(-1) as string,
+      travelmode: "driving",
+    });
+    if (stops.length > 2) params.set("waypoints", stops.slice(1, -1).join("|"));
+    return `https://www.google.com/maps/dir/?${params.toString()}`;
+  }, [itemsState]);
 
   const countryById = useMemo(
     () =>
@@ -819,6 +905,11 @@ export function PlannerClient({
           method: "POST",
           body: payload,
           label: "Planner item",
+          meta: {
+            tripId: activeTrip?.id,
+            tripName: activeTrip?.name,
+            description: payload.title,
+          },
         });
         clearDraft(draftKey("planner", `new:${tab}`));
         formElement.reset();
@@ -903,6 +994,11 @@ export function PlannerClient({
           method: "PATCH",
           body: payload,
           label: "Planner update",
+          meta: {
+            tripId: activeTrip?.id,
+            tripName: activeTrip?.name,
+            description: editingItem.title,
+          },
         });
         clearDraft(draftKey("planner", `edit:${editingItem.id}`));
         setEditingItem(null);
@@ -984,6 +1080,11 @@ export function PlannerClient({
           url: `/api/travel-items/${id}`,
           method: "DELETE",
           label: "Planner deletion",
+          meta: {
+            tripId: activeTrip?.id,
+            tripName: activeTrip?.name,
+            description: itemsState.find((item) => item.id === id)?.title,
+          },
         });
         setItemsState((current) => current.filter((item) => item.id !== id));
         setEditingItem((current) => (current?.id === id ? null : current));
@@ -1062,6 +1163,84 @@ export function PlannerClient({
           block: "start",
         });
     });
+  }
+
+  async function moveItem(item: PlannerItem, direction: -1 | 1) {
+    if (activeClosed || !navigator.onLine) {
+      setError(activeClosed ? "This Trip is closed and its Plan is read-only." : "Reconnect before reordering the shared plan.");
+      return;
+    }
+    const group = visible.filter((candidate) =>
+      candidate.countryId === item.countryId && candidate.itemDate === item.itemDate,
+    );
+    const index = group.findIndex((candidate) => candidate.id === item.id);
+    const nextIndex = index + direction;
+    if (index < 0 || nextIndex < 0 || nextIndex >= group.length) return;
+    const reordered = [...group];
+    [reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]];
+
+    setItemsState((current) => current.map((candidate) => {
+      const order = reordered.findIndex((entry) => entry.id === candidate.id);
+      return order >= 0 ? { ...candidate, sortOrder: order + 1 } : candidate;
+    }));
+
+    try {
+      const response = await fetch("/api/travel-items/reorder", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          countryId: item.countryId,
+          itemDate: item.itemDate ?? "",
+          itemIds: reordered.map((entry) => entry.id),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Unable to reorder the plan.");
+      await refreshItems();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to reorder the plan.");
+      await refreshItems();
+    }
+  }
+
+  async function toggleDone(item: PlannerItem) {
+    if (activeClosed) return;
+    if (!navigator.onLine) {
+      setError("Reconnect before changing checklist completion.");
+      return;
+    }
+    const nextStatus = item.status === "Done" ? "Planned" : "Done";
+    const response = await fetch(`/api/travel-items/${item.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        countryId: item.countryId,
+        itemType: item.itemType,
+        title: item.title,
+        itemDate: item.itemDate ?? "",
+        itemTime: item.itemTime ?? "",
+        area: item.area ?? "",
+        subtype: item.subtype ?? "",
+        priority: item.priority ?? "",
+        status: nextStatus,
+        ownerUserId: item.ownerUserId ?? "",
+        estimatedCost: item.estimatedCost ?? "",
+        quantity: item.quantity ?? "",
+        provider: item.provider ?? "",
+        confirmationNo: item.confirmationNo ?? "",
+        linkUrl: item.linkUrl ?? "",
+        notes: item.notes ?? "",
+        sortOrder: item.sortOrder,
+        durationMinutes: item.durationMinutes ?? "",
+        expectedUpdatedAt: item.updatedAt,
+      }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) {
+      setError(payload.error ?? "Unable to update this item.");
+      return;
+    }
+    await refreshItems();
   }
 
   async function changeTrip(nextTripId: string) {
@@ -1222,6 +1401,29 @@ export function PlannerClient({
         </span>
       </div>
 
+      {tab === "ITINERARY" ? (
+        <div className="planner-operations-bar">
+          <PlanImport
+            countryId={defaultCountryId}
+            disabled={activeClosed}
+            onImported={refreshItems}
+          />
+          <a
+            className="button secondary"
+            href={`/api/travel-items/calendar?tripId=${encodeURIComponent(activeTripId)}`}
+          >
+            Download calendar
+          </a>
+          {itineraryRouteUrl ? (
+            <a className="button secondary" href={itineraryRouteUrl} target="_blank" rel="noreferrer">
+              Open day route ↗
+            </a>
+          ) : (
+            <span className="muted">Add at least two City / area values to build a route.</span>
+          )}
+        </div>
+      ) : null}
+
       {showForm && !activeClosed ? (
         <PlannerItemForm
           countries={countries}
@@ -1379,6 +1581,23 @@ export function PlannerClient({
                   </div>
 
                   <div className="planner-card-buttons">
+                    {!activeClosed && visible.length > 1 ? (
+                      <span className="planner-order-buttons" aria-label="Change item order">
+                        <button type="button" onClick={() => void moveItem(item, -1)} aria-label={`Move ${item.title} earlier`}>↑</button>
+                        <button type="button" onClick={() => void moveItem(item, 1)} aria-label={`Move ${item.title} later`}>↓</button>
+                      </span>
+                    ) : null}
+
+                    {!activeClosed && (item.itemType === "CHECKLIST" || item.itemType === "PACKING") ? (
+                      <button
+                        className={item.status === "Done" ? "planner-done-button completed" : "planner-done-button"}
+                        onClick={() => void toggleDone(item)}
+                        type="button"
+                      >
+                        {item.status === "Done" ? "Undo" : "Mark done"}
+                      </button>
+                    ) : null}
+
                     <button
                       className="planner-detail-button"
                       onClick={() => setDetailItem(item)}
@@ -1389,12 +1608,14 @@ export function PlannerClient({
 
                     {!activeClosed ? (
                       <>
-                        <a
-                          className="planner-expense-button"
-                          href={expenseHrefForItem(item)}
-                        >
-                          Add expense
-                        </a>
+                        {item.itemType !== "CHECKLIST" && item.itemType !== "PACKING" ? (
+                          <a
+                            className="planner-expense-button"
+                            href={expenseHrefForItem(item)}
+                          >
+                            Add expense
+                          </a>
+                        ) : null}
 
                         <button
                           className="planner-edit-button"

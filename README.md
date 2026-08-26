@@ -1,3 +1,19 @@
+# V85 Combined — V83, V84 and V85
+
+V85 combines the next three phases into one release and makes every product scorecard area a **10/10 acceptance target**.
+
+- Trip Command Centre with stage, next plan, today summary, daily allowance and forecast.
+- Sync Centre with original Trip/currency/sharing context, history and actionable retry states.
+- Ordered day planning, Tasks, Packing, routes, calendar export and reviewed confirmation import.
+- Multiple expense payers, weighted shares, saved split presets and expense comments.
+- Category budgets, receipt review queue and partial settlement payments.
+- Final mobile/PWA containment plus authenticated audits at 320–430 px.
+- Neon migration, backup/export/reset coverage and a dedicated V85 release validator.
+
+Trip Inbox and flight-number guessing stay removed. See `V85-COMBINED-10-POINT-RELEASE.md` and run the non-destructive `neon-upgrade-v85-combined.sql` before deployment.
+
+---
+
 # v82.2 — Offline Sharing, Silent Refresh & Mobile Navigation
 
 v82.2 completes the offline and phone-layout follow-up:

@@ -82,6 +82,8 @@ export async function GET() {
       confirmationNo: travelItems.confirmationNo,
       linkUrl: travelItems.linkUrl,
       notes: travelItems.notes,
+      sortOrder: travelItems.sortOrder,
+      durationMinutes: travelItems.durationMinutes,
       createdBy: travelItems.createdBy,
       updatedAt: travelItems.updatedAt,
       proposedByName: user.name,
@@ -184,6 +186,11 @@ export async function POST(request: Request) {
       confirmationNo: input.confirmationNo || null,
       linkUrl: input.linkUrl || null,
       notes: input.notes || null,
+      sortOrder: input.sortOrder,
+      durationMinutes:
+        input.durationMinutes === "" || input.durationMinutes === null || input.durationMinutes === undefined
+          ? null
+          : input.durationMinutes,
       createdBy: session.user.id,
     };
 

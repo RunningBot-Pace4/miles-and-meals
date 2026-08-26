@@ -4,6 +4,7 @@ import {
   enqueueOfflineMutation,
   flushOfflineQueue,
   readOfflineQueue,
+  readOfflineSyncHistory,
 } from "@/lib/offline-queue";
 
 function memoryStorage(): Storage {
@@ -59,6 +60,10 @@ describe("offline mutation resync", () => {
 
     expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
     expect(readOfflineQueue()).toEqual([]);
+    expect(readOfflineSyncHistory()[0]).toMatchObject({
+      id: item.id,
+      label: "Offline dinner",
+    });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/expenses",
       expect.objectContaining({
@@ -68,6 +73,24 @@ describe("offline mutation resync", () => {
         }),
       }),
     );
+  });
+
+  it("keeps the original Trip context in the successful sync history", async () => {
+    enqueueOfflineMutation({
+      url: "/api/expenses",
+      method: "POST",
+      label: "Expense",
+      body: { description: "Taxi" },
+      meta: { tripId: "trip-1", tripName: "Vietnam Working", currency: "VND", sharing: "3 travelers" },
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
+    await flushOfflineQueue();
+    expect(readOfflineSyncHistory()[0]?.meta).toEqual({
+      tripId: "trip-1",
+      tripName: "Vietnam Working",
+      currency: "VND",
+      sharing: "3 travelers",
+    });
   });
 
   it("keeps validation failures visible for review", async () => {

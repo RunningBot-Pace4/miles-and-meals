@@ -157,8 +157,20 @@ export const expenseSchema = z.object({
   rateType: z.enum(["DEFAULT", "CASH_EXCHANGE", "CREDIT_CARD", "MANUAL"]),
   actualConvertedAmount: optionalPositiveMoneySchema.optional(),
   paidByUserId: z.string().min(1),
+  payers: z
+    .array(
+      z.object({
+        userId: z.string().min(1),
+        value: z.coerce.number().positive().max(1_000_000_000),
+      }),
+    )
+    .max(30)
+    .optional()
+    .default([]),
   paymentMethod: z.string().trim().max(100).optional().default(""),
   receiptUrl: receiptReferenceSchema.optional().default(""),
+  receiptConfidence: z.coerce.number().int().min(0).max(100).optional().nullable(),
+  receiptReviewStatus: z.enum(["NOT_REQUIRED", "NEEDS_REVIEW", "REVIEWED"]).optional().default("NOT_REQUIRED"),
   notes: z.string().trim().max(1000).optional().default(""),
   allowDuplicate: z.coerce.boolean().optional().default(false),
   itemization: z.array(z.object({
@@ -166,7 +178,7 @@ export const expenseSchema = z.object({
     transactionAmount: z.coerce.number().positive().max(1_000_000_000),
     assigneeUserIds: z.array(z.string().min(1)).min(1).max(30),
   })).max(50).optional().default([]),
-  splitMode: z.enum(["EQUAL", "PERCENTAGE", "EXACT"]),
+  splitMode: z.enum(["EQUAL", "PERCENTAGE", "SHARES", "EXACT"]),
   splits: z
     .array(
       z.object({
@@ -183,7 +195,7 @@ export const expenseUpdateSchema = expenseSchema.extend({
 
 export const travelItemSchema = z.object({
   countryId: uuidSchema,
-  itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING"]),
+  itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING", "CHECKLIST", "PACKING"]),
   title: z.string().trim().min(1).max(250),
   itemDate: z.string().optional().default(""),
   itemTime: z.string().trim().max(30).optional().default(""),
@@ -198,6 +210,8 @@ export const travelItemSchema = z.object({
   confirmationNo: z.string().trim().max(100).optional().default(""),
   linkUrl: z.union([z.string().url(), z.literal("")]).optional().default(""),
   notes: z.string().trim().max(1000).optional().default(""),
+  sortOrder: z.coerce.number().int().min(0).max(100_000).optional().default(0),
+  durationMinutes: z.union([z.coerce.number().int().min(1).max(1440), z.literal(""), z.null()]).optional(),
 });
 
 export const travelItemUpdateSchema = travelItemSchema.extend({
@@ -216,6 +230,33 @@ export const settlementActionSchema = z.object({
   countryId: uuidSchema,
   counterpartyUserId: z.string().min(1),
   action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),
+  amount: z.coerce.number().positive().max(1_000_000_000).optional(),
+});
+
+export const expenseCommentSchema = z.object({
+  body: z.string().trim().min(1).max(1000),
+});
+
+export const splitPresetSchema = z.object({
+  tripId: uuidSchema,
+  name: z.string().trim().min(1).max(80),
+  splitMode: z.enum(["EQUAL", "PERCENTAGE", "SHARES", "EXACT"]),
+  shares: z.array(z.object({
+    userId: z.string().min(1),
+    value: z.coerce.number().min(0).max(1_000_000_000),
+  })).min(1).max(30),
+});
+
+export const categoryBudgetSchema = z.object({
+  tripId: uuidSchema,
+  category: z.string().trim().min(1).max(80),
+  amount: z.coerce.number().min(0).max(1_000_000_000),
+});
+
+export const plannerReorderSchema = z.object({
+  countryId: uuidSchema,
+  itemDate: z.string().max(10).optional().default(""),
+  itemIds: z.array(uuidSchema).min(1).max(200),
 });
 
 

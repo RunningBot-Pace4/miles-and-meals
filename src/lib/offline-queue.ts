@@ -10,6 +10,20 @@ export type OfflineMutation = {
   lastError?: string;
   blocked?: boolean;
   nextAttemptAt?: string;
+  meta?: {
+    tripId?: string;
+    tripName?: string;
+    currency?: string;
+    sharing?: string;
+    description?: string;
+  };
+};
+
+export type OfflineSyncHistoryItem = {
+  id: string;
+  label: string;
+  syncedAt: string;
+  meta?: OfflineMutation["meta"];
 };
 
 export type OfflineFlushResult = {
@@ -19,6 +33,7 @@ export type OfflineFlushResult = {
 };
 
 export const OFFLINE_MUTATION_STORAGE_KEY = "mnm:offline-mutation-queue:v1";
+export const OFFLINE_SYNC_HISTORY_STORAGE_KEY = "mnm:offline-sync-history:v1";
 const MAX_ITEMS = 60;
 const MAX_RETRY_DELAY_MS = 5 * 60 * 1000;
 let automaticFlush: Promise<OfflineFlushResult> | null = null;
@@ -62,6 +77,30 @@ export function readOfflineQueue(): OfflineMutation[] {
   } catch {
     return [];
   }
+}
+
+export function readOfflineSyncHistory(): OfflineSyncHistoryItem[] {
+  const storage = browserStorage();
+  if (!storage) return [];
+  try {
+    const parsed = JSON.parse(storage.getItem(OFFLINE_SYNC_HISTORY_STORAGE_KEY) ?? "[]") as unknown;
+    return Array.isArray(parsed) ? (parsed as OfflineSyncHistoryItem[]).slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
+
+function recordOfflineSync(item: OfflineMutation) {
+  const storage = browserStorage();
+  if (!storage) return;
+  const next: OfflineSyncHistoryItem[] = [{
+    id: item.id,
+    label: item.label,
+    syncedAt: new Date().toISOString(),
+    meta: item.meta,
+  }, ...readOfflineSyncHistory().filter((entry) => entry.id !== item.id)].slice(0, 20);
+  storage.setItem(OFFLINE_SYNC_HISTORY_STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent("mnm:offline-sync-history-changed"));
 }
 
 function writeOfflineQueue(items: OfflineMutation[]) {
@@ -170,6 +209,17 @@ export function clearOfflineQueue(): void {
   try {
     storage.removeItem(OFFLINE_MUTATION_STORAGE_KEY);
     window.dispatchEvent(new CustomEvent("mnm:offline-queue-changed"));
+  } catch {
+    // Browser storage is best-effort.
+  }
+}
+
+export function clearOfflineSyncHistory(): void {
+  const storage = browserStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(OFFLINE_SYNC_HISTORY_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent("mnm:offline-sync-history-changed"));
   } catch {
     // Browser storage is best-effort.
   }
@@ -291,6 +341,7 @@ async function performFlush(options: {
       });
 
       if (response.ok) {
+        recordOfflineSync(item);
         if (updateOfflineMutation(id, () => null)) synced += 1;
         continue;
       }

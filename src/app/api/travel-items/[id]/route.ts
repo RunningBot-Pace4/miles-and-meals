@@ -45,6 +45,8 @@ async function getExistingItem(id: string) {
       confirmationNo: travelItems.confirmationNo,
       linkUrl: travelItems.linkUrl,
       notes: travelItems.notes,
+      sortOrder: travelItems.sortOrder,
+      durationMinutes: travelItems.durationMinutes,
       updatedAt: travelItems.updatedAt,
     })
     .from(travelItems)
@@ -80,6 +82,8 @@ function plannerPayloadAlreadyApplied(
     existing.confirmationNo === (input.confirmationNo || null) &&
     existing.linkUrl === (input.linkUrl || null) &&
     existing.notes === (input.notes || null)
+    && existing.sortOrder === input.sortOrder
+    && existing.durationMinutes === (input.durationMinutes === "" || input.durationMinutes === null || input.durationMinutes === undefined ? null : input.durationMinutes)
   );
 }
 
@@ -179,6 +183,11 @@ export async function PATCH(request: Request, context: Context) {
         confirmationNo: input.confirmationNo || null,
         linkUrl: input.linkUrl || null,
         notes: input.notes || null,
+        sortOrder: input.sortOrder,
+        durationMinutes:
+          input.durationMinutes === "" || input.durationMinutes === null || input.durationMinutes === undefined
+            ? null
+            : input.durationMinutes,
         updatedAt: new Date(),
       })
       .where(eq(travelItems.id, id));

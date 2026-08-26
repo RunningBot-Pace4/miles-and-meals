@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   flushOfflineQueue,
   readOfflineQueue,
+  readOfflineSyncHistory,
   removeOfflineMutation,
   retryOfflineMutation,
   type OfflineMutation,
@@ -26,6 +27,7 @@ export function OfflineQueueSync() {
   const [expanded, setExpanded] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const blocked = useMemo(
     () => items.filter((item) => item.blocked).length,
@@ -36,7 +38,10 @@ export function OfflineQueueSync() {
     let disposed = false;
 
     function refreshItems() {
-      if (!disposed) setItems(readOfflineQueue());
+      if (!disposed) {
+        setItems(readOfflineQueue());
+        setLastSyncedAt(readOfflineSyncHistory()[0]?.syncedAt ?? null);
+      }
     }
 
     async function sync(forceRetry = false) {
@@ -97,6 +102,7 @@ export function OfflineQueueSync() {
     window.addEventListener("focus", onVisible);
     window.addEventListener("storage", onStorage);
     window.addEventListener("mnm:offline-queue-changed", onQueueChanged);
+    window.addEventListener("mnm:offline-sync-history-changed", onQueueChanged);
     document.addEventListener("visibilitychange", onVisible);
 
     const timer = window.setInterval(() => void sync(), 30_000);
@@ -108,6 +114,7 @@ export function OfflineQueueSync() {
       window.removeEventListener("focus", onVisible);
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("mnm:offline-queue-changed", onQueueChanged);
+      window.removeEventListener("mnm:offline-sync-history-changed", onQueueChanged);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
@@ -210,17 +217,25 @@ export function OfflineQueueSync() {
       {expanded ? (
         <section
           className="offline-queue-sheet"
-          aria-label="Offline changes"
+          aria-label="Sync centre"
           aria-live="polite"
         >
           <div className="offline-queue-sheet-head">
             <div>
-              <strong>Offline changes</strong>
+              <strong>Sync centre</strong>
               <small>
                 {blocked > 0
                   ? `${blocked} change${blocked === 1 ? "" : "s"} needs your review.`
                   : "Stored safely on this device until sync completes."}
               </small>
+              {lastSyncedAt ? (
+                <small>Last successful sync {new Intl.DateTimeFormat("en-MY", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(lastSyncedAt))}</small>
+              ) : null}
             </div>
             <button
               type="button"
@@ -243,7 +258,25 @@ export function OfflineQueueSync() {
               >
                 <div>
                   <strong>{item.label}</strong>
+                  {item.meta ? (
+                    <span className="offline-queue-context">
+                      Original Trip · {[
+                        item.meta.tripName,
+                        item.meta.currency,
+                        item.meta.sharing,
+                      ].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
+                  {item.meta?.description ? <small>{item.meta.description}</small> : null}
                   <small>{item.lastError ?? retryText(item)}</small>
+                  <small>
+                    Saved {new Intl.DateTimeFormat("en-MY", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    }).format(new Date(item.createdAt))}
+                  </small>
                   {item.lastAttemptAt && !item.blocked ? (
                     <small className="offline-queue-attempt-meta">
                       Attempt {item.attempts ?? 0} · last tried {new Intl.DateTimeFormat("en-MY", {

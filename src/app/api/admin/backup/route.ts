@@ -6,6 +6,8 @@ import {
   countryMembers,
   expenseItemAssignments,
   expenseItems,
+  expenseComments,
+  expensePayers,
   expenseSplits,
   expenses,
   journeys,
@@ -13,7 +15,9 @@ import {
   travelItems,
   tripInboxItems,
   tripBudgets,
+  tripCategoryBudgets,
   tripMembers,
+  splitPresets,
   trips,
   user,
 } from "@/db/schema";
@@ -30,13 +34,13 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
 const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
-  version: z.literal(BACKUP_VERSION),
+  version: z.union([z.literal(1), z.literal(BACKUP_VERSION)]),
   exportedAt: z.string(),
   data: z.object({
     journeys: z.array(z.record(z.string(), z.unknown())).optional().default([]),
@@ -51,10 +55,14 @@ const backupSchema = z.object({
       )
       .optional()
       .default([]),
+    tripCategoryBudgets: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     countries: z.array(z.record(z.string(), z.unknown())),
     countryMembers: z.array(z.record(z.string(), z.unknown())),
     expenses: z.array(z.record(z.string(), z.unknown())),
     expenseSplits: z.array(z.record(z.string(), z.unknown())),
+    expensePayers: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    expenseComments: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    splitPresets: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     expenseItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     expenseItemAssignments: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     settlements: z.array(z.record(z.string(), z.unknown())),
@@ -184,12 +192,18 @@ function requiredUserIds(
     add(row, "userId");
   }
 
+  for (const row of backup.data.tripCategoryBudgets) add(row, "createdBy");
+
   for (
     const row of
       backup.data.tripBudgets
   ) {
     add(row, "userId");
   }
+
+  for (const row of backup.data.expensePayers) add(row, "userId");
+  for (const row of backup.data.expenseComments) add(row, "userId");
+  for (const row of backup.data.splitPresets) add(row, "createdBy");
 
   for (
     const row of
@@ -665,6 +679,7 @@ async function validateBackup(
       personalBudgets:
         backup.data.tripBudgets
           .length,
+      categoryBudgets: backup.data.tripCategoryBudgets.length,
       countries:
         backup.data.countries
           .length,
@@ -676,6 +691,9 @@ async function validateBackup(
       expenseSplits:
         backup.data.expenseSplits
           .length,
+      expensePayers: backup.data.expensePayers.length,
+      expenseComments: backup.data.expenseComments.length,
+      splitPresets: backup.data.splitPresets.length,
       expenseItems: backup.data.expenseItems.length,
       itemAssignments: backup.data.expenseItemAssignments.length,
       settlements:
@@ -735,6 +753,28 @@ async function restoreBackup(
       VALUES (
         ${value(row, "id")}, ${value(row, "name")}, ${value(row, "startDate")}, ${value(row, "endDate")},
         ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()}, ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripCategoryBudgets) {
+    queries.push(sql`
+      INSERT INTO trip_category_budgets (trip_id, category, amount, created_by, created_at, updated_at)
+      VALUES (
+        ${value(row, "tripId")}, ${value(row, "category")}, ${value(row, "amount")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.splitPresets) {
+    queries.push(sql`
+      INSERT INTO split_presets (id, trip_id, name, split_mode, shares_json, created_by, created_at)
+      VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "name")},
+        ${value(row, "splitMode") ?? "SHARES"}, ${value(row, "sharesJson")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()}
       )
     `);
   }
@@ -884,6 +924,9 @@ async function restoreBackup(
         paid_by_user_id,
         payment_method,
         receipt_url,
+        receipt_review_status,
+        receipt_confidence,
+        receipt_reviewed_at,
         notes,
         created_by,
         created_at,
@@ -906,6 +949,9 @@ async function restoreBackup(
         ${value(row, "paidByUserId")},
         ${value(row, "paymentMethod")},
         ${value(row, "receiptUrl")},
+        ${value(row, "receiptReviewStatus") ?? "NOT_REQUIRED"},
+        ${value(row, "receiptConfidence")},
+        ${timestamp(row, "receiptReviewedAt")},
         ${value(row, "notes")},
         ${value(row, "createdBy")},
         ${timestamp(row, "createdAt") ?? new Date()},
@@ -927,6 +973,24 @@ async function restoreBackup(
         ${value(row, "expenseId")},
         ${value(row, "userId")},
         ${value(row, "shareAmountBase")}
+      )
+    `);
+  }
+
+  for (const row of backup.data.expensePayers) {
+    queries.push(sql`
+      INSERT INTO expense_payers (expense_id, user_id, amount_base)
+      VALUES (${value(row, "expenseId")}, ${value(row, "userId")}, ${value(row, "amountBase")})
+    `);
+  }
+
+  for (const row of backup.data.expenseComments) {
+    queries.push(sql`
+      INSERT INTO expense_comments (id, expense_id, user_id, body, created_at, updated_at)
+      VALUES (
+        ${value(row, "id")}, ${value(row, "expenseId")}, ${value(row, "userId")},
+        ${value(row, "body")}, ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
       )
     `);
   }
@@ -1010,6 +1074,8 @@ async function restoreBackup(
         confirmation_no,
         link_url,
         notes,
+        sort_order,
+        duration_minutes,
         created_by,
         created_at,
         updated_at
@@ -1031,6 +1097,8 @@ async function restoreBackup(
         ${value(row, "confirmationNo")},
         ${value(row, "linkUrl")},
         ${value(row, "notes")},
+        ${value(row, "sortOrder") ?? 0},
+        ${value(row, "durationMinutes")},
         ${value(row, "createdBy")},
         ${timestamp(row, "createdAt") ?? new Date()},
         ${timestamp(row, "updatedAt") ?? new Date()}
@@ -1088,10 +1156,14 @@ export async function GET() {
     tripRows,
     tripMemberRows,
     tripBudgetRows,
+    tripCategoryBudgetRows,
     countryRows,
     countryMemberRows,
     expenseRows,
     splitRows,
+    payerRows,
+    commentRows,
+    splitPresetRows,
     settlementRows,
     plannerRows,
     expenseItemRows,
@@ -1102,10 +1174,14 @@ export async function GET() {
     db.select().from(trips),
     db.select().from(tripMembers),
     db.select().from(tripBudgets),
+    db.select().from(tripCategoryBudgets),
     db.select().from(countries),
     db.select().from(countryMembers),
     db.select().from(expenses),
     db.select().from(expenseSplits),
+    db.select().from(expensePayers),
+    db.select().from(expenseComments),
+    db.select().from(splitPresets),
     db.select().from(settlements),
     db.select().from(travelItems),
     db.select().from(expenseItems),
@@ -1145,12 +1221,16 @@ export async function GET() {
         tripMemberRows,
       tripBudgets:
         tripBudgetRows,
+      tripCategoryBudgets: tripCategoryBudgetRows,
       countries: countryRows,
       countryMembers:
         countryMemberRows,
       expenses: expenseRows,
       expenseSplits:
         splitRows,
+      expensePayers: payerRows,
+      expenseComments: commentRows,
+      splitPresets: splitPresetRows,
       expenseItems: expenseItemRows,
       expenseItemAssignments: expenseItemAssignmentRows,
       settlements:

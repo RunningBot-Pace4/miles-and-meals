@@ -329,6 +329,26 @@ export const tripBudgets = pgTable(
   ],
 );
 
+export const tripCategoryBudgets = pgTable(
+  "trip_category_budgets",
+  {
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    category: text("category").notNull(),
+    amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tripId, table.category] }),
+    index("trip_category_budget_trip_idx").on(table.tripId),
+  ],
+);
+
 export const countries = pgTable(
   "countries",
   {
@@ -499,6 +519,9 @@ export const expenses = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     paymentMethod: text("payment_method"),
     receiptUrl: text("receipt_url"),
+    receiptReviewStatus: text("receipt_review_status").default("NOT_REQUIRED").notNull(),
+    receiptConfidence: integer("receipt_confidence"),
+    receiptReviewedAt: timestamp("receipt_reviewed_at", { withTimezone: true }),
     notes: text("notes"),
     createdBy: text("created_by")
       .notNull()
@@ -509,6 +532,61 @@ export const expenses = pgTable(
   (table) => [
     index("expense_country_date_idx").on(table.countryId, table.expenseDate),
     index("expense_trip_idx").on(table.tripId),
+  ],
+);
+
+export const expensePayers = pgTable(
+  "expense_payers",
+  {
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    amountBase: numeric("amount_base", { precision: 18, scale: 2 }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.expenseId, table.userId] }),
+    index("expense_payer_user_idx").on(table.userId),
+  ],
+);
+
+export const expenseComments = pgTable(
+  "expense_comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("expense_comment_expense_time_idx").on(table.expenseId, table.createdAt)],
+);
+
+export const splitPresets = pgTable(
+  "split_presets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    splitMode: text("split_mode").default("SHARES").notNull(),
+    sharesJson: text("shares_json").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("split_preset_trip_idx").on(table.tripId),
+    uniqueIndex("split_preset_trip_name_uq").on(table.tripId, table.name),
   ],
 );
 
@@ -620,6 +698,8 @@ export const travelItems = pgTable(
     confirmationNo: text("confirmation_no"),
     linkUrl: text("link_url"),
     notes: text("notes"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    durationMinutes: integer("duration_minutes"),
     createdBy: text("created_by")
       .notNull()
       .references(() => user.id, { onDelete: "restrict" }),
@@ -704,10 +784,14 @@ export const schema = {
   trips,
   tripMembers,
   tripBudgets,
+  tripCategoryBudgets,
   countries,
   tripInvites,
   countryMembers,
   expenses,
+  expensePayers,
+  expenseComments,
+  splitPresets,
   expenseSplits,
   expenseItems,
   expenseItemAssignments,

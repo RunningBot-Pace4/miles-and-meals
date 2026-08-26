@@ -18,6 +18,7 @@ import { serializeSettlementLiveData } from "@/lib/settlement-live";
 import {
   loadTripBudgetSummary,
 } from "@/lib/trip-budget";
+import { loadTripCommandCenter } from "@/lib/trip-command-center";
 
 function StyledTripTitle({
   text,
@@ -342,6 +343,19 @@ export default async function DashboardPage({
         budget.travelerCount,
     };
 
+  const commandCenter = selectedTrip
+    ? await loadTripCommandCenter({
+        tripId: selectedTrip.id,
+        countryIds,
+        userId: session.user.id,
+        startDate: selectedTrip.startDate,
+        endDate: selectedTrip.endDate,
+        financialStatus: selectedTrip.financialStatus,
+        myBudget: budget.myBudget,
+        myShareSpent: individualMyShareSpent,
+      })
+    : null;
+
   const iOwe = settlementLiveData.waitingTransfers
     .filter((transfer) => transfer.fromUserId === session.user.id)
     .reduce((total, transfer) => total + transfer.amount, 0);
@@ -657,6 +671,79 @@ export default async function DashboardPage({
           <span className="travel-route-dot end" />
         </div>
       </section>
+
+      {selectedTrip && commandCenter ? (
+        <section className="trip-command-center" aria-labelledby="trip-command-title">
+          <div className="travel-section-heading">
+            <div>
+              <p className="eyebrow">TRIP COMMAND CENTRE</p>
+              <h2 id="trip-command-title">
+                {commandCenter.stage === "BEFORE"
+                  ? "Get ready"
+                  : commandCenter.stage === "DURING"
+                    ? "Today on your trip"
+                    : commandCenter.stage === "CLOSED"
+                      ? "Trip completed"
+                      : "Wrap up the trip"}
+              </h2>
+            </div>
+            <span className={`trip-stage-badge ${commandCenter.stage.toLowerCase()}`}>
+              {commandCenter.stage === "BEFORE" ? "Before" : commandCenter.stage === "DURING" ? "During" : "After"}
+            </span>
+          </div>
+
+          <div className="trip-command-grid">
+            <Link className="trip-command-card next" href="/planner">
+              <small>NEXT</small>
+              <strong>{commandCenter.nextItem?.title ?? "No upcoming plan"}</strong>
+              <span>
+                {commandCenter.nextItem
+                  ? `${formatTripDateRange(commandCenter.nextItem.itemDate, commandCenter.nextItem.itemDate)}${commandCenter.nextItem.itemTime ? ` · ${commandCenter.nextItem.itemTime}` : ""}`
+                  : "Add the next activity to keep everyone aligned."}
+              </span>
+            </Link>
+
+            <Link className="trip-command-card" href={selectedTrip.financialStatus === "CLOSED" ? "/expenses" : "/expenses/new"}>
+              <small>TODAY&apos;S SPENDING</small>
+              <strong>{formatMoney(commandCenter.todayMyShare, baseCurrency)}</strong>
+              <span>My share · group total {formatMoney(commandCenter.todayGroupSpend, baseCurrency)}</span>
+            </Link>
+
+            <Link className={commandCenter.forecastOver ? "trip-command-card warning" : "trip-command-card"} href="/settings/budgets">
+              <small>DAILY ALLOWANCE</small>
+              <strong>{formatMoney(commandCenter.dailyAllowance, baseCurrency)}</strong>
+              <span>
+                {commandCenter.remainingDays > 0
+                  ? `${commandCenter.remainingDays} day${commandCenter.remainingDays === 1 ? "" : "s"} remaining`
+                  : "Trip dates have ended"}
+              </span>
+            </Link>
+
+            <Link className={commandCenter.forecastOver ? "trip-command-card warning" : "trip-command-card"} href="/settings/budgets">
+              <small>PROJECTED SPEND</small>
+              <strong>{formatMoney(commandCenter.projectedSpend, baseCurrency)}</strong>
+              <span>{commandCenter.forecastOver ? "Above your current budget at this pace" : "Within your current budget at this pace"}</span>
+            </Link>
+
+            <Link className="trip-command-card" href="/planner">
+              <small>READY TO GO</small>
+              <strong>{commandCenter.openTaskCount}</strong>
+              <span>Open task{commandCenter.openTaskCount === 1 ? "" : "s"} and packing item{commandCenter.openTaskCount === 1 ? "" : "s"}</span>
+            </Link>
+          </div>
+
+          <div className="trip-command-actions">
+            {selectedTrip.financialStatus !== "CLOSED" ? (
+              <>
+                <Link className="button primary" href="/expenses/new">＋ Quick expense</Link>
+                <Link className="button secondary" href="/planner">Open today&apos;s plan</Link>
+              </>
+            ) : (
+              <Link className="button secondary" href="/settlements">Review final settlement</Link>
+            )}
+          </div>
+        </section>
+      ) : null}
 
       {selectedTrip && actionItems.length > 0 ? (
         <section className="dashboard-action-centre" aria-labelledby="dashboard-action-title">

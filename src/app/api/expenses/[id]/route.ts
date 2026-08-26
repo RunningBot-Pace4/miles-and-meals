@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { expenseItemAssignments, expenseItems, expenseSplits, expenses } from "@/db/schema";
+import { expenseItemAssignments, expenseItems, expensePayers, expenseSplits, expenses } from "@/db/schema";
 import {
   canAccessCountry,
   getCountryWithTrip,
@@ -10,6 +10,7 @@ import { recordActivity } from "@/lib/activity";
 import { expenseLedgerLockedResponse } from "@/lib/financial-close";
 import { buildExpenseSplits, convertedAmount, effectiveExchangeRate, sameCurrency } from "@/lib/money";
 import { buildReceiptItemization, type ReceiptItemizationResult } from "@/lib/receipt-itemization";
+import { buildExpensePayers } from "@/lib/expense-payers";
 import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
@@ -38,6 +39,16 @@ async function replaceExpenseItemization(
       })));
     }
   }
+}
+
+async function replaceExpensePayers(
+  expenseId: string,
+  payers: Array<{ userId: string; amountBase: string }>,
+): Promise<void> {
+  await db.delete(expensePayers).where(eq(expensePayers.expenseId, expenseId));
+  await db.insert(expensePayers).values(
+    payers.map((payer) => ({ expenseId, ...payer })),
+  );
 }
 
 
@@ -124,6 +135,7 @@ export async function PUT(request: Request, context: Context) {
 
     if (
       !memberIds.has(input.paidByUserId) ||
+      input.payers.some((payer) => !memberIds.has(payer.userId)) ||
       input.splits.some((split) => !memberIds.has(split.userId)) ||
       input.itemization.some((item) => item.assigneeUserIds.some((userId) => !memberIds.has(userId)))
     ) {
@@ -165,6 +177,11 @@ export async function PUT(request: Request, context: Context) {
       : null;
     const calculatedSplits = itemization?.splits ??
       buildExpenseSplits(settlementBase, input.splitMode, input.splits);
+    const calculatedPayers = buildExpensePayers(
+      settlementBase,
+      input.paidByUserId,
+      input.payers,
+    );
 
     await db
       .update(expenses)
@@ -185,6 +202,14 @@ export async function PUT(request: Request, context: Context) {
         paidByUserId: input.paidByUserId,
         paymentMethod: input.paymentMethod || null,
         receiptUrl: input.receiptUrl || null,
+        receiptReviewStatus: input.receiptUrl
+          ? input.receiptReviewStatus
+          : "NOT_REQUIRED",
+        receiptConfidence: input.receiptConfidence ?? null,
+        receiptReviewedAt:
+          input.receiptUrl && input.receiptReviewStatus === "REVIEWED"
+            ? new Date()
+            : null,
         notes: input.notes || null,
         updatedAt: new Date(),
       })
@@ -195,6 +220,7 @@ export async function PUT(request: Request, context: Context) {
     await db.insert(expenseSplits).values(
       calculatedSplits.map((split) => ({ expenseId: id, ...split })),
     );
+    await replaceExpensePayers(id, calculatedPayers);
     await replaceExpenseItemization(id, itemization);
 
     await recordActivity({

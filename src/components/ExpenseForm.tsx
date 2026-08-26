@@ -60,7 +60,14 @@ type DuplicateWarning = {
   amount: number;
 };
 
-type SplitMode = "EQUAL" | "PERCENTAGE" | "EXACT";
+type SplitPreset = {
+  id: string;
+  name: string;
+  splitMode: SplitMode;
+  shares: Array<{ userId: string; value: number }>;
+};
+
+type SplitMode = "EQUAL" | "PERCENTAGE" | "SHARES" | "EXACT";
 type RateType = "DEFAULT" | "CASH_EXCHANGE" | "CREDIT_CARD" | "MANUAL";
 
 function normalizeOptionalActualCharge(
@@ -98,8 +105,11 @@ type ExpenseInitial = {
   actualConvertedAmount: string | null;
   splitMode: SplitMode;
   paidByUserId: string;
+  payers?: Array<{ userId: string; amountBase: string }>;
   paymentMethod: string | null;
   receiptUrl: string | null;
+  receiptReviewStatus?: "NOT_REQUIRED" | "NEEDS_REVIEW" | "REVIEWED";
+  receiptConfidence?: number | null;
   notes: string | null;
   splitUserIds: string[];
   splitValues: Record<string, string>;
@@ -124,6 +134,9 @@ type ExpenseDraft = {
   splitUserIds: string[];
   splitValues: Record<string, string>;
   paidByUserId: string;
+  multiplePayers?: boolean;
+  payerUserIds?: string[];
+  payerValues?: Record<string, string>;
   description: string;
   receiptUrl: string;
   paymentMethod: string;
@@ -173,6 +186,7 @@ const commonCurrencies = [
 const splitModes: { value: SplitMode; label: string }[] = [
   { value: "EQUAL", label: "Equal" },
   { value: "PERCENTAGE", label: "%" },
+  { value: "SHARES", label: "Shares" },
   { value: "EXACT", label: "Exact" },
 ];
 
@@ -293,6 +307,18 @@ export function ExpenseForm({
   const [paidByUserId, setPaidByUserId] = useState(
     initial?.paidByUserId ?? currentUserId,
   );
+  const [multiplePayers, setMultiplePayers] = useState(
+    (initial?.payers?.length ?? 0) > 1,
+  );
+  const [payerUserIds, setPayerUserIds] = useState<string[]>(
+    initial?.payers?.map((payer) => payer.userId) ??
+      (initial?.paidByUserId ? [initial.paidByUserId] : currentUserId ? [currentUserId] : []),
+  );
+  const [payerValues, setPayerValues] = useState<Record<string, string>>(
+    Object.fromEntries(
+      (initial?.payers ?? []).map((payer) => [payer.userId, payer.amountBase]),
+    ),
+  );
   const [description, setDescription] = useState(
     initial?.description ?? prefill?.description ?? "",
   );
@@ -342,6 +368,9 @@ export function ExpenseForm({
   const [fxRateMessage, setFxRateMessage] = useState("");
   const [duplicateWarning, setDuplicateWarning] =
     useState<DuplicateWarning | null>(null);
+  const [splitPresets, setSplitPresets] = useState<SplitPreset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [presetBusy, setPresetBusy] = useState(false);
   const [offlineQueued, setOfflineQueued] = useState(false);
   const fxRequestIdRef = useRef(0);
   const duplicateOverrideRef = useRef(false);
@@ -522,6 +551,18 @@ export function ExpenseForm({
       };
     }
 
+    if (splitMode === "SHARES") {
+      const allPositive = splitUserIds.every(
+        (userId) => (parseTravelNumber(splitValues[userId]) ?? 0) > 0,
+      );
+      return {
+        label: allPositive
+          ? `${entered.toFixed(2)} total shares · amounts calculated automatically`
+          : "Enter a share weight above zero for every selected traveler",
+        valid: allPositive && entered > 0,
+      };
+    }
+
     return {
       label: `${currentCountry?.baseCurrency ?? "MYR"} ${entered.toFixed(2)} of ${settlementTotal.toFixed(2)}`,
       valid: Math.abs(entered - settlementTotal) < 0.01,
@@ -533,6 +574,41 @@ export function ExpenseForm({
     splitUserIds,
     splitValues,
   ]);
+
+  const payerStatus = useMemo(() => {
+    if (!multiplePayers) {
+      return { valid: Boolean(paidByUserId), entered: settlementTotal };
+    }
+
+    const entered = payerUserIds.reduce(
+      (sum, userId) => sum + (parseTravelNumber(payerValues[userId]) ?? 0),
+      0,
+    );
+    return {
+      entered,
+      valid:
+        payerUserIds.length > 1 &&
+        payerUserIds.every((userId) => (parseTravelNumber(payerValues[userId]) ?? 0) > 0) &&
+        Math.abs(entered - settlementTotal) < 0.01,
+    };
+  }, [multiplePayers, paidByUserId, payerUserIds, payerValues, settlementTotal]);
+
+  useEffect(() => {
+    const tripId = currentCountry?.tripId;
+    if (!tripId || !navigator.onLine) {
+      setSplitPresets([]);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`/api/split-presets?tripId=${encodeURIComponent(tripId)}`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => response.ok ? response.json() : { presets: [] })
+      .then((payload: { presets?: SplitPreset[] }) => setSplitPresets(payload.presets ?? []))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [currentCountry?.tripId]);
 
   useEffect(() => {
     const stored =
@@ -580,6 +656,9 @@ export function ExpenseForm({
             splitUserIds,
             splitValues,
             paidByUserId,
+            multiplePayers,
+            payerUserIds,
+            payerValues,
             description,
             receiptUrl:
               receiptUrl.startsWith(
@@ -612,6 +691,9 @@ export function ExpenseForm({
     notes,
     offlineQueued,
     paidByUserId,
+    multiplePayers,
+    payerUserIds,
+    payerValues,
     paymentMethod,
     rate,
     rateType,
@@ -680,6 +762,9 @@ export function ExpenseForm({
     setPaidByUserId(
       draft.paidByUserId,
     );
+    setMultiplePayers(Boolean(draft.multiplePayers));
+    setPayerUserIds(draft.payerUserIds ?? [draft.paidByUserId].filter(Boolean));
+    setPayerValues(draft.payerValues ?? {});
     setDescription(
       draft.description,
     );
@@ -761,9 +846,14 @@ export function ExpenseForm({
         setSplitValues(
           splitMode === "PERCENTAGE"
             ? equalPercentages(defaultSplitIds)
+            : splitMode === "SHARES"
+              ? Object.fromEntries(defaultSplitIds.map((userId) => [userId, "1"]))
             : {},
         );
         setPaidByUserId(defaultUserId);
+        setMultiplePayers(false);
+        setPayerUserIds(defaultUserId ? [defaultUserId] : []);
+        setPayerValues({});
       }
     }
 
@@ -1029,6 +1119,10 @@ export function ExpenseForm({
       setSplitValues(equalPercentages(splitUserIds));
     } else if (nextMode === "EQUAL") {
       setSplitValues({});
+    } else if (nextMode === "SHARES") {
+      setSplitValues(
+        Object.fromEntries(splitUserIds.map((userId) => [userId, "1"])),
+      );
     } else {
       setSplitValues(
         Object.fromEntries(splitUserIds.map((userId) => [userId, ""])),
@@ -1051,7 +1145,7 @@ export function ExpenseForm({
           const nextValues = { ...values };
 
           if (next.includes(userId)) {
-            nextValues[userId] ??= "";
+            nextValues[userId] ??= splitMode === "SHARES" ? "1" : "";
           } else {
             delete nextValues[userId];
           }
@@ -1062,6 +1156,97 @@ export function ExpenseForm({
 
       return next;
     });
+  }
+
+  function chooseSinglePayer(userId: string) {
+    setPaidByUserId(userId);
+    setPayerUserIds([userId]);
+    setPayerValues({});
+    markFormEdited();
+  }
+
+  function switchPayerMode(nextMultiple: boolean) {
+    setMultiplePayers(nextMultiple);
+    if (nextMultiple) {
+      const primary = paidByUserId || currentUserId || members[0]?.id || "";
+      setPayerUserIds(primary ? [primary] : []);
+      setPayerValues(primary ? { [primary]: settlementTotal.toFixed(2) } : {});
+    } else {
+      const primary = payerUserIds[0] ?? paidByUserId ?? currentUserId;
+      setPaidByUserId(primary);
+      setPayerUserIds(primary ? [primary] : []);
+      setPayerValues({});
+    }
+    markFormEdited();
+  }
+
+  function togglePayer(userId: string) {
+    setPayerUserIds((current) => {
+      const selected = current.includes(userId);
+      const next = selected
+        ? current.filter((id) => id !== userId)
+        : [...current, userId];
+      setPayerValues((values) => {
+        const updated = { ...values };
+        if (selected) delete updated[userId];
+        else updated[userId] = "";
+        return updated;
+      });
+      if (!selected && next.length === 1) setPaidByUserId(userId);
+      if (selected && paidByUserId === userId) setPaidByUserId(next[0] ?? "");
+      return next;
+    });
+    markFormEdited();
+  }
+
+  function applySplitPreset(presetId: string) {
+    const preset = splitPresets.find((item) => item.id === presetId);
+    if (!preset) return;
+    const availableIds = new Set(members.map((member) => member.id));
+    const shares = preset.shares.filter((share) => availableIds.has(share.userId));
+    if (!shares.length) {
+      setError("The travelers saved in this preset are no longer assigned to this Trip.");
+      return;
+    }
+    setItemizationEnabled(false);
+    setSplitMode(preset.splitMode);
+    setSplitUserIds(shares.map((share) => share.userId));
+    setSplitValues(Object.fromEntries(
+      shares.map((share) => [share.userId, preset.splitMode === "EQUAL" ? "" : String(share.value)]),
+    ));
+    markFormEdited();
+  }
+
+  async function saveSplitPreset() {
+    const tripId = currentCountry?.tripId;
+    const name = presetName.trim();
+    if (!tripId || !name || !splitStatus.valid || !navigator.onLine) return;
+
+    const shares = splitUserIds.map((userId) => ({
+      userId,
+      value: splitMode === "EQUAL" ? 0 : parseTravelNumber(splitValues[userId]) ?? 0,
+    }));
+    setPresetBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/split-presets", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tripId, name, splitMode, shares }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { id?: string; error?: string };
+      if (!response.ok || !payload.id) throw new Error(payload.error ?? "Unable to save preset.");
+      const nextPreset: SplitPreset = { id: payload.id, name, splitMode, shares };
+      setSplitPresets((current) => [
+        ...current.filter((preset) => preset.name.toLowerCase() !== name.toLowerCase()),
+        nextPreset,
+      ].sort((left, right) => left.name.localeCompare(right.name)));
+      setPresetName("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to save split preset.");
+    } finally {
+      setPresetBusy(false);
+    }
   }
 
   function applyReceiptItemizedSplit() {
@@ -1339,6 +1524,13 @@ export function ExpenseForm({
       return;
     }
 
+    if (multiplePayers && !payerStatus.valid) {
+      failSubmit(
+        `Payer contributions must total ${currentCountry.baseCurrency} ${settlementTotal.toFixed(2)}.`,
+      );
+      return;
+    }
+
     if (splitUserIds.length === 0) {
       failSubmit("Choose at least one person to share this expense.");
       return;
@@ -1348,6 +1540,8 @@ export function ExpenseForm({
       failSubmit(
         splitMode === "PERCENTAGE"
           ? "Percentage shares must add up to 100%."
+          : splitMode === "SHARES"
+            ? "Enter a share weight above zero for every selected traveler."
           : "Exact shares must add up to the amount being split.",
       );
       return;
@@ -1403,6 +1597,13 @@ export function ExpenseForm({
           : parseTravelNumber(splitValues[userId]) ?? Number.NaN,
     }));
 
+    const parsedPayers = multiplePayers
+      ? payerUserIds.map((userId) => ({
+          userId,
+          value: parseTravelNumber(payerValues[userId]) ?? Number.NaN,
+        }))
+      : [];
+
     if (
       splitMode !== "EQUAL" &&
       parsedSplits.some(
@@ -1447,8 +1648,21 @@ export function ExpenseForm({
           ? parsedActual
           : "",
       paidByUserId,
+      payers: parsedPayers,
       paymentMethod,
       receiptUrl: finalReceiptUrl,
+      receiptConfidence: receiptResult
+        ? receiptResult.confidence === "HIGH"
+          ? 95
+          : receiptResult.confidence === "MEDIUM"
+            ? 75
+            : 45
+        : initial?.receiptConfidence ?? null,
+      receiptReviewStatus: finalReceiptUrl
+        ? receiptResult
+          ? "REVIEWED"
+          : initial?.receiptReviewStatus ?? "NEEDS_REVIEW"
+        : "NOT_REQUIRED",
       notes,
       allowDuplicate: duplicateOverrideRef.current,
       itemization:
@@ -1475,6 +1689,13 @@ export function ExpenseForm({
           body: {
             ...body,
             allowDuplicate: true,
+          },
+          meta: {
+            tripId: currentCountry.tripId,
+            tripName: currentCountry.tripName,
+            currency,
+            sharing: `${splitUserIds.length} traveler${splitUserIds.length === 1 ? "" : "s"}`,
+            description: description.trim(),
           },
         });
         clearDraft(expenseDraftKey);
@@ -1975,23 +2196,127 @@ export function ExpenseForm({
         </div>
 
         <div>
-          <span className="field-label">Paid by</span>
-          <div className="people-scroll" role="group" aria-label="Paid by">
-            {members.map((member) => (
+          <div className="split-heading-row payer-heading-row">
+            <span className="field-label">Paid by</span>
+            <div className="mini-segments" role="group" aria-label="Number of payers">
               <button
-                className={paidByUserId === member.id ? "person-pill active" : "person-pill"}
-                key={member.id}
-                onClick={() => {
-                  setPaidByUserId(member.id);
-                  markFormEdited();
-                }}
+                className={!multiplePayers ? "mini-segment active" : "mini-segment"}
                 type="button"
+                onClick={() => switchPayerMode(false)}
               >
-                <span className="avatar">{initials(member.name)}</span>
-                <span>{member.name}</span>
+                One payer
               </button>
-            ))}
+              <button
+                className={multiplePayers ? "mini-segment active" : "mini-segment"}
+                type="button"
+                onClick={() => switchPayerMode(true)}
+              >
+                Multiple payers
+              </button>
+            </div>
           </div>
+
+          {!multiplePayers ? (
+            <div className="people-scroll" role="group" aria-label="Paid by">
+              {members.map((member) => (
+                <button
+                  className={paidByUserId === member.id ? "person-pill active" : "person-pill"}
+                  key={member.id}
+                  onClick={() => chooseSinglePayer(member.id)}
+                  type="button"
+                >
+                  <span className="avatar">{initials(member.name)}</span>
+                  <span>{member.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="multi-payer-list">
+              {members.map((member) => {
+                const selected = payerUserIds.includes(member.id);
+                return (
+                  <div className={selected ? "multi-payer-row selected" : "multi-payer-row"} key={member.id}>
+                    <button
+                      className="member-select"
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => togglePayer(member.id)}
+                    >
+                      <span className="avatar">{initials(member.name)}</span>
+                      <span className="member-copy">
+                        <strong>{member.name}</strong>
+                        <small>{selected ? "Contributed" : "Not a payer"}</small>
+                      </span>
+                      <span className={selected ? "round-check checked" : "round-check"}>
+                        {selected ? "✓" : ""}
+                      </span>
+                    </button>
+                    {selected ? (
+                      <label className="payer-amount-input">
+                        <span>{currentCountry?.baseCurrency ?? "MYR"}</span>
+                        <input
+                          inputMode="decimal"
+                          data-numeric-input="decimal"
+                          value={payerValues[member.id] ?? ""}
+                          onChange={(event) => {
+                            setPayerValues((values) => ({
+                              ...values,
+                              [member.id]: event.target.value,
+                            }));
+                            markFormEdited();
+                          }}
+                          aria-label={`${member.name} paid amount`}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                );
+              })}
+              <div className={payerStatus.valid ? "split-summary valid" : "split-summary invalid"}>
+                <span>{payerStatus.valid ? "✓" : "!"}</span>
+                <strong>
+                  {currentCountry?.baseCurrency ?? "MYR"} {payerStatus.entered.toFixed(2)} of {settlementTotal.toFixed(2)} paid
+                </strong>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="split-preset-bar">
+          <label>
+            Saved split
+            <select
+              defaultValue=""
+              onChange={(event) => {
+                applySplitPreset(event.target.value);
+                event.currentTarget.value = "";
+              }}
+            >
+              <option value="">Choose a saved group…</option>
+              {splitPresets.map((preset) => (
+                <option value={preset.id} key={preset.id}>{preset.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Save current split
+            <span className="split-preset-save">
+              <input
+                value={presetName}
+                onChange={(event) => setPresetName(event.target.value)}
+                maxLength={80}
+                placeholder="Family, roommates…"
+              />
+              <button
+                className="button secondary"
+                type="button"
+                disabled={presetBusy || !presetName.trim() || !splitStatus.valid}
+                onClick={() => void saveSplitPreset()}
+              >
+                {presetBusy ? "Saving…" : "Save"}
+              </button>
+            </span>
+          </label>
         </div>
 
         <div className="split-heading-row">
@@ -2037,6 +2362,8 @@ export function ExpenseForm({
                     <span>
                       {splitMode === "PERCENTAGE"
                         ? "%"
+                        : splitMode === "SHARES"
+                          ? "×"
                         : currentCountry?.baseCurrency ?? "MYR"}
                     </span>
                     <input

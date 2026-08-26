@@ -15,6 +15,615 @@
   --radius: 22px;
 }
 
+/* v85 combined · command centre, planner operations, finance trust and mobile containment */
+.trip-command-center,
+.expense-comments-card,
+.receipt-review-row,
+.receipt-review-summary,
+.offline-sync-health {
+  border: 1px solid var(--line, #e7ded0);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 50px rgba(45, 61, 55, 0.07);
+}
+
+.trip-command-center {
+  padding: clamp(20px, 3vw, 34px);
+}
+
+.trip-stage-badge,
+.sync-health-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f5efe6;
+  color: #7f5d2c;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.trip-stage-badge.during,
+.sync-health-badge.good {
+  background: #e3f5ef;
+  color: #087968;
+}
+
+.trip-stage-badge.closed,
+.trip-stage-badge.after {
+  background: #edf0ed;
+  color: #53605b;
+}
+
+.trip-command-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.trip-command-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e7ded0;
+  border-radius: 20px;
+  background: #fffaf4;
+  color: #173d38;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.trip-command-card:hover,
+.trip-command-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: #5eaaa0;
+  box-shadow: 0 12px 28px rgba(30, 107, 97, 0.12);
+}
+
+.trip-command-card.next {
+  background: linear-gradient(145deg, #0e756b, #178c7d);
+  color: white;
+}
+
+.trip-command-card.warning {
+  background: #fff0e9;
+  border-color: #efb5a1;
+}
+
+.trip-command-card small,
+.trip-command-card span,
+.trip-command-card strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.trip-command-card small {
+  margin-bottom: 12px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.trip-command-card strong {
+  font-size: clamp(1.12rem, 2vw, 1.48rem);
+  line-height: 1.16;
+}
+
+.trip-command-card span {
+  margin-top: 9px;
+  color: inherit;
+  opacity: 0.76;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.trip-command-actions,
+.planner-operations-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.planner-operations-bar {
+  padding: 14px;
+  border: 1px solid #e6dccd;
+  border-radius: 18px;
+  background: rgba(248, 244, 236, 0.7);
+}
+
+.plan-import {
+  display: contents;
+}
+
+.plan-import-panel {
+  flex: 1 0 100%;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #d8c9b6;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.plan-import-panel textarea,
+.plan-import-panel input,
+.plan-import-panel select {
+  max-width: 100%;
+}
+
+.plan-import-file {
+  display: block;
+  margin: 12px 0;
+}
+
+.plan-import-confidence {
+  display: inline-flex;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #fff2d9;
+  color: #8b5e11;
+  font-weight: 800;
+}
+
+.plan-import-confidence.high {
+  background: #e2f4ec;
+  color: #087968;
+}
+
+.planner-order-buttons {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.planner-order-buttons button,
+.planner-done-button {
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid #d9cdbf;
+  border-radius: 12px;
+  background: white;
+  color: #173d38;
+  font-weight: 850;
+}
+
+.planner-done-button.completed {
+  background: #e1f4ed;
+  border-color: #9bd4c8;
+  color: #087968;
+}
+
+.split-preset-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8f4ed;
+}
+
+.split-preset-save {
+  display: flex;
+  gap: 8px;
+}
+
+.split-preset-save input {
+  min-width: 0;
+  flex: 1;
+}
+
+.multi-payer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.multi-payer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.42fr);
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #e3d8ca;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.multi-payer-row.selected {
+  border-color: #72b9af;
+  background: #f0fbf8;
+}
+
+.payer-amount-input > span,
+.settlement-partial-amount > span {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #ded3c5;
+  border-radius: 14px;
+  background: white;
+}
+
+.payer-amount-input b,
+.settlement-partial-amount b {
+  padding-left: 12px;
+  color: #64716c;
+}
+
+.payer-amount-input input,
+.settlement-partial-amount input {
+  min-width: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.expense-payer-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.expense-payer-line span,
+.offline-queue-context {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #edf8f5;
+  color: #087968;
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.expense-comments-card {
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.expense-comment-list {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.expense-comment-list article {
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8f4ed;
+}
+
+.expense-comment-list p,
+.expense-comment-list small,
+.expense-comment-list strong {
+  display: block;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.expense-comment-list p {
+  margin: 6px 0;
+}
+
+.expense-comment-form textarea {
+  min-height: 96px;
+}
+
+.category-budget-trip-select {
+  display: block;
+  max-width: 520px;
+  margin: 16px 0;
+}
+
+.category-budget-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.category-budget-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 16px;
+  border: 1px solid #e6dccf;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.category-budget-row.over {
+  border-color: #e7a98f;
+  background: #fff5f0;
+}
+
+.category-budget-row > div:first-child strong,
+.category-budget-row > div:first-child small {
+  display: block;
+}
+
+.category-budget-progress {
+  grid-column: 1 / -1;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ece7df;
+}
+
+.category-budget-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #168c7d, #dbad55);
+}
+
+.category-budget-row label > span {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid #ddd2c4;
+  border-radius: 12px;
+}
+
+.category-budget-row label b {
+  padding-left: 10px;
+}
+
+.category-budget-row input {
+  min-width: 0;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.receipt-review-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+}
+
+.receipt-review-summary article,
+.sync-health-stats article {
+  padding: 20px;
+  background: white;
+  text-align: center;
+}
+
+.receipt-review-summary strong,
+.receipt-review-summary span,
+.sync-health-stats strong,
+.sync-health-stats span {
+  display: block;
+}
+
+.receipt-review-summary strong,
+.sync-health-stats strong {
+  color: #0b776b;
+  font-size: 1.65rem;
+}
+
+.receipt-review-list {
+  display: grid;
+  gap: 12px;
+}
+
+.receipt-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 20px;
+}
+
+.receipt-review-row.reviewed {
+  border-color: #a8d8cd;
+}
+
+.receipt-review-row h2,
+.receipt-review-row p {
+  margin: 0;
+}
+
+.receipt-review-row small,
+.receipt-review-row strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.receipt-review-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.receipt-review-action {
+  display: inline-grid;
+  gap: 4px;
+}
+
+.offline-sync-health {
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.sync-health-badge.warning {
+  background: #fff0e8;
+  color: #a14327;
+}
+
+.sync-health-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid #e5dccf;
+  border-radius: 18px;
+}
+
+.sync-history {
+  margin-top: 16px;
+}
+
+.sync-history summary {
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.sync-history article {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #ece5dc;
+}
+
+.sync-history article span,
+.sync-history article strong,
+.sync-history article small {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settlement-partial-amount {
+  display: grid;
+  gap: 5px;
+  min-width: min(220px, 100%);
+}
+
+.settlement-partial-amount small {
+  max-width: 220px;
+}
+
+.menu-section-title {
+  padding: 18px 20px 10px;
+}
+
+.menu-section-title h2,
+.menu-section-title p {
+  margin: 0;
+}
+
+@media (max-width: 980px) {
+  .trip-command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .category-budget-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .trip-command-center,
+  .expense-comments-card,
+  .offline-sync-health {
+    border-radius: 22px;
+    padding: 16px;
+  }
+
+  .trip-command-grid,
+  .receipt-review-summary,
+  .sync-health-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .trip-command-card {
+    padding: 16px;
+  }
+
+  .trip-command-actions,
+  .planner-operations-bar,
+  .receipt-review-row-actions {
+    align-items: stretch;
+  }
+
+  .trip-command-actions > *,
+  .planner-operations-bar > .button,
+  .planner-operations-bar > .plan-import > .button,
+  .receipt-review-row-actions > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .planner-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+  }
+
+  .planner-tab {
+    min-width: 0 !important;
+    padding-inline: 6px !important;
+  }
+
+  .split-preset-bar,
+  .multi-payer-row,
+  .category-budget-row,
+  .receipt-review-row {
+    grid-template-columns: 1fr;
+  }
+
+  .split-preset-save,
+  .sync-history article {
+    flex-direction: column;
+  }
+
+  .payer-heading-row,
+  .split-heading-row {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .payer-heading-row .mini-segments,
+  .split-heading-row .mini-segments {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .receipt-review-row-actions {
+    justify-content: stretch;
+  }
+
+  .settlement-action-wrap,
+  .settlement-partial-amount,
+  .settlement-partial-amount small {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .category-budget-row button,
+  .category-budget-row label {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .planner-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .trip-command-actions .button,
+  .planner-operations-bar .button,
+  .split-preset-save .button {
+    width: 100%;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .planner-order-buttons button,
+  .planner-done-button,
+  .receipt-review-row-actions button,
+  .receipt-review-row-actions a {
+    min-height: 44px;
+  }
+}
+
 /* v82.2 — offline sharing, closed-pack cleanup and viewport-owned navigation */
 .offline-share-picker {
   min-width: 0;
@@ -122,6 +731,72 @@
     opacity: 0;
     pointer-events: none;
     transform: translateY(calc(100% + 2rem + env(safe-area-inset-bottom)));
+  }
+}
+
+/* v85 final cascade: keep every new workspace inside the phone viewport. */
+:where(
+  .trip-command-center,
+  .planner-operations-bar,
+  .plan-import-card,
+  .split-preset-bar,
+  .multi-payer-list,
+  .category-budget-grid,
+  .receipt-review-list,
+  .offline-sync-health,
+  .expense-comments-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(
+  .split-preset-bar,
+  .multi-payer-row,
+  .category-budget-row,
+  .receipt-review-row
+) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .planner-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .trip-command-grid,
+  .receipt-review-summary,
+  .sync-health-stats {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .planner-operations-bar,
+  .split-preset-bar,
+  .split-preset-save,
+  .multi-payer-row,
+  .category-budget-row,
+  .receipt-review-row,
+  .receipt-review-row-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :where(
+    .trip-command-actions,
+    .planner-operations-bar,
+    .split-preset-save,
+    .receipt-review-row-actions
+  ) > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .planner-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
@@ -17206,5 +17881,58 @@ select {
   :where(.button-row, .form-actions, .planner-card-buttons, .live-location-actions) > * {
     min-width: 0;
     max-width: 100%;
+  }
+}
+
+/* v85 last-in-cascade responsive guarantee. */
+:where(
+  .trip-command-center,
+  .planner-operations-bar,
+  .plan-import-card,
+  .split-preset-bar,
+  .multi-payer-list,
+  .category-budget-grid,
+  .receipt-review-list,
+  .offline-sync-health,
+  .expense-comments-card
+) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .planner-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .trip-command-grid,
+  .receipt-review-summary,
+  .sync-health-stats,
+  .planner-operations-bar,
+  .split-preset-bar,
+  .split-preset-save,
+  .multi-payer-row,
+  .category-budget-row,
+  .receipt-review-row,
+  .receipt-review-row-actions {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  :where(
+    .trip-command-actions,
+    .planner-operations-bar,
+    .split-preset-save,
+    .receipt-review-row-actions
+  ) > * {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .planner-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }

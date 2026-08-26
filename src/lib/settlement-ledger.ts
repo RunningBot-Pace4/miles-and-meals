@@ -2,6 +2,7 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   countries,
+  expensePayers,
   expenseSplits,
   expenses,
   settlements,
@@ -177,17 +178,27 @@ export async function buildCountrySettlementLedger(
 
   const expenseIds = expenseRows.map((row) => row.id);
 
-  const splitRows =
+  const [splitRows, payerRows] =
     expenseIds.length === 0
-      ? []
-      : await db
-          .select({
-            expenseId: expenseSplits.expenseId,
-            userId: expenseSplits.userId,
-            shareAmountBase: expenseSplits.shareAmountBase,
-          })
-          .from(expenseSplits)
-          .where(inArray(expenseSplits.expenseId, expenseIds));
+      ? [[], []] as const
+      : await Promise.all([
+          db
+            .select({
+              expenseId: expenseSplits.expenseId,
+              userId: expenseSplits.userId,
+              shareAmountBase: expenseSplits.shareAmountBase,
+            })
+            .from(expenseSplits)
+            .where(inArray(expenseSplits.expenseId, expenseIds)),
+          db
+            .select({
+              expenseId: expensePayers.expenseId,
+              userId: expensePayers.userId,
+              amountBase: expensePayers.amountBase,
+            })
+            .from(expensePayers)
+            .where(inArray(expensePayers.expenseId, expenseIds)),
+        ]);
 
   const recordedRows = await db
     .select({
@@ -207,7 +218,17 @@ export async function buildCountrySettlementLedger(
   const paid = new Map<string, number>();
   const owed = new Map<string, number>();
 
+  const expensesWithPayerRows = new Set(payerRows.map((row) => row.expenseId));
+
+  for (const payer of payerRows) {
+    paid.set(
+      payer.userId,
+      (paid.get(payer.userId) ?? 0) + toNumber(payer.amountBase),
+    );
+  }
+
   for (const expense of expenseRows) {
+    if (expensesWithPayerRows.has(expense.id)) continue;
     const amount = effectiveConvertedAmount(
       expense.convertedAmount,
       expense.actualConvertedAmount,
@@ -262,36 +283,49 @@ export async function buildCountrySettlementLedger(
 
   const expenseById = new Map(expenseRows.map((expense) => [expense.id, expense]));
   const originalExpenseLines: SmartSettlementExpenseLine[] = splitRows
-    .map((split): SmartSettlementExpenseLine | null => {
+    .flatMap((split): SmartSettlementExpenseLine[] => {
       const expense = expenseById.get(split.expenseId);
-      const amount = toNumber(split.shareAmountBase);
+      const participantShare = toNumber(split.shareAmountBase);
 
       if (
         !expense ||
-        expense.paidByUserId === split.userId ||
-        amount <= 0.005
+        participantShare <= 0.005
       ) {
-        return null;
+        return [];
       }
 
-      return {
-        expenseId: expense.id,
-        expenseDate: expense.expenseDate,
-        description: expense.description,
-        category: expense.category,
-        payerUserId: expense.paidByUserId,
-        payerName: names.get(expense.paidByUserId) ?? "Traveler",
-        participantUserId: split.userId,
-        participantName: names.get(split.userId) ?? "Traveler",
-        shareAmount: amount,
-        expenseTotal: effectiveConvertedAmount(
-          expense.convertedAmount,
-          expense.actualConvertedAmount,
-        ),
-        currency: country.currency,
-      };
-    })
-    .filter((line): line is SmartSettlementExpenseLine => line !== null);
+      const expenseTotal = effectiveConvertedAmount(
+        expense.convertedAmount,
+        expense.actualConvertedAmount,
+      );
+      const storedPayers = payerRows.filter((payer) => payer.expenseId === expense.id);
+      const payers = storedPayers.length
+        ? storedPayers.map((payer) => ({
+            userId: payer.userId,
+            amount: toNumber(payer.amountBase),
+          }))
+        : [{ userId: expense.paidByUserId, amount: expenseTotal }];
+
+      return payers.flatMap((payer) => {
+        if (payer.userId === split.userId || expenseTotal <= 0) return [];
+        const amount = roundMoney(participantShare * (payer.amount / expenseTotal));
+        if (amount <= 0.005) return [];
+
+        return [{
+          expenseId: expense.id,
+          expenseDate: expense.expenseDate,
+          description: expense.description,
+          category: expense.category,
+          payerUserId: payer.userId,
+          payerName: names.get(payer.userId) ?? "Traveler",
+          participantUserId: split.userId,
+          participantName: names.get(split.userId) ?? "Traveler",
+          shareAmount: amount,
+          expenseTotal,
+          currency: country.currency,
+        }];
+      });
+    });
 
   const originalObligations: SettlementTransfer[] = originalExpenseLines.map((line) => ({
     fromUserId: line.participantUserId,

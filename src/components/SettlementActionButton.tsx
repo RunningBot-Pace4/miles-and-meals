@@ -14,11 +14,15 @@ export function SettlementActionButton({
   counterpartyUserId,
   action,
   label,
+  maximumAmount,
+  currency,
 }: {
   countryId: string;
   counterpartyUserId: string;
   action: SettlementAction;
   label: string;
+  maximumAmount?: number;
+  currency?: string;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -26,6 +30,9 @@ export function SettlementActionButton({
     useState("");
   const [completed, setCompleted] =
     useState(false);
+  const [amount, setAmount] = useState(
+    maximumAmount !== undefined ? maximumAmount.toFixed(2) : "",
+  );
 
   async function runAction() {
     setBusy(true);
@@ -45,6 +52,7 @@ export function SettlementActionButton({
             countryId,
             counterpartyUserId,
             action,
+            amount: maximumAmount !== undefined ? Number(amount) : undefined,
           }),
         },
       );
@@ -84,6 +92,22 @@ export function SettlementActionButton({
 
   return (
     <div className="settlement-action-wrap">
+      {maximumAmount !== undefined ? (
+        <label className="settlement-partial-amount">
+          <span>Amount</span>
+          <span>
+            <b>{currency}</b>
+            <input
+              inputMode="decimal"
+              data-numeric-input="decimal"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              aria-label={`${label} amount`}
+            />
+          </span>
+          <small>Enter the full or partial amount received/paid.</small>
+        </label>
+      ) : null}
       <button
         className={
           action ===
@@ -91,7 +115,7 @@ export function SettlementActionButton({
             ? "button primary settlement-action-button"
             : "button settlement-action-button settlement-action-secondary"
         }
-        disabled={busy}
+        disabled={busy || (maximumAmount !== undefined && (!Number.isFinite(Number(amount)) || Number(amount) <= 0 || Number(amount) > maximumAmount + 0.009))}
         data-requires-online="true"
         onClick={runAction}
         type="button"
