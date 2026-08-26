@@ -74,6 +74,32 @@ function normalizePack(pack: OfflineTripPack): OfflineTripPack {
   };
 }
 
+function isOpenPack(pack: OfflineTripPack): boolean {
+  return pack.trip.financialStatus !== "CLOSED";
+}
+
+function repairStoredOpenPacks(
+  localStorage: Storage,
+  candidates: OfflineTripPack[],
+  openPacks: OfflineTripPack[],
+): void {
+  if (candidates.length === openPacks.length) return;
+
+  const previousSelectedId = localStorage.getItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY) ?? "";
+  const selectedPack =
+    openPacks.find((pack) => pack.trip.id === previousSelectedId) ??
+    openPacks[0];
+
+  localStorage.setItem(OFFLINE_PACKS_STORAGE_KEY, JSON.stringify(openPacks));
+  if (selectedPack) {
+    localStorage.setItem(OFFLINE_PACK_STORAGE_KEY, JSON.stringify(selectedPack));
+    localStorage.setItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY, selectedPack.trip.id);
+  } else {
+    localStorage.removeItem(OFFLINE_PACK_STORAGE_KEY);
+    localStorage.removeItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY);
+  }
+}
+
 export function readOfflinePacks(): OfflineTripPack[] {
   const localStorage = storage();
   if (!localStorage) return [];
@@ -81,12 +107,20 @@ export function readOfflinePacks(): OfflineTripPack[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(OFFLINE_PACKS_STORAGE_KEY) ?? "[]") as unknown;
     if (Array.isArray(parsed)) {
-      const packs = parsed.filter(validPack).map(normalizePack);
-      if (packs.length) return packs;
+      const candidates = parsed.filter(validPack).map(normalizePack);
+      if (candidates.length) {
+        const openPacks = candidates.filter(isOpenPack);
+        repairStoredOpenPacks(localStorage, candidates, openPacks);
+        return openPacks;
+      }
     }
 
     const legacy = JSON.parse(localStorage.getItem(OFFLINE_PACK_STORAGE_KEY) ?? "null") as unknown;
-    return validPack(legacy) ? [normalizePack(legacy)] : [];
+    if (!validPack(legacy)) return [];
+    const normalizedLegacy = normalizePack(legacy);
+    if (isOpenPack(normalizedLegacy)) return [normalizedLegacy];
+    repairStoredOpenPacks(localStorage, [normalizedLegacy], []);
+    return [];
   } catch {
     return [];
   }
@@ -122,11 +156,12 @@ export function writeOfflinePacks(
   const localStorage = storage();
   if (!localStorage) return;
 
-  const incomingIds = new Set(incoming.map((pack) => pack.trip.id));
+  const normalizedIncoming = incoming.map(normalizePack);
+  const incomingIds = new Set(normalizedIncoming.map((pack) => pack.trip.id));
   const retained = replaceExisting
     ? []
     : readOfflinePacks().filter((item) => !incomingIds.has(item.trip.id));
-  const next = [...incoming.map(normalizePack), ...retained]
+  const next = [...normalizedIncoming.filter(isOpenPack), ...retained]
     .sort((left, right) => Date.parse(right.savedAt) - Date.parse(left.savedAt));
 
   const previousSelectedId = readOfflineSelectedTripId();

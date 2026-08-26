@@ -173,6 +173,10 @@ export function LiveDashboardFinance({
       "mnm:budget-updated",
       refreshVisible,
     );
+    window.addEventListener(
+      "mnm:data-synced",
+      refreshVisible,
+    );
     document.addEventListener(
       "visibilitychange",
       refreshVisible,
@@ -194,6 +198,10 @@ export function LiveDashboardFinance({
       );
       window.removeEventListener(
         "mnm:budget-updated",
+        refreshVisible,
+      );
+      window.removeEventListener(
+        "mnm:data-synced",
         refreshVisible,
       );
       document.removeEventListener(

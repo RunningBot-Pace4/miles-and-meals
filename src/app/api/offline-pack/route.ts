@@ -16,7 +16,7 @@ async function buildPack(
 ): Promise<OfflineTripPack | null> {
   const country = active.allCountries.find((row) => row.tripId === targetTripId);
 
-  if (!country || !targetTripId) {
+  if (!country || !targetTripId || country.financialStatus === "CLOSED") {
     return null;
   }
 
@@ -84,7 +84,9 @@ export async function GET(request: Request) {
   const requestedTripId = parameters.get("tripId") ?? "";
 
   if (parameters.get("all") === "1") {
-    const tripIds = [...new Set(active.allCountries.map((country) => country.tripId))];
+    const tripIds = [...new Set(active.allCountries
+      .filter((country) => country.financialStatus !== "CLOSED")
+      .map((country) => country.tripId))];
     const packs = (await Promise.all(
       tripIds.map((tripId) => buildPack(active, tripId, session.user.id)),
     )).filter((pack): pack is OfflineTripPack => Boolean(pack));

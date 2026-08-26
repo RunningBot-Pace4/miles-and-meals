@@ -1,3 +1,17 @@
+# v82.2 — Offline Sharing, Silent Refresh & Mobile Navigation
+
+v82.2 completes the offline and phone-layout follow-up:
+
+- closed Trips are filtered by the server, app screen, local cache and standalone offline shell;
+- offline Quick Expense defaults to Everyone but supports Only me or a custom traveler selection;
+- successful background sync immediately refreshes the live Home wallet and Settlement data without a loading page;
+- the mobile navigation is portalled directly to the document body and remains fixed to the viewport while long pages scroll;
+- the PWA cache is bumped so devices receive the new offline shell and layout rules.
+
+See `V82.2-OFFLINE-SHARING-MOBILE-REFRESH.md`.
+
+---
+
 # v82.1 — Vercel Overlay Build Hotfix
 
 v82.1 removes retired Trip Inbox / flight files during `prebuild`. This supports deployments where the full-source ZIP is extracted over an older checkout, which replaces changed files but otherwise leaves deleted routes behind.

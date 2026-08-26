@@ -75,4 +75,28 @@ describe("multi-Trip offline packs", () => {
 
     expect(readOfflinePacks().map((item) => item.trip.id)).toEqual(["one"]);
   });
+
+  it("never stores a closed Trip and repairs a closed remembered selection", () => {
+    const closed = pack("closed", "2026-08-25T02:00:00.000Z");
+    closed.trip.financialStatus = "CLOSED";
+
+    writeOfflinePacks([
+      closed,
+      pack("open", "2026-08-25T01:00:00.000Z"),
+    ], "closed", true);
+
+    expect(readOfflinePacks().map((item) => item.trip.id)).toEqual(["open"]);
+    expect(readOfflineSelectedTripId()).toBe("open");
+  });
+
+  it("purges a closed Trip left by an older device cache", () => {
+    const closed = pack("legacy-closed", "2026-08-25T02:00:00.000Z");
+    closed.trip.financialStatus = "CLOSED";
+    window.localStorage.setItem("mnm:offline-packs:v3", JSON.stringify([closed]));
+    window.localStorage.setItem(OFFLINE_SELECTED_TRIP_STORAGE_KEY, closed.trip.id);
+
+    expect(readOfflinePacks()).toEqual([]);
+    expect(readOfflineSelectedTripId()).toBe("");
+    expect(window.localStorage.getItem("mnm:offline-packs:v3")).toBe("[]");
+  });
 });

@@ -2,6 +2,8 @@
 
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type IconName = "home" | "plan" | "plus" | "map" | "more";
 
@@ -65,8 +67,13 @@ function NavIcon({ name }: { name: IconName }) {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
 
-  return (
+  useEffect(() => {
+    setPortalHost(document.body);
+  }, []);
+
+  const navigation = (
     <nav className="mobile-nav" aria-label="Main navigation" data-app-mobile-nav="true">
       {links.map((link) => {
         const moreSection =
@@ -115,4 +122,6 @@ export function MobileNav() {
       })}
     </nav>
   );
+
+  return portalHost ? createPortal(navigation, portalHost) : navigation;
 }

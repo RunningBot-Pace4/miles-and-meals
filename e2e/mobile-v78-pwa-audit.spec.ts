@@ -160,6 +160,28 @@ test.describe("v78 interaction upgrades", () => {
     }
   });
 
+  test("mobile navigation remains attached to the viewport while Settlement scrolls", async ({ page }) => {
+    await page.goto("/settlements");
+    await page.waitForFunction(() => document.querySelector(".mobile-nav")?.parentElement === document.body);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(100);
+
+    const geometry = await page.locator(".mobile-nav").evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        position: getComputedStyle(element).position,
+        top: rect.top,
+        bottom: rect.bottom,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(geometry.position).toBe("fixed");
+    expect(geometry.top).toBeGreaterThanOrEqual(0);
+    expect(geometry.bottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+    expect(geometry.viewportHeight - geometry.bottom).toBeLessThanOrEqual(24);
+  });
+
 });
 
 test.describe("v79 tablet and browser-zoom containment", () => {
@@ -211,7 +233,10 @@ for (const width of [320, 390, 430]) {
           endDate: "2026-08-29",
           financialStatus: "OPEN",
         },
-        members: [{ id: "user-1", name: "Traveler" }],
+        members: [
+          { id: "user-1", name: "You" },
+          { id: "user-2", name: "Travel Partner" },
+        ],
         plan: [],
       });
       localStorage.setItem(
@@ -219,6 +244,13 @@ for (const width of [320, 390, 430]) {
         JSON.stringify([
           makePack("trip-1", "Vietnam Working With A Very Long Trip Name", "Vietnam"),
           makePack("trip-2", "Japan Autumn Holiday", "Japan"),
+          {
+            ...makePack("trip-closed", "Closed Holiday", "Thailand"),
+            trip: {
+              ...makePack("trip-closed", "Closed Holiday", "Thailand").trip,
+              financialStatus: "CLOSED",
+            },
+          },
         ]),
       );
       localStorage.setItem("mnm:offline-selected-trip:v1", "trip-1");
@@ -226,6 +258,8 @@ for (const width of [320, 390, 430]) {
 
     await page.goto("/offline.html");
     await expect(page.locator("#saved-trip option")).toHaveCount(2);
+    await expect(page.locator("#saved-trip option", { hasText: "Closed Holiday" })).toHaveCount(0);
+    await expect(page.locator("#share-members input")).toHaveCount(2);
     await expectNoHorizontalOverflow(page);
     await expectFormControlsInsideViewport(page);
 
@@ -233,5 +267,17 @@ for (const width of [320, 390, 430]) {
       (element) => getComputedStyle(element).gridTemplateColumns.split(" ").length,
     );
     expect(gridColumns).toBe(1);
+
+    await page.locator("#share-me").click();
+    await page.locator("#description").fill("Offline lunch");
+    await page.locator("#amount").fill("12.50");
+    await page.locator("#quick-form button[type='submit']").click();
+    const queuedSplitIds = await page.evaluate(() => {
+      const queue = JSON.parse(localStorage.getItem("mnm:offline-mutation-queue:v1") ?? "[]") as Array<{
+        body?: { splits?: Array<{ userId: string }> };
+      }>;
+      return queue[0]?.body?.splits?.map((split) => split.userId) ?? [];
+    });
+    expect(queuedSplitIds).toEqual(["user-1"]);
   });
 }

@@ -36,6 +36,12 @@ export function OfflinePackWorkspace({
   const [expenseDate, setExpenseDate] = useState(localDate());
   const [category, setCategory] = useState("Food");
   const [currency, setCurrency] = useState("");
+  const [splitMemberIds, setSplitMemberIds] = useState<string[]>([]);
+
+  const openTrips = useMemo(
+    () => trips.filter((trip) => trip.financialStatus !== "CLOSED"),
+    [trips],
+  );
 
   useEffect(() => {
     const refresh = () => {
@@ -44,11 +50,11 @@ export function OfflinePackWorkspace({
       setPacks(storedPacks);
       setQueueCount(readOfflineQueue().length);
       setSelectedTripId((current) => {
-        const candidates = new Set([...trips.map((trip) => trip.id), ...storedPacks.map((pack) => pack.trip.id)]);
+        const candidates = new Set([...openTrips.map((trip) => trip.id), ...storedPacks.map((pack) => pack.trip.id)]);
         if (remembered && candidates.has(remembered)) return remembered;
         if (current && candidates.has(current)) return current;
         if (activeTripId && candidates.has(activeTripId)) return activeTripId;
-        return storedPacks[0]?.trip.id ?? trips[0]?.id ?? "";
+        return storedPacks[0]?.trip.id ?? openTrips[0]?.id ?? "";
       });
     };
 
@@ -59,7 +65,7 @@ export function OfflinePackWorkspace({
       window.removeEventListener("mnm:offline-pack-updated", refresh);
       window.removeEventListener("mnm:offline-queue-changed", refresh);
     };
-  }, [activeTripId, trips]);
+  }, [activeTripId, openTrips]);
 
   const pack = useMemo(
     () => packs.find((item) => item.trip.id === selectedTripId) ?? null,
@@ -68,9 +74,9 @@ export function OfflinePackWorkspace({
 
   const tripOptions = useMemo(() => {
     const options = new Map<string, OfflineTripOption>();
-    for (const trip of trips) options.set(trip.id, trip);
+    for (const trip of openTrips) options.set(trip.id, trip);
     for (const saved of packs) {
-      if (!options.has(saved.trip.id)) {
+      if (saved.trip.financialStatus !== "CLOSED" && !options.has(saved.trip.id)) {
         options.set(saved.trip.id, {
           id: saved.trip.id,
           name: saved.trip.name,
@@ -82,7 +88,18 @@ export function OfflinePackWorkspace({
       }
     }
     return [...options.values()];
-  }, [packs, trips]);
+  }, [openTrips, packs]);
+
+  const packMemberIds = useMemo(
+    () => pack?.members.map((member) => member.id) ?? [],
+    [pack],
+  );
+
+  const memberSignature = packMemberIds.join("|");
+
+  useEffect(() => {
+    setSplitMemberIds(packMemberIds);
+  }, [pack?.trip.id, memberSignature]);
 
   const currencyOptions = useMemo(
     () => pack
@@ -106,6 +123,26 @@ export function OfflinePackWorkspace({
     setMessage(readOfflinePacks().some((item) => item.trip.id === tripId)
       ? "Showing the saved offline pack for this Trip."
       : "This Trip is not saved on this device yet. Save it while online.");
+  }
+
+  function chooseEveryone() {
+    setSplitMemberIds(packMemberIds);
+  }
+
+  function chooseOnlyMe() {
+    const currentUserId = pack?.currentUserId;
+    const fallbackId = packMemberIds[0];
+    setSplitMemberIds(currentUserId && packMemberIds.includes(currentUserId)
+      ? [currentUserId]
+      : fallbackId
+        ? [fallbackId]
+        : []);
+  }
+
+  function toggleSplitMember(memberId: string) {
+    setSplitMemberIds((current) => current.includes(memberId)
+      ? current.filter((id) => id !== memberId)
+      : [...current, memberId]);
   }
 
   async function refreshPack() {
@@ -175,9 +212,9 @@ export function OfflinePackWorkspace({
       setMessage("Enter a description and a valid amount.");
       return;
     }
-    const memberIds = pack.members.map((member) => member.id);
+    const memberIds = splitMemberIds.filter((memberId) => packMemberIds.includes(memberId));
     if (!memberIds.length) {
-      setMessage("The saved trip pack has no travelers. Refresh it when online.");
+      setMessage("Choose at least one traveler to share this expense.");
       return;
     }
 
@@ -227,17 +264,18 @@ export function OfflinePackWorkspace({
     <div className="stack gap-lg offline-pack-workspace">
       <section className="panel offline-pack-hero">
         <div>
-          <p className="eyebrow">OFFLINE 3.1 · ALL TRIPS</p>
-          <h2>{pack ? pack.trip.name : "Choose a Trip to save offline"}</h2>
-          <p className="muted">Each saved pack keeps its own Trip ID, destination currency and base currency, so queued expenses return to the correct ledger after reconnection.</p>
+          <p className="eyebrow">OFFLINE 3.2 · OPEN TRIPS</p>
+          <h2>{pack ? pack.trip.name : "No open Trip is saved offline"}</h2>
+          <p className="muted">Each saved pack keeps its own Trip ID, destination currency and base currency, so queued expenses return to the correct ledger after reconnection. Closed Trips are removed from this device list.</p>
         </div>
 
         <label className="offline-trip-picker">
           Trip
-          <select value={selectedTripId} onChange={(event) => chooseTrip(event.target.value)}>
+          <select value={selectedTripId} disabled={!tripOptions.length} onChange={(event) => chooseTrip(event.target.value)}>
+            {!tripOptions.length ? <option value="">No open Trips available</option> : null}
             {tripOptions.map((trip) => (
               <option key={trip.id} value={trip.id} title={`${trip.name} · ${trip.destination}`}>
-                {compactOptionText(`${trip.name} · ${trip.destination}${trip.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
+                {compactOptionText(`${trip.name} · ${trip.destination}`, 36)}
               </option>
             ))}
           </select>
@@ -272,10 +310,7 @@ export function OfflinePackWorkspace({
         <>
           <section className="panel">
             <div className="panel-title"><div><p className="eyebrow">QUICK EXPENSE</p><h2>Works without internet</h2></div></div>
-            {pack.trip.financialStatus === "CLOSED" ? (
-              <p className="form-warning">This Trip is closed and read-only. Its saved Plan remains available offline, but no new spending can be queued.</p>
-            ) : (
-              <form className="stack gap-md offline-quick-expense" onSubmit={queueQuickExpense}>
+            <form className="stack gap-md offline-quick-expense" onSubmit={queueQuickExpense}>
                 <label>Description<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Dinner, taxi, tickets…" maxLength={250} /></label>
                 <div className="two-col">
                   <label>Amount<span className="input-with-prefix"><b>{currency}</b><input inputMode="decimal" data-numeric-input="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0.00" /></span></label>
@@ -285,10 +320,25 @@ export function OfflinePackWorkspace({
                   <label>Date<input type="date" value={expenseDate} onChange={(event) => setExpenseDate(event.target.value)} /></label>
                   <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
                 </div>
-                <p className="muted">Saving to <strong>{pack.trip.name} · {pack.trip.destination}</strong>. Paid by you and split equally between {pack.members.length} traveler{pack.members.length === 1 ? "" : "s"}.</p>
+                <fieldset className="offline-share-picker">
+                  <legend>Share cost with</legend>
+                  <div className="offline-share-shortcuts" aria-label="Offline expense sharing shortcuts">
+                    <button className={splitMemberIds.length === packMemberIds.length ? "selected" : ""} type="button" onClick={chooseEveryone}>Everyone</button>
+                    <button className={splitMemberIds.length === 1 && splitMemberIds[0] === pack.currentUserId ? "selected" : ""} type="button" onClick={chooseOnlyMe}>Only me</button>
+                  </div>
+                  <div className="offline-share-members">
+                    {pack.members.map((member) => (
+                      <label key={member.id}>
+                        <input type="checkbox" checked={splitMemberIds.includes(member.id)} onChange={() => toggleSplitMember(member.id)} />
+                        <span>{member.name}{member.id === pack.currentUserId ? " · You" : ""}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <small>All Trip members can see the expense after sync. The cost is split equally only between the {splitMemberIds.length} selected traveler{splitMemberIds.length === 1 ? "" : "s"}.</small>
+                </fieldset>
+                <p className="muted">Saving to <strong>{pack.trip.name} · {pack.trip.destination}</strong>. Paid by you. Reconnection syncs this silently to the original Trip.</p>
                 <button className="button primary" type="submit">Save offline expense</button>
               </form>
-            )}
           </section>
 
           <section className="panel">
@@ -302,7 +352,7 @@ export function OfflinePackWorkspace({
 
         </>
       ) : (
-        <section className="panel"><h2>This Trip is still preparing</h2><p className="muted">Stay online briefly and Miles & Meals will refresh every accessible Trip automatically. You can also refresh the selected Trip now.</p></section>
+        <section className="panel"><h2>No open Trip is available offline</h2><p className="muted">Closed Trips are intentionally hidden. If you have an open Trip, stay online briefly and Miles & Meals will save it automatically on this device.</p></section>
       )}
     </div>
   );

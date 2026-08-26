@@ -1,3 +1,11 @@
+# Miles & Meals v82.2 — Audited Full Source Package
+
+v82.2 removes closed Trips from every offline-pack layer, adds traveler selection for offline expense sharing, refreshes Home and Settlement data silently after a successful reconnect sync, and mounts mobile navigation at the document viewport so it cannot float inside long Settlement content.
+
+See `V82.2-OFFLINE-SHARING-MOBILE-REFRESH.md`.
+
+---
+
 # Miles & Meals v82.1 — Audited Full Source Package
 
 v82.1 adds an overlay-safe prebuild cleanup for the Trip Inbox, booking parser and flight lookup files retired in v82. This prevents stale files from an older extracted checkout from failing Vercel validation or recreating removed routes.

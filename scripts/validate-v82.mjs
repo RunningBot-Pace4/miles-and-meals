@@ -23,10 +23,15 @@ const offlineShell = read("public/offline.html");
 const queueTests = read("tests/offline-queue.test.ts");
 const e2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
 const cleanup = read("scripts/cleanup-legacy-files.mjs");
+const offlinePage = read("src/app/(app)/offline/page.tsx");
+const mobileNav = read("src/components/MobileNav.tsx");
+const dashboardFinance = read("src/components/LiveDashboardFinance.tsx");
+const settlementWorkspace = read("src/components/LiveSettlementWorkspace.tsx");
+const css = read("src/app/globals.css");
 
-must(packageJson, '"version": "1.82.1"', "v82.1 package version missing");
+must(packageJson, '"version": "1.82.2"', "v82.2 package version missing");
 must(packageJson, '"v82:check"', "v82 validator command missing");
-must(worker, "miles-meals-static-v82-1", "v82.1 service-worker cache bump missing");
+must(worker, "miles-meals-static-v82-2", "v82.2 service-worker cache bump missing");
 
 for (const source of [expenseRoute, expenseItemRoute, travelRoute, travelItemRoute]) {
   must(source, "canAccessCountry", "cross-Trip offline sync must verify durable Trip access");
@@ -86,4 +91,18 @@ if (expenseForm.includes("financially locked trip")) {
 }
 must(expenseForm, "friendlyExpenseSaveError", "Add Expense lacks friendly access-error handling");
 
-console.log("v82 offline resync, access guidance and Trip Inbox removal validation passed.");
+for (const [source, name] of [[offlinePage, "offline page"], [offlineApi, "offline API"]]) {
+  must(source, 'financialStatus !== "CLOSED"', `${name} does not exclude closed Trips`);
+}
+must(offlinePack, "isOpenPack", "device cache does not purge closed Trip packs");
+must(offlineWorkspace, "splitMemberIds", "offline expense sharing selector is missing");
+must(offlineWorkspace, "All Trip members can see the expense after sync", "offline sharing visibility guidance is missing");
+must(offlineShell, "selectedMembers", "standalone offline sharing selector is missing");
+must(offlineShell, 'financialStatus!=="CLOSED"', "standalone offline shell does not exclude closed Trips");
+must(dashboardFinance, '"mnm:data-synced"', "Home wallet does not refresh immediately after offline sync");
+must(settlementWorkspace, '"mnm:data-synced"', "Settlement does not refresh immediately after offline sync");
+must(mobileNav, "createPortal", "mobile navigation is not owned by the document viewport");
+must(css, 'body > .mobile-nav[data-app-mobile-nav="true"]', "viewport-fixed mobile navigation hardening is missing");
+must(e2e, "remains attached to the viewport", "mobile navigation scroll regression coverage is missing");
+
+console.log("v82.2 offline sharing, silent refresh, mobile navigation and v82 recovery validation passed.");

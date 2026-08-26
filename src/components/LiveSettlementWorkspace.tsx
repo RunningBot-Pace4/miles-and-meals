@@ -1256,6 +1256,10 @@ export function LiveSettlementWorkspace({
       refreshImmediately,
     );
     window.addEventListener(
+      "mnm:data-synced",
+      refreshWhenVisible,
+    );
+    window.addEventListener(
       "focus",
       refreshWhenVisible,
     );
@@ -1273,6 +1277,10 @@ export function LiveSettlementWorkspace({
       window.removeEventListener(
         "online",
         refreshImmediately,
+      );
+      window.removeEventListener(
+        "mnm:data-synced",
+        refreshWhenVisible,
       );
       window.removeEventListener(
         "focus",
