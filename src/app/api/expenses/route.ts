@@ -18,6 +18,7 @@ import { sendPushToCountry } from "@/lib/push";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { expenseSchema } from "@/lib/validation";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 export const runtime = "nodejs";
 
@@ -191,6 +192,9 @@ export async function POST(request: Request) {
     // if the owner locked the trip in the meantime. Brand-new financial writes
     // are blocked once the final-settlement snapshot is closed.
     if (!priorRequest) {
+      if (!(await getTripCapabilities(session.user, country.tripId)).canAddExpenses) {
+        return Response.json({ error: "You have view-only access to this Trip's finances." }, { status: 403 });
+      }
       const locked = await expenseLedgerLockedResponse(country.tripId);
 
       if (locked) {

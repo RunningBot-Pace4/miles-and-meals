@@ -288,6 +288,96 @@ export const tripMembers = pgTable(
   (table) => [primaryKey({ columns: [table.tripId, table.userId] })],
 );
 
+export const tripMemberPermissions = pgTable(
+  "trip_member_permissions",
+  {
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    canEditPlan: boolean("can_edit_plan").default(true).notNull(),
+    canAddExpenses: boolean("can_add_expenses").default(true).notNull(),
+    canViewDocuments: boolean("can_view_documents").default(true).notNull(),
+    canAddMemories: boolean("can_add_memories").default(true).notNull(),
+    updatedBy: text("updated_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.tripId, table.userId] }),
+    index("trip_member_permission_user_idx").on(table.userId),
+  ],
+);
+
+export const tripDocuments = pgTable(
+  "trip_documents",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    documentType: text("document_type").default("OTHER").notNull(),
+    documentData: text("document_data"),
+    externalUrl: text("external_url"),
+    expiryDate: date("expiry_date"),
+    visibility: text("visibility").default("TRIP").notNull(),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("trip_document_trip_time_idx").on(table.tripId, table.createdAt),
+    index("trip_document_creator_idx").on(table.createdBy),
+  ],
+);
+
+export const tripEmergencyContacts = pgTable(
+  "trip_emergency_contacts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    contactName: text("contact_name").notNull(),
+    phone: text("phone").notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("trip_emergency_contact_trip_idx").on(table.tripId)],
+);
+
+export const tripMemories = pgTable(
+  "trip_memories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    story: text("story"),
+    place: text("place"),
+    occurredOn: date("occurred_on"),
+    photoData: text("photo_data"),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("trip_memory_trip_date_idx").on(table.tripId, table.occurredOn)],
+);
+
 export const tripBudgets = pgTable(
   "trip_budgets",
   {
@@ -783,6 +873,10 @@ export const schema = {
   journeys,
   trips,
   tripMembers,
+  tripMemberPermissions,
+  tripDocuments,
+  tripEmergencyContacts,
+  tripMemories,
   tripBudgets,
   tripCategoryBudgets,
   countries,

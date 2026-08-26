@@ -36,6 +36,12 @@
 
   <section class="card" id="plan-card" hidden><p class="eyebrow">SAVED PLAN</p><h2>Travel essentials</h2><div class="list" id="plan-list"></div></section>
 
+  <section class="card" id="finance-card" hidden><p class="eyebrow">FINANCE SNAPSHOT</p><h2>Saved totals</h2><div class="list" id="finance-list"></div></section>
+
+  <section class="card" id="expenses-card" hidden><p class="eyebrow">RECENT EXPENSES</p><h2>Saved ledger</h2><div class="list" id="expenses-list"></div></section>
+
+  <section class="card" id="safety-card" hidden><p class="eyebrow">SAFETY & DOCUMENTS</p><h2>Available on this device</h2><div class="list" id="safety-list"></div></section>
+
   <section class="card" id="no-pack">
     <p class="eyebrow">NO OPEN TRIP OFFLINE</p><h2>Reconnect once to prepare an open Trip.</h2><p class="muted">When you are signed in and online, Miles & Meals securely refreshes open Trips you can access. Closed Trips stay hidden.</p>
   </section>
@@ -49,7 +55,7 @@
   const SELECTED_KEY="mnm:offline-selected-trip:v1";
   const QUEUE_KEY="mnm:offline-mutation-queue:v1";
   const $=id=>document.getElementById(id);
-  const isOpen=x=>x&&x.version===2&&x.trip&&x.trip.id&&x.trip.financialStatus!=="CLOSED";
+  const isOpen=x=>x&&(x.version===2||x.version===3)&&x.trip&&x.trip.id&&x.trip.financialStatus!=="CLOSED";
   let packs=[];
   try{const parsed=JSON.parse(localStorage.getItem(PACKS_KEY)||"[]");if(Array.isArray(parsed))packs=parsed.filter(isOpen)}catch{}
   if(!packs.length){try{const legacy=JSON.parse(localStorage.getItem(PACK_KEY)||"null");if(isOpen(legacy))packs=[legacy]}catch{}}
@@ -77,13 +83,17 @@
   function renderPack(){
     pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
     const has=Boolean(pack&&pack.currentUserId);
-    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;
+    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;$("finance-card").hidden=!has;$("expenses-card").hidden=!has;$("safety-card").hidden=!has;
     if(!has){localStorage.removeItem(PACK_KEY);localStorage.removeItem(SELECTED_KEY);return}
     selectedId=pack.trip.id;localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack));
     $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · trip ${pack.trip.currencyCode} · base ${pack.trip.baseCurrency}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
     selectedMembers=(pack.members||[]).map(member=>member.id);renderSharing();
     const currencyCodes=[...new Set([String(pack.trip.currencyCode).toUpperCase(),String(pack.trip.baseCurrency).toUpperCase()])];$("currency").replaceChildren(...currencyCodes.map(code=>{const option=document.createElement("option");option.value=code;option.textContent=`${code}${code===String(pack.trip.currencyCode).toUpperCase()?" · destination":" · base"}`;return option}));
     $("plan-list").replaceChildren();const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
+    const base=pack.finance?.baseCurrency||pack.trip.baseCurrency;const amount=value=>`${base} ${Number(value||0).toFixed(2)}`;
+    $("finance-list").replaceChildren(row("My budget",amount(pack.finance?.myBudget),""),row("My share spent",amount(pack.finance?.myShareSpent),""),row("Group spent",amount(pack.finance?.groupSpent),""));
+    $("expenses-list").replaceChildren();const expenses=(pack.expenses||[]).slice(0,20);if(!expenses.length)$("expenses-list").innerHTML='<div class="empty">No saved expenses.</div>';else expenses.forEach(x=>$("expenses-list").append(row(x.description,`${x.date} · ${x.category} · my share ${amount(x.myShare)}`,`${x.currency} ${Number(x.amount||0).toFixed(2)}`)));
+    $("safety-list").replaceChildren();const contacts=pack.emergencyContacts||[],documents=pack.documents||[];if(!contacts.length&&!documents.length)$("safety-list").innerHTML='<div class="empty">No safety contacts or accessible documents saved.</div>';contacts.forEach(x=>$("safety-list").append(row(`${x.label} · ${x.contactName}`,x.notes||"Emergency contact",x.phone)));documents.forEach(x=>$("safety-list").append(row(x.title,`${x.documentType}${x.expiryDate?` · expires ${x.expiryDate}`:""}`,x.offlineAvailable?"Saved":"Reconnect to open")));
   }
   $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>{selectedId=event.target.value;renderPack()});renderPack();
 

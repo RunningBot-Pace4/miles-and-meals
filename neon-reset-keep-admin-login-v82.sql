@@ -1,4 +1,4 @@
--- Miles & Meals v85 Combined — clear Neon and keep one admin login only.
+-- Miles & Meals v90 Combined — clear Neon and keep one admin login only.
 --
 -- DESTRUCTIVE: create a Neon backup/branch before running this file.
 -- Run the complete file in Neon SQL Editor, not one statement at a time.
@@ -62,7 +62,7 @@ END;
 $$;
 
 -- Clear every application, Trip, financial, collaboration and telemetry table.
--- All current v85 schema tables are listed explicitly so an unexpected
+-- All current v90 schema tables are listed explicitly so an unexpected
 -- dependency causes a rollback instead of being silently deleted by CASCADE.
 TRUNCATE TABLE
   location_pings,
@@ -73,6 +73,9 @@ TRUNCATE TABLE
   expense_splits,
   settlements,
   expenses,
+  trip_documents,
+  trip_emergency_contacts,
+  trip_memories,
   trip_inbox_items,
   travel_items,
   trip_invites,
@@ -83,6 +86,7 @@ TRUNCATE TABLE
   trip_budgets,
   trip_category_budgets,
   split_presets,
+  trip_member_permissions,
   trip_members,
   trips,
   journeys,

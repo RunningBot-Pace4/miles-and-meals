@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  editOfflineMutation,
   flushOfflineQueue,
   readOfflineQueue,
   readOfflineSyncHistory,
@@ -9,6 +10,34 @@ import {
   retryOfflineMutation,
   type OfflineMutation,
 } from "@/lib/offline-queue";
+
+type QueueEditDraft = {
+  description: string;
+  expenseDate: string;
+  transactionAmount: string;
+  category: string;
+  title: string;
+  itemDate: string;
+  itemTime: string;
+  area: string;
+};
+
+const EMPTY_EDIT: QueueEditDraft = {
+  description: "", expenseDate: "", transactionAmount: "", category: "Other",
+  title: "", itemDate: "", itemTime: "", area: "",
+};
+
+function bodyRecord(item: OfflineMutation): Record<string, unknown> {
+  return item.body && typeof item.body === "object" && !Array.isArray(item.body)
+    ? item.body as Record<string, unknown>
+    : {};
+}
+
+function editableKind(item: OfflineMutation): "expense" | "plan" | null {
+  if (item.method === "POST" && item.url === "/api/expenses") return "expense";
+  if (item.method === "POST" && item.url === "/api/travel-items") return "plan";
+  return null;
+}
 
 function retryText(item: OfflineMutation): string {
   if (item.blocked) return "Needs review before it can sync.";
@@ -28,6 +57,9 @@ export function OfflineQueueSync() {
   const [syncing, setSyncing] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<QueueEditDraft>(EMPTY_EDIT);
+  const [editMessage, setEditMessage] = useState("");
 
   const blocked = useMemo(
     () => items.filter((item) => item.blocked).length,
@@ -132,6 +164,54 @@ export function OfflineQueueSync() {
 
     removeOfflineMutation(id);
     setItems(readOfflineQueue());
+  }
+
+  function startEdit(item: OfflineMutation) {
+    const body = bodyRecord(item);
+    setEditingId(item.id);
+    setEditMessage("");
+    setEditDraft({
+      description: String(body.description ?? ""),
+      expenseDate: String(body.expenseDate ?? ""),
+      transactionAmount: String(body.transactionAmount ?? ""),
+      category: String(body.category ?? "Other"),
+      title: String(body.title ?? ""),
+      itemDate: String(body.itemDate ?? ""),
+      itemTime: String(body.itemTime ?? ""),
+      area: String(body.area ?? ""),
+    });
+  }
+
+  function saveEdit(item: OfflineMutation) {
+    const kind = editableKind(item);
+    if (!kind) return;
+    if (kind === "expense") {
+      const numericAmount = Number(editDraft.transactionAmount);
+      if (!editDraft.description.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0) {
+        setEditMessage("Enter a description and valid amount.");
+        return;
+      }
+      editOfflineMutation(item.id, {
+        description: editDraft.description,
+        expenseDate: editDraft.expenseDate,
+        transactionAmount: numericAmount,
+        category: editDraft.category,
+      });
+    } else {
+      if (!editDraft.title.trim()) {
+        setEditMessage("Enter a title for this Plan item.");
+        return;
+      }
+      editOfflineMutation(item.id, {
+        title: editDraft.title,
+        itemDate: editDraft.itemDate,
+        itemTime: editDraft.itemTime,
+        area: editDraft.area,
+      });
+    }
+    setItems(readOfflineQueue());
+    setEditingId(null);
+    setEditMessage("");
   }
 
   async function retryOne(id: string) {
@@ -256,7 +336,7 @@ export function OfflineQueueSync() {
                 }
                 key={item.id}
               >
-                <div>
+                <div className="offline-queue-item-content">
                   <strong>{item.label}</strong>
                   {item.meta ? (
                     <span className="offline-queue-context">
@@ -285,9 +365,32 @@ export function OfflineQueueSync() {
                       }).format(new Date(item.lastAttemptAt))}
                     </small>
                   ) : null}
+                  {editingId === item.id ? (
+                    <div className="offline-queue-editor">
+                      {editableKind(item) === "expense" ? <>
+                        <label>Description<input value={editDraft.description} onChange={(event) => setEditDraft({ ...editDraft, description: event.target.value })} /></label>
+                        <div className="offline-queue-editor-grid">
+                          <label>Amount<input inputMode="decimal" data-numeric-input="decimal" value={editDraft.transactionAmount} onChange={(event) => setEditDraft({ ...editDraft, transactionAmount: event.target.value })} /></label>
+                          <label>Date<input type="date" value={editDraft.expenseDate} onChange={(event) => setEditDraft({ ...editDraft, expenseDate: event.target.value })} /></label>
+                          <label>Category<select value={editDraft.category} onChange={(event) => setEditDraft({ ...editDraft, category: event.target.value })}><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
+                        </div>
+                      </> : <>
+                        <label>Title<input value={editDraft.title} onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })} /></label>
+                        <div className="offline-queue-editor-grid">
+                          <label>Date<input type="date" value={editDraft.itemDate} onChange={(event) => setEditDraft({ ...editDraft, itemDate: event.target.value })} /></label>
+                          <label>Time<input type="time" value={editDraft.itemTime} onChange={(event) => setEditDraft({ ...editDraft, itemTime: event.target.value })} /></label>
+                          <label>Area<input value={editDraft.area} onChange={(event) => setEditDraft({ ...editDraft, area: event.target.value })} /></label>
+                        </div>
+                      </>}
+                      <small>Original Trip, currency, payer and sharing cannot be changed.</small>
+                      {editMessage ? <small className="field-error">{editMessage}</small> : null}
+                      <div className="offline-queue-editor-actions"><button type="button" onClick={() => saveEdit(item)}>Save correction</button><button type="button" onClick={() => { setEditingId(null); setEditMessage(""); }}>Cancel</button></div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="offline-queue-item-actions">
+                  {editableKind(item) && editingId !== item.id ? <button type="button" onClick={() => startEdit(item)}>Edit</button> : null}
                   {!item.blocked ? (
                     <button
                       type="button"

@@ -1,3 +1,13 @@
+# V90 Combined — V86, V87, V88, V89 and V90
+
+Version `1.90.0` adds production-readiness evidence, server-enforced traveler permissions, smart day routes, private/shared travel documents, emergency contacts, a fuller editable multi-Trip offline workflow, explainable Trip companion guidance, nearby discovery and Trip memories.
+
+Start with `START-HERE-V90.md`. The ten 10/10 acceptance targets—and the real-device, load, security, accessibility and market evidence still required before claiming global top-10 status—are in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
+
+Run `neon-upgrade-v85-combined.sql` if it is not already deployed, then run `neon-upgrade-v90-combined.sql` before releasing this source.
+
+---
+
 # V85 Combined — V83, V84 and V85
 
 V85 combines the next three phases into one release and makes every product scorecard area a **10/10 acceptance target**.
@@ -175,7 +185,11 @@ See `V69-MOBILE-FLOW-NAV-RESET.md`.
 
 Settle Up is now explicitly trip-scoped: the selector shows trip names and readiness, the financial checkpoint names the selected trip, and Live GPS also uses trip names instead of country-only labels. See `V68-TRIP-FIRST-SETTLEMENT-DROPDOWNS.md`.
 
-# Miles & Meals
+# Miles & Meals — V90 Combined
+
+Version `1.90.0` combines V86–V90: production-readiness evidence, traveler permissions, smart day routing, private/shared travel documents, emergency contacts, a fuller editable offline workflow, explainable Trip companion guidance, discovery and memories.
+
+Start with `START-HERE-V90.md`, then review the honest target and external-proof boundary in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
 ## v67 — Phase 9–14 Production Launch Candidate
 

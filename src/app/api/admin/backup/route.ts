@@ -16,6 +16,10 @@ import {
   tripInboxItems,
   tripBudgets,
   tripCategoryBudgets,
+  tripDocuments,
+  tripEmergencyContacts,
+  tripMemories,
+  tripMemberPermissions,
   tripMembers,
   splitPresets,
   trips,
@@ -34,18 +38,22 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 2;
+const BACKUP_VERSION = 3;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
 const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
-  version: z.union([z.literal(1), z.literal(BACKUP_VERSION)]),
+  version: z.union([z.literal(1), z.literal(2), z.literal(BACKUP_VERSION)]),
   exportedAt: z.string(),
   data: z.object({
     journeys: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     trips: z.array(z.record(z.string(), z.unknown())),
     tripMembers: z.array(z.record(z.string(), z.unknown())),
+    tripMemberPermissions: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    tripDocuments: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    tripEmergencyContacts: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+    tripMemories: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     tripBudgets: z
       .array(
         z.record(
@@ -191,6 +199,14 @@ function requiredUserIds(
   ) {
     add(row, "userId");
   }
+
+  for (const row of backup.data.tripMemberPermissions) {
+    add(row, "userId");
+    add(row, "updatedBy");
+  }
+  for (const row of backup.data.tripDocuments) add(row, "createdBy");
+  for (const row of backup.data.tripEmergencyContacts) add(row, "createdBy");
+  for (const row of backup.data.tripMemories) add(row, "createdBy");
 
   for (const row of backup.data.tripCategoryBudgets) add(row, "createdBy");
 
@@ -621,6 +637,18 @@ async function validateBackup(
     if (countryId && !countryIds.has(countryId)) errors.push(`tripInboxItems[${index}] references a missing country.`);
   }
 
+  for (const [collection, rows] of [
+    ["tripMemberPermissions", backup.data.tripMemberPermissions],
+    ["tripDocuments", backup.data.tripDocuments],
+    ["tripEmergencyContacts", backup.data.tripEmergencyContacts],
+    ["tripMemories", backup.data.tripMemories],
+  ] as const) {
+    rows.forEach((row, index) => {
+      const tripId = requiredString(row, "tripId", errors, `${collection}[${index}]`);
+      if (tripId && !tripIds.has(tripId)) errors.push(`${collection}[${index}] references a missing trip.`);
+    });
+  }
+
   const neededUserIds =
     requiredUserIds(backup);
   const currentUsers =
@@ -676,6 +704,10 @@ async function validateBackup(
       tripMembers:
         backup.data.tripMembers
           .length,
+      tripMemberPermissions: backup.data.tripMemberPermissions.length,
+      tripDocuments: backup.data.tripDocuments.length,
+      emergencyContacts: backup.data.tripEmergencyContacts.length,
+      tripMemories: backup.data.tripMemories.length,
       personalBudgets:
         backup.data.tripBudgets
           .length,
@@ -757,28 +789,6 @@ async function restoreBackup(
     `);
   }
 
-  for (const row of backup.data.tripCategoryBudgets) {
-    queries.push(sql`
-      INSERT INTO trip_category_budgets (trip_id, category, amount, created_by, created_at, updated_at)
-      VALUES (
-        ${value(row, "tripId")}, ${value(row, "category")}, ${value(row, "amount")},
-        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()},
-        ${timestamp(row, "updatedAt") ?? new Date()}
-      )
-    `);
-  }
-
-  for (const row of backup.data.splitPresets) {
-    queries.push(sql`
-      INSERT INTO split_presets (id, trip_id, name, split_mode, shares_json, created_by, created_at)
-      VALUES (
-        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "name")},
-        ${value(row, "splitMode") ?? "SHARES"}, ${value(row, "sharesJson")},
-        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()}
-      )
-    `);
-  }
-
   for (const row of backup.data.trips) {
     queries.push(sql`
       INSERT INTO trips (
@@ -811,6 +821,83 @@ async function restoreBackup(
         ${value(row, "financialSnapshot")},
         ${value(row, "createdBy")},
         ${timestamp(row, "createdAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripMemberPermissions) {
+    queries.push(sql`
+      INSERT INTO trip_member_permissions (
+        trip_id, user_id, can_edit_plan, can_add_expenses, can_view_documents,
+        can_add_memories, updated_by, updated_at
+      ) VALUES (
+        ${value(row, "tripId")}, ${value(row, "userId")}, ${value(row, "canEditPlan") ?? true},
+        ${value(row, "canAddExpenses") ?? true}, ${value(row, "canViewDocuments") ?? true},
+        ${value(row, "canAddMemories") ?? true}, ${value(row, "updatedBy")},
+        ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripCategoryBudgets) {
+    queries.push(sql`
+      INSERT INTO trip_category_budgets (trip_id, category, amount, created_by, created_at, updated_at)
+      VALUES (
+        ${value(row, "tripId")}, ${value(row, "category")}, ${value(row, "amount")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.splitPresets) {
+    queries.push(sql`
+      INSERT INTO split_presets (id, trip_id, name, split_mode, shares_json, created_by, created_at)
+      VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "name")},
+        ${value(row, "splitMode") ?? "SHARES"}, ${value(row, "sharesJson")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripDocuments) {
+    queries.push(sql`
+      INSERT INTO trip_documents (
+        id, trip_id, title, document_type, document_data, external_url, expiry_date,
+        visibility, created_by, created_at, updated_at
+      ) VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "title")},
+        ${value(row, "documentType") ?? "OTHER"}, ${value(row, "documentData")},
+        ${value(row, "externalUrl")}, ${value(row, "expiryDate")}, ${value(row, "visibility") ?? "TRIP"},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripEmergencyContacts) {
+    queries.push(sql`
+      INSERT INTO trip_emergency_contacts (
+        id, trip_id, label, contact_name, phone, notes, created_by, created_at, updated_at
+      ) VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "label")},
+        ${value(row, "contactName")}, ${value(row, "phone")}, ${value(row, "notes")},
+        ${value(row, "createdBy")}, ${timestamp(row, "createdAt") ?? new Date()},
+        ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (const row of backup.data.tripMemories) {
+    queries.push(sql`
+      INSERT INTO trip_memories (
+        id, trip_id, title, story, place, occurred_on, photo_data, created_by, created_at, updated_at
+      ) VALUES (
+        ${value(row, "id")}, ${value(row, "tripId")}, ${value(row, "title")},
+        ${value(row, "story")}, ${value(row, "place")}, ${value(row, "occurredOn")},
+        ${value(row, "photoData")}, ${value(row, "createdBy")},
+        ${timestamp(row, "createdAt") ?? new Date()}, ${timestamp(row, "updatedAt") ?? new Date()}
       )
     `);
   }
@@ -1155,6 +1242,10 @@ export async function GET() {
     journeyRows,
     tripRows,
     tripMemberRows,
+    tripMemberPermissionRows,
+    tripDocumentRows,
+    emergencyContactRows,
+    tripMemoryRows,
     tripBudgetRows,
     tripCategoryBudgetRows,
     countryRows,
@@ -1168,11 +1259,14 @@ export async function GET() {
     plannerRows,
     expenseItemRows,
     expenseItemAssignmentRows,
-    inboxRows,
   ] = await Promise.all([
     db.select().from(journeys),
     db.select().from(trips),
     db.select().from(tripMembers),
+    db.select().from(tripMemberPermissions),
+    db.select().from(tripDocuments),
+    db.select().from(tripEmergencyContacts),
+    db.select().from(tripMemories),
     db.select().from(tripBudgets),
     db.select().from(tripCategoryBudgets),
     db.select().from(countries),
@@ -1186,7 +1280,6 @@ export async function GET() {
     db.select().from(travelItems),
     db.select().from(expenseItems),
     db.select().from(expenseItemAssignments),
-    db.select().from(tripInboxItems),
   ]);
 
   const backup = {
@@ -1219,6 +1312,10 @@ export async function GET() {
       trips: tripRows,
       tripMembers:
         tripMemberRows,
+      tripMemberPermissions: tripMemberPermissionRows,
+      tripDocuments: tripDocumentRows,
+      tripEmergencyContacts: emergencyContactRows,
+      tripMemories: tripMemoryRows,
       tripBudgets:
         tripBudgetRows,
       tripCategoryBudgets: tripCategoryBudgetRows,
@@ -1237,7 +1334,6 @@ export async function GET() {
         settlementRows,
       travelItems:
         plannerRows,
-      tripInboxItems: inboxRows,
     },
   };
 

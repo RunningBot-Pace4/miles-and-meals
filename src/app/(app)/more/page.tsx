@@ -75,6 +75,22 @@ export default async function MorePage() {
           <span>Offline packs & Sync Centre</span>
           <span>›</span>
         </Link>
+        <Link className="menu-row link-row" href="/companion">
+          <span>Smart Trip companion</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/documents">
+          <span>Documents & emergency info</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/memories">
+          <span>Trip memories</span>
+          <span>›</span>
+        </Link>
+        <Link className="menu-row link-row" href="/settings/permissions">
+          <span>Traveler permissions</span>
+          <span>›</span>
+        </Link>
         <Link className="menu-row link-row" href="/settings/budgets">
           <span>Budgets & category limits</span>
           <span>›</span>
@@ -138,7 +154,7 @@ export default async function MorePage() {
             <span>›</span>
           </Link>
           <Link className="menu-row link-row" href="/admin/health">
-            <span>App health</span>
+            <span>App health & V90 readiness</span>
             <span>›</span>
           </Link>
           <Link className="menu-row link-row" href="/admin/backup">

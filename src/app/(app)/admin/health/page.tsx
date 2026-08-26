@@ -2,7 +2,13 @@ import { desc, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { db } from "@/db";
-import { appErrors } from "@/db/schema";
+import {
+  appErrors,
+  tripDocuments,
+  tripEmergencyContacts,
+  tripMemberPermissions,
+  tripMemories,
+} from "@/db/schema";
 import {
   loadPerformanceSnapshot,
   runConsistencyChecks,
@@ -30,6 +36,20 @@ async function checkDatabase(): Promise<{
       ok: false,
       message: "Database health query failed.",
     };
+  }
+}
+
+async function checkV90DataModel(): Promise<{ ok: boolean; message: string }> {
+  try {
+    await Promise.all([
+      db.select({ id: tripMemberPermissions.tripId }).from(tripMemberPermissions).limit(1),
+      db.select({ id: tripDocuments.id }).from(tripDocuments).limit(1),
+      db.select({ id: tripEmergencyContacts.id }).from(tripEmergencyContacts).limit(1),
+      db.select({ id: tripMemories.id }).from(tripMemories).limit(1),
+    ]);
+    return { ok: true, message: "V90 permissions, documents, emergency contacts and memories tables are available." };
+  } catch {
+    return { ok: false, message: "Run neon-upgrade-v90-combined.sql before releasing V90." };
   }
 }
 
@@ -72,11 +92,13 @@ export default async function AdminHealthPage() {
 
   const [
     database,
+    v90DataModel,
     recentErrors,
     consistency,
     performance,
   ] = await Promise.all([
     checkDatabase(),
+    checkV90DataModel(),
     loadRecentErrors(),
     runConsistencyChecks(),
     loadPerformanceSnapshot(),
@@ -98,6 +120,11 @@ export default async function AdminHealthPage() {
               sum + issue.count,
             0,
           )} consistency issue(s) need review.`,
+    },
+    {
+      name: "V90 data model",
+      ok: v90DataModel.ok,
+      detail: v90DataModel.message,
     },
     {
       name: "Authentication",

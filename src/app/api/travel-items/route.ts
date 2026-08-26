@@ -15,6 +15,7 @@ import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/reques
 import { getSession } from "@/lib/session";
 import { travelItemSchema } from "@/lib/validation";
 import { closedTripReadOnlyResponse } from "@/lib/financial-close";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 export const runtime = "nodejs";
 
@@ -153,6 +154,11 @@ export async function POST(request: Request) {
           { status: 409 },
         );
       }
+    }
+
+    const capabilities = await getTripCapabilities(session.user, country.tripId);
+    if (!capabilities.canEditPlan) {
+      return Response.json({ error: "You have view-only access to this Trip's Plan." }, { status: 403 });
     }
 
     const locked = await closedTripReadOnlyResponse(country.tripId);

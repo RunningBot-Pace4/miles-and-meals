@@ -20,8 +20,47 @@ export type OfflineTravelItem = {
   notes: string;
 };
 
+export type OfflineExpense = {
+  id: string;
+  date: string;
+  category: string;
+  description: string;
+  currency: string;
+  amount: number;
+  baseAmount: number;
+  myShare: number;
+};
+
+export type OfflineDocument = {
+  id: string;
+  title: string;
+  documentType: string;
+  expiryDate: string | null;
+  visibility: string;
+  externalUrl: string;
+  documentData: string;
+  offlineAvailable: boolean;
+};
+
+export type OfflineEmergencyContact = {
+  id: string;
+  label: string;
+  contactName: string;
+  phone: string;
+  notes: string;
+};
+
+export type OfflineMemory = {
+  id: string;
+  title: string;
+  story: string;
+  place: string;
+  occurredOn: string | null;
+  photoData: string;
+};
+
 export type OfflineTripPack = {
-  version: 2;
+  version: 2 | 3;
   savedAt: string;
   currentUserId: string;
   trip: {
@@ -38,6 +77,16 @@ export type OfflineTripPack = {
   };
   members: OfflineTripMember[];
   plan: OfflineTravelItem[];
+  expenses: OfflineExpense[];
+  finance: {
+    baseCurrency: string;
+    myBudget: number;
+    groupSpent: number;
+    myShareSpent: number;
+  };
+  documents: OfflineDocument[];
+  emergencyContacts: OfflineEmergencyContact[];
+  memories: OfflineMemory[];
 };
 
 export type OfflineTripOption = {
@@ -60,17 +109,30 @@ function storage(): Storage | null {
 
 function validPack(value: unknown): value is OfflineTripPack {
   if (!value || typeof value !== "object") return false;
-  const pack = value as Partial<OfflineTripPack>;
-  return pack.version === 2 && Boolean(pack.trip?.id && pack.currentUserId);
+  const pack = value as Partial<OfflineTripPack> & { version?: number };
+  return (pack.version === 2 || pack.version === 3) && Boolean(pack.trip?.id && pack.currentUserId);
 }
 
 function normalizePack(pack: OfflineTripPack): OfflineTripPack {
   return {
     ...pack,
+    version: 3,
     trip: {
       ...pack.trip,
       financialStatus: pack.trip.financialStatus ?? "OPEN",
     },
+    members: Array.isArray(pack.members) ? pack.members : [],
+    plan: Array.isArray(pack.plan) ? pack.plan : [],
+    expenses: Array.isArray(pack.expenses) ? pack.expenses : [],
+    finance: pack.finance ?? {
+      baseCurrency: pack.trip.baseCurrency,
+      myBudget: 0,
+      groupSpent: 0,
+      myShareSpent: 0,
+    },
+    documents: Array.isArray(pack.documents) ? pack.documents : [],
+    emergencyContacts: Array.isArray(pack.emergencyContacts) ? pack.emergencyContacts : [],
+    memories: Array.isArray(pack.memories) ? pack.memories : [],
   };
 }
 

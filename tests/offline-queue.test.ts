@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   OFFLINE_MUTATION_STORAGE_KEY,
+  editOfflineMutation,
   enqueueOfflineMutation,
   flushOfflineQueue,
   readOfflineQueue,
@@ -90,6 +91,44 @@ describe("offline mutation resync", () => {
       tripName: "Vietnam Working",
       currency: "VND",
       sharing: "3 travelers",
+    });
+  });
+
+  it("edits a blocked offline expense without changing its Trip, currency or sharing", async () => {
+    const item = enqueueOfflineMutation({
+      url: "/api/expenses",
+      method: "POST",
+      label: "Vietnam Working · VND · Taxi",
+      body: {
+        countryId: "country-vn",
+        description: "Taxi",
+        expenseDate: "2026-08-25",
+        transactionCurrency: "VND",
+        transactionAmount: 100,
+        splits: [{ userId: "member-1", value: 0 }],
+      },
+      meta: { tripId: "trip-1", tripName: "Vietnam Working", currency: "VND", sharing: "1 traveler", description: "Taxi" },
+    });
+    window.localStorage.setItem(OFFLINE_MUTATION_STORAGE_KEY, JSON.stringify([{ ...item, attempts: 6, blocked: true, lastError: "Invalid amount" }]));
+
+    expect(editOfflineMutation(item.id, {
+      description: "Airport taxi",
+      transactionAmount: 120,
+      expenseDate: "2026-08-26",
+      category: "Transport",
+    })).toBe(true);
+
+    const [edited] = readOfflineQueue();
+    expect(edited).toMatchObject({ attempts: 0, blocked: false, lastError: "Edited and ready to sync." });
+    expect(edited.meta).toMatchObject({ tripId: "trip-1", currency: "VND", sharing: "1 traveler", description: "Airport taxi" });
+    expect(edited.body).toMatchObject({
+      countryId: "country-vn",
+      transactionCurrency: "VND",
+      splits: [{ userId: "member-1", value: 0 }],
+      description: "Airport taxi",
+      transactionAmount: 120,
+      expenseDate: "2026-08-26",
+      category: "Transport",
     });
   });
 

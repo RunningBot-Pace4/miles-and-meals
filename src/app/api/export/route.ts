@@ -4,6 +4,7 @@ import {
   eq,
   inArray,
   ne,
+  or,
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -16,12 +17,17 @@ import {
   tripBudgets,
   tripCategoryBudgets,
   splitPresets,
+  tripDocuments,
+  tripEmergencyContacts,
+  tripMemories,
+  tripMemberPermissions,
   user,
 } from "@/db/schema";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
 import { getSession } from "@/lib/session";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 function csvCell(value: unknown): string {
   if (
@@ -106,6 +112,10 @@ export async function GET(request: Request) {
       expensePayers: [],
       expenseComments: [],
       splitPresets: [],
+      documents: [],
+      emergencyContacts: [],
+      memories: [],
+      myTripPermissions: [],
     };
 
     if (format === "json") {
@@ -148,6 +158,10 @@ export async function GET(request: Request) {
     personalBudgetRows,
     categoryBudgetRows,
     splitPresetRows,
+    documentRows,
+    emergencyContactRows,
+    memoryRows,
+    myTripPermissionRows,
   ] = await Promise.all([
     db
       .select({
@@ -230,6 +244,21 @@ export async function GET(request: Request) {
       ),
     db.select().from(tripCategoryBudgets).where(inArray(tripCategoryBudgets.tripId, tripIds)),
     db.select().from(splitPresets).where(inArray(splitPresets.tripId, tripIds)),
+    Promise.all(tripIds.map(async (tripId) => ({ tripId, capabilities: await getTripCapabilities(session.user, tripId) })))
+      .then(async (rows) => {
+        const permittedTripIds = rows.filter((row) => row.capabilities.canViewDocuments).map((row) => row.tripId);
+        if (!permittedTripIds.length) return [];
+        return db.select().from(tripDocuments).where(and(
+          inArray(tripDocuments.tripId, permittedTripIds),
+          or(eq(tripDocuments.visibility, "TRIP"), eq(tripDocuments.createdBy, session.user.id)),
+        ));
+      }),
+    db.select().from(tripEmergencyContacts).where(inArray(tripEmergencyContacts.tripId, tripIds)),
+    db.select().from(tripMemories).where(inArray(tripMemories.tripId, tripIds)),
+    db.select().from(tripMemberPermissions).where(and(
+      inArray(tripMemberPermissions.tripId, tripIds),
+      eq(tripMemberPermissions.userId, session.user.id),
+    )),
   ]);
 
   const allowedExpenseIds = new Set(expenseRows.map((row) => row.id));
@@ -277,6 +306,10 @@ export async function GET(request: Request) {
       shares: JSON.parse(preset.sharesJson) as unknown,
       sharesJson: undefined,
     })),
+    documents: documentRows,
+    emergencyContacts: emergencyContactRows,
+    memories: memoryRows,
+    myTripPermissions: myTripPermissionRows,
   };
 
   if (format === "json") {

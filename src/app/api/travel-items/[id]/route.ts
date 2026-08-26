@@ -11,6 +11,7 @@ import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/reques
 import { getSession } from "@/lib/session";
 import { travelItemUpdateSchema } from "@/lib/validation";
 import { closedCountryReadOnlyResponse } from "@/lib/financial-close";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 export const runtime = "nodejs";
 
@@ -116,6 +117,11 @@ export async function PATCH(request: Request, context: Context) {
     const existingLocked = await closedCountryReadOnlyResponse(existing.countryId);
     if (existingLocked) return existingLocked;
 
+    const existingCountry = await getCountryWithTrip(existing.countryId);
+    if (!existingCountry || !(await getTripCapabilities(session.user, existingCountry.tripId)).canEditPlan) {
+      return Response.json({ error: "You have view-only access to this Trip's Plan." }, { status: 403 });
+    }
+
     const input = travelItemUpdateSchema.parse(await request.json());
     const mutationId = offlineMutationId(request);
 
@@ -129,6 +135,10 @@ export async function PATCH(request: Request, context: Context) {
 
     const targetLocked = await closedCountryReadOnlyResponse(input.countryId);
     if (targetLocked) return targetLocked;
+    const targetCountry = await getCountryWithTrip(input.countryId);
+    if (!targetCountry || !(await getTripCapabilities(session.user, targetCountry.tripId)).canEditPlan) {
+      return Response.json({ error: "You have view-only access to the selected Trip's Plan." }, { status: 403 });
+    }
 
     if (input.expectedUpdatedAt) {
       const expected = new Date(input.expectedUpdatedAt).getTime();
@@ -192,7 +202,7 @@ export async function PATCH(request: Request, context: Context) {
       })
       .where(eq(travelItems.id, id));
 
-    const country = await getCountryWithTrip(input.countryId);
+    const country = targetCountry;
 
     await recordActivity({
       actorUserId: session.user.id,
@@ -260,6 +270,9 @@ export async function DELETE(request: Request, context: Context) {
   if (locked) return locked;
 
   const country = await getCountryWithTrip(existing.countryId);
+  if (!country || !(await getTripCapabilities(session.user, country.tripId)).canEditPlan) {
+    return Response.json({ error: "You have view-only access to this Trip's Plan." }, { status: 403 });
+  }
 
   await db.delete(travelItems).where(eq(travelItems.id, id));
 

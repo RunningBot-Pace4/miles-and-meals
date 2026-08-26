@@ -259,6 +259,55 @@ export const plannerReorderSchema = z.object({
   itemIds: z.array(uuidSchema).min(1).max(200),
 });
 
+export const tripPermissionSchema = z.object({
+  tripId: uuidSchema,
+  userId: z.string().min(1),
+  canEditPlan: z.boolean(),
+  canAddExpenses: z.boolean(),
+  canViewDocuments: z.boolean(),
+  canAddMemories: z.boolean(),
+});
+
+const privateTravelFileSchema = z.union([
+  z.string().max(1_200_000).regex(
+    /^data:(?:image\/(?:jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/,
+    "Use a JPEG, PNG, WebP or PDF file.",
+  ),
+  z.literal(""),
+]);
+
+export const tripDocumentSchema = z.object({
+  tripId: uuidSchema,
+  title: z.string().trim().min(1).max(160),
+  documentType: z.enum(["TICKET", "HOTEL", "INSURANCE", "PASSPORT", "VISA", "MEDICAL", "OTHER"]),
+  documentData: privateTravelFileSchema.optional().default(""),
+  externalUrl: z.union([z.string().url().max(1000), z.literal("")]).optional().default(""),
+  expiryDate: z.union([z.string().max(10), z.literal("")]).optional().default(""),
+  visibility: z.enum(["TRIP", "PRIVATE"]),
+}).refine((value) => Boolean(value.documentData || value.externalUrl), {
+  message: "Upload a document or provide a secure link.",
+});
+
+export const emergencyContactSchema = z.object({
+  tripId: uuidSchema,
+  label: z.string().trim().min(1).max(80),
+  contactName: z.string().trim().min(1).max(120),
+  phone: z.string().trim().min(3).max(60),
+  notes: z.string().trim().max(500).optional().default(""),
+});
+
+export const tripMemorySchema = z.object({
+  tripId: uuidSchema,
+  title: z.string().trim().min(1).max(160),
+  story: z.string().trim().max(3000).optional().default(""),
+  place: z.string().trim().max(160).optional().default(""),
+  occurredOn: z.union([z.string().max(10), z.literal("")]).optional().default(""),
+  photoData: z.union([
+    z.string().max(1_200_000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/),
+    z.literal(""),
+  ]).optional().default(""),
+});
+
 
 export const selfServiceTripSchema = z.object({
   name: z.string().trim().min(2).max(120),

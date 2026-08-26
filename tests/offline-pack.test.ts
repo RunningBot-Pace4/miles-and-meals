@@ -39,6 +39,11 @@ function pack(id: string, savedAt: string): OfflineTripPack {
     },
     members: [],
     plan: [],
+    expenses: [],
+    finance: { baseCurrency: "MYR", myBudget: 0, groupSpent: 0, myShareSpent: 0 },
+    documents: [],
+    emergencyContacts: [],
+    memories: [],
   };
 }
 

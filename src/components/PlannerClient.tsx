@@ -20,6 +20,7 @@ import {
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { compactOptionText } from "@/lib/display-text";
 import { PlanImport } from "@/components/PlanImport";
+import { SmartDayRoute } from "@/components/SmartDayRoute";
 
 type CountryOption = {
   id: string;
@@ -743,28 +744,6 @@ export function PlannerClient({
       });
   }, [itemsState, tab]);
 
-  const itineraryRouteUrl = useMemo(() => {
-    const stops = itemsState
-      .filter((item) => item.itemType === "ITINERARY" && item.area)
-      .sort((left, right) => {
-        const dateCompare = (left.itemDate ?? "9999-12-31").localeCompare(right.itemDate ?? "9999-12-31");
-        if (dateCompare !== 0) return dateCompare;
-        if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
-        return (left.itemTime ?? "99:99").localeCompare(right.itemTime ?? "99:99");
-      })
-      .slice(0, 10)
-      .map((item) => item.area as string);
-    if (stops.length < 2) return "";
-    const params = new URLSearchParams({
-      api: "1",
-      origin: stops[0],
-      destination: stops.at(-1) as string,
-      travelmode: "driving",
-    });
-    if (stops.length > 2) params.set("waypoints", stops.slice(1, -1).join("|"));
-    return `https://www.google.com/maps/dir/?${params.toString()}`;
-  }, [itemsState]);
-
   const countryById = useMemo(
     () =>
       new Map(
@@ -1414,15 +1393,16 @@ export function PlannerClient({
           >
             Download calendar
           </a>
-          {itineraryRouteUrl ? (
-            <a className="button secondary" href={itineraryRouteUrl} target="_blank" rel="noreferrer">
-              Open day route ↗
-            </a>
-          ) : (
-            <span className="muted">Add at least two City / area values to build a route.</span>
-          )}
         </div>
       ) : null}
+
+      {tab === "ITINERARY" ? <SmartDayRoute
+        items={itemsState.filter((item) => item.itemType === "ITINERARY")}
+        countryId={defaultCountryId}
+        tripName={activeTrip?.name ?? "this Trip"}
+        disabled={activeClosed}
+        onUpdated={refreshItems}
+      /> : null}
 
       {showForm && !activeClosed ? (
         <PlannerItemForm

@@ -32,6 +32,17 @@ export type OfflineFlushResult = {
   blocked: number;
 };
 
+export type OfflineMutationEdit = {
+  description?: string;
+  expenseDate?: string;
+  transactionAmount?: number;
+  category?: string;
+  title?: string;
+  itemDate?: string;
+  itemTime?: string;
+  area?: string;
+};
+
 export const OFFLINE_MUTATION_STORAGE_KEY = "mnm:offline-mutation-queue:v1";
 export const OFFLINE_SYNC_HISTORY_STORAGE_KEY = "mnm:offline-sync-history:v1";
 const MAX_ITEMS = 60;
@@ -131,6 +142,61 @@ function updateOfflineMutation(
   else next.splice(index, 1);
   writeOfflineQueue(next);
   return true;
+}
+
+function editableBody(body: unknown): Record<string, unknown> | null {
+  return body && typeof body === "object" && !Array.isArray(body)
+    ? { ...(body as Record<string, unknown>) }
+    : null;
+}
+
+/**
+ * Edits only user-facing fields. Trip, country, currency, payer and sharing
+ * remain bound to the original mutation so an offline correction can never be
+ * routed to a different ledger by accident.
+ */
+export function editOfflineMutation(id: string, edit: OfflineMutationEdit): boolean {
+  return updateOfflineMutation(id, (current) => {
+    const body = editableBody(current.body);
+    if (!body) return current;
+
+    const isExpense = current.url === "/api/expenses" && current.method === "POST";
+    const isPlan = current.url === "/api/travel-items" && current.method === "POST";
+    if (!isExpense && !isPlan) return current;
+
+    if (isExpense) {
+      if (typeof edit.description === "string" && edit.description.trim()) body.description = edit.description.trim();
+      if (typeof edit.expenseDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(edit.expenseDate)) body.expenseDate = edit.expenseDate;
+      if (typeof edit.transactionAmount === "number" && Number.isFinite(edit.transactionAmount) && edit.transactionAmount > 0) body.transactionAmount = edit.transactionAmount;
+      if (typeof edit.category === "string" && edit.category.trim()) body.category = edit.category.trim();
+    }
+
+    if (isPlan) {
+      if (typeof edit.title === "string" && edit.title.trim()) body.title = edit.title.trim();
+      if (typeof edit.itemDate === "string" && (!edit.itemDate || /^\d{4}-\d{2}-\d{2}$/.test(edit.itemDate))) body.itemDate = edit.itemDate || null;
+      if (typeof edit.itemTime === "string" && (!edit.itemTime || /^\d{2}:\d{2}$/.test(edit.itemTime))) body.itemTime = edit.itemTime || null;
+      if (typeof edit.area === "string") body.area = edit.area.trim();
+    }
+
+    const description = isExpense
+      ? String(body.description ?? current.meta?.description ?? "Offline expense")
+      : String(body.title ?? current.meta?.description ?? "Plan item");
+    const label = isExpense && current.meta?.tripName
+      ? `${current.meta.tripName} · ${current.meta.currency ?? ""} · ${description}`.replace(" ·  · ", " · ")
+      : current.label;
+
+    return {
+      ...current,
+      body,
+      label,
+      attempts: 0,
+      lastAttemptAt: undefined,
+      lastError: "Edited and ready to sync.",
+      blocked: false,
+      nextAttemptAt: undefined,
+      meta: current.meta ? { ...current.meta, description } : current.meta,
+    };
+  });
 }
 
 function createMutationId(): string {

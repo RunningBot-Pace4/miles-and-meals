@@ -1,12 +1,12 @@
-# Miles & Meals V85 Combined — Audited Full Source Package
+# Miles & Meals V90 Combined — Audited Full Source Package
 
-This is the complete V83 + V84 + V85 release, versioned `1.85.0`.
+This is the complete V86 + V87 + V88 + V89 + V90 release, versioned `1.90.0`.
 
-It includes the Trip Command Centre, reliable Sync Centre, advanced Plan tools, reviewed confirmation import, multiple expense payers, weighted/saved splits, category budgets, comments, receipt review and partial settlements. The 10-point acceptance matrix and deployment order are in `V85-COMBINED-10-POINT-RELEASE.md`.
+It includes all V85 foundations plus traveler permissions, smart day routes, the document and emergency vault, fuller editable offline packs, companion guidance, discovery and memories. The 10-point target and honest external-proof boundary are in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-**Database:** this release adds schema. Back up or branch Neon, then run `neon-upgrade-v85-combined.sql` before deployment. Never use a reset script as an upgrade.
+**Database:** this release adds schema. Back up or branch Neon, run `neon-upgrade-v85-combined.sql` if needed, then run `neon-upgrade-v90-combined.sql` before deployment. Never use a reset script as an upgrade.
 
-**Validated:** 80/80 unit tests, all historical source gates, route/source integrity, TypeScript and the Next.js production build pass in the packaging environment.
+**Validated:** 84/84 unit tests, all historical source gates, V90 acceptance validation, route/source integrity, TypeScript and the Next.js production build pass in the packaging environment. Authenticated real-device E2E remains a deployment-stage evidence gate.
 
 ---
 

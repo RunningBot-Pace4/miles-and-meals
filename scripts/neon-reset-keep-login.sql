@@ -1,5 +1,5 @@
 -- Miles & Meals — reset application/travel data while keeping login accounts.
--- v77
+-- v90
 -- Create a Neon backup/branch before running this destructive script.
 -- PRESERVED:
 --   "user"             -> user identity and role
@@ -19,6 +19,9 @@ TRUNCATE TABLE
   expense_splits,
   settlements,
   expenses,
+  trip_documents,
+  trip_emergency_contacts,
+  trip_memories,
   trip_inbox_items,
   travel_items,
   trip_invites,
@@ -29,6 +32,7 @@ TRUNCATE TABLE
   trip_budgets,
   trip_category_budgets,
   split_presets,
+  trip_member_permissions,
   trip_members,
   trips,
   journeys,

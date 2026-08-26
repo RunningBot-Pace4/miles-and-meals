@@ -18,6 +18,10 @@ function localDate() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
+function money(value: number, currency: string) {
+  return new Intl.NumberFormat("en-MY", { style: "currency", currency, maximumFractionDigits: 2 }).format(value || 0);
+}
+
 export function OfflinePackWorkspace({
   trips,
   activeTripId,
@@ -348,6 +352,24 @@ export function OfflinePackWorkspace({
               </form>
           </section>
 
+          <section className="panel offline-finance-panel">
+            <div className="panel-title"><div><p className="eyebrow">FINANCE SNAPSHOT</p><h2>Saved totals</h2></div><small>{pack.finance.baseCurrency}</small></div>
+            <div className="offline-stat-grid">
+              <article><small>My budget</small><strong>{money(pack.finance.myBudget, pack.finance.baseCurrency)}</strong></article>
+              <article><small>My share spent</small><strong>{money(pack.finance.myShareSpent, pack.finance.baseCurrency)}</strong></article>
+              <article><small>Group spent</small><strong>{money(pack.finance.groupSpent, pack.finance.baseCurrency)}</strong></article>
+              <article><small>My budget left</small><strong>{money(Math.max(0, pack.finance.myBudget - pack.finance.myShareSpent), pack.finance.baseCurrency)}</strong></article>
+            </div>
+            <small className="muted">Snapshot saved {new Date(pack.savedAt).toLocaleString()}. Reconnect for live totals.</small>
+          </section>
+
+          <section className="panel">
+            <div className="panel-title"><div><p className="eyebrow">RECENT EXPENSES</p><h2>Saved ledger</h2></div><span>{pack.expenses.length}</span></div>
+            <div className="offline-expense-list">
+              {pack.expenses.length ? pack.expenses.slice(0, 30).map((expense) => <article key={expense.id} className="offline-expense-row"><span><strong>{expense.description}</strong><small>{expense.date} · {expense.category} · my share {money(expense.myShare, pack.finance.baseCurrency)}</small></span><b>{money(expense.amount, expense.currency)}</b></article>) : <p className="muted">No saved expenses.</p>}
+            </div>
+          </section>
+
           <section className="panel">
             <div className="panel-title"><div><p className="eyebrow">SAVED PLAN</p><h2>Travel essentials</h2></div><span>{upcoming.length}</span></div>
             <div className="offline-plan-list">
@@ -355,6 +377,19 @@ export function OfflinePackWorkspace({
                 <article key={item.id} className="offline-plan-row"><span><strong>{item.title}</strong><small>{item.date ?? "Any day"}{item.time ? ` · ${item.time}` : ""}{item.area ? ` · ${item.area}` : ""}</small></span><small>{item.type}</small></article>
               )) : <p className="muted">No saved plan items.</p>}
             </div>
+          </section>
+
+          <section className="panel offline-safety-panel">
+            <div className="panel-title"><div><p className="eyebrow">SAFETY & DOCUMENTS</p><h2>Available on this device</h2></div></div>
+            <div className="offline-safety-grid">
+              <div><h3>Emergency contacts</h3>{pack.emergencyContacts.length ? pack.emergencyContacts.map((contact) => <article className="offline-contact-row" key={contact.id}><span><strong>{contact.label}</strong><small>{contact.contactName}{contact.notes ? ` · ${contact.notes}` : ""}</small></span><a href={`tel:${contact.phone}`}>{contact.phone}</a></article>) : <p className="muted">No emergency contacts saved.</p>}</div>
+              <div><h3>Travel documents</h3>{pack.documents.length ? pack.documents.map((document) => <article className="offline-document-row" key={document.id}><span><strong>{document.title}</strong><small>{document.documentType}{document.expiryDate ? ` · expires ${document.expiryDate}` : ""}{document.visibility === "PRIVATE" ? " · Private" : ""}</small></span>{document.documentData || document.externalUrl ? <a href={document.documentData || document.externalUrl} target="_blank" rel="noreferrer">Open</a> : <small>Reconnect to open</small>}</article>) : <p className="muted">No accessible documents saved.</p>}</div>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-title"><div><p className="eyebrow">TRIP MEMORIES</p><h2>Saved moments</h2></div><span>{pack.memories.length}</span></div>
+            <div className="offline-memory-grid">{pack.memories.length ? pack.memories.slice(0, 12).map((memory) => <article key={memory.id}>{memory.photoData ? <img src={memory.photoData} alt="" /> : null}<span><strong>{memory.title}</strong><small>{memory.occurredOn ?? "Trip moment"}{memory.place ? ` · ${memory.place}` : ""}</small>{memory.story ? <p>{memory.story}</p> : null}</span></article>) : <p className="muted">No saved memories yet.</p>}</div>
           </section>
 
         </>

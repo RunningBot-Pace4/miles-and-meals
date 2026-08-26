@@ -6,6 +6,7 @@ import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { plannerReorderSchema } from "@/lib/validation";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     }
     const country = await getCountryWithTrip(input.countryId);
     if (!country) return Response.json({ error: "Trip not found." }, { status: 404 });
+    if (!(await getTripCapabilities(session.user, country.tripId)).canEditPlan) {
+      return Response.json({ error: "You have view-only access to this Trip's Plan." }, { status: 403 });
+    }
     const locked = await closedTripReadOnlyResponse(country.tripId);
     if (locked) return locked;
 

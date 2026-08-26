@@ -41,7 +41,7 @@ must(settlement, "SettlementPaymentTools", "v76 Smart Settlement payment UX miss
 must(profile, "Regional number format", "v77 locale preference UI missing");
 must(profile, "Time zone", "v77 time-zone preference UI missing");
 for (const href of ['/journeys', '/offline']) must(more, `href="${href}"`, `v77 More menu missing ${href}`);
-for (const marker of ["journeyRows", "expenseItemRows", "expenseItemAssignmentRows", "inboxRows"]) must(backup, marker, `v77 backup missing ${marker}`);
+for (const marker of ["journeyRows", "expenseItemRows", "expenseItemAssignmentRows"]) must(backup, marker, `v77 backup missing ${marker}`);
 for (const table of ["expense_item_assignments", "expense_items", "trip_inbox_items", "trip_invites", "journeys"]) must(reset, table, `v77 keep-login reset missing ${table}`);
 const packageVersion = JSON.parse(packageJson).version ?? "0.0.0";
 const [major, minor] = packageVersion.split(".").map(Number);
