@@ -12,9 +12,9 @@ const halo = read("src/components/LivingJourneyHalo.tsx");
 const css = read("src/app/living-journey.css");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.91.2"', "V91.2 package version missing");
+must(packageJson, '"version": "1.92.0"', "V91.2-or-newer package version missing");
 must(packageJson, '"v91-2:check"', "V91.2 validation command missing");
-must(worker, "miles-meals-static-v91-2", "V91.2 PWA cache bump missing");
+must(worker, "miles-meals-static-v92", "V91.2-or-newer PWA cache bump missing");
 
 for (const marker of [
   'import { LivingJourneyStarter }',

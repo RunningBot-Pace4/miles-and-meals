@@ -36,13 +36,6 @@ const modeLabel: Record<JourneyMode, string> = {
   people: "People",
 };
 
-const modeIcon: Record<JourneyMode, string> = {
-  move: "↗",
-  plan: "⌁",
-  spend: "◈",
-  people: "◎",
-};
-
 function stageLabel(stage: LivingJourneyHaloProps["stage"]): string {
   if (stage === "BEFORE") return "Getting ready";
   if (stage === "DURING") return "Happening now";
@@ -149,9 +142,9 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
           <span className="journey-orbit orbit-three" aria-hidden="true" />
 
           <div className="journey-halo-core" aria-live="polite">
-            <img src="/icons/v91-1/icon-512.png" width="174" height="174" alt="" />
-            <span>{modeLabel[activeMode]}</span>
-            <strong>{activeMode === "spend" ? active.title : "What matters now?"}</strong>
+            <span>{active.eyebrow.split(" · ")[0]}</span>
+            <strong>{active.title}</strong>
+            <small>{activeMode === "move" ? active.summary : "Tap for meaningful detail"}</small>
           </div>
 
           {modeOrder.map((mode) => (
@@ -164,7 +157,6 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
               aria-controls="living-journey-panel"
               onClick={() => setActiveMode(mode)}
             >
-              <span aria-hidden="true">{modeIcon[mode]}</span>
               <b>{modeLabel[mode]}</b>
             </button>
           ))}

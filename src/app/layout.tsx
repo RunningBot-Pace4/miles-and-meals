@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/globals.css";
 import "@/app/living-journey.css";
+import "@/app/v92-living-journey.css";
 import { ClientErrorReporter } from "@/components/ClientErrorReporter";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
 import { NumericInputGuard } from "@/components/NumericInputGuard";
@@ -19,11 +20,11 @@ export const metadata: Metadata = {
   description:
     "Your whole journey connected—move, plan, spend and travel together.",
   applicationName: "Miles & Meals",
-  manifest: "/manifest-v91-1.webmanifest",
+  manifest: "/manifest-v92.webmanifest",
   icons: {
     icon: [
       {
-        url: "/icons/v91-1/icon-192.png",
+        url: "/icons/v92/icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
@@ -32,12 +33,12 @@ export const metadata: Metadata = {
         type: "image/svg+xml",
       },
     ],
-    apple: "/icons/v91-1/apple-touch-icon-180.png",
+    apple: "/icons/v92/apple-touch-icon-180.png",
   },
   appleWebApp: {
     capable: true,
     title: "Miles & Meals",
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
   },
 };
 
@@ -45,7 +46,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#061c33",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -116,7 +117,7 @@ export default function RootLayout({
         >
           <div className="pwa-launch-art">
             <img
-              src="/icons/v91-1/living-journey-loader.gif"
+              src="/icons/v92/living-journey-loader.gif"
               alt=""
               width="96"
               height="96"

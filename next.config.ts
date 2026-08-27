@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: "/manifest-v91-1.webmanifest",
+        source: "/manifest-v92.webmanifest",
         headers: [
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
         ],

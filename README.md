@@ -1,10 +1,10 @@
-# V91.2 Living Journey — the real interactive Home experience
+# V92 Living Journey — complete approved light design
 
-Version `1.91.2` renders the Living Journey Halo both before and after a Trip exists. New users receive an interactive four-mode introduction; active travellers receive live Move, Plan, Spend and People data. It retains the V91.1 stale-route, final-cascade and PWA icon corrections.
+Version `1.92.0` applies the approved light Living Journey system across the full Miles & Meals PWA and PC experience. The interactive four-mode Halo remains data-driven for active Trips and explanatory before the first Trip exists. Plan, Map, expenses, receipts, settlement, documents, offline, Companion, people, memories, notifications, settings and administration now share the same calm white canvas, compact hierarchy and connected interaction language.
 
-Start with `START-HERE-V91-2.md`, then review `V91-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
+Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-V91.2 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
+V92 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
 
 ---
 

@@ -521,7 +521,7 @@ export default async function DashboardPage({
           className="living-hero-mark"
           aria-hidden="true"
         >
-          <img src="/icons/v91-1/icon-192.png" width="68" height="68" alt="" />
+          <img src="/icons/v92/icon-192.png" width="68" height="68" alt="" />
           <span>
             <small>LIVING JOURNEY</small>
             <strong>{commandCenter?.stage ?? heroCode}</strong>

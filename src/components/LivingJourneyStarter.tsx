@@ -14,13 +14,6 @@ const labels: Record<StarterMode, string> = {
   people: "People",
 };
 
-const icons: Record<StarterMode, string> = {
-  move: "↗",
-  plan: "⌁",
-  spend: "◈",
-  people: "◎",
-};
-
 export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
   const [activeMode, setActiveMode] = useState<StarterMode>("plan");
 
@@ -78,9 +71,9 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
           <span className="journey-orbit orbit-three" aria-hidden="true" />
 
           <div className="journey-halo-core" aria-live="polite">
-            <img src="/icons/v91-1/icon-512.png" width="174" height="174" alt="" />
-            <span>{labels[activeMode]}</span>
+            <span>{active.eyebrow.split(" · ")[0]}</span>
             <strong>Start your journey</strong>
+            <small>Create a Trip to connect live data</small>
           </div>
 
           {modes.map((mode) => (
@@ -93,7 +86,6 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
               aria-controls="living-journey-starter-panel"
               onClick={() => setActiveMode(mode)}
             >
-              <span aria-hidden="true">{icons[mode]}</span>
               <b>{labels[mode]}</b>
             </button>
           ))}

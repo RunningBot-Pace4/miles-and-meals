@@ -20,7 +20,7 @@ export function BrandedLoadingScreen({
         <BrandLogo href="" />
 
         <div className="living-loader" aria-hidden="true">
-          <img src="/icons/v91-1/living-journey-loader.gif" width="220" height="220" alt="" />
+          <img src="/icons/v92/living-journey-loader.gif" width="220" height="220" alt="" />
           <span>Move · Plan · Spend · People</span>
         </div>
 

@@ -1,0 +1,1320 @@
+/* -------------------------------------------------------------------------- */
+/* V92 · Living Journey — approved light product system                       */
+/* One calm white canvas, a four-segment Halo and compact progressive detail. */
+/* -------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+  --v92-ink: #121417;
+  --v92-muted: #74787f;
+  --v92-line: #e1e3e6;
+  --v92-soft: #f3f3f4;
+  --v92-white: #ffffff;
+  --v92-blue: #3d82f6;
+  --v92-yellow: #f5d98b;
+  --v92-peach: #edb18d;
+  --v92-green: #9bd0a5;
+  --v92-teal: #127f7a;
+  --v92-shadow: 0 16px 38px rgb(23 28 35 / 7%);
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --surface-2: #f3f3f4;
+  --text: #121417;
+  --muted: #74787f;
+  --primary: #121417;
+  --primary-2: #2f343a;
+  --primary-soft: #f0f1f2;
+  --border: #e1e3e6;
+  --accent: #edb18d;
+  --accent-soft: #fff1e8;
+  --ink-deep: #121417;
+  --journey-night: #121417;
+  --journey-blue: #3d82f6;
+  --journey-violet: #f5d98b;
+  --journey-amber: #edb18d;
+  --journey-coral: #9bd0a5;
+  --shadow: 0 18px 46px rgb(23 28 35 / 9%);
+  --shadow-soft: var(--v92-shadow);
+}
+
+html {
+  background: #f7f8fa !important;
+}
+
+body {
+  color: var(--v92-ink) !important;
+  background:
+    radial-gradient(circle at 4% 3%, rgb(61 130 246 / 5%), transparent 27rem),
+    radial-gradient(circle at 97% 88%, rgb(237 177 141 / 7%), transparent 30rem),
+    #f7f8fa !important;
+}
+
+body::before,
+body::after,
+.dashboard-page::before {
+  display: none !important;
+}
+
+::selection {
+  color: #111;
+  background: #f5d98b;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid rgb(61 130 246 / 22%) !important;
+  outline-offset: 2px;
+}
+
+.app-shell {
+  min-height: 100svh;
+  background: transparent;
+}
+
+.topbar {
+  height: 72px !important;
+  padding-inline: clamp(1rem, 3vw, 2rem) !important;
+  border-bottom: 1px solid var(--v92-line) !important;
+  background: rgb(255 255 255 / 92%) !important;
+  box-shadow: 0 8px 28px rgb(18 20 23 / 4%) !important;
+  backdrop-filter: blur(18px) saturate(135%) !important;
+}
+
+.brand-logo-mark {
+  width: 42px !important;
+  height: 42px !important;
+  overflow: hidden;
+  border: 1px solid #e0e2e5 !important;
+  border-radius: 13px !important;
+  background: white;
+  box-shadow: 0 8px 22px rgb(18 20 23 / 10%) !important;
+}
+
+.brand-logo-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.brand-logo-name {
+  color: var(--v92-ink) !important;
+  font-size: 1.04rem !important;
+  letter-spacing: -0.035em;
+}
+
+.brand-amp {
+  color: #d88108 !important;
+}
+
+.brand-logo-tagline,
+.muted,
+.muted-text {
+  color: var(--v92-muted) !important;
+}
+
+.notification-bell,
+.account-trigger {
+  border-color: var(--v92-line) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: 0 8px 20px rgb(18 20 23 / 5%) !important;
+}
+
+.account-avatar {
+  color: white !important;
+  background: #147e78 !important;
+  box-shadow: none !important;
+}
+
+.account-popover,
+.account-menu-list,
+.notification-detail-dialog {
+  border-color: var(--v92-line) !important;
+  border-radius: 16px !important;
+  background: white !important;
+  box-shadow: 0 22px 52px rgb(20 24 31 / 14%) !important;
+}
+
+.page-container {
+  width: min(100%, 1440px) !important;
+  padding-top: clamp(1rem, 2vw, 1.6rem) !important;
+}
+
+.page-heading {
+  align-items: flex-end !important;
+  padding: 0 0 0.35rem !important;
+}
+
+.page-heading h1,
+.page-heading h2,
+.panel-title h2,
+.travel-section-heading h2 {
+  color: var(--v92-ink) !important;
+  letter-spacing: -0.045em !important;
+}
+
+.page-heading h1 {
+  font-size: clamp(1.7rem, 4vw, 2.5rem) !important;
+}
+
+.eyebrow {
+  color: var(--v92-teal) !important;
+  font-size: 0.67rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.13em !important;
+}
+
+.button,
+button.button {
+  min-height: 42px !important;
+  border-radius: 11px !important;
+  box-shadow: none !important;
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease !important;
+}
+
+.button:hover,
+.button:focus-visible {
+  transform: translateY(-1px) !important;
+}
+
+.button.primary,
+.button.journey-primary,
+.nav-action {
+  border-color: #111 !important;
+  color: white !important;
+  background: #111 !important;
+  box-shadow: none !important;
+}
+
+.button.primary:hover,
+.button.journey-primary:hover {
+  background: #2b2e32 !important;
+}
+
+.button.secondary,
+.button.journey-secondary,
+.button.ghost {
+  border: 1px solid #d9dbdf !important;
+  color: #222 !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.button.danger {
+  color: #9f2f31 !important;
+  background: #fff2f1 !important;
+  border-color: #f1cfcd !important;
+}
+
+:where(input, select, textarea) {
+  min-height: 46px !important;
+  border: 1px solid #dfe1e4 !important;
+  border-radius: 11px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+:where(input, select, textarea):focus {
+  border-color: var(--v92-blue) !important;
+  box-shadow: 0 0 0 3px rgb(61 130 246 / 10%) !important;
+}
+
+:where(.panel, .empty-card, .info-card, .expense-card, .stat-card, .settings-card) {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 15px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+.info-card,
+.empty-card,
+.form-warning,
+.form-notice,
+.draft-recovery-banner {
+  background: #f6f6f7 !important;
+}
+
+.status-pill,
+.admin-status-pill,
+.badge,
+.settlement-live-badge {
+  border-radius: 999px !important;
+  box-shadow: none !important;
+}
+
+/* Desktop rail and mobile navigation ------------------------------------- */
+
+.mobile-nav {
+  border: 1px solid var(--v92-line) !important;
+  background: rgb(255 255 255 / 95%) !important;
+  box-shadow: 0 16px 42px rgb(20 24 31 / 12%) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.nav-item {
+  color: #7e838a !important;
+  background: transparent !important;
+}
+
+.nav-item.active {
+  color: #111 !important;
+  background: #f0f1f2 !important;
+}
+
+.nav-item.active::after {
+  background: var(--v92-blue) !important;
+  box-shadow: none !important;
+}
+
+.nav-action {
+  color: white !important;
+}
+
+.nav-action .nav-icon {
+  border-color: transparent !important;
+  color: white !important;
+  background: rgb(255 255 255 / 14%) !important;
+  box-shadow: none !important;
+}
+
+/* Home command centre ----------------------------------------------------- */
+
+.dashboard-page {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: clamp(0.9rem, 2vw, 1.35rem) !important;
+  padding-top: 0 !important;
+}
+
+.dashboard-page > * { order: 10; }
+.dashboard-page > .dashboard-welcome { order: 0; }
+.dashboard-page > .living-journey-shell { order: 1; }
+.dashboard-page > .living-journey-trip-hero { order: 2; }
+.dashboard-page > .dashboard-action-centre { order: 3; }
+
+.dashboard-welcome {
+  align-items: flex-end !important;
+  gap: 1rem;
+}
+
+.dashboard-welcome-title {
+  color: var(--v92-ink) !important;
+  font-size: clamp(1.7rem, 4.5vw, 2.9rem) !important;
+}
+
+.welcome-prefix,
+.welcome-name {
+  color: var(--v92-ink) !important;
+}
+
+.welcome-tagline {
+  color: #676b71 !important;
+  font-size: clamp(0.9rem, 2vw, 1.2rem) !important;
+}
+
+.tagline-mile { color: #088f96 !important; background: #e4f5f5; border-radius: 7px; padding-inline: 0.25em; }
+.tagline-meal { color: #d28100 !important; background: #fff4d8; border-radius: 7px; padding-inline: 0.25em; }
+.tagline-memory { color: #d3436f !important; background: #fde8ef; border-radius: 7px; padding-inline: 0.25em; }
+
+.living-journey-trip-hero {
+  min-height: 0 !important;
+  padding: clamp(1rem, 2.5vw, 1.5rem) !important;
+  border: 1px solid #e6cfaa !important;
+  border-radius: 18px !important;
+  color: #55452f !important;
+  background: linear-gradient(135deg, #f9e4bf, #f5d69d) !important;
+  box-shadow: 0 14px 34px rgb(96 69 38 / 9%) !important;
+}
+
+.living-journey-trip-hero::before,
+.living-journey-trip-hero::after,
+.travel-route-decoration {
+  display: none !important;
+}
+
+.living-journey-trip-hero .living-hero-mark {
+  border: 1px solid rgb(126 93 50 / 14%) !important;
+  border-radius: 13px !important;
+  color: #43341f !important;
+  background: rgb(255 255 255 / 36%) !important;
+  backdrop-filter: none !important;
+}
+
+.living-hero-mark img {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 11px !important;
+  box-shadow: none !important;
+}
+
+.living-hero-mark small,
+.living-hero-mark strong,
+.living-journey-trip-hero :where(h2, p, span, small, strong),
+.living-journey-trip-hero .muted-on-dark {
+  color: inherit !important;
+}
+
+.living-journey-trip-hero .travel-title-name {
+  color: #174a43 !important;
+  font-size: clamp(2rem, 5vw, 4.2rem) !important;
+  line-height: 0.98 !important;
+}
+
+.travel-country-code {
+  color: rgb(56 46 31 / 28%) !important;
+}
+
+.travel-wallet-card {
+  border: 1px solid rgb(117 85 44 / 14%) !important;
+  border-radius: 13px !important;
+  color: #4d3d29 !important;
+  background: rgb(255 255 255 / 42%) !important;
+  box-shadow: none !important;
+}
+
+.travel-wallet-icon {
+  color: #174a43 !important;
+  background: rgb(255 255 255 / 44%) !important;
+}
+
+.budget-track {
+  background: rgb(111 82 44 / 14%) !important;
+}
+
+.budget-track span {
+  background: #167f78 !important;
+}
+
+/* The signature light Halo ------------------------------------------------ */
+
+.living-journey-shell {
+  --mode-color: var(--v92-blue) !important;
+  position: relative;
+  overflow: hidden !important;
+  padding: clamp(1rem, 2.5vw, 1.5rem) !important;
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 18px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+.living-journey-shell::before {
+  display: none !important;
+}
+
+.living-journey-shell.mode-plan { --mode-color: var(--v92-yellow) !important; }
+.living-journey-shell.mode-spend { --mode-color: var(--v92-peach) !important; }
+.living-journey-shell.mode-people { --mode-color: var(--v92-green) !important; }
+
+.living-journey-heading {
+  color: var(--v92-ink) !important;
+}
+
+.living-journey-heading h2 {
+  margin-bottom: 0.25rem !important;
+  color: var(--v92-ink) !important;
+  font-size: clamp(1.2rem, 3vw, 1.75rem) !important;
+  letter-spacing: -0.04em !important;
+}
+
+.living-journey-heading p:last-child {
+  color: var(--v92-muted) !important;
+  font-size: 0.78rem !important;
+}
+
+.living-journey-heading .eyebrow {
+  color: var(--v92-teal) !important;
+}
+
+.journey-stage {
+  border: 1px solid #dfe1e4 !important;
+  border-radius: 999px !important;
+  color: #60646b !important;
+  background: #f7f7f8 !important;
+  font-size: 0.65rem !important;
+  backdrop-filter: none !important;
+}
+
+.journey-stage i {
+  background: var(--mode-color) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mode-color), white 70%) !important;
+}
+
+.living-journey-grid {
+  grid-template-columns: minmax(250px, 0.8fr) minmax(320px, 1.2fr) !important;
+  gap: clamp(1rem, 3vw, 2rem) !important;
+  margin-top: 1rem !important;
+}
+
+.journey-halo {
+  width: min(100%, 330px) !important;
+  aspect-ratio: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-template-areas:
+    "core core core core"
+    "move plan spend people" !important;
+  gap: 0.7rem !important;
+  place-items: stretch !important;
+  margin-inline: auto !important;
+}
+
+.journey-orbit {
+  display: none !important;
+}
+
+.journey-halo-core {
+  grid-area: core !important;
+  position: relative !important;
+  z-index: 2;
+  width: 220px !important;
+  height: 220px !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: 0.28rem;
+  overflow: visible !important;
+  padding: 2.5rem !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  color: var(--v92-ink) !important;
+  background: conic-gradient(
+    var(--v92-blue) 0 20%, transparent 20% 25%,
+    var(--v92-green) 25% 45%, transparent 45% 50%,
+    var(--v92-peach) 50% 70%, transparent 70% 75%,
+    var(--v92-yellow) 75% 95%, transparent 95% 100%
+  ) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.journey-halo-core::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 11px;
+  border-radius: 50%;
+  background: white;
+}
+
+.journey-halo-core span,
+.journey-halo-core strong,
+.journey-halo-core small {
+  position: relative !important;
+  z-index: 1 !important;
+  inset: auto !important;
+  left: auto !important;
+  bottom: auto !important;
+  max-width: 150px;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  border: 0 !important;
+  color: var(--v92-ink) !important;
+  background: transparent !important;
+  text-align: center;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.journey-halo-core span {
+  color: #999da3 !important;
+  font-size: 0.56rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: uppercase;
+}
+
+.journey-halo-core strong {
+  font-size: 0.84rem !important;
+  font-weight: 850 !important;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.journey-halo-core small {
+  color: #64686f !important;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.journey-mode {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 30px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0.35rem 0.25rem !important;
+  border: 1px solid #dedfe2 !important;
+  border-radius: 7px !important;
+  color: #444 !important;
+  background: white !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.journey-mode:hover,
+.journey-mode:focus-visible {
+  transform: translateY(-1px) !important;
+}
+
+.journey-mode.active {
+  color: white !important;
+  background: #111 !important;
+  border-color: #111 !important;
+  box-shadow: none !important;
+}
+
+.journey-mode b {
+  font-size: 0.66rem !important;
+  letter-spacing: 0 !important;
+}
+
+.journey-mode-move { grid-area: move !important; }
+.journey-mode-plan { grid-area: plan !important; }
+.journey-mode-spend { grid-area: spend !important; }
+.journey-mode-people { grid-area: people !important; }
+
+.journey-live-panel {
+  padding: clamp(0.9rem, 2vw, 1.2rem) !important;
+  border: 1px solid #dedfe2 !important;
+  border-radius: 13px !important;
+  color: var(--v92-ink) !important;
+  background: #f1f1f2 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.journey-live-panel .eyebrow {
+  color: #8d9197 !important;
+  font-size: 0.58rem !important;
+}
+
+.journey-live-panel h3 {
+  margin: 0.25rem 0 0 !important;
+  color: var(--v92-ink) !important;
+  font-size: clamp(1.05rem, 2.6vw, 1.55rem) !important;
+  letter-spacing: -0.035em !important;
+}
+
+.journey-live-summary {
+  margin: 0.35rem 0 0 !important;
+  color: #666b72 !important;
+  font-size: 0.78rem !important;
+}
+
+.journey-live-insight {
+  margin: 0.75rem 0 !important;
+  padding: 0 !important;
+  color: #666b72 !important;
+  background: transparent !important;
+  font-size: 0.73rem !important;
+}
+
+.journey-live-insight span {
+  color: var(--v92-teal) !important;
+}
+
+.journey-metrics {
+  gap: 0.55rem !important;
+}
+
+.journey-metrics div {
+  padding: 0.6rem !important;
+  border: 1px solid #dedfe2 !important;
+  border-radius: 10px !important;
+  background: white !important;
+}
+
+.journey-metrics dt {
+  color: #8b8f96 !important;
+  font-size: 0.56rem !important;
+}
+
+.journey-metrics dd {
+  margin-top: 0.2rem !important;
+  color: var(--v92-ink) !important;
+  font-size: 0.7rem !important;
+}
+
+.journey-live-actions {
+  gap: 0.5rem !important;
+  margin-top: 0.75rem !important;
+}
+
+.journey-live-actions .button {
+  min-height: 34px !important;
+  padding: 0.45rem 0.7rem !important;
+  border-radius: 8px !important;
+  font-size: 0.68rem !important;
+}
+
+.living-journey-starter {
+  background: white !important;
+}
+
+.living-journey-starter .living-journey-grid {
+  min-height: 0 !important;
+}
+
+.starter-halo .journey-halo-core {
+  box-shadow: none !important;
+}
+
+.starter-live-panel h3 {
+  max-width: none !important;
+  font-size: clamp(1.2rem, 3vw, 1.7rem) !important;
+}
+
+.starter-invite-note {
+  color: var(--v92-muted) !important;
+}
+
+.journey-start-steps {
+  gap: 0.55rem !important;
+  margin-top: 1rem !important;
+}
+
+.journey-start-steps li {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 12px !important;
+  background: #f7f7f8 !important;
+}
+
+.journey-start-steps span {
+  color: #111 !important;
+  background: #eceeef !important;
+}
+
+.journey-start-steps strong { color: var(--v92-ink) !important; }
+.journey-start-steps small { color: var(--v92-muted) !important; }
+
+/* Data panels, lists and interactive workspaces --------------------------- */
+
+:where(
+  .dashboard-action-centre,
+  .dashboard-budget-section,
+  .dashboard-recent-activity,
+  .dashboard-travel-shortcuts,
+  .settlement-panel,
+  .expense-section,
+  .planner-intro,
+  .planner-filter,
+  .planner-add-form,
+  .planner-empty,
+  .offline-pack-workspace,
+  .travel-documents-workspace,
+  .memories-workspace,
+  .permissions-workspace
+) {
+  border-color: var(--v92-line) !important;
+  border-radius: 15px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: var(--v92-shadow) !important;
+  backdrop-filter: none !important;
+}
+
+.expense-editor-hero,
+.planner-intro,
+.settlement-trip-context,
+.offline-pack-hero,
+.companion-hero,
+.wrapped-hero {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 16px !important;
+  color: var(--v92-ink) !important;
+  background: linear-gradient(135deg, #f6f7f9, #fff9f4) !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+:where(.expense-editor-hero, .planner-intro, .settlement-trip-context, .offline-pack-hero, .companion-hero, .wrapped-hero) :where(h1, h2, h3, p, small, span, strong) {
+  color: inherit !important;
+}
+
+.section-number,
+.travel-stat-icon,
+.quick-action-icon,
+.settlement-trip-context-icon,
+.export-icon,
+.activity-icon,
+.search-result-icon,
+.notification-center-icon,
+.admin-form-icon {
+  border-radius: 10px !important;
+  color: var(--v92-teal) !important;
+  background: #eef5f5 !important;
+  box-shadow: none !important;
+}
+
+.section-number.amber,
+.admin-form-icon.amber,
+.admin-summary-icon.amber {
+  color: #a96726 !important;
+  background: #fff1e5 !important;
+}
+
+.travel-stat,
+.expense-overview-card,
+.settle-summary-card,
+.wrapped-stat-card,
+.performance-summary-grid > *,
+.insights-kpi-grid > *,
+.sync-health-stats > * {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 13px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+:where(
+  .travel-quick,
+  .dashboard-action-card,
+  .travel-card,
+  .smart-transfer-card,
+  .expense-card,
+  .activity-row,
+  .search-result-row,
+  .notification-center-item-main,
+  .document-row,
+  .offline-plan-row,
+  .offline-expense-row,
+  .offline-document-row,
+  .offline-contact-row,
+  .memory-card,
+  .permission-member-card,
+  .journey-card,
+  .owner-trip-card,
+  .admin-user-row
+) {
+  border-color: var(--v92-line) !important;
+  border-radius: 13px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+:where(.travel-quick, .dashboard-action-card, .travel-card, .expense-card, .menu-row, .search-result-row, .notification-center-item-main):hover {
+  transform: translateY(-1px) !important;
+  border-color: #c9ccd1 !important;
+  background: #fafafa !important;
+  box-shadow: 0 12px 26px rgb(20 24 31 / 6%) !important;
+}
+
+.category-grid button,
+.segmented-control button,
+.mini-segments button,
+.planner-tab,
+.planner-tabs button,
+.planner-filter button,
+.smart-settlement-tabs button,
+.chip,
+.filter-chip {
+  border-color: #dedfe2 !important;
+  border-radius: 999px !important;
+  color: #60646b !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.category-grid button[aria-pressed="true"],
+.segmented-control button.active,
+.mini-segments button.active,
+.planner-tab.active,
+.planner-tabs button.active,
+.planner-filter button.active,
+.smart-settlement-tabs button.active,
+.chip.active,
+.filter-chip.active {
+  border-color: #111 !important;
+  color: white !important;
+  background: #111 !important;
+  box-shadow: none !important;
+}
+
+.advanced-money-card,
+.conversion-hero,
+.receipt-inline-panel,
+.receipt-itemization-panel,
+.people-ledger-panel,
+.smart-settlement-panel,
+.settled-state,
+.smart-original-balance-card,
+.financial-lock-strip,
+.offline-safety-panel,
+.companion-discovery,
+.plan-import-panel {
+  border-color: var(--v92-line) !important;
+  border-radius: 14px !important;
+  color: var(--v92-ink) !important;
+  background: #f6f6f7 !important;
+  box-shadow: none !important;
+}
+
+.advanced-amount-shell,
+.input-with-prefix,
+.payer-amount-input,
+.split-input {
+  border-color: #dfe1e4 !important;
+  border-radius: 11px !important;
+  background: white !important;
+}
+
+.category-track,
+.category-budget-progress,
+.progress-track,
+.receipt-ocr-progress-track {
+  background: #e7e8ea !important;
+}
+
+:where(.category-track, .category-budget-progress, .progress-track, .receipt-ocr-progress-track) > span {
+  background: var(--v92-blue) !important;
+}
+
+.planner-shell,
+.expense-editor,
+.live-settlement-workspace,
+.offline-pack-workspace,
+.travel-documents-workspace,
+.memories-workspace,
+.permissions-workspace {
+  gap: 0.9rem !important;
+}
+
+.timeline-time,
+.expense-meta,
+.travel-card-meta,
+.travel-notes,
+.notification-center-body-preview,
+.offline-pack-meta {
+  color: var(--v92-muted) !important;
+}
+
+.map-shell,
+.map-shell-live {
+  min-height: 430px !important;
+  border: 1px solid #dfe1e4 !important;
+  border-radius: 16px !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+.live-location-control,
+.live-member-grid,
+.location-status-tile {
+  border-color: var(--v92-line) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+/* More, account, notifications and settings ------------------------------- */
+
+.menu-list {
+  overflow: hidden;
+  padding: 0 !important;
+  border-radius: 15px !important;
+}
+
+.menu-section-title {
+  padding: 1rem 1rem 0.65rem !important;
+  background: #fafafa;
+}
+
+.menu-row {
+  min-height: 54px !important;
+  padding: 0.85rem 1rem !important;
+  border-bottom: 1px solid #e8e9eb !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+}
+
+.menu-row:last-child {
+  border-bottom: 0 !important;
+}
+
+.menu-row > :last-child {
+  color: #a0a3a8 !important;
+}
+
+.settings-card,
+.profile-settings-card,
+.notification-settings-card,
+.install-app-card {
+  border-radius: 15px !important;
+  background: white !important;
+}
+
+.settings-card-art,
+.profile-art,
+.settings-lock,
+.install-app-icon {
+  color: var(--v92-teal) !important;
+  background: #edf5f5 !important;
+  box-shadow: none !important;
+}
+
+.notification-center-toolbar,
+.notification-center-list,
+.activity-list,
+.receipt-review-list,
+.search-result-list,
+.document-list,
+.emergency-contact-list,
+.memory-grid,
+.permissions-list {
+  gap: 0.55rem !important;
+}
+
+.notification-new-badge {
+  color: var(--v92-blue) !important;
+  background: #eaf3ff !important;
+}
+
+/* Admin and operations retain serious clarity ----------------------------- */
+
+.admin-traveler-hub,
+.admin-overview-section,
+.admin-form-card,
+.admin-backup-card,
+.health-grid .panel,
+.admin-insights-page .panel {
+  border-color: var(--v92-line) !important;
+  border-radius: 15px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+.admin-traveler-hero,
+.admin-summary-strip,
+.admin-country-card,
+.admin-trip-edit-card,
+.admin-config-edit,
+.admin-user-expanded {
+  border-color: var(--v92-line) !important;
+  border-radius: 13px !important;
+  color: var(--v92-ink) !important;
+  background: #f7f7f8 !important;
+  box-shadow: none !important;
+}
+
+.admin-danger-zone {
+  border-color: #efcfcd !important;
+  color: #8f3133 !important;
+  background: #fff5f4 !important;
+}
+
+/* Authentication, launch, loading and offline shell ----------------------- */
+
+.auth-showcase,
+.auth-layout,
+.auth-card,
+.auth-panel {
+  color: var(--v92-ink) !important;
+  background: white !important;
+}
+
+.auth-layout {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 28px 72px rgb(20 24 31 / 12%) !important;
+}
+
+.auth-showcase {
+  background:
+    radial-gradient(circle at 22% 18%, rgb(61 130 246 / 9%), transparent 15rem),
+    radial-gradient(circle at 84% 82%, rgb(237 177 141 / 11%), transparent 17rem),
+    #f7f8fa !important;
+}
+
+.auth-showcase :where(h1, h2, p, span, strong) {
+  color: inherit !important;
+}
+
+.pwa-launch-screen,
+.trip-loading-overlay,
+.forced-password-screen,
+.budget-gate-screen {
+  color: var(--v92-ink) !important;
+  background: #f7f8fa !important;
+}
+
+.trip-loading-card,
+.budget-gate-card {
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 18px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: var(--v92-shadow) !important;
+}
+
+.trip-loading-card .brand-logo-name,
+.trip-loading-card .brand-logo-tagline,
+.pwa-launch-screen :where(strong, span, small) {
+  color: inherit !important;
+}
+
+.living-loader img {
+  max-width: 140px !important;
+  border-radius: 24px !important;
+}
+
+.living-loader span {
+  color: var(--v92-muted) !important;
+}
+
+.network-status-banner,
+.pwa-update-banner,
+.collaboration-toast,
+.offline-queue-sheet {
+  border-color: var(--v92-line) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: 0 18px 44px rgb(20 24 31 / 15%) !important;
+}
+
+/* Responsive fidelity ----------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding-left: 238px !important;
+  }
+
+  .mobile-nav {
+    top: 92px !important;
+    width: 194px !important;
+    padding: 0.65rem !important;
+    border-radius: 18px !important;
+  }
+
+  .mobile-nav .nav-item {
+    min-height: 48px !important;
+    border-radius: 10px !important;
+  }
+
+  .mobile-nav .nav-action {
+    background: #111 !important;
+  }
+
+  .living-journey-trip-hero {
+    grid-template-columns: minmax(0, 1.25fr) minmax(230px, 0.55fr) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .living-journey-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .journey-halo {
+    width: min(100%, 360px) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    height: 62px !important;
+    padding-inline: 0.75rem !important;
+  }
+
+  .brand-logo-mark {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+  }
+
+  .brand-logo-tagline,
+  .account-trigger-copy {
+    display: none !important;
+  }
+
+  .page-container {
+    padding: 0.75rem 0.75rem calc(6.7rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .page-heading {
+    align-items: flex-start !important;
+  }
+
+  .page-heading h1 {
+    font-size: 1.7rem !important;
+  }
+
+  .dashboard-welcome {
+    align-items: flex-start !important;
+  }
+
+  .dashboard-welcome-title {
+    font-size: 1.65rem !important;
+  }
+
+  .welcome-tagline {
+    margin-top: 0.25rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .dashboard-add {
+    min-height: 36px !important;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  .living-journey-trip-hero {
+    padding: 0.95rem !important;
+    border-radius: 15px !important;
+  }
+
+  .living-journey-trip-hero .travel-title-name {
+    font-size: clamp(1.8rem, 10vw, 2.8rem) !important;
+  }
+
+  .living-journey-shell {
+    padding: 0.85rem !important;
+    border-radius: 15px !important;
+  }
+
+  .living-journey-heading {
+    display: grid !important;
+  }
+
+  .living-journey-heading h2 {
+    font-size: 1.15rem !important;
+  }
+
+  .living-journey-heading p:last-child {
+    display: none;
+  }
+
+  .journey-stage {
+    justify-self: start;
+    min-height: 26px !important;
+    padding: 0.3rem 0.55rem !important;
+  }
+
+  .journey-halo {
+    width: min(100%, 310px) !important;
+    gap: 0.48rem !important;
+  }
+
+  .journey-halo-core {
+    width: 205px !important;
+    height: 205px !important;
+  }
+
+  .journey-mode {
+    min-height: 28px !important;
+  }
+
+  .journey-live-panel {
+    padding: 0.85rem !important;
+    border-radius: 12px !important;
+  }
+
+  .journey-live-panel h3 {
+    font-size: 1rem !important;
+  }
+
+  .journey-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .journey-metrics div:last-child {
+    grid-column: span 2;
+  }
+
+  .journey-live-actions,
+  .journey-live-actions > * {
+    width: auto !important;
+  }
+
+  .journey-start-steps {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .journey-start-steps li:nth-child(n + 3) {
+    display: none !important;
+  }
+
+  .mobile-nav {
+    left: max(0.5rem, env(safe-area-inset-left)) !important;
+    right: max(0.5rem, env(safe-area-inset-right)) !important;
+    bottom: max(0.55rem, env(safe-area-inset-bottom)) !important;
+    padding: 0.38rem !important;
+    border-radius: 18px !important;
+  }
+
+  .mobile-nav .nav-item {
+    border-radius: 10px !important;
+  }
+
+  .map-shell,
+  .map-shell-live {
+    min-height: 350px !important;
+    border-radius: 14px !important;
+  }
+
+  .settle-summary-grid,
+  .expense-overview-grid,
+  .wrapped-stat-grid,
+  .offline-stat-grid,
+  .health-grid,
+  .insights-kpi-grid,
+  .category-budget-grid,
+  .content-grid,
+  .two-col,
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .menu-row {
+    min-height: 50px !important;
+    padding: 0.75rem 0.85rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-container {
+    padding-inline: 0.55rem !important;
+  }
+
+  .journey-halo {
+    width: 100% !important;
+    transform: none !important;
+    margin-bottom: 0 !important;
+  }
+
+  .journey-halo-core {
+    width: 178px !important;
+    height: 178px !important;
+    padding: 2rem !important;
+  }
+
+  .journey-halo-core strong {
+    display: block !important;
+    font-size: 0.75rem !important;
+  }
+
+  .journey-halo-core small {
+    font-size: 0.56rem !important;
+  }
+
+  .journey-mode b {
+    font-size: 0.58rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

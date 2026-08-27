@@ -36,6 +36,13 @@ const requiredFiles = [
   "public/apple-splash-1320x2868.png",
   "public/apple-splash-1668x2388.png",
   "public/apple-splash-2048x2732.png",
+  "public/manifest-v92.webmanifest",
+  "public/icons/v92/icon-192.png",
+  "public/icons/v92/icon-512.png",
+  "public/icons/v92/icon-maskable-192.png",
+  "public/icons/v92/icon-maskable-512.png",
+  "public/icons/v92/apple-touch-icon-180.png",
+  "public/icons/v92/notification-icon-96.png",
 ];
 
 for (const relativePath of requiredFiles) {
