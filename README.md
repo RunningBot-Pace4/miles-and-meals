@@ -1,10 +1,10 @@
-# V90 Combined — V86, V87, V88, V89 and V90
+# V91 Living Journey — complete V90 product with the new design system
 
-Version `1.90.0` adds production-readiness evidence, server-enforced traveler permissions, smart day routes, private/shared travel documents, emergency contacts, a fuller editable multi-Trip offline workflow, explainable Trip companion guidance, nearby discovery and Trip memories.
+Version `1.91.0` preserves the complete V90 product and adds the interactive Living Journey Halo, a data-rich Travel Command Centre, a unified visual system and the new PWA identity.
 
-Start with `START-HERE-V90.md`. The ten 10/10 acceptance targets—and the real-device, load, security, accessibility and market evidence still required before claiming global top-10 status—are in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
+Start with `START-HERE-V91.md`, then review `V91-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-Run `neon-upgrade-v85-combined.sql` if it is not already deployed, then run `neon-upgrade-v90-combined.sql` before releasing this source.
+V91 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
 
 ---
 

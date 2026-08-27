@@ -1,6 +1,7 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
+import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
 import { TripQuickSelect } from "@/components/TripQuickSelect";
 import {
   getActiveTripContext,
@@ -450,7 +451,7 @@ export default async function DashboardPage({
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">
-            YOUR TRAVEL COMPANION
+            MILES &amp; MEALS · LIVING JOURNEY
           </p>
           <h1 className="dashboard-welcome-title">
             <span className="welcome-editorial">
@@ -513,17 +514,16 @@ export default async function DashboardPage({
         )}
       </section>
 
-      <section className="hero-card dashboard-hero dashboard-travel-hero">
+      <section className="hero-card dashboard-hero dashboard-travel-hero living-journey-trip-hero">
         <div
-          className="travel-boarding-stamp"
+          className="living-hero-mark"
           aria-hidden="true"
         >
-          <small>
-            BOARDING
-          </small>
-          <strong>
-            {heroCode}
-          </strong>
+          <img src="/icons/icon-192.png" width="68" height="68" alt="" />
+          <span>
+            <small>LIVING JOURNEY</small>
+            <strong>{commandCenter?.stage ?? heroCode}</strong>
+          </span>
         </div>
 
         <div className="hero-main">
@@ -532,7 +532,7 @@ export default async function DashboardPage({
               <span aria-hidden="true">
                 ✦
               </span>
-              CURRENT JOURNEY
+              YOUR CURRENT WORLD
             </p>
 
             <div className="travel-destination-heading">
@@ -673,76 +673,28 @@ export default async function DashboardPage({
       </section>
 
       {selectedTrip && commandCenter ? (
-        <section className="trip-command-center" aria-labelledby="trip-command-title">
-          <div className="travel-section-heading">
-            <div>
-              <p className="eyebrow">TRIP COMMAND CENTRE</p>
-              <h2 id="trip-command-title">
-                {commandCenter.stage === "BEFORE"
-                  ? "Get ready"
-                  : commandCenter.stage === "DURING"
-                    ? "Today on your trip"
-                    : commandCenter.stage === "CLOSED"
-                      ? "Trip completed"
-                      : "Wrap up the trip"}
-              </h2>
-            </div>
-            <span className={`trip-stage-badge ${commandCenter.stage.toLowerCase()}`}>
-              {commandCenter.stage === "BEFORE" ? "Before" : commandCenter.stage === "DURING" ? "During" : "After"}
-            </span>
-          </div>
-
-          <div className="trip-command-grid">
-            <Link className="trip-command-card next" href="/planner">
-              <small>NEXT</small>
-              <strong>{commandCenter.nextItem?.title ?? "No upcoming plan"}</strong>
-              <span>
-                {commandCenter.nextItem
-                  ? `${formatTripDateRange(commandCenter.nextItem.itemDate, commandCenter.nextItem.itemDate)}${commandCenter.nextItem.itemTime ? ` · ${commandCenter.nextItem.itemTime}` : ""}`
-                  : "Add the next activity to keep everyone aligned."}
-              </span>
-            </Link>
-
-            <Link className="trip-command-card" href={selectedTrip.financialStatus === "CLOSED" ? "/expenses" : "/expenses/new"}>
-              <small>TODAY&apos;S SPENDING</small>
-              <strong>{formatMoney(commandCenter.todayMyShare, baseCurrency)}</strong>
-              <span>My share · group total {formatMoney(commandCenter.todayGroupSpend, baseCurrency)}</span>
-            </Link>
-
-            <Link className={commandCenter.forecastOver ? "trip-command-card warning" : "trip-command-card"} href="/settings/budgets">
-              <small>DAILY ALLOWANCE</small>
-              <strong>{formatMoney(commandCenter.dailyAllowance, baseCurrency)}</strong>
-              <span>
-                {commandCenter.remainingDays > 0
-                  ? `${commandCenter.remainingDays} day${commandCenter.remainingDays === 1 ? "" : "s"} remaining`
-                  : "Trip dates have ended"}
-              </span>
-            </Link>
-
-            <Link className={commandCenter.forecastOver ? "trip-command-card warning" : "trip-command-card"} href="/settings/budgets">
-              <small>PROJECTED SPEND</small>
-              <strong>{formatMoney(commandCenter.projectedSpend, baseCurrency)}</strong>
-              <span>{commandCenter.forecastOver ? "Above your current budget at this pace" : "Within your current budget at this pace"}</span>
-            </Link>
-
-            <Link className="trip-command-card" href="/planner">
-              <small>READY TO GO</small>
-              <strong>{commandCenter.openTaskCount}</strong>
-              <span>Open task{commandCenter.openTaskCount === 1 ? "" : "s"} and packing item{commandCenter.openTaskCount === 1 ? "" : "s"}</span>
-            </Link>
-          </div>
-
-          <div className="trip-command-actions">
-            {selectedTrip.financialStatus !== "CLOSED" ? (
-              <>
-                <Link className="button primary" href="/expenses/new">＋ Quick expense</Link>
-                <Link className="button secondary" href="/planner">Open today&apos;s plan</Link>
-              </>
-            ) : (
-              <Link className="button secondary" href="/settlements">Review final settlement</Link>
-            )}
-          </div>
-        </section>
+        <LivingJourneyHalo
+          initialMode={commandCenter.stage === "DURING" ? "move" : commandCenter.stage === "BEFORE" ? "plan" : "spend"}
+          stage={commandCenter.stage}
+          nextTitle={commandCenter.nextItem?.title ?? "No upcoming plan"}
+          nextMeta={commandCenter.nextItem
+            ? `${formatTripDateRange(commandCenter.nextItem.itemDate, commandCenter.nextItem.itemDate)}${commandCenter.nextItem.itemTime ? ` · ${commandCenter.nextItem.itemTime}` : ""}`
+            : "Add the next activity to keep everyone aligned."}
+          destinationCount={selectedCountries.length}
+          todayItemCount={commandCenter.todayItemCount}
+          openTaskCount={commandCenter.openTaskCount}
+          todayMyShare={commandCenter.todayMyShare}
+          todayGroupSpend={commandCenter.todayGroupSpend}
+          dailyAllowance={commandCenter.dailyAllowance}
+          projectedSpend={commandCenter.projectedSpend}
+          myRemaining={financeLiveData.myRemaining}
+          baseCurrency={baseCurrency}
+          travelerCount={budget.travelerCount}
+          unreadCount={unreadNotificationCount}
+          iOwe={iOwe}
+          waitingForMe={waitingForMe}
+          closed={selectedTrip.financialStatus === "CLOSED"}
+        />
       ) : null}
 
       {selectedTrip && actionItems.length > 0 ? (

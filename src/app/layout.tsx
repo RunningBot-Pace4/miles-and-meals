@@ -16,13 +16,13 @@ export const metadata: Metadata = {
     template: "%s · Miles & Meals",
   },
   description:
-    "Travel together, plan the day, split expenses and stay connected.",
+    "Your whole journey connected—move, plan, spend and travel together.",
   applicationName: "Miles & Meals",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       {
-        url: "/miles-meals-icon-192.png",
+        url: "/icons/icon-192.png",
         sizes: "192x192",
         type: "image/png",
       },
@@ -31,12 +31,12 @@ export const metadata: Metadata = {
         type: "image/svg+xml",
       },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: "/icons/apple-touch-icon-180.png",
   },
   appleWebApp: {
     capable: true,
     title: "Miles & Meals",
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
 };
 
@@ -44,7 +44,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#12786f",
+  themeColor: "#061c33",
 };
 
 export default function RootLayout({
@@ -115,17 +115,17 @@ export default function RootLayout({
         >
           <div className="pwa-launch-art">
             <img
-              src="/miles-meals-icon-192.png"
+              src="/icons/living-journey-loader.gif"
               alt=""
               width="96"
               height="96"
             />
             <div>
               <strong>Miles &amp; Meals</strong>
-              <span>Travel together. Spend smarter.</span>
+              <span>Your whole journey, connected.</span>
             </div>
           </div>
-          <small>Eat · Play · Sleep</small>
+          <small>Move · Plan · Spend · People</small>
         </div>
 
         {children}

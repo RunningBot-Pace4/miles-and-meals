@@ -154,7 +154,7 @@ export default async function MorePage() {
             <span>›</span>
           </Link>
           <Link className="menu-row link-row" href="/admin/health">
-            <span>App health & V90 readiness</span>
+            <span>App health &amp; release readiness</span>
             <span>›</span>
           </Link>
           <Link className="menu-row link-row" href="/admin/backup">

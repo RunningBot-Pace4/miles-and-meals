@@ -19,23 +19,9 @@ export function BrandedLoadingScreen({
       <div className="trip-loading-card">
         <BrandLogo href="" />
 
-        <div className="trip-loading-route" aria-hidden="true">
-          <span className="trip-loading-line">
-            <span />
-          </span>
-
-          <span className="trip-loading-stop active">
-            <i>1</i>
-            <small>Eat</small>
-          </span>
-          <span className="trip-loading-stop">
-            <i>2</i>
-            <small>Play</small>
-          </span>
-          <span className="trip-loading-stop">
-            <i>3</i>
-            <small>Sleep</small>
-          </span>
+        <div className="living-loader" aria-hidden="true">
+          <img src="/icons/living-journey-loader.gif" width="220" height="220" alt="" />
+          <span>Move · Plan · Spend · People</span>
         </div>
 
         {showCopy ? (
@@ -47,7 +33,7 @@ export function BrandedLoadingScreen({
 
         <div className="trip-loading-foot">
           <span className="trip-loading-pulse" />
-          <small>Miles &amp; Meals is keeping your trip in sync</small>
+          <small>Your Living Journey is coming together</small>
         </div>
       </div>
     </div>

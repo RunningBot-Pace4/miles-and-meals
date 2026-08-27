@@ -12,6 +12,7 @@ const packageJson = read("package.json");
 const schema = read("src/db/schema.ts");
 const validation = read("src/lib/validation.ts");
 const dashboard = read("src/app/(app)/dashboard/page.tsx");
+const livingJourney = read("src/components/LivingJourneyHalo.tsx");
 const commandCentre = read("src/lib/trip-command-center.ts");
 const queue = read("src/lib/offline-queue.ts");
 const queueUi = read("src/components/OfflineQueueSync.tsx");
@@ -34,7 +35,7 @@ const css = read("src/app/globals.css");
 const unitTests = read("tests/v85-combined.test.ts");
 const e2e = read("e2e/mobile-v85-combined.spec.ts");
 
-must(packageJson, '"version": "1.90.0"', "v85-or-newer package version missing");
+must(packageJson, '"version": "1.91.0"', "v85-or-newer package version missing");
 must(packageJson, '"v85:check"', "v85 release validator command missing");
 
 for (const marker of [
@@ -47,8 +48,8 @@ for (const marker of [
   "durationMinutes",
 ]) must(schema, marker, `v85 schema marker missing: ${marker}`);
 
-for (const marker of ["TRIP COMMAND CENTRE", "commandCenter.nextItem", "DAILY ALLOWANCE", "PROJECTED SPEND"]) {
-  must(dashboard, marker, `Trip command centre UI missing: ${marker}`);
+for (const marker of ["TRIP COMMAND CENTRE", "nextTitle", "Daily allowance", "Projected"]) {
+  must(`${dashboard}\n${livingJourney}`, marker, `Trip command centre UI missing: ${marker}`);
 }
 for (const marker of ["projectedSpend", "forecastOver", "openTaskCount", "todayGroupSpend"]) {
   must(commandCentre, marker, `Trip command centre calculation missing: ${marker}`);

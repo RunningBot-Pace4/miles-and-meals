@@ -1,6 +1,36 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="120" fill="#0F766E"/>
-  <path d="M256 76C173.2 76 106 143.2 106 226C106 337.8 256 436 256 436C256 436 406 337.8 406 226C406 143.2 338.8 76 256 76Z" fill="#FFF8E8"/>
-  <circle cx="256" cy="220" r="76" fill="#0F766E"/>
-  <path d="M221 164V276M256 164V276M291 164V276M221 220H291" stroke="#F59E0B" stroke-width="20" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x1="40" y1="30" x2="470" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B3459"/>
+      <stop offset="1" stop-color="#041427"/>
+    </linearGradient>
+    <linearGradient id="move" x1="110" y1="90" x2="318" y2="284" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22E1D5"/>
+      <stop offset="1" stop-color="#2689FF"/>
+    </linearGradient>
+    <linearGradient id="plan" x1="270" y1="100" x2="418" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7565FF"/>
+      <stop offset="1" stop-color="#E879F9"/>
+    </linearGradient>
+    <linearGradient id="spend" x1="90" y1="280" x2="300" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD54A"/>
+      <stop offset="1" stop-color="#FF8A21"/>
+    </linearGradient>
+    <linearGradient id="people" x1="250" y1="255" x2="430" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8A6B"/>
+      <stop offset="1" stop-color="#FF3D78"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g fill="none" stroke-width="36" stroke-linecap="round">
+    <path d="M255 254C190 214 114 140 144 103c29-35 111 12 154 78" stroke="url(#move)"/>
+    <path d="M258 254c41-64 116-137 153-107 36 29-11 109-76 153" stroke="url(#plan)"/>
+    <path d="M257 258c-41 64-116 137-153 107-36-29 11-109 76-153" stroke="url(#spend)"/>
+    <path d="M255 258c65 40 141 114 111 151-29 35-111-12-154-78" stroke="url(#people)"/>
+  </g>
+  <circle cx="256" cy="256" r="48" fill="#FFF4CA"/>
+  <circle cx="144" cy="103" r="22" fill="#22E1D5"/>
+  <circle cx="411" cy="147" r="22" fill="#CF72FF"/>
+  <circle cx="104" cy="365" r="22" fill="#FFB322"/>
+  <circle cx="366" cy="409" r="22" fill="#FF5A75"/>
 </svg>

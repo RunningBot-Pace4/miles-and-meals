@@ -1,25 +1,37 @@
 {
   "name": "Miles & Meals",
   "short_name": "Miles & Meals",
-  "description": "Travel together, plan the day, split expenses and stay connected.",
+  "description": "Your whole journey connected—move, plan, spend and travel together.",
   "id": "/dashboard",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#fffaf2",
-  "theme_color": "#12786f",
+  "background_color": "#061c33",
+  "theme_color": "#061c33",
   "icons": [
     {
-      "src": "/miles-meals-icon-192.png",
+      "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/miles-meals-icon-512.png",
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
