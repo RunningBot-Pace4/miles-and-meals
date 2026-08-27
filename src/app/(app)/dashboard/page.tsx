@@ -2,6 +2,7 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
+import { LivingJourneyStarter } from "@/components/LivingJourneyStarter";
 import { TripQuickSelect } from "@/components/TripQuickSelect";
 import {
   getActiveTripContext,
@@ -514,6 +515,7 @@ export default async function DashboardPage({
         )}
       </section>
 
+      {selectedTrip ? (
       <section className="hero-card dashboard-hero dashboard-travel-hero living-journey-trip-hero">
         <div
           className="living-hero-mark"
@@ -671,6 +673,9 @@ export default async function DashboardPage({
           <span className="travel-route-dot end" />
         </div>
       </section>
+      ) : (
+        <LivingJourneyStarter isAdmin={admin} />
+      )}
 
       {selectedTrip && commandCenter ? (
         <LivingJourneyHalo
@@ -722,40 +727,7 @@ export default async function DashboardPage({
         </section>
       ) : null}
 
-      {!selectedTrip ? (
-        <section className="empty-card empty-card-feature dashboard-self-service-empty">
-          <div className="empty-icon">
-            ✦
-          </div>
-
-          <div>
-            <h2>
-              Start your own trip
-            </h2>
-            <p>
-              Create a trip and invite your travel crew, or open a secure Miles & Meals invite link from a friend to join theirs.
-            </p>
-
-            <div className="dashboard-empty-actions">
-              <Link
-                className="button primary"
-                href="/trips"
-              >
-                Plan a new trip
-              </Link>
-
-              {admin ? (
-                <Link
-                  className="button secondary"
-                  href="/admin"
-                >
-                  System Admin
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : (
+      {selectedTrip ? (
         <>
           <LiveDashboardFinance
             initialData={
@@ -906,7 +878,7 @@ export default async function DashboardPage({
             </div>
           </section>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

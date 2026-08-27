@@ -34,7 +34,7 @@ describe("V91.1 release recovery", () => {
 
     expect(layout).toContain("/manifest-v91-1.webmanifest");
     expect(manifest).toContain("/icons/v91-1/icon-192.png");
-    expect(worker).toContain("miles-meals-static-v91-1");
+    expect(worker).toContain("miles-meals-static-v91-2");
     expect(worker).toContain("/icons/v91-1/notification-icon-96.png");
   });
 });
