@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v91";
+const CACHE_NAME = "miles-meals-static-v91-1";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -7,11 +7,11 @@ const PRECACHE_ASSETS = [
   "/miles-meals-icon-192.png",
   "/miles-meals-icon-512.png",
   "/apple-touch-icon.png",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-maskable-192.png",
-  "/icons/icon-maskable-512.png",
-  "/icons/notification-icon-96.png",
+  "/icons/v91-1/icon-192.png",
+  "/icons/v91-1/icon-512.png",
+  "/icons/v91-1/icon-maskable-192.png",
+  "/icons/v91-1/icon-maskable-512.png",
+  "/icons/v91-1/notification-icon-96.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -193,8 +193,8 @@ self.addEventListener("push", (event) => {
           body:
             payload.body ||
             "Your trip has a new update.",
-          icon: "/icons/icon-192.png",
-          badge: "/icons/notification-icon-96.png",
+          icon: "/icons/v91-1/icon-192.png",
+          badge: "/icons/v91-1/notification-icon-96.png",
           tag:
             payload.tag ||
             "miles-meals-update",

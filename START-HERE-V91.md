@@ -1,6 +1,6 @@
 # Start here — V91 Living Journey
 
-Miles & Meals `1.91.0` keeps the complete V90 product and adds the Living Journey experience.
+Miles & Meals `1.91.1` keeps the complete V90 product and includes the Living Journey experience. For the stale-route, final-cascade and versioned-icon corrections, follow `START-HERE-V91-1.md`.
 
 ## Deployment
 

@@ -149,7 +149,7 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
           <span className="journey-orbit orbit-three" aria-hidden="true" />
 
           <div className="journey-halo-core" aria-live="polite">
-            <img src="/icons/icon-512.png" width="174" height="174" alt="" />
+            <img src="/icons/v91-1/icon-512.png" width="174" height="174" alt="" />
             <span>{modeLabel[activeMode]}</span>
             <strong>{activeMode === "spend" ? active.title : "What matters now?"}</strong>
           </div>

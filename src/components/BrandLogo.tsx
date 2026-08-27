@@ -14,7 +14,7 @@ export function BrandLogo({
   const content = (
     <>
       <span className="brand-logo-mark" aria-hidden="true">
-        <img src="/icons/icon-192.png" width="48" height="48" alt="" />
+        <img src="/icons/v91-1/icon-192.png" width="48" height="48" alt="" />
       </span>
       {!compact ? (
         <span className="brand-logo-copy">

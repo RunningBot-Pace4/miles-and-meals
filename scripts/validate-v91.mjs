@@ -17,13 +17,13 @@ const layout = read("src/app/layout.tsx");
 const manifest = JSON.parse(read("public/manifest.webmanifest"));
 const serviceWorker = read("public/sw.js");
 const offline = read("public/offline.html");
-const css = read("src/app/globals.css");
+const css = `${read("src/app/globals.css")}\n${read("src/app/living-journey.css")}`;
 const e2e = read("e2e/mobile-v91-living-journey.spec.ts");
 const tests = read("tests/v91-living-journey.test.ts");
 
-must(packageJson, '"version": "1.91.0"', "V91 package version missing");
+must(packageJson, '"version": "1.91.1"', "V91 package version missing");
 must(packageJson, '"v91:check"', "V91 validation command missing");
-must(serviceWorker, "miles-meals-static-v91", "V91 service-worker cache was not bumped");
+must(serviceWorker, "miles-meals-static-v91-1", "V91 service-worker cache was not bumped");
 
 for (const file of [
   "public/icons/icon-192.png",
@@ -52,11 +52,11 @@ for (const marker of ["Move", "Plan", "Spend", "People", 'role="tablist"', "aria
 for (const marker of ["v91 · Living Journey design system", ".living-journey-shell", ".journey-halo", ".journey-live-panel", "max-width: 640px", "max-width: 360px", "prefers-reduced-motion"]) {
   must(css, marker, `V91 design-system gate missing: ${marker}`);
 }
-must(brand, "/icons/icon-192.png", "Brand does not use the Living Journey mark");
-must(loading, "/icons/living-journey-loader.gif", "Loading state does not use the Living Journey motion mark");
+must(brand, "/icons/v91-1/icon-192.png", "Brand does not use the Living Journey mark");
+must(loading, "/icons/v91-1/living-journey-loader.gif", "Loading state does not use the Living Journey motion mark");
 must(layout, "Your whole journey, connected.", "PWA launch copy is not updated");
 must(offline, "Your journey keeps moving.", "Offline experience is not updated");
-must(serviceWorker, "/icons/notification-icon-96.png", "Notification badge is not monochrome");
+must(serviceWorker, "/icons/v91-1/notification-icon-96.png", "Notification badge is not monochrome");
 
 for (const marker of ["320", "360", "390", "430", "Move", "Plan", "Spend", "People", "no horizontal overflow"]) {
   must(e2e, marker, `V91 mobile interaction audit missing: ${marker}`);

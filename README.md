@@ -1,10 +1,10 @@
-# V91 Living Journey — complete V90 product with the new design system
+# V91.1 Living Journey — design, stale-route and icon correction
 
-Version `1.91.0` preserves the complete V90 product and adds the interactive Living Journey Halo, a data-rich Travel Command Centre, a unified visual system and the new PWA identity.
+Version `1.91.1` preserves the complete V90 product and makes Living Journey the final responsive presentation layer. It also clears stale generated Next route types before checks/builds and publishes the PWA identity through versioned icon and manifest URLs.
 
-Start with `START-HERE-V91.md`, then review `V91-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
+Start with `START-HERE-V91-1.md`, then review `V91-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-V91 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
+V91.1 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
 
 ---
 
