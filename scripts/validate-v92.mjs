@@ -12,6 +12,10 @@ const packageJson = read("package.json");
 const layout = read("src/app/layout.tsx");
 const halo = read("src/components/LivingJourneyHalo.tsx");
 const starter = read("src/components/LivingJourneyStarter.tsx");
+const dashboard = read("src/app/(app)/dashboard/page.tsx");
+const loading = read("src/components/BrandedLoadingScreen.tsx");
+const nav = read("src/components/MobileNav.tsx");
+const contextBack = read("src/components/MobileContextBack.tsx");
 const css = read("src/app/v92-living-journey.css");
 const manifest = JSON.parse(read("public/manifest-v92.webmanifest"));
 const worker = read("public/sw.js");
@@ -19,7 +23,7 @@ const offline = read("public/offline.html");
 const release = read("START-HERE-V92.md");
 const e2e = read("e2e/mobile-v92-light-design.spec.ts");
 
-must(packageJson, '"version": "1.92.0"', "V92 package version missing");
+must(packageJson, '"version": "1.92.1"', "V92.1 package version missing");
 must(packageJson, '"v92:check"', "V92 validation command missing");
 must(packageJson, "npm run v92:check", "V92 validation is not part of prebuild");
 
@@ -99,12 +103,29 @@ for (const icon of manifest.icons) {
 }
 must(layout, "/manifest-v92.webmanifest", "V92 layout manifest missing");
 must(layout, 'statusBarStyle: "default"', "V92 iOS status bar remains dark");
-must(worker, "miles-meals-static-v92", "V92 service-worker cache missing");
+must(worker, "miles-meals-static-v92-1", "V92.1 service-worker cache missing");
 must(worker, "/icons/v92/icon-192.png", "V92 notification icon path missing");
 must(offline, 'content="#ffffff"', "Offline shell theme is not light");
 must(offline, "/icons/v92/icon-192.png", "Offline shell icon is not V92");
 
-for (const marker of ["320", "360", "390", "430", "1024", "no horizontal overflow", "Living Journey areas"]) {
+for (const marker of ["v92-loading-halo", "v92-loading-halo-ring", "Getting your trip ready"]) {
+  must(`${layout}\n${loading}\n${css}`, marker, `V92.1 loading redesign marker missing: ${marker}`);
+}
+for (const marker of [
+  'body > .mobile-nav[data-app-mobile-nav="true"] .nav-item.nav-action',
+  "visibility: visible !important",
+  "mobile-context-current",
+  "Offline & Sync",
+  "Notifications",
+  'aria-current={active ? "page" : undefined}',
+]) must(`${css}\n${nav}\n${contextBack}`, marker, `V92.1 PWA navigation marker missing: ${marker}`);
+
+const visibleCopy = `${dashboard}\n${starter}\n${halo}\n${loading}\n${layout}\n${offline}`;
+for (const repeated of ["LIVING JOURNEY ·", "Your Living Journey", "One living journey"]) {
+  if (visibleCopy.includes(repeated)) throw new Error(`Repeated visible wording returned: ${repeated}`);
+}
+
+for (const marker of ["320", "360", "390", "430", "1024", "no horizontal overflow", "Trip command areas"]) {
   must(e2e, marker, `V92 mobile/desktop audit marker missing: ${marker}`);
 }
 
@@ -115,4 +136,4 @@ for (const retired of [
   "src/app/api/trip-inbox/[id]/add-to-plan/route.ts",
 ]) if (fs.existsSync(retired)) throw new Error(`Retired Trip Inbox route returned: ${retired}`);
 
-console.log("V92 Living Journey light design, complete page coverage, PWA identity and responsive release validation passed.");
+console.log("V92.1 light Halo design, PWA navigation, loading and responsive release validation passed.");

@@ -54,8 +54,8 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
     <section className={`living-journey-shell living-journey-starter mode-${activeMode}`} aria-labelledby="living-journey-starter-title">
       <div className="living-journey-heading">
         <div>
-          <p className="eyebrow">LIVING JOURNEY · YOUR TRIP COMMAND CENTRE</p>
-          <h2 id="living-journey-starter-title">Four travel systems. One living journey.</h2>
+          <p className="eyebrow">YOUR TRIP COMMAND CENTRE</p>
+          <h2 id="living-journey-starter-title">Four travel systems. One connected trip.</h2>
           <p>Tap the Halo to discover how Miles &amp; Meals works before creating your first Trip.</p>
         </div>
         <span className="journey-stage before">
@@ -65,7 +65,7 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       <div className="living-journey-grid">
-        <div className="journey-halo starter-halo" role="tablist" aria-label="Living Journey introduction">
+        <div className="journey-halo starter-halo" role="tablist" aria-label="Trip command introduction">
           <span className="journey-orbit orbit-one" aria-hidden="true" />
           <span className="journey-orbit orbit-two" aria-hidden="true" />
           <span className="journey-orbit orbit-three" aria-hidden="true" />

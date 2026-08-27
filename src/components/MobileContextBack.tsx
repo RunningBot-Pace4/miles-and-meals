@@ -13,6 +13,35 @@ const PRIMARY_ROUTES = new Set([
 
 const ROUTE_STACK_KEY = "mm:app-route-stack";
 
+const MORE_PAGE_LABELS: Array<[string, string]> = [
+  ["/settings/notifications", "Notification settings"],
+  ["/settings/permissions", "Traveler permissions"],
+  ["/settings/password", "Password & security"],
+  ["/settings/profile", "Profile"],
+  ["/settings/budgets", "Trip budgets"],
+  ["/settlements", "Settlement"],
+  ["/notifications", "Notifications"],
+  ["/documents", "Travel documents"],
+  ["/companion", "Trip Companion"],
+  ["/memories", "Trip memories"],
+  ["/receipts", "Receipt review"],
+  ["/journeys", "Journeys"],
+  ["/expenses", "Expenses"],
+  ["/offline", "Offline & Sync"],
+  ["/activity", "Trip activity"],
+  ["/wrapped", "Trip Wrapped"],
+  ["/export", "Export data"],
+  ["/search", "Search"],
+  ["/trips", "Trips"],
+  ["/admin", "System Admin"],
+];
+
+function pageLabel(pathname: string): string {
+  return MORE_PAGE_LABELS.find(([prefix]) =>
+    pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )?.[1] ?? "Page details";
+}
+
 function fallbackFor(pathname: string): string {
   if (/^\/expenses\/[^/]+\/edit$/.test(pathname)) return "/expenses";
   if (pathname.startsWith("/admin/")) return "/admin";
@@ -26,6 +55,12 @@ function fallbackFor(pathname: string): string {
     pathname === "/search" ||
     pathname === "/wrapped" ||
     pathname === "/export" ||
+    pathname === "/documents" ||
+    pathname === "/companion" ||
+    pathname === "/memories" ||
+    pathname === "/receipts" ||
+    pathname === "/journeys" ||
+    pathname === "/offline" ||
     pathname === "/admin"
   ) {
     return "/more";
@@ -55,6 +90,7 @@ function writeRouteStack(stack: string[]) {
 export function MobileContextBack() {
   const pathname = usePathname();
   const fallback = useMemo(() => fallbackFor(pathname), [pathname]);
+  const currentLabel = useMemo(() => pageLabel(pathname), [pathname]);
   const hidden = PRIMARY_ROUTES.has(pathname);
 
   useEffect(() => {
@@ -101,8 +137,12 @@ export function MobileContextBack() {
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m14.5 6-6 6 6 6" />
         </svg>
-        <span>Back</span>
+        <span>{fallback === "/more" ? "More" : "Back"}</span>
       </button>
+      <span className="mobile-context-current" aria-current="page">
+        <i aria-hidden="true" />
+        {currentLabel}
+      </span>
     </div>
   );
 }

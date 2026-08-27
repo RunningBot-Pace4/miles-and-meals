@@ -91,6 +91,10 @@ export function MobileNav() {
             "/wrapped",
             "/journeys",
             "/offline",
+            "/documents",
+            "/companion",
+            "/memories",
+            "/receipts",
           ].some(
             (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
           );
@@ -112,6 +116,7 @@ export function MobileNav() {
               .join(" ")}
             href={link.href}
             key={link.href}
+            aria-current={active ? "page" : undefined}
           >
             <span className="nav-icon">
               <NavIcon name={link.icon} />

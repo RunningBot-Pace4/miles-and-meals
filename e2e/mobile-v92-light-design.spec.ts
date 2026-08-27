@@ -26,7 +26,7 @@ for (const width of [320, 360, 390, 430]) {
     test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD for authenticated PWA QA.");
     await page.setViewportSize({ width, height: 880 });
     await signIn(page);
-    const halo = page.getByRole("tablist", { name: "Living Journey areas" });
+    const halo = page.getByRole("tablist", { name: "Trip command areas" });
     await expect(halo).toBeVisible();
     expect(await page.locator("html").evaluate((element) => getComputedStyle(element).backgroundColor)).toBe("rgb(247, 248, 250)");
     for (const mode of ["Move", "Plan", "Spend", "People"]) {
@@ -43,6 +43,6 @@ test("V92 PC design keeps the light sidebar and content contained at 1024px", as
   await page.setViewportSize({ width: 1024, height: 900 });
   await signIn(page);
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeVisible();
-  await expect(page.getByRole("tablist", { name: "Living Journey areas" })).toBeVisible();
+  await expect(page.getByRole("tablist", { name: "Trip command areas" })).toBeVisible();
   await expectContained(page);
 });

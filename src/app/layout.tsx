@@ -116,18 +116,20 @@ export default function RootLayout({
           aria-hidden="true"
         >
           <div className="pwa-launch-art">
-            <img
-              src="/icons/v92/living-journey-loader.gif"
-              alt=""
-              width="96"
-              height="96"
-            />
+            <div className="v92-loading-halo" aria-hidden="true">
+              <span className="v92-loading-halo-ring" />
+              <span className="v92-loading-halo-core">
+                <i />
+                <b />
+                <i />
+              </span>
+            </div>
             <div>
               <strong>Miles &amp; Meals</strong>
-              <span>Your whole journey, connected.</span>
+              <span>Getting your trip ready</span>
             </div>
           </div>
-          <small>Move · Plan · Spend · People</small>
+          <small>Plan · Spend · Settle</small>
         </div>
 
         {children}

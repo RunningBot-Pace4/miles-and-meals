@@ -452,7 +452,7 @@ export default async function DashboardPage({
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">
-            MILES &amp; MEALS · LIVING JOURNEY
+            MILES &amp; MEALS
           </p>
           <h1 className="dashboard-welcome-title">
             <span className="welcome-editorial">
@@ -523,7 +523,7 @@ export default async function DashboardPage({
         >
           <img src="/icons/v92/icon-192.png" width="68" height="68" alt="" />
           <span>
-            <small>LIVING JOURNEY</small>
+            <small>CURRENT TRIP</small>
             <strong>{commandCenter?.stage ?? heroCode}</strong>
           </span>
         </div>

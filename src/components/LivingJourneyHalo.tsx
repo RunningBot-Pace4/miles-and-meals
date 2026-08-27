@@ -125,8 +125,8 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
     <section className={`living-journey-shell mode-${activeMode}`} aria-labelledby="living-journey-title">
       <div className="living-journey-heading">
         <div>
-          <p className="eyebrow">LIVING JOURNEY · TRIP COMMAND CENTRE</p>
-          <h2 id="living-journey-title">Everything connected. One journey.</h2>
+          <p className="eyebrow">TRIP COMMAND CENTRE</p>
+          <h2 id="living-journey-title">Everything connected. One trip.</h2>
           <p>Tap the Halo to see what matters now—without searching through the app.</p>
         </div>
         <span className={`journey-stage ${props.stage.toLowerCase()}`}>
@@ -136,7 +136,7 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
       </div>
 
       <div className="living-journey-grid">
-        <div className="journey-halo" role="tablist" aria-label="Living Journey areas">
+        <div className="journey-halo" role="tablist" aria-label="Trip command areas">
           <span className="journey-orbit orbit-one" aria-hidden="true" />
           <span className="journey-orbit orbit-two" aria-hidden="true" />
           <span className="journey-orbit orbit-three" aria-hidden="true" />

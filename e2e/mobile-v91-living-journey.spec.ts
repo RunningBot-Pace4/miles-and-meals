@@ -26,7 +26,7 @@ for (const width of [320, 360, 390, 430]) {
     test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD for authenticated mobile QA.");
     await page.setViewportSize({ width, height: 880 });
     await signIn(page);
-    const halo = page.getByRole("tablist", { name: "Living Journey areas" });
+    const halo = page.getByRole("tablist", { name: "Trip command areas" });
     await expect(halo).toBeVisible();
     for (const mode of ["Move", "Plan", "Spend", "People"]) {
       const tab = page.getByRole("tab", { name: mode });

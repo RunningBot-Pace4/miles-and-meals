@@ -1,5 +1,3 @@
-import { BrandLogo } from "@/components/BrandLogo";
-
 export function BrandedLoadingScreen({
   title,
   message,
@@ -17,11 +15,21 @@ export function BrandedLoadingScreen({
       aria-busy="true"
     >
       <div className="trip-loading-card">
-        <BrandLogo href="" />
+        <div className="trip-loading-brand">
+          <img src="/icons/v92/icon-192.png" width="46" height="46" alt="" />
+          <div>
+            <strong>Miles &amp; Meals</strong>
+            <span>Your trip, ready when you are.</span>
+          </div>
+        </div>
 
-        <div className="living-loader" aria-hidden="true">
-          <img src="/icons/v92/living-journey-loader.gif" width="220" height="220" alt="" />
-          <span>Move · Plan · Spend · People</span>
+        <div className="v92-loading-halo" aria-hidden="true">
+          <span className="v92-loading-halo-ring" />
+          <span className="v92-loading-halo-core">
+            <i />
+            <b />
+            <i />
+          </span>
         </div>
 
         {showCopy ? (
@@ -33,7 +41,7 @@ export function BrandedLoadingScreen({
 
         <div className="trip-loading-foot">
           <span className="trip-loading-pulse" />
-          <small>Your Living Journey is coming together</small>
+          <small>Getting your trip ready</small>
         </div>
       </div>
     </div>

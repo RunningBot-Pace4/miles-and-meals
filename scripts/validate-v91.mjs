@@ -21,9 +21,9 @@ const css = `${read("src/app/globals.css")}\n${read("src/app/living-journey.css"
 const e2e = read("e2e/mobile-v91-living-journey.spec.ts");
 const tests = read("tests/v91-living-journey.test.ts");
 
-must(packageJson, '"version": "1.92.0"', "V91-or-newer package version missing");
+must(packageJson, '"version": "1.92.1"', "V91-or-newer package version missing");
 must(packageJson, '"v91:check"', "V91 validation command missing");
-must(serviceWorker, "miles-meals-static-v92", "V91-or-newer service-worker cache was not bumped");
+must(serviceWorker, "miles-meals-static-v92-1", "V91-or-newer service-worker cache was not bumped");
 
 for (const file of [
   "public/icons/icon-192.png",
@@ -53,9 +53,9 @@ for (const marker of ["v91 · Living Journey design system", ".living-journey-sh
   must(css, marker, `V91 design-system gate missing: ${marker}`);
 }
 must(brand, "/icons/v92/icon-192.png", "Brand does not use the current Living Journey mark");
-must(loading, "/icons/v92/living-journey-loader.gif", "Loading state does not use the current Living Journey motion mark");
-must(layout, "Your whole journey, connected.", "PWA launch copy is not updated");
-must(offline, "Your journey keeps moving.", "Offline experience is not updated");
+must(loading, "v92-loading-halo", "Loading state does not use the light Halo progress treatment");
+must(layout, "Getting your trip ready", "PWA launch copy is not updated");
+must(offline, "Your trip keeps moving.", "Offline experience is not updated");
 must(serviceWorker, "/icons/v92/notification-icon-96.png", "Notification badge is not versioned for V92");
 
 for (const marker of ["320", "360", "390", "430", "Move", "Plan", "Spend", "People", "no horizontal overflow"]) {
