@@ -2,6 +2,7 @@ import type {
   AnchorHTMLAttributes,
   ReactNode,
 } from "react";
+import NextLink from "next/link";
 
 type FullPageLinkProps = Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -16,9 +17,24 @@ export function FullPageLink({
   children,
   ...props
 }: FullPageLinkProps) {
+  const useNativeNavigation =
+    Boolean(props.download) ||
+    Boolean(props.target) ||
+    !href.startsWith("/") ||
+    href.startsWith("//") ||
+    href.startsWith("/api/");
+
+  if (useNativeNavigation) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <a href={href} {...props}>
+    <NextLink href={href} {...props}>
       {children}
-    </a>
+    </NextLink>
   );
 }

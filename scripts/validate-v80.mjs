@@ -25,8 +25,9 @@ const offlineQueue = read("src/lib/offline-queue.ts");
 const sync = read("src/components/OfflineQueueSync.tsx");
 const css = read("src/app/globals.css");
 const worker = read("public/sw.js");
+const updater = read("src/components/PwaRegister.tsx");
 
-must(packageJson, '"version": "1.92.1"', "v80-or-newer package version missing");
+must(packageJson, '"version": "1.92.2"', "v80-or-newer package version missing");
 must(packageJson, '"v80:check"', "v80 validator command missing");
 must(newExpense, 'financialStatus !== "CLOSED"', "closed Trips are not removed from Add Expense");
 if (expenseForm.includes("financially locked trip")) throw new Error("retired locked Trip wording is still visible");
@@ -60,7 +61,8 @@ must(sync, "sync(true)", "online event does not force immediate retry");
 for (const marker of ["v80 — calendar containment", "position: relative !important", ".journey-route-card", ".offline-trip-picker"]) {
   must(css, marker, `v80 responsive CSS missing: ${marker}`);
 }
-must(worker, 'miles-meals-static-v92-1', "v80-or-newer service-worker cache bump missing");
-must(worker, ".then(() => self.skipWaiting())", "v80 worker does not activate immediately");
+must(worker, 'miles-meals-static-v92-2', "v80-or-newer service-worker cache bump missing");
+must(worker, 'type === "SKIP_WAITING"', "v80 worker cannot be activated by the controlled update flow");
+must(updater, 'type: "SKIP_WAITING"', "v80-or-newer updater does not activate the waiting worker");
 
 console.log("v80 locked Trip, invite, Journey, offline and calendar validation passed.");

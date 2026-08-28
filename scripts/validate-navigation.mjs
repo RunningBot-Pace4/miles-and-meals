@@ -38,11 +38,22 @@ function visit(directory) {
       absolutePath,
       "utf8",
     );
+    const relativePath = path.relative(
+      process.cwd(),
+      absolutePath,
+    );
 
     for (const pattern of forbidden) {
+      if (
+        pattern === 'from "next/link"' &&
+        relativePath === "src/components/FullPageLink.tsx"
+      ) {
+        continue;
+      }
+
       if (source.includes(pattern)) {
         failures.push(
-          `${path.relative(process.cwd(), absolutePath)}: ${pattern}`,
+          `${relativePath}: ${pattern}`,
         );
       }
     }

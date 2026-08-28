@@ -11,7 +11,7 @@ type CollaborationEvent = {
   createdAt: string;
 };
 
-const POLL_MS = 5000;
+const POLL_MS = 15_000;
 const TOAST_MS = 6500;
 
 function destination(entityType: string): string {
@@ -35,12 +35,19 @@ function notifyWorkspace(entityType: string) {
 export function CollaborationPulse() {
   const cursorRef = useRef(new Date().toISOString());
   const seenRef = useRef(new Set<string>());
+  const pollingRef = useRef(false);
   const [event, setEvent] = useState<CollaborationEvent | null>(null);
 
   const poll = useCallback(async () => {
-    if (!navigator.onLine || document.visibilityState !== "visible") {
+    if (
+      pollingRef.current ||
+      !navigator.onLine ||
+      document.visibilityState !== "visible"
+    ) {
       return;
     }
+
+    pollingRef.current = true;
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 3500);
@@ -79,6 +86,7 @@ export function CollaborationPulse() {
       // Background collaboration polling must never interrupt the active page.
     } finally {
       window.clearTimeout(timer);
+      pollingRef.current = false;
     }
   }, []);
 

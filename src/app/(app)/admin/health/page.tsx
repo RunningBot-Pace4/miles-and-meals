@@ -39,7 +39,7 @@ async function checkDatabase(): Promise<{
   }
 }
 
-async function checkV90DataModel(): Promise<{ ok: boolean; message: string }> {
+async function checkRequiredDataModel(): Promise<{ ok: boolean; message: string }> {
   try {
     await Promise.all([
       db.select({ id: tripMemberPermissions.tripId }).from(tripMemberPermissions).limit(1),
@@ -47,9 +47,32 @@ async function checkV90DataModel(): Promise<{ ok: boolean; message: string }> {
       db.select({ id: tripEmergencyContacts.id }).from(tripEmergencyContacts).limit(1),
       db.select({ id: tripMemories.id }).from(tripMemories).limit(1),
     ]);
-    return { ok: true, message: "V90 permissions, documents, emergency contacts and memories tables are available." };
-  } catch {
-    return { ok: false, message: "Run neon-upgrade-v90-combined.sql before releasing V90." };
+    return { ok: true, message: "Required permissions, documents, emergency contacts and memories tables are available." };
+  } catch (error) {
+    const directCode =
+      typeof error === "object" && error !== null && "code" in error
+        ? String(error.code)
+        : "";
+    const cause =
+      typeof error === "object" && error !== null && "cause" in error
+        ? error.cause
+        : null;
+    const causeCode =
+      typeof cause === "object" && cause !== null && "code" in cause
+        ? String(cause.code)
+        : "";
+
+    if (directCode === "42P01" || causeCode === "42P01") {
+      return {
+        ok: false,
+        message: "Required app tables are missing from this Neon database. Apply neon-upgrade-v90-combined.sql once to this database after taking a backup.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "Required app tables could not be verified. Check the Neon connection and Vercel logs; do not rerun a migration unless a missing-table error is confirmed.",
+    };
   }
 }
 
@@ -98,7 +121,7 @@ export default async function AdminHealthPage() {
     performance,
   ] = await Promise.all([
     checkDatabase(),
-    checkV90DataModel(),
+    checkRequiredDataModel(),
     loadRecentErrors(),
     runConsistencyChecks(),
     loadPerformanceSnapshot(),
@@ -122,7 +145,7 @@ export default async function AdminHealthPage() {
           )} consistency issue(s) need review.`,
     },
     {
-      name: "V90 data model",
+      name: "Required app tables",
       ok: v90DataModel.ok,
       detail: v90DataModel.message,
     },

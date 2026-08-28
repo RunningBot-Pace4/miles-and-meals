@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
@@ -97,6 +98,7 @@ export function LiveDashboardFinance({
     useState(initialData);
   const [syncError, setSyncError] =
     useState(false);
+  const refreshingRef = useRef(false);
 
   const endpoint = useMemo(
     () =>
@@ -111,12 +113,15 @@ export function LiveDashboardFinance({
   const refresh =
     useCallback(async () => {
       if (
+        refreshingRef.current ||
         !navigator.onLine ||
         document.visibilityState !==
           "visible"
       ) {
         return;
       }
+
+      refreshingRef.current = true;
 
       try {
         const response =
@@ -138,6 +143,8 @@ export function LiveDashboardFinance({
         setSyncError(false);
       } catch {
         setSyncError(true);
+      } finally {
+        refreshingRef.current = false;
       }
     }, [endpoint]);
 
@@ -145,7 +152,7 @@ export function LiveDashboardFinance({
     const timer =
       window.setInterval(
         () => void refresh(),
-        8000,
+        15_000,
       );
 
     function refreshVisible() {

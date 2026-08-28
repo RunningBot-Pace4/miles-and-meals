@@ -3,11 +3,12 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 
-const NOTIFICATION_POLL_INTERVAL_MS = 5000;
+const NOTIFICATION_POLL_INTERVAL_MS = 30_000;
 
 export const NOTIFICATION_UPDATED_EVENT =
   "mnm:notifications-updated";
@@ -21,12 +22,22 @@ export function NotificationBell({
     useState(
       initialUnreadCount,
     );
+  const refreshingRef = useRef(false);
 
   const refresh =
     useCallback(async () => {
       if (!navigator.onLine) {
         return;
       }
+
+      if (
+        refreshingRef.current ||
+        document.visibilityState !== "visible"
+      ) {
+        return;
+      }
+
+      refreshingRef.current = true;
 
       try {
         const response = await fetch(
@@ -56,6 +67,8 @@ export function NotificationBell({
         );
       } catch {
         // Keep the current badge if a background refresh fails.
+      } finally {
+        refreshingRef.current = false;
       }
     }, []);
 

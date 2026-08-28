@@ -60,10 +60,12 @@ for (const marker of [
 }
 
 if (
-  !bell.includes("NOTIFICATION_POLL_INTERVAL_MS = 5000") ||
-  !center.includes("NOTIFICATION_POLL_INTERVAL_MS = 5000")
+  !bell.includes("NOTIFICATION_POLL_INTERVAL_MS = 30_000") ||
+  !center.includes("NOTIFICATION_POLL_INTERVAL_MS = 15_000") ||
+  !bell.includes("refreshingRef") ||
+  !center.includes("reloadingRef")
 ) {
-  failures.push("Notification bell and center must refresh every 5 seconds.");
+  failures.push("Notification polling must use the tuned intervals and prevent overlapping requests.");
 }
 
 const cacheVersionMatch = worker.match(/miles-meals-static-v(\d+)/);

@@ -1,6 +1,6 @@
-# Miles & Meals V92.1 · Light Halo PWA Design
+# Miles & Meals V92.2 · Fast and Reliable PWA
 
-Version `1.92.1` applies the approved light Halo presentation across the complete product while preserving the V90–V91 data model, permissions, financial rules and offline behavior.
+Version `1.92.2` keeps the approved light Halo presentation and adds reliable PWA updates, faster in-app navigation, reduced background traffic, unmistakable selected states and safe login memory.
 
 ## What changed
 
@@ -14,17 +14,25 @@ Version `1.92.1` applies the approved light Halo presentation across the complet
 - Light launch, loading and standalone offline experiences.
 - Compact animated Halo loader, restored centre Add button and explicit More-page context labels.
 - Repeated “Living Journey” promotional wording removed from the interface.
+- Clear check-mark selected states for Halo, settlement and other tab controls; active bottom navigation uses a high-contrast state.
+- One controlled service-worker activation path with automatic reload timeout and a visible Retry state.
+- Next.js client navigation for internal pages instead of rebuilding the complete app shell on every tap.
+- Reduced and protected background polling, plus a five-minute offline-pack refresh throttle.
+- Health checks now distinguish a genuinely missing table from a temporary Neon query failure.
+- Optional remembered email and persistent session; passwords remain with the device/browser password manager and are never stored by the app.
 
 ## Database
 
 **No Neon or database migration is required for V92.** This release changes presentation and PWA assets only. Existing deployments must already have the V85 and V90 migrations applied.
+
+If App Health reports that required tables are missing with PostgreSQL code `42P01`, back up Neon and apply `neon-upgrade-v90-combined.sql` once. A connection or query failure now shows separate guidance and is not a reason to rerun SQL blindly.
 
 ## Deploy
 
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online so `miles-meals-static-v92-1` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-2` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

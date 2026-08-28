@@ -1572,3 +1572,101 @@ button.button {
     animation: none !important;
   }
 }
+
+/* V92.2 · unmistakable selection, fast navigation and safe login memory ---- */
+
+button[role="tab"][aria-selected="true"] {
+  position: relative !important;
+  border-color: #111 !important;
+  color: white !important;
+  background: #111 !important;
+  box-shadow: 0 0 0 3px rgb(61 130 246 / 18%) !important;
+}
+
+button[role="tab"][aria-selected="true"]::after {
+  content: "✓";
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #111;
+  background: white;
+  font-size: 0.58rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+button[role="tab"][aria-selected="true"] small {
+  color: #dfe3e8 !important;
+}
+
+.mobile-nav .nav-item.active,
+.mobile-nav .nav-item[aria-current="page"]:not(.nav-action) {
+  border-color: #111 !important;
+  color: white !important;
+  background: #111 !important;
+  box-shadow: 0 8px 20px rgb(17 17 17 / 14%) !important;
+}
+
+.mobile-nav .nav-item.active .nav-icon,
+.mobile-nav .nav-item[aria-current="page"]:not(.nav-action) .nav-icon,
+.mobile-nav .nav-item.active > span:last-child,
+.mobile-nav .nav-item[aria-current="page"]:not(.nav-action) > span:last-child {
+  color: white !important;
+}
+
+.mobile-nav .nav-item.active::after,
+.mobile-nav .nav-item[aria-current="page"]:not(.nav-action)::after {
+  background: var(--v92-blue) !important;
+  box-shadow: 0 0 0 2px white !important;
+}
+
+.remember-login-option {
+  display: grid !important;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid var(--v92-line);
+  border-radius: 12px;
+  color: var(--v92-ink);
+  background: #f7f8fa;
+  cursor: pointer;
+}
+
+.remember-login-option input {
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  margin: 0.1rem 0 0;
+  accent-color: #111;
+}
+
+.remember-login-option > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.remember-login-option strong {
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.remember-login-option small {
+  color: var(--v92-muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@media (max-width: 719px) {
+  button[role="tab"][aria-selected="true"]::after {
+    top: 3px;
+    right: 4px;
+  }
+}

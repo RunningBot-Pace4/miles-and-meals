@@ -3,10 +3,11 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
-const NOTIFICATION_POLL_INTERVAL_MS = 5000;
+const NOTIFICATION_POLL_INTERVAL_MS = 15_000;
 
 type NotificationItem = {
   id: string;
@@ -92,6 +93,7 @@ export function NotificationCenter({
     useState<string | null>(null);
   const [error, setError] =
     useState("");
+  const reloadingRef = useRef(false);
   const [
     selectedNotification,
     setSelectedNotification,
@@ -101,6 +103,16 @@ export function NotificationCenter({
 
   const reload = useCallback(
     async () => {
+      if (
+        reloadingRef.current ||
+        !navigator.onLine ||
+        document.visibilityState !== "visible"
+      ) {
+        return;
+      }
+
+      reloadingRef.current = true;
+
       try {
         const response = await fetch(
           "/api/notifications/inbox",
@@ -138,6 +150,8 @@ export function NotificationCenter({
         );
       } catch {
         // The existing inbox remains usable if a background refresh fails.
+      } finally {
+        reloadingRef.current = false;
       }
     },
     [],

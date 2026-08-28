@@ -11,6 +11,26 @@ type NavigatorWithStandalone =
     standalone?: boolean;
   };
 
+const UPDATE_READY_TIMEOUT_MS = 8_000;
+const UPDATE_RELOAD_TIMEOUT_MS = 8_000;
+
+async function waitForWaitingWorker(
+  registration: ServiceWorkerRegistration,
+): Promise<ServiceWorker | null> {
+  const immediate = registration.waiting;
+  if (immediate) return immediate;
+
+  await registration.update();
+  const deadline = Date.now() + UPDATE_READY_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    if (registration.waiting) return registration.waiting;
+    await new Promise((resolve) => window.setTimeout(resolve, 160));
+  }
+
+  return registration.waiting;
+}
+
 function isInstalledMobileApp(): boolean {
   const standalone =
     window.matchMedia(
@@ -43,8 +63,9 @@ export function PwaRegister() {
     );
   const [updateAvailable, setUpdateAvailable] =
     useState(false);
-  const [updating, setUpdating] =
-    useState(false);
+  const activationTimerRef = useRef<number | null>(null);
+  const [updateState, setUpdateState] =
+    useState<"idle" | "updating" | "failed">("idle");
 
   useEffect(() => {
     if (
@@ -130,6 +151,11 @@ export function PwaRegister() {
       }
 
       refreshing = true;
+      if (activationTimerRef.current !== null) {
+        window.clearTimeout(activationTimerRef.current);
+        activationTimerRef.current = null;
+      }
+      setUpdateAvailable(false);
       window.location.reload();
     }
 
@@ -154,6 +180,10 @@ export function PwaRegister() {
 
     return () => {
       disposed = true;
+      if (activationTimerRef.current !== null) {
+        window.clearTimeout(activationTimerRef.current);
+        activationTimerRef.current = null;
+      }
       window.removeEventListener(
         "load",
         register,
@@ -205,32 +235,31 @@ export function PwaRegister() {
     };
   }, []);
 
-  function installUpdate() {
-    const waiting =
-      registrationRef.current?.waiting;
+  async function installUpdate() {
+    const registration = registrationRef.current;
+    if (!registration || updateState === "updating") return;
 
-    if (!waiting) {
-      void registrationRef.current
-        ?.update()
-        .then(() => {
-          const next =
-            registrationRef.current
-              ?.waiting;
+    setUpdateState("updating");
 
-          if (next) {
-            setUpdating(true);
-            next.postMessage({
-              type: "SKIP_WAITING",
-            });
-          }
-        });
-      return;
+    try {
+      const waiting = await waitForWaitingWorker(registration);
+      if (!waiting) throw new Error("Update worker did not become ready");
+
+      activationTimerRef.current = window.setTimeout(() => {
+        // iOS installed PWAs do not always dispatch controllerchange. A safe
+        // reload lets the newly activated worker take control and never leaves
+        // the button stuck indefinitely.
+        window.location.reload();
+      }, UPDATE_RELOAD_TIMEOUT_MS);
+
+      waiting.postMessage({ type: "SKIP_WAITING" });
+    } catch {
+      if (activationTimerRef.current !== null) {
+        window.clearTimeout(activationTimerRef.current);
+        activationTimerRef.current = null;
+      }
+      setUpdateState("failed");
     }
-
-    setUpdating(true);
-    waiting.postMessage({
-      type: "SKIP_WAITING",
-    });
   }
 
   return updateAvailable ? (
@@ -251,20 +280,23 @@ export function PwaRegister() {
           Miles &amp; Meals update ready
         </strong>
         <small>
-          Install the latest version without
-          reinstalling the Home Screen app.
+          {updateState === "failed"
+            ? "The update did not finish. Your current version is still safe to use."
+            : "Install the latest version without reinstalling the Home Screen app."}
         </small>
       </div>
 
       <button
         type="button"
         className="button primary"
-        onClick={installUpdate}
-        disabled={updating}
+        onClick={() => void installUpdate()}
+        disabled={updateState === "updating"}
       >
-        {updating
+        {updateState === "updating"
           ? "Updating…"
-          : "Update"}
+          : updateState === "failed"
+            ? "Retry"
+            : "Update"}
       </button>
     </div>
   ) : null;

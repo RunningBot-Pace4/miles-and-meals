@@ -8,7 +8,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-const BUDGET_POLL_INTERVAL_MS = 4000;
+const BUDGET_POLL_INTERVAL_MS = 15_000;
 const PASSWORD_PATH = "/settings/password";
 
 type MissingBudgetPayload = {
@@ -29,6 +29,7 @@ export function BudgetAccessGate({
 }) {
   const pathname = usePathname();
   const redirectingRef = useRef(false);
+  const checkingRef = useRef(false);
   const [missingBudgetCount, setMissingBudgetCount] =
     useState(initialMissingBudgetCount);
   const [missingTripId, setMissingTripId] =
@@ -36,6 +37,16 @@ export function BudgetAccessGate({
 
   const checkMissingBudgets = useCallback(
     async () => {
+      if (
+        checkingRef.current ||
+        !navigator.onLine ||
+        document.visibilityState !== "visible"
+      ) {
+        return;
+      }
+
+      checkingRef.current = true;
+
       try {
         const response = await fetch(
           "/api/budgets",
@@ -65,6 +76,8 @@ export function BudgetAccessGate({
         );
       } catch {
         // The server-rendered value remains the safe fallback while offline.
+      } finally {
+        checkingRef.current = false;
       }
     },
     [],

@@ -1,7 +1,7 @@
 "use client";
 
 import { FullPageLink as Link } from "@/components/FullPageLink";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { safeInternalPath } from "@/lib/navigation-safety";
@@ -10,6 +10,17 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [rememberLogin, setRememberLogin] = useState(true);
+
+  useEffect(() => {
+    try {
+      const remembered = window.localStorage.getItem("mnm:remembered-login-email");
+      if (remembered) setEmail(remembered);
+    } catch {
+      // Login remains fully usable when private browsing blocks local storage.
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,14 +28,24 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
     setError("");
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "").trim();
+    const submittedEmail = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
     try {
+      if (rememberLogin) {
+        window.localStorage.setItem("mnm:remembered-login-email", submittedEmail);
+      } else {
+        window.localStorage.removeItem("mnm:remembered-login-email");
+      }
+    } catch {
+      // Session sign-in must not depend on local storage.
+    }
+
+    try {
       const result = await authClient.signIn.email({
-        email,
+        email: submittedEmail,
         password,
-        rememberMe: true,
+        rememberMe: rememberLogin,
       });
 
       if (result.error) {
@@ -55,7 +76,9 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
         <input
           name="email"
           type="email"
-          autoComplete="email"
+          autoComplete="username"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           required
           placeholder="you@example.com"
         />
@@ -80,6 +103,18 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
           >
             {showPassword ? "Hide" : "Show"}
           </button>
+        </span>
+      </label>
+
+      <label className="remember-login-option">
+        <input
+          type="checkbox"
+          checked={rememberLogin}
+          onChange={(event) => setRememberLogin(event.target.checked)}
+        />
+        <span>
+          <strong>Remember my email</strong>
+          <small>Keep me signed in on this device. Your password stays with your phone or browser password manager.</small>
         </span>
       </label>
 

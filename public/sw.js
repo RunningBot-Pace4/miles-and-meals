@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v92-1";
+const CACHE_NAME = "miles-meals-static-v92-2";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -19,9 +19,9 @@ self.addEventListener("install", (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      // Activate every release immediately. Leaving a new worker waiting kept
-      // old cached CSS alive and could reproduce already-fixed calendar layouts.
-      .then(() => self.skipWaiting()),
+      // An existing app stays on one coherent version until the user accepts
+      // the update. PwaRegister then sends SKIP_WAITING and reloads once.
+      .then(() => undefined),
   );
 });
 
