@@ -1,8 +1,12 @@
+"use client";
+
 import type {
   AnchorHTMLAttributes,
+  MouseEvent,
+  PointerEvent,
   ReactNode,
 } from "react";
-import NextLink from "next/link";
+import { useState } from "react";
 
 type FullPageLinkProps = Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -15,26 +19,46 @@ type FullPageLinkProps = Omit<
 export function FullPageLink({
   href,
   children,
+  onClick,
+  onPointerCancel,
+  onPointerDown,
   ...props
 }: FullPageLinkProps) {
-  const useNativeNavigation =
-    Boolean(props.download) ||
-    Boolean(props.target) ||
-    !href.startsWith("/") ||
-    href.startsWith("//") ||
-    href.startsWith("/api/");
+  const [navigationPending, setNavigationPending] = useState(false);
 
-  if (useNativeNavigation) {
-    return (
-      <a href={href} {...props}>
-        {children}
-      </a>
-    );
+  function handlePointerDown(event: PointerEvent<HTMLAnchorElement>) {
+    if (event.button === 0) {
+      setNavigationPending(true);
+    }
+
+    onPointerDown?.(event);
+  }
+
+  function handlePointerCancel(event: PointerEvent<HTMLAnchorElement>) {
+    setNavigationPending(false);
+    onPointerCancel?.(event);
+  }
+
+  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
+    setNavigationPending(true);
+    onClick?.(event);
+
+    if (event.defaultPrevented) {
+      setNavigationPending(false);
+    }
   }
 
   return (
-    <NextLink href={href} {...props}>
+    <a
+      href={href}
+      data-full-page-link="true"
+      data-navigation-pending={navigationPending ? "true" : undefined}
+      onClick={handleClick}
+      onPointerCancel={handlePointerCancel}
+      onPointerDown={handlePointerDown}
+      {...props}
+    >
       {children}
-    </NextLink>
+    </a>
   );
 }

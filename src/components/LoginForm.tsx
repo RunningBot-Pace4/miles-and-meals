@@ -3,7 +3,6 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { FormEvent, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
-import { SavingOverlay } from "@/components/SavingOverlay";
 import { safeInternalPath } from "@/lib/navigation-safety";
 
 export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
@@ -62,15 +61,7 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   }
 
   return (
-    <>
-      {busy ? (
-        <SavingOverlay
-          title="Signing you in"
-          message="Opening your trips, plans and balances."
-        />
-      ) : null}
-
-      <form className="stack" onSubmit={handleSubmit}>
+    <form className="stack" onSubmit={handleSubmit} aria-busy={busy}>
       <label>
         Email
         <input
@@ -137,7 +128,6 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
           Create account
         </Link>
       </p>
-      </form>
-    </>
+    </form>
   );
 }

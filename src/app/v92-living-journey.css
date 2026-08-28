@@ -1573,56 +1573,54 @@ button.button {
   }
 }
 
-/* V92.2 · unmistakable selection, fast navigation and safe login memory ---- */
+/* V92.3 · quiet blue selection and reliable full-page navigation ----------- */
 
 button[role="tab"][aria-selected="true"] {
   position: relative !important;
-  border-color: #111 !important;
-  color: white !important;
-  background: #111 !important;
-  box-shadow: 0 0 0 3px rgb(61 130 246 / 18%) !important;
+  border-color: var(--v92-blue) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
 }
 
 button[role="tab"][aria-selected="true"]::after {
-  content: "✓";
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  width: 15px;
-  height: 15px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #111;
-  background: white;
-  font-size: 0.58rem;
-  font-weight: 950;
-  line-height: 1;
+  content: none !important;
+  display: none !important;
 }
 
 button[role="tab"][aria-selected="true"] small {
-  color: #dfe3e8 !important;
+  color: var(--v92-muted) !important;
 }
 
 .mobile-nav .nav-item.active,
 .mobile-nav .nav-item[aria-current="page"]:not(.nav-action) {
-  border-color: #111 !important;
-  color: white !important;
-  background: #111 !important;
-  box-shadow: 0 8px 20px rgb(17 17 17 / 14%) !important;
+  border-color: var(--v92-blue) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
 }
 
 .mobile-nav .nav-item.active .nav-icon,
 .mobile-nav .nav-item[aria-current="page"]:not(.nav-action) .nav-icon,
 .mobile-nav .nav-item.active > span:last-child,
 .mobile-nav .nav-item[aria-current="page"]:not(.nav-action) > span:last-child {
-  color: white !important;
+  color: var(--v92-ink) !important;
 }
 
 .mobile-nav .nav-item.active::after,
 .mobile-nav .nav-item[aria-current="page"]:not(.nav-action)::after {
-  background: var(--v92-blue) !important;
-  box-shadow: 0 0 0 2px white !important;
+  content: none !important;
+  display: none !important;
+}
+
+.menu-row.link-row[data-navigation-pending="true"],
+.menu-row.link-row:focus-visible,
+.account-menu-item[data-navigation-pending="true"] {
+  position: relative;
+  z-index: 1;
+  outline: 0 !important;
+  background: white !important;
+  box-shadow: inset 0 0 0 2px var(--v92-blue) !important;
 }
 
 .remember-login-option {
@@ -1662,11 +1660,4 @@ button[role="tab"][aria-selected="true"] small {
   font-size: 0.66rem;
   font-weight: 600;
   line-height: 1.4;
-}
-
-@media (max-width: 719px) {
-  button[role="tab"][aria-selected="true"]::after {
-    top: 3px;
-    right: 4px;
-  }
 }

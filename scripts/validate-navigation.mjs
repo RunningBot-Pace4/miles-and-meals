@@ -44,13 +44,6 @@ function visit(directory) {
     );
 
     for (const pattern of forbidden) {
-      if (
-        pattern === 'from "next/link"' &&
-        relativePath === "src/components/FullPageLink.tsx"
-      ) {
-        continue;
-      }
-
       if (source.includes(pattern)) {
         failures.push(
           `${relativePath}: ${pattern}`,

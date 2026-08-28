@@ -1,6 +1,6 @@
-# Miles & Meals V92.2 · Fast and Reliable PWA
+# Miles & Meals V92.3 · Clear Selection and Reliable PWA Navigation
 
-Version `1.92.2` keeps the approved light Halo presentation and adds reliable PWA updates, faster in-app navigation, reduced background traffic, unmistakable selected states and safe login memory.
+Version `1.92.3` keeps the approved light Halo presentation, removes the overly dark selected states and fixes the installed-PWA transition failure reported from More.
 
 ## What changed
 
@@ -14,12 +14,15 @@ Version `1.92.2` keeps the approved light Halo presentation and adds reliable PW
 - Light launch, loading and standalone offline experiences.
 - Compact animated Halo loader, restored centre Add button and explicit More-page context labels.
 - Repeated “Living Journey” promotional wording removed from the interface.
-- Clear check-mark selected states for Halo, settlement and other tab controls; active bottom navigation uses a high-contrast state.
+- Selected tabs and active navigation use only a clean blue outline: no black fill, white text or check mark.
+- More-page rows keep a blue outline while the selected destination opens.
 - One controlled service-worker activation path with automatic reload timeout and a visible Retry state.
-- Next.js client navigation for internal pages instead of rebuilding the complete app shell on every tap.
+- Reliable native document navigation for authenticated pages so a stale installed-PWA client cannot request an incompatible React Server Component payload.
 - Reduced and protected background polling, plus a five-minute offline-pack refresh throttle.
 - Health checks now distinguish a genuinely missing table from a temporary Neon query failure.
 - Optional remembered email and persistent session; passwords remain with the device/browser password manager and are never stored by the app.
+- One sign-in loading state instead of an overlay followed by a second loader.
+- Node.js 24 matches the Vercel project setting, removing the engine-override warning.
 
 ## Database
 
@@ -32,7 +35,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-2` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-3` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

@@ -18,22 +18,22 @@ describe("V92.2 PWA reliability and performance", () => {
       worker.indexOf('self.addEventListener("activate"'),
     );
     expect(installBlock).not.toContain("self.skipWaiting(");
-    expect(worker).toContain('miles-meals-static-v92-2');
+    expect(worker).toContain('miles-meals-static-v92-3');
     expect(updater).toContain("waitForWaitingWorker");
     expect(updater).toContain("UPDATE_RELOAD_TIMEOUT_MS");
     expect(updater).toContain('"Retry"');
   });
 
-  it("uses Next client navigation while preserving native downloads", () => {
-    expect(link).toContain("NextLink");
-    expect(link).toContain("useNativeNavigation");
-    expect(link).toContain('href.startsWith("/api/")');
-    expect(navigationGate).toContain('relativePath === "src/components/FullPageLink.tsx"');
+  it("uses reliable native navigation and exposes the selected row while opening", () => {
+    expect(link).toContain("href={href}");
+    expect(link).toContain("data-navigation-pending");
+    expect(link).not.toContain("NextLink");
+    expect(navigationGate).not.toContain('relativePath === "src/components/FullPageLink.tsx"');
   });
 
   it("makes selected tabs and main destinations unmistakable", () => {
     expect(css).toContain('button[role="tab"][aria-selected="true"]');
-    expect(css).toContain('content: "✓"');
+    expect(css).toContain('content: none !important');
     expect(css).toContain('.nav-item[aria-current="page"]');
   });
 

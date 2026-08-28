@@ -18,9 +18,9 @@ const mobileE2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
 const offlineTests = read("tests/offline-queue.test.ts");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.2"', "v79-or-newer package version missing");
+must(packageJson, '"version": "1.92.3"', "v79-or-newer package version missing");
 must(packageJson, '"v79:check"', "v79 validator command missing");
-must(worker, 'miles-meals-static-v92-2', "v79-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v92-3', "v79-or-newer service-worker cache bump missing");
 
 for (const marker of [
   "v79 — complete responsive control",
