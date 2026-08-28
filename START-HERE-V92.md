@@ -1,6 +1,6 @@
-# Miles & Meals V92.3 · Clear Selection and Reliable PWA Navigation
+# Miles & Meals V92.4 · Stable Mobile and PWA Interaction
 
-Version `1.92.3` keeps the approved light Halo presentation, removes the overly dark selected states and fixes the installed-PWA transition failure reported from More.
+Version `1.92.4` keeps the approved light Halo presentation and corrects the remaining touch-state and layout instability shown in the mobile PWA recording.
 
 ## What changed
 
@@ -15,6 +15,9 @@ Version `1.92.3` keeps the approved light Halo presentation, removes the overly 
 - Compact animated Halo loader, restored centre Add button and explicit More-page context labels.
 - Repeated “Living Journey” promotional wording removed from the interface.
 - Selected tabs and active navigation use only a clean blue outline: no black fill, white text or check mark.
+- Halo selection moves to the newly touched mode immediately, without Safari's grey tap flash.
+- Larger touch targets and a restrained detail-panel transition keep Move, Plan, Spend and People easy to use and visually stable.
+- Bottom navigation shows only the newly tapped destination while the page opens.
 - More-page rows keep a blue outline while the selected destination opens.
 - One controlled service-worker activation path with automatic reload timeout and a visible Retry state.
 - Reliable native document navigation for authenticated pages so a stale installed-PWA client cannot request an incompatible React Server Component payload.
@@ -35,7 +38,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-3` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-4` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

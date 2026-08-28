@@ -84,6 +84,7 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
               role="tab"
               aria-selected={activeMode === mode}
               aria-controls="living-journey-starter-panel"
+              onPointerDown={() => setActiveMode(mode)}
               onClick={() => setActiveMode(mode)}
             >
               <b>{labels[mode]}</b>
@@ -91,7 +92,13 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </div>
 
-        <div className="journey-live-panel starter-live-panel" id="living-journey-starter-panel" role="tabpanel">
+        <div
+          className="journey-live-panel starter-live-panel"
+          data-active-mode={activeMode}
+          id="living-journey-starter-panel"
+          key={activeMode}
+          role="tabpanel"
+        >
           <p className="eyebrow">{active.eyebrow}</p>
           <h3>{active.title}</h3>
           <p className="journey-live-summary">{active.summary}</p>

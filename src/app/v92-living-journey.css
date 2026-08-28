@@ -1661,3 +1661,83 @@ button[role="tab"][aria-selected="true"] small {
   font-weight: 600;
   line-height: 1.4;
 }
+
+/* V92.4 · stable touch feedback across browser and installed PWA ---------- */
+
+:where(a[data-full-page-link="true"], button[role="tab"], .mobile-nav .nav-item) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button[role="tab"] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button[role="tab"]:active,
+button[role="tab"]:focus-visible,
+button[role="tab"][aria-selected="true"] {
+  border-color: var(--v92-blue) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  outline: 0 !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+.journey-live-panel[data-active-mode] {
+  min-width: 0;
+  animation: v92-mode-panel-in 160ms ease-out both;
+}
+
+@keyframes v92-mode-panel-in {
+  from {
+    opacity: 0.72;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-nav[data-navigation-pending="true"]
+  .nav-item[aria-current="page"]:not(.navigation-pending):not(.nav-action) {
+  border-color: transparent !important;
+  color: #7e838a !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mobile-nav .nav-item.navigation-pending:not(.nav-action) {
+  border-color: var(--v92-blue) !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+.mobile-nav .nav-item.navigation-pending:not(.nav-action) :where(.nav-icon, span) {
+  color: var(--v92-ink) !important;
+}
+
+.mobile-nav .nav-item.navigation-pending.nav-action {
+  border-color: var(--v92-blue) !important;
+  box-shadow: 0 0 0 2px var(--v92-blue) !important;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .journey-mode {
+    min-height: 40px !important;
+  }
+
+  .journey-mode:hover,
+  .journey-mode:focus,
+  .journey-mode:active {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-live-panel[data-active-mode] {
+    animation: none !important;
+  }
+}

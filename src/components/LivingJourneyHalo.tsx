@@ -155,6 +155,7 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
               role="tab"
               aria-selected={activeMode === mode}
               aria-controls="living-journey-panel"
+              onPointerDown={() => setActiveMode(mode)}
               onClick={() => setActiveMode(mode)}
             >
               <b>{modeLabel[mode]}</b>
@@ -162,7 +163,13 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
           ))}
         </div>
 
-        <div className="journey-live-panel" id="living-journey-panel" role="tabpanel">
+        <div
+          className="journey-live-panel"
+          data-active-mode={activeMode}
+          id="living-journey-panel"
+          key={activeMode}
+          role="tabpanel"
+        >
           <p className="eyebrow">{active.eyebrow}</p>
           <h3>{active.title}</h3>
           <p className="journey-live-summary">{active.summary}</p>
