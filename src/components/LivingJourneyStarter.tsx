@@ -65,7 +65,7 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
       </div>
 
       <div className="living-journey-grid">
-        <div className="journey-halo starter-halo" role="tablist" aria-label="Trip command introduction">
+        <div className="journey-halo starter-halo">
           <span className="journey-orbit orbit-one" aria-hidden="true" />
           <span className="journey-orbit orbit-two" aria-hidden="true" />
           <span className="journey-orbit orbit-three" aria-hidden="true" />
@@ -76,21 +76,23 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
             <small>Create a Trip to connect live data</small>
           </div>
 
-          {modes.map((mode) => (
-            <button
-              key={mode}
-              className={`journey-mode journey-mode-${mode}${activeMode === mode ? " active" : ""}`}
-              type="button"
-              role="tab"
-              id={`living-journey-starter-tab-${mode}`}
-              aria-selected={activeMode === mode}
-              aria-controls={`living-journey-starter-panel-${mode}`}
-              onPointerDown={() => setActiveMode(mode)}
-              onClick={() => setActiveMode(mode)}
-            >
-              <b>{labels[mode]}</b>
-            </button>
-          ))}
+          <div className="journey-mode-switcher" role="tablist" aria-label="Trip command introduction">
+            {modes.map((mode) => (
+              <button
+                key={mode}
+                className={`journey-mode journey-mode-${mode}`}
+                type="button"
+                role="tab"
+                id={`living-journey-starter-tab-${mode}`}
+                aria-selected={activeMode === mode}
+                aria-controls={`living-journey-starter-panel-${mode}`}
+                onPointerDown={() => setActiveMode(mode)}
+                onClick={() => setActiveMode(mode)}
+              >
+                <b>{labels[mode]}</b>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="journey-panel-stack">

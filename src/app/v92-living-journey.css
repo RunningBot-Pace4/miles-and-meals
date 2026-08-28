@@ -1753,41 +1753,54 @@ button[role="tab"][aria-selected="true"] {
   }
 }
 
-/* V92.6 · stationary four-column Halo controls --------------------------- */
+/* V92.7 · structurally isolated Halo controls ---------------------------- */
 
 .journey-halo {
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  column-gap: clamp(0.5rem, 2.5vw, 0.8rem) !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    "core"
+    "modes" !important;
+  column-gap: 0 !important;
   row-gap: 0.7rem !important;
 }
 
-.journey-halo > .journey-mode {
+.journey-mode-switcher {
+  grid-area: modes;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.5rem, 2.5vw, 0.8rem);
+  isolation: isolate;
+}
+
+.journey-mode-switcher > .journey-mode,
+.journey-mode-switcher > .journey-mode:hover,
+.journey-mode-switcher > .journey-mode:focus,
+.journey-mode-switcher > .journey-mode:focus-visible,
+.journey-mode-switcher > .journey-mode:active,
+.journey-mode-switcher > .journey-mode[aria-selected="true"] {
+  grid-area: auto !important;
+  position: static !important;
+  inset: auto !important;
   box-sizing: border-box !important;
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
+  height: 40px !important;
+  min-height: 40px !important;
   margin: 0 !important;
+  padding: 0.35rem 0.25rem !important;
   transform: none !important;
   contain: layout paint;
   transition:
-    border-color 120ms ease,
-    box-shadow 120ms ease,
-    color 120ms ease,
-    background-color 120ms ease !important;
+    border-color 100ms ease,
+    box-shadow 100ms ease,
+    color 100ms ease,
+    background-color 100ms ease !important;
 }
 
-.journey-halo > .journey-mode:hover,
-.journey-halo > .journey-mode:focus,
-.journey-halo > .journey-mode:focus-visible,
-.journey-halo > .journey-mode:active,
-.journey-halo > .journey-mode.active,
-.journey-halo > .journey-mode[aria-selected="true"] {
-  width: 100% !important;
-  margin: 0 !important;
-  transform: none !important;
-}
-
-.journey-halo > .journey-mode[aria-selected="true"] {
+.journey-mode-switcher > .journey-mode[aria-selected="true"] {
   border-color: var(--v92-blue) !important;
   color: var(--v92-ink) !important;
   background: white !important;
