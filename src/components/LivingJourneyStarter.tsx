@@ -82,8 +82,9 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
               className={`journey-mode journey-mode-${mode}${activeMode === mode ? " active" : ""}`}
               type="button"
               role="tab"
+              id={`living-journey-starter-tab-${mode}`}
               aria-selected={activeMode === mode}
-              aria-controls="living-journey-starter-panel"
+              aria-controls={`living-journey-starter-panel-${mode}`}
               onPointerDown={() => setActiveMode(mode)}
               onClick={() => setActiveMode(mode)}
             >
@@ -92,41 +93,52 @@ export function LivingJourneyStarter({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </div>
 
-        <div
-          className="journey-live-panel starter-live-panel"
-          data-active-mode={activeMode}
-          id="living-journey-starter-panel"
-          key={activeMode}
-          role="tabpanel"
-        >
-          <p className="eyebrow">{active.eyebrow}</p>
-          <h3>{active.title}</h3>
-          <p className="journey-live-summary">{active.summary}</p>
-          <p className="journey-live-insight">
-            <span aria-hidden="true">✦</span>
-            {active.insight}
-          </p>
+        <div className="journey-panel-stack">
+          {modes.map((mode) => {
+            const item = content[mode];
+            const selected = activeMode === mode;
 
-          <dl className="journey-metrics">
-            {active.metrics.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
+            return (
+              <div
+                aria-hidden={!selected}
+                aria-labelledby={`living-journey-starter-tab-${mode}`}
+                className={`journey-live-panel starter-live-panel${selected ? " is-active" : ""}`}
+                data-mode={mode}
+                id={`living-journey-starter-panel-${mode}`}
+                key={mode}
+                role="tabpanel"
+              >
+                <p className="eyebrow">{item.eyebrow}</p>
+                <h3>{item.title}</h3>
+                <p className="journey-live-summary">{item.summary}</p>
+                <p className="journey-live-insight">
+                  <span aria-hidden="true">✦</span>
+                  {item.insight}
+                </p>
+
+                <dl className="journey-metrics">
+                  {item.metrics.map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className="journey-live-actions">
+                  <Link className="button journey-primary" href="/trips">
+                    Create my first Trip
+                    <span aria-hidden="true">↗</span>
+                  </Link>
+                  {isAdmin ? (
+                    <Link className="button journey-secondary" href="/admin">System Admin</Link>
+                  ) : (
+                    <span className="starter-invite-note">Have an invite? Open its secure link to join.</span>
+                  )}
+                </div>
               </div>
-            ))}
-          </dl>
-
-          <div className="journey-live-actions">
-            <Link className="button journey-primary" href="/trips">
-              Create my first Trip
-              <span aria-hidden="true">↗</span>
-            </Link>
-            {isAdmin ? (
-              <Link className="button journey-secondary" href="/admin">System Admin</Link>
-            ) : (
-              <span className="starter-invite-note">Have an invite? Open its secure link to join.</span>
-            )}
-          </div>
+            );
+          })}
         </div>
       </div>
 

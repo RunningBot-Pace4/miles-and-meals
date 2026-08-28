@@ -23,7 +23,7 @@ describe("V92.4 web and installed-PWA layout", () => {
 
   it("keeps touch targets and mode transitions stable", () => {
     expect(css).toContain("min-height: 40px !important");
-    expect(css).toContain("@keyframes v92-mode-panel-in");
+    expect(css).toContain(".journey-panel-stack > .journey-live-panel.is-active");
     expect(css).toContain("animation: none !important");
   });
 

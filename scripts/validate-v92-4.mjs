@@ -12,15 +12,15 @@ const halo = read("src/components/LivingJourneyHalo.tsx");
 const nav = read("src/components/MobileNav.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.4"', "V92.4 package version missing");
+must(packageJson, '"version": "1.92.5"', "V92.4-or-newer package version missing");
 must(packageJson, '"v92-4:check"', "V92.4 release gate missing");
 must(packageJson, "npm run v92-4:check", "V92.4 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-4", "V92.4 service-worker cache missing");
+must(worker, "miles-meals-static-v92-5", "V92.4-or-newer service-worker cache missing");
 
 for (const source of [starter, halo]) {
   must(source, "onPointerDown={() => setActiveMode(mode)}", "Halo selection is not immediate on touch");
-  must(source, "data-active-mode={activeMode}", "Halo panel does not expose its active mode");
-  must(source, "key={activeMode}", "Halo panel transition is not reset for each mode");
+  must(source, 'className="journey-panel-stack"', "Halo panels are not held in a stable stack");
+  must(source, 'selected ? " is-active" : ""', "Halo stack does not expose its active panel");
 }
 
 for (const marker of [
@@ -36,7 +36,7 @@ for (const marker of [
   'button[role="tab"]:active',
   "background: white !important",
   "min-height: 40px !important",
-  "@keyframes v92-mode-panel-in",
+  ".journey-panel-stack > .journey-live-panel.is-active",
   '.mobile-nav[data-navigation-pending="true"]',
   ".nav-item.navigation-pending:not(.nav-action)",
   "calc(6.7rem + env(safe-area-inset-bottom))",

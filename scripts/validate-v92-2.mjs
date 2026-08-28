@@ -20,10 +20,10 @@ const offlineWarmup = read("src/components/OfflinePackWarmup.tsx");
 const health = read("src/app/(app)/admin/health/page.tsx");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.4"', "V92.2-or-newer package version missing");
+must(packageJson, '"version": "1.92.5"', "V92.2-or-newer package version missing");
 must(packageJson, '"v92-2:check"', "V92.2 release gate missing");
 must(packageJson, "npm run v92-2:check", "V92.2 gate is not part of prebuild");
-must(worker, 'miles-meals-static-v92-4', "V92.2-or-newer service-worker cache missing");
+must(worker, 'miles-meals-static-v92-5', "V92.2-or-newer service-worker cache missing");
 
 const installBlock = worker.slice(
   worker.indexOf('self.addEventListener("install"'),
