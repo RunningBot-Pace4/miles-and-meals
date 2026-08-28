@@ -1,6 +1,6 @@
-# Miles & Meals V92.5 · Stable Living Journey Layout
+# Miles & Meals V92.6 · Stationary Living Journey Controls
 
-Version `1.92.5` keeps the approved light Halo presentation and fixes the full panel reflow shown when switching Move, Plan, Spend and People.
+Version `1.92.6` keeps the approved light Halo presentation and fixes both the information-panel reflow and the changing tab spacing shown when switching Move, Plan, Spend and People.
 
 ## What changed
 
@@ -18,6 +18,7 @@ Version `1.92.5` keeps the approved light Halo presentation and fixes the full p
 - Halo selection moves to the newly touched mode immediately, without Safari's grey tap flash.
 - Larger touch targets and a restrained detail-panel transition keep Move, Plan, Spend and People easy to use and visually stable.
 - All four information panels now share one equal-height stack, so the Halo, tab row, page height and bottom navigation do not jump when a mode changes.
+- Move, Plan, Spend and People stay in four equal-width fixed columns; selection cannot resize, translate or overlap a neighbouring tab.
 - Bottom navigation shows only the newly tapped destination while the page opens.
 - More-page rows keep a blue outline while the selected destination opens.
 - One controlled service-worker activation path with automatic reload timeout and a visible Retry state.
@@ -39,7 +40,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-5` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-6` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
