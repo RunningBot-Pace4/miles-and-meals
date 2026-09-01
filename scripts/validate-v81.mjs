@@ -19,7 +19,7 @@ const offlineShell = read("public/offline.html");
 const css = read("src/app/globals.css");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.7"', "v81-or-newer package version missing");
+must(packageJson, '"version": "1.92.8"', "v81-or-newer package version missing");
 must(packageJson, '"v81:check"', "v81 validator command missing");
 
 for (const marker of ["closedTripReadOnlyResponse", "TRIP_CLOSED_READ_ONLY", "Trip is closed and read-only"]) {
@@ -38,6 +38,6 @@ for (const marker of ["repeat(2,minmax(0,1fr))", "@media(max-width:640px)", "OPE
 for (const marker of ["v81 — closed-Trip states", 'input[type="date"]', "grid-template-columns: minmax(0, 1fr) !important"]) {
   must(css, marker, `v81 mobile containment missing: ${marker}`);
 }
-must(worker, 'miles-meals-static-v92-7', "v81-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v92-8', "v81-or-newer service-worker cache bump missing");
 
 console.log("v81 closed-Trip, all-Trip offline and mobile validation passed.");

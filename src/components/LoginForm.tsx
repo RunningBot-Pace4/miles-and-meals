@@ -4,6 +4,7 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { FormEvent, useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { safeInternalPath } from "@/lib/navigation-safety";
+import { PasswordVisibilityIcon } from "@/components/PasswordVisibilityIcon";
 
 export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [error, setError] = useState("");
@@ -92,7 +93,8 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
             aria-label={showPassword ? "Hide password" : "Show password"}
             onClick={() => setShowPassword((value) => !value)}
           >
-            {showPassword ? "Hide" : "Show"}
+            <PasswordVisibilityIcon visible={showPassword} />
+            <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
           </button>
         </span>
       </label>

@@ -1807,3 +1807,294 @@ button[role="tab"][aria-selected="true"] {
   outline: 0 !important;
   box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
 }
+
+/* V92.8 · compact entry and one connected Home -------------------------- */
+
+.password-input-wrap input {
+  padding-right: 3.35rem !important;
+}
+
+.password-toggle,
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  width: 40px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border: 1px solid #dfe1e4 !important;
+  border-radius: 11px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  border-color: var(--v92-blue) !important;
+  background: #f5f9ff !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+.password-toggle svg {
+  pointer-events: none;
+}
+
+.amount-section .compact-fields {
+  gap: 0.75rem !important;
+}
+
+.amount-section .compact-fields :is(select, input[type="date"]),
+.amount-section .description-field input {
+  height: 48px !important;
+  min-height: 48px !important;
+  padding: 0.62rem 0.8rem !important;
+  border-radius: 12px !important;
+  font-size: 0.9rem !important;
+}
+
+.amount-section input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.amount-section .category-grid {
+  gap: 0.55rem !important;
+}
+
+.amount-section .category-chip {
+  height: 58px !important;
+  min-height: 58px !important;
+  display: grid !important;
+  grid-template-columns: auto auto !important;
+  place-content: center !important;
+  gap: 0.45rem !important;
+  padding: 0.45rem 0.65rem !important;
+  border-radius: 13px !important;
+}
+
+.amount-section .category-chip[aria-pressed="true"] {
+  border-color: var(--v92-blue) !important;
+  color: var(--v92-ink) !important;
+  background: #f5f9ff !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+.amount-section .category-icon {
+  font-size: 1rem !important;
+}
+
+.split-preset-details {
+  overflow: hidden;
+  border: 1px solid var(--v92-line);
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.split-preset-details > summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.split-preset-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.split-preset-details > summary > span:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.split-preset-details > summary strong {
+  color: var(--v92-ink);
+  font-size: 0.8rem;
+}
+
+.split-preset-details > summary small {
+  color: var(--v92-muted);
+  font-size: 0.66rem;
+  font-weight: 650;
+}
+
+.split-preset-details > summary > span:last-child {
+  transition: transform 140ms ease;
+}
+
+.split-preset-details[open] > summary {
+  border-bottom: 1px solid var(--v92-line);
+}
+
+.split-preset-details[open] > summary > span:last-child {
+  transform: rotate(180deg);
+}
+
+.split-preset-details .split-preset-bar {
+  padding: 0.85rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: white !important;
+}
+
+.settlement-panel > .panel-title {
+  justify-content: flex-start !important;
+}
+
+.settlement-panel > .panel-title > div {
+  margin-right: auto;
+}
+
+.settlement-status-row {
+  grid-template-columns: 38px minmax(0, 1fr) max-content !important;
+  grid-template-areas:
+    "icon copy amount"
+    ". action action" !important;
+}
+
+.settlement-status-icon { grid-area: icon !important; }
+.settlement-status-copy { grid-area: copy !important; }
+.settlement-amount { grid-area: amount !important; }
+
+.settlement-action-wrap {
+  grid-area: action !important;
+  grid-column: auto !important;
+  width: 100%;
+  min-width: 0 !important;
+}
+
+.settlement-partial-amount,
+.settlement-partial-amount > span {
+  width: 100%;
+  min-width: 0;
+}
+
+.settlement-partial-amount > span:last-of-type {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.settlement-partial-amount b {
+  padding-inline: 0.7rem 0 !important;
+  white-space: nowrap;
+}
+
+.settlement-partial-amount input {
+  width: 100% !important;
+}
+
+.journey-context-strip {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(300px, 1fr);
+  gap: 0.75rem;
+  align-items: stretch;
+  margin-top: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--v92-line);
+  border-radius: 14px;
+  background: #fafafa;
+}
+
+.journey-context-strip .destination-switcher {
+  align-self: center;
+  margin: 0 !important;
+}
+
+.journey-wallet-summary {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.3rem 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--v92-line);
+  border-radius: 12px;
+  background: white;
+}
+
+.journey-wallet-summary > span {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.journey-wallet-summary small {
+  color: var(--v92-muted);
+  font-size: 0.63rem;
+  font-weight: 700;
+}
+
+.journey-wallet-summary strong {
+  overflow: hidden;
+  color: var(--v92-ink);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-wallet-progress {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 0.2rem;
+  border-radius: 999px;
+  background: #e8e9eb;
+}
+
+.journey-wallet-progress > span {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: var(--v92-teal);
+}
+
+@media (min-width: 760px) {
+  .settlement-status-row {
+    grid-template-columns: 38px minmax(220px, 1fr) max-content minmax(240px, 300px) !important;
+    grid-template-areas: "icon copy amount action" !important;
+  }
+}
+
+@media (max-width: 759px) {
+  .journey-context-strip {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.65rem;
+  }
+
+  .split-preset-details .split-preset-bar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .settlement-status-row {
+    grid-template-columns: 38px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "icon copy"
+      ". amount"
+      ". action" !important;
+  }
+
+  .settlement-amount {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .amount-section .compact-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .amount-section .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .amount-section .category-chip {
+    justify-content: start !important;
+  }
+}

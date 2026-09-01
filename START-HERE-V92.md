@@ -1,6 +1,6 @@
-# Miles & Meals V92.7 · Isolated Living Journey Controls
+# Miles & Meals V92.8 · Connected Home and Usability Pass
 
-Version `1.92.7` keeps the approved light Halo presentation and fixes both the information-panel reflow and the changing tab spacing shown when switching Move, Plan, Spend and People.
+Version `1.92.8` keeps the approved light Living Journey design while making expense entry, settlement and the Home command centre more compact, understandable and data-rich.
 
 ## What changed
 
@@ -29,6 +29,13 @@ Version `1.92.7` keeps the approved light Halo presentation and fixes both the i
 - Optional remembered email and persistent session; passwords remain with the device/browser password manager and are never stored by the app.
 - One sign-in loading state instead of an overlay followed by a second loader.
 - Node.js 24 matches the Vercel project setting, removing the engine-override warning.
+- Compact 48 px date, Trip and description controls replace the oversized expense-entry fields.
+- Expense categories expose their real selected state with the requested blue outline.
+- Password visibility uses an accessible eye/eye-off icon instead of Show/Hide wording.
+- Saved traveller splits are now an optional collapsed shortcut with a clear explanation.
+- Settlement rows keep names, amount, currency and payment controls in stable responsive columns.
+- The Halo uses full-Trip wallet totals while retaining today's context, so existing spending no longer appears missing.
+- The redundant lower yellow Home hero is removed; its trip selector, dates and wallet data now live inside the top command centre.
 
 ## Database
 
@@ -41,7 +48,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-7` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-8` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

@@ -2,11 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
+import { TripQuickSelect } from "@/components/TripQuickSelect";
 import { formatMoney } from "@/lib/money";
 
 type JourneyMode = "move" | "plan" | "spend" | "people";
 
 type LivingJourneyHaloProps = {
+  tripName: string;
+  tripDateLabel: string;
+  tripSummary: string;
+  tripOptions: { id: string; name: string }[];
+  selectedTripId: string;
+  viewAll: boolean;
   initialMode: JourneyMode;
   stage: "BEFORE" | "DURING" | "AFTER" | "CLOSED";
   nextTitle: string;
@@ -16,6 +23,9 @@ type LivingJourneyHaloProps = {
   openTaskCount: number;
   todayMyShare: number;
   todayGroupSpend: number;
+  tripGroupSpend: number;
+  myShareSpent: number;
+  myBudget: number;
   dailyAllowance: number;
   projectedSpend: number;
   myRemaining: number;
@@ -45,6 +55,9 @@ function stageLabel(stage: LivingJourneyHaloProps["stage"]): string {
 
 export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
   const [activeMode, setActiveMode] = useState<JourneyMode>(props.initialMode);
+  const budgetPercent = props.myBudget > 0
+    ? Math.min(100, Math.max(0, (props.myShareSpent / props.myBudget) * 100))
+    : 0;
 
   const content = useMemo(() => ({
     move: {
@@ -83,8 +96,8 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
     },
     spend: {
       eyebrow: "SPEND · TRIP WALLET",
-      title: formatMoney(props.todayMyShare, props.baseCurrency),
-      summary: `Your share today · group total ${formatMoney(props.todayGroupSpend, props.baseCurrency)}.`,
+      title: formatMoney(props.myShareSpent, props.baseCurrency),
+      summary: `Group total ${formatMoney(props.tripGroupSpend, props.baseCurrency)} · today you shared ${formatMoney(props.todayMyShare, props.baseCurrency)} of ${formatMoney(props.todayGroupSpend, props.baseCurrency)}.`,
       insight: props.myRemaining < 0
         ? `You are ${formatMoney(Math.abs(props.myRemaining), props.baseCurrency)} above your personal budget.`
         : `${formatMoney(props.myRemaining, props.baseCurrency)} remains in your personal budget.`,
@@ -126,13 +139,36 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
       <div className="living-journey-heading">
         <div>
           <p className="eyebrow">TRIP COMMAND CENTRE</p>
-          <h2 id="living-journey-title">Everything connected. One trip.</h2>
-          <p>Tap the Halo to see what matters now—without searching through the app.</p>
+          <h2 id="living-journey-title">{props.tripName}</h2>
+          <p>{props.tripDateLabel} · {props.tripSummary}</p>
         </div>
         <span className={`journey-stage ${props.stage.toLowerCase()}`}>
           <i aria-hidden="true" />
           {stageLabel(props.stage)}
         </span>
+      </div>
+
+      <div className="journey-context-strip">
+        <TripQuickSelect
+          trips={props.tripOptions}
+          selectedId={props.selectedTripId}
+          viewAll={props.viewAll}
+        />
+
+        <div className="journey-wallet-summary">
+          <span>
+            <small>My share spent</small>
+            <strong>{formatMoney(props.myShareSpent, props.baseCurrency)}</strong>
+          </span>
+          <span>
+            <small>Personal budget</small>
+            <strong>{formatMoney(props.myBudget, props.baseCurrency)}</strong>
+          </span>
+          <div className="journey-wallet-progress" aria-label={`${budgetPercent.toFixed(0)}% of personal budget used`}>
+            <span style={{ width: `${budgetPercent}%` }} />
+          </div>
+          <small>{props.myBudget > 0 ? `${budgetPercent.toFixed(0)}% used` : "Add a budget to track progress"}</small>
+        </div>
       </div>
 
       <div className="living-journey-grid">

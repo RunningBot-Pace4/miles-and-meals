@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
+import { PasswordVisibilityIcon } from "@/components/PasswordVisibilityIcon";
 
 export function ChangePasswordForm({
   forceChange = false,
@@ -109,9 +110,11 @@ export function ChangePasswordForm({
             className="password-toggle"
             type="button"
             aria-pressed={showPasswords}
+            aria-label={showPasswords ? "Hide passwords" : "Show passwords"}
             onClick={() => setShowPasswords((value) => !value)}
           >
-            {showPasswords ? "Hide" : "Show"}
+            <PasswordVisibilityIcon visible={showPasswords} />
+            <span className="sr-only">{showPasswords ? "Hide passwords" : "Show passwords"}</span>
           </button>
         </span>
       </label>

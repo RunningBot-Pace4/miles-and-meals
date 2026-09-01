@@ -35,7 +35,7 @@ const css = read("src/app/globals.css");
 const unitTests = read("tests/v85-combined.test.ts");
 const e2e = read("e2e/mobile-v85-combined.spec.ts");
 
-must(packageJson, '"version": "1.92.7"', "v85-or-newer package version missing");
+must(packageJson, '"version": "1.92.8"', "v85-or-newer package version missing");
 must(packageJson, '"v85:check"', "v85 release validator command missing");
 
 for (const marker of [
@@ -70,8 +70,11 @@ for (const file of ["src/app/api/travel-items/reorder/route.ts", "src/app/api/tr
   if (!fs.existsSync(file)) throw new Error(`planner endpoint missing: ${file}`);
 }
 
-for (const marker of ["Multiple payers", 'value: "SHARES"', "Saved split", "receiptReviewStatus"]) {
+for (const marker of ["Multiple payers", 'value: "SHARES"', "receiptReviewStatus"]) {
   must(expenseForm, marker, `expense workflow missing: ${marker}`);
+}
+if (!expenseForm.includes("Saved split") && !expenseForm.includes("Apply saved group")) {
+  throw new Error("expense workflow missing: reusable saved split group");
 }
 must(payerLogic, "Payer contributions must total", "multi-payer balancing is not enforced");
 must(validation, '"SHARES"', "weighted shares validation missing");

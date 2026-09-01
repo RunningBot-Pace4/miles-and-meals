@@ -1957,7 +1957,7 @@ export function ExpenseForm({
             </select>
           </label>
 
-          <label>
+          <label className="expense-date-field">
             Date
             <input
               name="expenseDate"
@@ -1992,6 +1992,7 @@ export function ExpenseForm({
               <button
                 className={category === item.value ? "category-chip active" : "category-chip"}
                 key={item.value}
+                aria-pressed={category === item.value}
                 onClick={() => {
                   setCategory(item.value);
                   markFormEdited();
@@ -2282,42 +2283,54 @@ export function ExpenseForm({
           )}
         </div>
 
-        <div className="split-preset-bar">
-          <label>
-            Saved split
-            <select
-              defaultValue=""
-              onChange={(event) => {
-                applySplitPreset(event.target.value);
-                event.currentTarget.value = "";
-              }}
-            >
-              <option value="">Choose a saved group…</option>
-              {splitPresets.map((preset) => (
-                <option value={preset.id} key={preset.id}>{preset.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Save current split
-            <span className="split-preset-save">
-              <input
-                value={presetName}
-                onChange={(event) => setPresetName(event.target.value)}
-                maxLength={80}
-                placeholder="Family, roommates…"
-              />
-              <button
-                className="button secondary"
-                type="button"
-                disabled={presetBusy || !presetName.trim() || !splitStatus.valid}
-                onClick={() => void saveSplitPreset()}
-              >
-                {presetBusy ? "Saving…" : "Save"}
-              </button>
+        <details className="split-preset-details">
+          <summary>
+            <span>
+              <strong>Reuse a traveller group</strong>
+              <small>Optional · remembers who shares, not the amount</small>
             </span>
-          </label>
-        </div>
+            <span aria-hidden="true">⌄</span>
+          </summary>
+          <div className="split-preset-bar">
+            <label>
+              Apply saved group
+              <select
+                defaultValue=""
+                disabled={splitPresets.length === 0}
+                onChange={(event) => {
+                  applySplitPreset(event.target.value);
+                  event.currentTarget.value = "";
+                }}
+              >
+                <option value="">
+                  {splitPresets.length ? "Choose a group…" : "No saved groups yet"}
+                </option>
+                {splitPresets.map((preset) => (
+                  <option value={preset.id} key={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Save selected travellers
+              <span className="split-preset-save">
+                <input
+                  value={presetName}
+                  onChange={(event) => setPresetName(event.target.value)}
+                  maxLength={80}
+                  placeholder="Family, roommates…"
+                />
+                <button
+                  className="button secondary"
+                  type="button"
+                  disabled={presetBusy || !presetName.trim() || !splitStatus.valid}
+                  onClick={() => void saveSplitPreset()}
+                >
+                  {presetBusy ? "Saving…" : "Save group"}
+                </button>
+              </span>
+            </label>
+          </div>
+        </details>
 
         <div className="split-heading-row">
           <span className="field-label">Split with</span>

@@ -701,6 +701,9 @@ const tripBudgetFormV46 = read(
 const dashboardV46 = read(
   "src/app/(app)/dashboard/page.tsx",
 );
+const livingJourneyV92 = read(
+  "src/components/LivingJourneyHalo.tsx",
+);
 const dashboardFinanceV46 = read(
   "src/components/LiveDashboardFinance.tsx",
 );
@@ -776,8 +779,13 @@ for (const marker of [
 }
 
 if (
-  !dashboardV46.includes(
-    "TripQuickSelect",
+  !(
+    dashboardV46.includes(
+      "TripQuickSelect",
+    ) ||
+    livingJourneyV92.includes(
+      "TripQuickSelect",
+    )
   ) ||
   !dashboardV46.includes(
     "loadTripBudgetSummary",

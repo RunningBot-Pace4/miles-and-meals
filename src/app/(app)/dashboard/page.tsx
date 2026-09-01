@@ -3,7 +3,6 @@ import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
 import { LivingJourneyStarter } from "@/components/LivingJourneyStarter";
-import { TripQuickSelect } from "@/components/TripQuickSelect";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
@@ -21,45 +20,6 @@ import {
   loadTripBudgetSummary,
 } from "@/lib/trip-budget";
 import { loadTripCommandCenter } from "@/lib/trip-command-center";
-
-function StyledTripTitle({
-  text,
-}: {
-  text: string;
-}) {
-  const match = text.match(
-    /^(.*?)(?:\s+(\d{4}))?(?:\s+(\(.+\)))?$/,
-  );
-
-  const name =
-    match?.[1]?.trim() ||
-    text;
-  const year =
-    match?.[2] ?? "";
-  const note =
-    match?.[3] ?? "";
-
-  return (
-    <span
-      className="travel-title-editorial"
-      aria-label={text}
-    >
-      <span className="travel-title-name">
-        {name}
-      </span>
-      {year ? (
-        <span className="travel-title-year">
-          {year}
-        </span>
-      ) : null}
-      {note ? (
-        <span className="travel-title-note">
-          {note}
-        </span>
-      ) : null}
-    </span>
-  );
-}
 
 function formatTripDateRange(
   startDate:
@@ -266,17 +226,6 @@ export default async function DashboardPage({
       ? "All trips"
       : selectedTrip?.name ??
         "Plan your next trip";
-  const heroCode =
-    viewAll
-      ? "ALL"
-      : selectedCountries.length ===
-        1
-        ? selectedCountries[0]
-            ?.code ?? "TRIP"
-        : selectedCountries.length >
-            1
-          ? "TRIP"
-          : "NEW";
   const tripDateLabel =
     viewAll
       ? allTripDateLabel
@@ -301,20 +250,6 @@ export default async function DashboardPage({
               : "s"
           } ready`
         : "Create a trip or join a destination";
-  const personalPercent =
-    displayMyBudget > 0
-      ? Math.min(
-          100,
-          Math.max(
-            0,
-            (
-              myShareSpent /
-              displayMyBudget
-            ) * 100,
-          ),
-        )
-      : 0;
-
   const settlementLiveData =
     allTripsData?.settlement ??
     serializeSettlementLiveData(
@@ -515,170 +450,18 @@ export default async function DashboardPage({
         )}
       </section>
 
-      {selectedTrip ? (
-      <section className="hero-card dashboard-hero dashboard-travel-hero living-journey-trip-hero">
-        <div
-          className="living-hero-mark"
-          aria-hidden="true"
-        >
-          <img src="/icons/v92/icon-192.png" width="68" height="68" alt="" />
-          <span>
-            <small>CURRENT TRIP</small>
-            <strong>{commandCenter?.stage ?? heroCode}</strong>
-          </span>
-        </div>
-
-        <div className="hero-main">
-          <div className="travel-destination-block">
-            <p className="eyebrow travel-eyebrow">
-              <span aria-hidden="true">
-                ✦
-              </span>
-              YOUR CURRENT WORLD
-            </p>
-
-            <div className="travel-destination-heading">
-              <div>
-                <small className="travel-destination-label">
-                  Trip
-                </small>
-                <h2 className="travel-title-wrap">
-                  <StyledTripTitle
-                    text={
-                      heroDestination
-                    }
-                  />
-                </h2>
-                <p className="muted-on-dark">
-                  {
-                    heroSecondary
-                  }
-                </p>
-              </div>
-
-              <span className="travel-country-code">
-                {heroCode}
-              </span>
-            </div>
-
-            {selectedTrip ? (
-              <div className="travel-hero-meta">
-                <span>
-                  <b aria-hidden="true">
-                    ◷
-                  </b>
-                  {tripDateLabel}
-                </span>
-                <span>
-                  <b aria-hidden="true">
-                    ⌖
-                  </b>
-                  {viewAll
-                    ? `${allTripsData?.destinationCount ?? activeTrip.allCountries.length} destinations`
-                    : `${selectedCountries.length} destination${
-                        selectedCountries.length === 1 ? "" : "s"
-                      }`}
-                </span>
-              </div>
-            ) : null}
-          </div>
-
-          {tripOptions.length ? (
-            <TripQuickSelect
-              trips={
-                tripOptions
-              }
-              selectedId={
-                requestedTripId
-              }
-              viewAll={viewAll}
-            />
-          ) : null}
-        </div>
-
-        {selectedTrip ? (
-          <div className="hero-budget travel-wallet-card">
-            <div className="travel-wallet-title">
-              <span
-                className="travel-wallet-icon"
-                aria-hidden="true"
-              >
-                ◈
-              </span>
-              <div>
-                <small>
-                  MY WALLET
-                </small>
-                <strong>
-                  {
-                    baseCurrency
-                  }
-                </strong>
-              </div>
-            </div>
-
-            <div className="hero-budget-row">
-              <span>
-                My share spent
-              </span>
-              <strong>
-                {formatMoney(
-                  myShareSpent,
-                  baseCurrency,
-                )}
-              </strong>
-            </div>
-
-            <div
-              className="budget-track"
-              aria-label={`${personalPercent.toFixed(
-                0,
-              )}% of personal budget used`}
-            >
-              <span
-                style={{
-                  width: `${personalPercent}%`,
-                }}
-              />
-            </div>
-
-            <div className="hero-budget-foot">
-              <span>
-                {personalPercent.toFixed(
-                  0,
-                )}
-                % used
-              </span>
-              <span>
-                My budget{" "}
-                {formatMoney(
-                  displayMyBudget,
-                  baseCurrency,
-                )}
-              </span>
-            </div>
-          </div>
-        ) : null}
-
-        <div
-          className="travel-route-decoration"
-          aria-hidden="true"
-        >
-          <span className="travel-route-dot start" />
-          <span className="travel-route-line" />
-          <span className="travel-route-plane">
-            ✈
-          </span>
-          <span className="travel-route-line second" />
-          <span className="travel-route-dot end" />
-        </div>
-      </section>
-      ) : (
+      {!selectedTrip ? (
         <LivingJourneyStarter isAdmin={admin} />
-      )}
+      ) : null}
 
       {selectedTrip && commandCenter ? (
         <LivingJourneyHalo
+          tripName={heroDestination}
+          tripDateLabel={tripDateLabel}
+          tripSummary={heroSecondary}
+          tripOptions={tripOptions.map((trip) => ({ id: trip.id, name: trip.name }))}
+          selectedTripId={requestedTripId}
+          viewAll={viewAll}
           initialMode={commandCenter.stage === "DURING" ? "move" : commandCenter.stage === "BEFORE" ? "plan" : "spend"}
           stage={commandCenter.stage}
           nextTitle={commandCenter.nextItem?.title ?? "No upcoming plan"}
@@ -690,6 +473,9 @@ export default async function DashboardPage({
           openTaskCount={commandCenter.openTaskCount}
           todayMyShare={commandCenter.todayMyShare}
           todayGroupSpend={commandCenter.todayGroupSpend}
+          tripGroupSpend={financeLiveData.total}
+          myShareSpent={myShareSpent}
+          myBudget={displayMyBudget}
           dailyAllowance={commandCenter.dailyAllowance}
           projectedSpend={commandCenter.projectedSpend}
           myRemaining={financeLiveData.myRemaining}

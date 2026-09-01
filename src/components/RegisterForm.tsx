@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import { safeInternalPath } from "@/lib/navigation-safety";
+import { PasswordVisibilityIcon } from "@/components/PasswordVisibilityIcon";
 
 export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
   const [busy, setBusy] = useState(false);
@@ -97,9 +98,11 @@ export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string })
             className="password-toggle"
             type="button"
             aria-pressed={showPassword}
+            aria-label={showPassword ? "Hide password" : "Show password"}
             onClick={() => setShowPassword((value) => !value)}
           >
-            {showPassword ? "Hide" : "Show"}
+            <PasswordVisibilityIcon visible={showPassword} />
+            <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
           </button>
         </span>
       </label>
