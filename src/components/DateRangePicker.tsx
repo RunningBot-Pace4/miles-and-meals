@@ -200,16 +200,12 @@ export function DateRangePicker({
           <small>End</small>
           <strong>{formatDisplayDate(endDate)}</strong>
         </span>
-        <span className="date-range-calendar-icon" aria-hidden="true">▣</span>
+        <span className="date-range-calendar-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+            <path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </span>
       </button>
-      <div className="date-range-guidance" aria-live="polite">
-        <span className={startDate ? "done" : "active"}><b>1</b> Start</span>
-        <span aria-hidden="true">→</span>
-        <span className={endDate ? "done" : startDate ? "active" : ""}><b>2</b> End</span>
-      </div>
-      <small className="date-range-help">
-        Tap one day for the start, then tap another day for the end. The dates between them are highlighted automatically.
-      </small>
 
       {open ? (
         <section
@@ -228,6 +224,13 @@ export function DateRangePicker({
             <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month">›</button>
           </div>
 
+          <div className="date-range-instruction" aria-live="polite">
+            <span className={startDate ? "done" : "active"}><b>{startDate ? "✓" : "1"}</b> Start</span>
+            <span aria-hidden="true">→</span>
+            <span className={endDate ? "done" : startDate ? "active" : ""}><b>{endDate ? "✓" : "2"}</b> End</span>
+            <small>{pickingEnd && startDate ? "Tap the final day" : "Tap the first day"}</small>
+          </div>
+
           <div className="date-range-weekdays" aria-hidden="true">
             {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}
           </div>
@@ -242,9 +245,11 @@ export function DateRangePicker({
                 start && end && time > startOfDay(start) && time < startOfDay(end),
               );
               const outside = date.getMonth() !== viewMonth.getMonth();
+              const isToday = sameDay(date, new Date());
               const classes = [
                 "date-range-day",
                 outside ? "outside" : "",
+                isToday ? "today" : "",
                 inRange ? "in-range" : "",
                 isStart ? "selected start" : "",
                 isEnd ? "selected end" : "",
@@ -275,7 +280,7 @@ export function DateRangePicker({
             <div className="date-range-foot-actions">
               <button className="text-button" type="button" onClick={() => choose(new Date())}>Today</button>
               <button className="text-button" type="button" onClick={clearRange}>Clear dates</button>
-              <button className="text-button" type="button" onClick={() => setOpen(false)}>Close</button>
+              <button className="text-button date-range-done" type="button" onClick={() => setOpen(false)}>Done</button>
             </div>
             <span>{startDate ? formatDisplayDate(startDate) : "Start"} → {endDate ? formatDisplayDate(endDate) : "End"}</span>
           </div>

@@ -38,12 +38,14 @@ if (settlementSelect.includes(">\n          View trip\n")) {
 must(settlementPage, "Choose a trip and it opens instantly", "v78 Settle Up instant-selection guidance missing");
 
 for (const marker of [
-  "Tap one day for the start, then tap another day for the end.",
   "Now choose the end date",
   "date-range-grid",
   'startName ? <input type="hidden"',
 ]) {
   must(dateRange, marker, `v78 range calendar missing: ${marker}`);
+}
+if (!dateRange.includes("Tap one day for the start, then tap another day for the end.") && !dateRange.includes('className="date-range-instruction"')) {
+  throw new Error("v78 range calendar is missing start/end selection guidance");
 }
 for (const source of [tripManager, adminForms, adminOverview, journeyManager]) {
   must(source, "DateRangePicker", "v78 trip/journey date editor has not been upgraded to the range picker");

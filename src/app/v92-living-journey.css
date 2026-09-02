@@ -2098,3 +2098,391 @@ button[role="tab"][aria-selected="true"] {
     justify-content: start !important;
   }
 }
+
+/* V92.9 · calendar system and complete PWA alignment --------------------- */
+
+:where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"]) {
+  box-sizing: border-box !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0.58rem 0.72rem !important;
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 12px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  box-shadow: none !important;
+  color-scheme: light !important;
+}
+
+:where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"]):focus {
+  border-color: var(--v92-blue) !important;
+  outline: 0 !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+:where(input[type="date"], input[type="time"], input[type="datetime-local"], input[type="month"])::-webkit-calendar-picker-indicator {
+  width: 20px !important;
+  height: 20px !important;
+  flex: 0 0 20px !important;
+  margin: 0 0 0 0.45rem !important;
+  opacity: 0.72;
+  cursor: pointer;
+}
+
+.date-range-picker {
+  gap: 0.35rem !important;
+}
+
+.date-range-label {
+  font-size: 0.72rem !important;
+}
+
+.date-range-trigger {
+  min-height: 52px !important;
+  gap: 0.5rem !important;
+  padding: 0.48rem 0.62rem !important;
+  border-color: var(--v92-line) !important;
+  border-radius: 12px !important;
+  background: white !important;
+  box-shadow: none !important;
+}
+
+.date-range-trigger:hover,
+.date-range-trigger:focus-visible,
+.date-range-trigger[aria-expanded="true"] {
+  border-color: var(--v92-blue) !important;
+  outline: 0 !important;
+  background: #f8fbff !important;
+  box-shadow: inset 0 0 0 1px var(--v92-blue) !important;
+}
+
+.date-range-value {
+  gap: 0.05rem !important;
+}
+
+.date-range-value small {
+  font-size: 0.58rem !important;
+}
+
+.date-range-value strong {
+  color: var(--v92-muted) !important;
+  font-size: 0.76rem !important;
+  font-weight: 750 !important;
+  line-height: 1.15 !important;
+}
+
+.date-range-value.filled strong {
+  color: var(--v92-ink) !important;
+}
+
+.date-range-calendar-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  color: var(--v92-blue) !important;
+  background: #eef5ff !important;
+}
+
+.date-range-popover {
+  width: min(100%, 430px) !important;
+  gap: 0.48rem !important;
+  padding: 0.7rem !important;
+  border-color: var(--v92-line) !important;
+  border-radius: 16px !important;
+  background: white !important;
+  box-shadow: 0 18px 44px rgb(20 24 31 / 12%) !important;
+}
+
+.date-range-popover-head {
+  grid-template-columns: 36px minmax(0, 1fr) 36px !important;
+}
+
+.date-range-popover-head button {
+  width: 36px !important;
+  height: 36px !important;
+  border-color: var(--v92-line) !important;
+  border-radius: 10px !important;
+  color: var(--v92-ink) !important;
+}
+
+.date-range-popover-head strong {
+  color: var(--v92-ink) !important;
+  font-size: 0.84rem !important;
+}
+
+.date-range-instruction {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto auto minmax(0, 1fr);
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.42rem 0.5rem;
+  border-radius: 10px;
+  color: var(--v92-muted);
+  background: #f6f7f9;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.date-range-instruction > span:not([aria-hidden]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  white-space: nowrap;
+}
+
+.date-range-instruction b {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8dbe0;
+  border-radius: 50%;
+  color: var(--v92-muted);
+  background: white;
+  font-size: 0.58rem;
+}
+
+.date-range-instruction .active {
+  color: var(--v92-ink);
+}
+
+.date-range-instruction .active b,
+.date-range-instruction .done b {
+  border-color: var(--v92-blue);
+  color: white;
+  background: var(--v92-blue);
+}
+
+.date-range-instruction small {
+  min-width: 0;
+  justify-self: end;
+  overflow: hidden;
+  color: var(--v92-muted);
+  font-size: 0.6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-range-weekdays span {
+  font-size: 0.55rem !important;
+}
+
+.date-range-day {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  font-size: 0.7rem !important;
+}
+
+.date-range-day.today:not(.selected) {
+  box-shadow: inset 0 0 0 1px var(--v92-blue);
+}
+
+.date-range-day.in-range {
+  border-radius: 0 !important;
+  color: var(--v92-ink) !important;
+  background: #eaf3ff !important;
+}
+
+.date-range-day.selected {
+  color: white !important;
+  background: var(--v92-blue) !important;
+  box-shadow: none !important;
+}
+
+.date-range-popover-foot {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.date-range-foot-actions {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.date-range-foot-actions .text-button {
+  min-height: 34px !important;
+  padding: 0.35rem 0.55rem !important;
+  border: 1px solid var(--v92-line) !important;
+  border-radius: 9px !important;
+  color: var(--v92-ink) !important;
+  background: white !important;
+}
+
+.date-range-foot-actions .date-range-done {
+  border-color: var(--v92-blue) !important;
+  color: white !important;
+  background: var(--v92-blue) !important;
+}
+
+.settlement-partial-amount > span:first-child {
+  width: auto !important;
+  min-width: 0 !important;
+  display: block !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--v92-ink) !important;
+  background: transparent !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+}
+
+.settlement-partial-amount > span:nth-child(2) {
+  min-height: 46px;
+}
+
+.settlement-partial-amount small {
+  max-width: none !important;
+  color: var(--v92-muted) !important;
+  font-size: 0.65rem !important;
+  line-height: 1.35 !important;
+}
+
+@media (max-width: 759px) {
+  .settlement-status-list,
+  .settlement-status-row {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .settlement-status-row {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    gap: 0.55rem 0.7rem !important;
+    align-items: start !important;
+    padding: 0.78rem !important;
+  }
+
+  .settlement-status-icon {
+    grid-area: auto !important;
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+  }
+
+  .settlement-status-copy {
+    grid-area: auto !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .settlement-amount {
+    grid-area: auto !important;
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    justify-self: start !important;
+  }
+
+  .settlement-action-wrap {
+    grid-area: auto !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin-top: 0.2rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--v92-line);
+  }
+
+  .settlement-partial-amount,
+  .settlement-partial-amount > span,
+  .settlement-action-button {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .settlement-partial-amount > span:nth-child(2) {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+  }
+
+  .settlement-action-button {
+    min-height: 46px !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 430px) {
+  :where(
+    .page-container,
+    .page-container > *,
+    .panel,
+    .panel > *,
+    .card,
+    .card > *,
+    .settlement-status-list,
+    .settlement-status-row,
+    .settlement-action-wrap,
+    .date-range-picker,
+    .date-range-popover,
+    .form-grid,
+    .two-col,
+    .three-col
+  ) {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  :where(input, select, textarea, button, .button) {
+    box-sizing: border-box !important;
+  }
+
+  .date-range-trigger {
+    grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr) 32px !important;
+  }
+
+  .date-range-popover {
+    padding: 0.58rem !important;
+    border-radius: 14px !important;
+  }
+
+  .date-range-day {
+    min-height: 34px !important;
+  }
+
+  .date-range-popover-foot {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .date-range-popover-foot > span {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .date-range-trigger {
+    grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr) !important;
+    gap: 0.32rem !important;
+    padding-inline: 0.52rem !important;
+  }
+
+  .date-range-calendar-icon {
+    display: none !important;
+  }
+
+  .date-range-instruction {
+    grid-template-columns: auto auto auto !important;
+  }
+
+  .date-range-instruction small {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .date-range-day {
+    min-height: 32px !important;
+    font-size: 0.66rem !important;
+  }
+}

@@ -29,9 +29,9 @@ const queueTests = read("tests/offline-queue.test.ts");
 const e2e = read("e2e/mobile-v90-market-audit.spec.ts");
 const scorecard = read("V90-COMBINED-WORLD-CLASS-TARGET.md");
 
-must(packageJson, '"version": "1.92.8"', "V90-or-newer package version missing");
+must(packageJson, '"version": "1.92.9"', "V90-or-newer package version missing");
 must(packageJson, '"v90:check"', "V90 validator command missing");
-must(read("public/sw.js"), "miles-meals-static-v92-8", "V90-or-newer service-worker cache was not bumped");
+must(read("public/sw.js"), "miles-meals-static-v92-9", "V90-or-newer service-worker cache was not bumped");
 
 for (const marker of ["tripMemberPermissions", "tripDocuments", "tripEmergencyContacts", "tripMemories"]) {
   must(schema, marker, `V90 schema marker missing: ${marker}`);

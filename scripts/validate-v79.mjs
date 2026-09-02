@@ -18,9 +18,9 @@ const mobileE2e = read("e2e/mobile-v78-pwa-audit.spec.ts");
 const offlineTests = read("tests/offline-queue.test.ts");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.8"', "v79-or-newer package version missing");
+must(packageJson, '"version": "1.92.9"', "v79-or-newer package version missing");
 must(packageJson, '"v79:check"', "v79 validator command missing");
-must(worker, 'miles-meals-static-v92-8', "v79-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v92-9', "v79-or-newer service-worker cache bump missing");
 
 for (const marker of [
   "v79 — complete responsive control",
@@ -37,9 +37,11 @@ for (const marker of [
   "togglePicker",
   'aria-modal="false"',
   "aria-controls={calendarId}",
-  ">Close</button>",
 ]) {
   must(dateRange, marker, `v79 in-flow date calendar missing: ${marker}`);
+}
+if (!dateRange.includes(">Close</button>") && !dateRange.includes(">Done</button>")) {
+  throw new Error("v79 in-flow date calendar is missing its close/done action");
 }
 
 must(
