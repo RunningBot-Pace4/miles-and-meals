@@ -1,5 +1,9 @@
 import type { ParsedReceipt } from "@/lib/receipt-parser";
 import { parseReceiptText } from "@/lib/receipt-parser";
+import {
+  findReceiptBounds,
+  type ReceiptBounds,
+} from "@/lib/receipt-crop";
 
 export type OcrProgress = {
   status: string;
@@ -295,29 +299,141 @@ function cropCanvas(
   return canvas;
 }
 
+function detectReceiptCrop(
+  decoded: DecodedReceiptImage,
+): ReceiptBounds | null {
+  const analysisMaxSide = 720;
+  const analysisScale = Math.min(
+    1,
+    analysisMaxSide /
+      Math.max(
+        decoded.width,
+        decoded.height,
+      ),
+  );
+  const analysisWidth = Math.max(
+    1,
+    Math.round(
+      decoded.width * analysisScale,
+    ),
+  );
+  const analysisHeight = Math.max(
+    1,
+    Math.round(
+      decoded.height * analysisScale,
+    ),
+  );
+  const { canvas, context } = createCanvas(
+    analysisWidth,
+    analysisHeight,
+  );
+
+  context.drawImage(
+    decoded.source,
+    0,
+    0,
+    analysisWidth,
+    analysisHeight,
+  );
+
+  const image = context.getImageData(
+    0,
+    0,
+    analysisWidth,
+    analysisHeight,
+  );
+  const luminance = new Uint8Array(
+    analysisWidth * analysisHeight,
+  );
+
+  for (
+    let sourceIndex = 0,
+      pixelIndex = 0;
+    sourceIndex < image.data.length;
+    sourceIndex += 4,
+      pixelIndex += 1
+  ) {
+    luminance[pixelIndex] = Math.round(
+      image.data[sourceIndex] * 0.299 +
+        image.data[sourceIndex + 1] *
+          0.587 +
+        image.data[sourceIndex + 2] *
+          0.114,
+    );
+  }
+
+  const bounds = findReceiptBounds(
+    luminance,
+    analysisWidth,
+    analysisHeight,
+  );
+
+  if (!bounds) {
+    return null;
+  }
+
+  const scaleX =
+    decoded.width / analysisWidth;
+  const scaleY =
+    decoded.height / analysisHeight;
+  const x = Math.max(
+    0,
+    Math.floor(bounds.x * scaleX),
+  );
+  const y = Math.max(
+    0,
+    Math.floor(bounds.y * scaleY),
+  );
+  const right = Math.min(
+    decoded.width,
+    Math.ceil(
+      (bounds.x + bounds.width) * scaleX,
+    ),
+  );
+  const bottom = Math.min(
+    decoded.height,
+    Math.ceil(
+      (bounds.y + bounds.height) *
+        scaleY,
+    ),
+  );
+
+  return {
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+  };
+}
+
 async function preprocessReceiptImage(
   file: File,
 ): Promise<PreparedReceipt> {
   const decoded = await decodeReceiptImage(file);
 
   try {
-    const maxSide = 2600;
+    const crop = detectReceiptCrop(decoded);
+    const sourceWidth =
+      crop?.width ?? decoded.width;
+    const sourceHeight =
+      crop?.height ?? decoded.height;
+    const maxSide = 3600;
     const scale = Math.min(
-      2.2,
+      2.6,
       maxSide /
         Math.max(
-          decoded.width,
-          decoded.height,
+          sourceWidth,
+          sourceHeight,
         ),
     );
 
     const width = Math.max(
       1,
-      Math.round(decoded.width * scale),
+      Math.round(sourceWidth * scale),
     );
     const height = Math.max(
       1,
-      Math.round(decoded.height * scale),
+      Math.round(sourceHeight * scale),
     );
 
     const { canvas, context } = createCanvas(
@@ -327,6 +443,10 @@ async function preprocessReceiptImage(
 
     context.drawImage(
       decoded.source,
+      crop?.x ?? 0,
+      crop?.y ?? 0,
+      sourceWidth,
+      sourceHeight,
       0,
       0,
       width,
@@ -454,6 +574,11 @@ export async function recognizeReceiptLocally(
     progress: OcrProgress,
   ) => void,
 ): Promise<ParsedReceipt> {
+  onProgress?.({
+    status: "Finding receipt edges",
+    progress: 0,
+  });
+
   const prepared =
     await preprocessReceiptImage(file);
 

@@ -2599,3 +2599,182 @@ button[role="tab"][aria-selected="true"] {
     background-position: 0 0 !important;
   }
 }
+
+/* V92.12 · phone rhythm, real tablet layout and receipt-first PWA polish -- */
+
+.dashboard-recent-activity,
+.dashboard-travel-shortcuts {
+  padding: clamp(0.85rem, 2vw, 1.1rem) !important;
+}
+
+.dashboard-recent-activity > *,
+.dashboard-travel-shortcuts > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 719px) {
+  .dashboard-recent-activity .travel-section-heading,
+  .dashboard-travel-shortcuts .travel-section-heading {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    gap: 0.45rem 0.75rem !important;
+  }
+
+  .dashboard-recent-activity .dashboard-section-link,
+  .dashboard-travel-shortcuts .travel-section-heading > span {
+    align-self: end;
+    justify-self: end;
+    max-width: 9.5rem;
+    margin: 0 0 0.08rem !important;
+    text-align: right;
+    white-space: normal !important;
+  }
+
+  .dashboard-recent-activity .dashboard-section-link {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid #cfd2d7;
+    border-radius: 9px;
+    color: var(--v92-ink) !important;
+    background: white;
+  }
+
+  .dashboard-travel-shortcuts .travel-section-heading > span {
+    color: #8b6b3f !important;
+    font-size: 0.64rem !important;
+    line-height: 1.35;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .page-container {
+    width: 100% !important;
+    padding:
+      1rem
+      clamp(1rem, 2.4vw, 1.5rem)
+      calc(6.9rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .dashboard-page {
+    width: 100%;
+    max-width: none !important;
+  }
+
+  .dashboard-welcome {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    gap: 1rem !important;
+  }
+
+  .dashboard-welcome-copy,
+  .dashboard-welcome-title,
+  .welcome-editorial,
+  .welcome-tagline {
+    justify-self: start !important;
+    margin-inline: 0 !important;
+    text-align: left !important;
+  }
+
+  .dashboard-welcome-title {
+    font-size: clamp(1.8rem, 4.6vw, 2.5rem) !important;
+  }
+
+  .dashboard-add {
+    align-self: end;
+    justify-self: end;
+  }
+
+  .living-journey-shell {
+    width: 100%;
+    padding: clamp(1rem, 2.3vw, 1.35rem) !important;
+  }
+
+  .living-journey-grid {
+    grid-template-columns:
+      minmax(240px, 0.78fr)
+      minmax(0, 1.22fr) !important;
+    gap: clamp(0.9rem, 2vw, 1.35rem) !important;
+    align-items: stretch !important;
+  }
+
+  .journey-halo {
+    width: min(100%, 300px) !important;
+    align-self: center;
+    row-gap: 0.6rem !important;
+  }
+
+  .journey-halo-core {
+    width: clamp(184px, 25vw, 210px) !important;
+    height: clamp(184px, 25vw, 210px) !important;
+    padding: 2rem !important;
+  }
+
+  .journey-mode-switcher {
+    gap: clamp(0.38rem, 1vw, 0.65rem) !important;
+  }
+
+  .journey-mode-switcher > .journey-mode,
+  .journey-mode-switcher > .journey-mode:hover,
+  .journey-mode-switcher > .journey-mode:focus,
+  .journey-mode-switcher > .journey-mode:focus-visible,
+  .journey-mode-switcher > .journey-mode:active,
+  .journey-mode-switcher > .journey-mode[aria-selected="true"] {
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
+  .journey-panel-stack,
+  .journey-live-panel {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .journey-live-panel {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .journey-live-actions {
+    margin-top: auto !important;
+    padding-top: 0.75rem;
+  }
+
+  .travel-section-heading {
+    align-items: end !important;
+    flex-direction: row !important;
+  }
+}
+
+@media (min-width: 720px) and (max-width: 799px) {
+  .journey-context-strip {
+    grid-template-columns:
+      minmax(200px, 0.9fr)
+      minmax(270px, 1.1fr) !important;
+  }
+
+  .journey-live-panel {
+    padding: 0.9rem !important;
+  }
+
+  .journey-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 719px) {
+  .living-journey-grid,
+  .journey-context-strip {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .journey-halo {
+    width: min(100%, 340px) !important;
+  }
+}

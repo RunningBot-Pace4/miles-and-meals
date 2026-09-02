@@ -28,6 +28,10 @@ const routes = [
   "/settings/permissions",
   "/settings/notifications",
   "/more",
+  "/admin",
+  "/admin/backup",
+  "/admin/health",
+  "/admin/insights",
 ];
 
 async function signIn(page: Page) {
@@ -84,11 +88,48 @@ async function auditViewport(page: Page, route: string) {
   expect(issues.nativeDates, `${route}: undersized calendar controls`).toBe(0);
 }
 
-for (const width of [320, 360, 390, 430]) {
+for (const width of [
+  320,
+  360,
+  390,
+  430,
+  600,
+  768,
+  820,
+  1024,
+  1280,
+]) {
   test(`V92.9 full PWA page sweep at ${width}px`, async ({ page }) => {
     test.skip(!email || !password, "Set E2E_EMAIL and E2E_PASSWORD for the authenticated full-PWA audit.");
-    await page.setViewportSize({ width, height: 880 });
+    await page.setViewportSize({
+      width,
+      height: width >= 600 ? 1180 : 880,
+    });
     await signIn(page);
     for (const route of routes) await auditViewport(page, route);
+
+    // Cover data-dependent detail pages whenever the signed-in account has
+    // matching records. These routes cannot be represented by a fixed URL.
+    await page.goto("/expenses");
+    const expenseEditHref = await page
+      .locator('a[href^="/expenses/"][href$="/edit"]')
+      .first()
+      .getAttribute("href")
+      .catch(() => null);
+
+    if (expenseEditHref) {
+      await auditViewport(page, expenseEditHref);
+    }
+
+    await page.goto("/journeys");
+    const journeyHref = await page
+      .locator('a[href^="/journeys/"]')
+      .first()
+      .getAttribute("href")
+      .catch(() => null);
+
+    if (journeyHref) {
+      await auditViewport(page, journeyHref);
+    }
   });
 }

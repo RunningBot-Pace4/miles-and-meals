@@ -1,6 +1,6 @@
-# Miles & Meals V92.11 · Receipt and Money Clarity Repair
+# Miles & Meals V92.12 · Receipt Accuracy and PWA Layout Repair
 
-Version `1.92.11` keeps the approved Living Journey design and V92.10 automatic partial-settlement refresh, then repairs receipt scanning, settlement-state clarity and the missing Expenses summary card.
+Version `1.92.12` keeps the approved light Living Journey design and all V92.11 money-state repairs, then improves receipt isolation and corrects the phone/tablet PWA layout system.
 
 ## What changed
 
@@ -51,6 +51,14 @@ Version `1.92.11` keeps the approved Living Journey design and V92.10 automatic 
 - Failed scans retain the photo and provide a clear **Try scan again** action.
 - Payment-sent rows use blue and payment-due rows use amber, with text badges and stronger left-edge accents for quick recognition.
 - The third Expenses overview card again shows **Settle Up**, payment states and its explanation instead of appearing as an empty white panel.
+- Receipt scanning now detects the bright paper area, removes most table/background pixels and enlarges the actual receipt before OCR.
+- Edge detection fails safely: light or ambiguous photos retain the complete image instead of risking a destructive crop.
+- The OCR working image increases from 2600 to 3600 px on its longest side and still compares enhanced, binary, header and total-area passes.
+- Recent Activity and Travel Shortcuts keep their heading and secondary action on one balanced phone row.
+- Phone section gutters are consistent between headings, activity rows and shortcut cards.
+- 720–1023 px tablets now use a purpose-built two-column Trip Command Centre instead of a stretched, vertically stacked phone layout.
+- Tablet welcome content stays left aligned, the action stays right aligned and the Halo is capped at a comfortable reading size.
+- The full authenticated route audit now covers 320, 360, 390, 430, 600, 768, 820, 1024 and 1280 px layouts.
 
 ## Database
 
@@ -63,7 +71,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-11` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-12` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -71,6 +79,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 ```bash
 npm install
 npm run v92:check
+npm run v92-12:check
 npm test
 npm run build
 ```
