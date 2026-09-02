@@ -1369,10 +1369,22 @@ export function ExpenseForm({
         );
       }
     } catch (caught) {
-      setReceiptMessage(
+      const technicalMessage =
         caught instanceof Error
           ? caught.message
-          : "Unable to read this receipt on this device.",
+          : typeof caught === "string"
+            ? caught
+            : "";
+      const engineUnavailable =
+        /worker|tesseract|traineddata|webassembly|wasm|network error/i.test(
+          technicalMessage,
+        );
+
+      setReceiptMessage(
+        engineUnavailable
+          ? "The receipt reader could not start. Check your connection once, then tap Try scan again."
+          : technicalMessage ||
+              "Unable to read this receipt on this device. Retake it closer, in bright light, then try again.",
       );
     } finally {
       setReceiptScanning(false);
@@ -2462,7 +2474,7 @@ export function ExpenseForm({
                 <strong>{receiptScanStatus || "Reading receipt…"}</strong>
                 <small>
                   {Math.round(receiptScanProgress * 100)}% · First scan can
-                  take longer while the OCR engine downloads.
+                  take longer while the local OCR engine starts.
                 </small>
                 <span className="receipt-ocr-progress-track">
                   <span
@@ -2477,21 +2489,33 @@ export function ExpenseForm({
               </div>
             </div>
           ) : receiptMessage ? (
-            <div
-              className={
-                receiptResult
-                  ? "receipt-ai-status success"
-                  : "receipt-ai-status warning"
-              }
-              role="status"
-            >
-              <span>{receiptResult ? "✓" : "!"}</span>
-              <div>
-                <strong>
-                  {receiptResult ? "Receipt read" : "Could not auto-fill"}
-                </strong>
-                <small>{receiptMessage}</small>
+            <div className="receipt-scan-result">
+              <div
+                className={
+                  receiptResult
+                    ? "receipt-ai-status success"
+                    : "receipt-ai-status warning"
+                }
+                role="status"
+              >
+                <span>{receiptResult ? "✓" : "!"}</span>
+                <div>
+                  <strong>
+                    {receiptResult ? "Receipt read" : "Could not auto-fill"}
+                  </strong>
+                  <small>{receiptMessage}</small>
+                </div>
               </div>
+              {!receiptResult && receiptFile ? (
+                <button
+                  className="receipt-scan-retry"
+                  disabled={receiptScanning || busy}
+                  onClick={() => void analyzeReceipt(receiptFile)}
+                  type="button"
+                >
+                  Try scan again
+                </button>
+              ) : null}
             </div>
           ) : null}
 

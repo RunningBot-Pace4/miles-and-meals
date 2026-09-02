@@ -2486,3 +2486,116 @@ button[role="tab"][aria-selected="true"] {
     font-size: 0.66rem !important;
   }
 }
+
+/* V92.10 · automatic partial-settlement refresh -------------------------- */
+
+.settlement-action-success {
+  display: block;
+  color: var(--v92-teal) !important;
+  font-size: 0.66rem !important;
+  font-weight: 750 !important;
+  line-height: 1.4 !important;
+}
+
+.settlement-action-button:disabled {
+  cursor: wait;
+}
+
+.settlement-action-button:disabled:not(:has(.button-spinner)) {
+  cursor: not-allowed;
+}
+
+/* V92.11 · local receipt OCR and clearer money states -------------------- */
+
+.receipt-scan-result {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.receipt-scan-retry {
+  min-height: 42px;
+  justify-self: start;
+  padding: 0.55rem 0.85rem;
+  border: 1.5px solid var(--v92-blue);
+  border-radius: 10px;
+  color: var(--v92-blue);
+  background: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.receipt-scan-retry:focus-visible,
+.receipt-scan-retry:hover {
+  background: #eef5ff;
+}
+
+.expense-overview-card.settle-link {
+  border-color: #1764c7 !important;
+  color: white !important;
+  background: linear-gradient(145deg, #2f80ed, #1764c7) !important;
+  box-shadow: 0 12px 24px rgb(47 128 237 / 16%) !important;
+}
+
+.expense-overview-card.settle-link > span,
+.expense-overview-card.settle-link > strong,
+.expense-overview-card.settle-link > small {
+  color: white !important;
+}
+
+.settlement-status-row.sent {
+  border-color: #9fc7ff !important;
+  background: linear-gradient(145deg, #fff, #eaf4ff) !important;
+  box-shadow: inset 4px 0 0 #3b82f6 !important;
+}
+
+.settlement-status-row.waiting {
+  border-color: #f0c870 !important;
+  background: linear-gradient(145deg, #fff, #fff4d8) !important;
+  box-shadow: inset 4px 0 0 #e7a522 !important;
+}
+
+.settlement-status-row.sent .settlement-status-icon {
+  color: #1764c7 !important;
+  background: #dbeafe !important;
+}
+
+.settlement-status-row.waiting .settlement-status-icon {
+  color: #8a5200 !important;
+  background: #ffedbd !important;
+}
+
+.settlement-state-pill {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin-top: 0.15rem;
+  padding: 0.18rem 0.48rem;
+  border-radius: 999px;
+  font-size: 0.61rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.settlement-state-pill.sent {
+  color: #1553a6;
+  background: #dbeafe;
+}
+
+.settlement-state-pill.waiting {
+  color: #7a4a00;
+  background: #ffedbd;
+}
+
+@media (max-width: 759px) {
+  .receipt-scan-retry {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .settlement-status-row.sent,
+  .settlement-status-row.waiting {
+    background-position: 0 0 !important;
+  }
+}

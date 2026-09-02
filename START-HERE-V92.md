@@ -1,6 +1,6 @@
-# Miles & Meals V92.9 · Calendar and Complete PWA Alignment
+# Miles & Meals V92.11 · Receipt and Money Clarity Repair
 
-Version `1.92.9` keeps the approved light Living Journey design, standardises every calendar and date control, and fixes the narrow mobile settlement action shown in the installed PWA.
+Version `1.92.11` keeps the approved Living Journey design and V92.10 automatic partial-settlement refresh, then repairs receipt scanning, settlement-state clarity and the missing Expenses summary card.
 
 ## What changed
 
@@ -42,6 +42,15 @@ Version `1.92.9` keeps the approved light Living Journey design, standardises ev
 - Mobile settlement actions now occupy a dedicated full-width row, so Amount, MYR, help text and Mark paid cannot collapse vertically.
 - Representative settlement and calendar layouts are measured at 320, 360, 390 and 430 px as part of the release coverage.
 - An authenticated 24-page PWA sweep checks horizontal containment, collapsed text controls, calendar height and fixed-navigation layouts at all four target widths.
+- Partial payment and receipt actions request an immediate no-cache settlement refresh.
+- The amount field resets to the newly calculated outstanding amount as soon as refreshed data arrives.
+- The action is disabled while the remaining balance refreshes, preventing accidental duplicate submissions.
+- Clear status feedback confirms the partial amount and displays the updated remaining balance without a manual page reload.
+- Receipt OCR worker, core and English/Vietnamese language data now load from Miles & Meals itself, matching the PWA security policy instead of relying on blocked cross-origin workers.
+- iOS/PWA receipt decoding has a normal-image fallback when `createImageBitmap` is unavailable or rejects a camera photo.
+- Failed scans retain the photo and provide a clear **Try scan again** action.
+- Payment-sent rows use blue and payment-due rows use amber, with text badges and stronger left-edge accents for quick recognition.
+- The third Expenses overview card again shows **Settle Up**, payment states and its explanation instead of appearing as an empty white panel.
 
 ## Database
 
@@ -54,7 +63,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-9` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-11` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

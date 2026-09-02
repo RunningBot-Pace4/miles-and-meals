@@ -782,10 +782,11 @@ function SettlementStatus({
                       ? `${payment.fromName} → You`
                       : `${payment.fromName} → ${payment.toName}`}
                 </strong>
+                <span className="settlement-state-pill sent">
+                  Sent · awaiting receipt
+                </span>
                 <small>
-                  {payment.tripName} ·
-                  Payment sent · Waiting
-                  for receiver
+                  {payment.tripName}
                 </small>
               </div>
 
@@ -833,9 +834,11 @@ function SettlementStatus({
                       ? `${transfer.fromName} → You`
                       : `${transfer.fromName} → ${transfer.toName}`}
                 </strong>
+                <span className="settlement-state-pill waiting">
+                  Payment due
+                </span>
                 <small>
-                  {transfer.tripName} ·
-                  Waiting for payment
+                  {transfer.tripName}
                 </small>
               </div>
 

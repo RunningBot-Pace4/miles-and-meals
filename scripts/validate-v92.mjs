@@ -23,7 +23,7 @@ const offline = read("public/offline.html");
 const release = read("START-HERE-V92.md");
 const e2e = read("e2e/mobile-v92-light-design.spec.ts");
 
-must(packageJson, '"version": "1.92.9"', "V92.5 package version missing");
+must(packageJson, '"version": "1.92.11"', "V92.5 package version missing");
 must(packageJson, '"v92:check"', "V92 validation command missing");
 must(packageJson, "npm run v92:check", "V92 validation is not part of prebuild");
 
@@ -103,7 +103,7 @@ for (const icon of manifest.icons) {
 }
 must(layout, "/manifest-v92.webmanifest", "V92 layout manifest missing");
 must(layout, 'statusBarStyle: "default"', "V92 iOS status bar remains dark");
-must(worker, "miles-meals-static-v92-9", "V92.5 service-worker cache missing");
+must(worker, "miles-meals-static-v92-11", "V92.5 service-worker cache missing");
 must(worker, "/icons/v92/icon-192.png", "V92 notification icon path missing");
 must(offline, 'content="#ffffff"', "Offline shell theme is not light");
 must(offline, "/icons/v92/icon-192.png", "Offline shell icon is not V92");

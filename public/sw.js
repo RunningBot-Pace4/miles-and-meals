@@ -1,4 +1,4 @@
-const CACHE_NAME = "miles-meals-static-v92-9";
+const CACHE_NAME = "miles-meals-static-v92-11";
 const OFFLINE_URL = "/offline.html";
 
 const PRECACHE_ASSETS = [
@@ -123,7 +123,8 @@ self.addEventListener("fetch", (event) => {
 
   const staticRequest =
     PRECACHE_ASSETS.includes(url.pathname) ||
-    url.pathname.startsWith("/_next/static/");
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/tesseract/");
 
   if (staticRequest) {
     event.respondWith(handleStaticAsset(request));

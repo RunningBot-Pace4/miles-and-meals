@@ -14,6 +14,64 @@ type PreparedReceipt = {
   bottomBinary: Blob;
 };
 
+type DecodedReceiptImage = {
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  close: () => void;
+};
+
+async function decodeReceiptImage(
+  file: File,
+): Promise<DecodedReceiptImage> {
+  if ("createImageBitmap" in window) {
+    try {
+      const bitmap = await createImageBitmap(file, {
+        imageOrientation: "from-image",
+      });
+
+      return {
+        source: bitmap,
+        width: bitmap.width,
+        height: bitmap.height,
+        close: () => bitmap.close(),
+      };
+    } catch {
+      // Some iOS PWA builds can preview a camera image but cannot decode it
+      // through createImageBitmap. The normal image decoder below is a safe
+      // fallback for those devices.
+    }
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+    image.decoding = "async";
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () =>
+        reject(
+          new Error(
+            "This receipt photo could not be decoded. Retake it using the camera button.",
+          ),
+        );
+      image.src = objectUrl;
+    });
+
+    return {
+      source: image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      close: () => URL.revokeObjectURL(objectUrl),
+    };
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl);
+    throw error;
+  }
+}
+
 function canvasToBlob(
   canvas: HTMLCanvasElement,
   quality: number,
@@ -240,7 +298,7 @@ function cropCanvas(
 async function preprocessReceiptImage(
   file: File,
 ): Promise<PreparedReceipt> {
-  const bitmap = await createImageBitmap(file);
+  const decoded = await decodeReceiptImage(file);
 
   try {
     const maxSide = 2600;
@@ -248,18 +306,18 @@ async function preprocessReceiptImage(
       2.2,
       maxSide /
         Math.max(
-          bitmap.width,
-          bitmap.height,
+          decoded.width,
+          decoded.height,
         ),
     );
 
     const width = Math.max(
       1,
-      Math.round(bitmap.width * scale),
+      Math.round(decoded.width * scale),
     );
     const height = Math.max(
       1,
-      Math.round(bitmap.height * scale),
+      Math.round(decoded.height * scale),
     );
 
     const { canvas, context } = createCanvas(
@@ -268,7 +326,7 @@ async function preprocessReceiptImage(
     );
 
     context.drawImage(
-      bitmap,
+      decoded.source,
       0,
       0,
       width,
@@ -362,7 +420,7 @@ async function preprocessReceiptImage(
       bottomBinary,
     };
   } finally {
-    bitmap.close();
+    decoded.close();
   }
 }
 
@@ -446,9 +504,14 @@ export async function recognizeReceiptLocally(
   };
 
   const worker = await createWorker(
-    "eng",
+    "eng+vie",
     OEM.LSTM_ONLY,
     {
+      workerPath:
+        "/tesseract/worker.min.js",
+      corePath: "/tesseract/core",
+      langPath: "/tesseract/lang",
+      gzip: true,
       logger(message) {
         const range = phaseRanges[phase];
         const localProgress =
