@@ -1,8 +1,8 @@
-# Miles & Meals V92.13 — Mobile Wallet Layout Package
+# Miles & Meals V92.14 — Complete Web/PWA Responsive Package
 
-This is the complete source package, versioned `1.92.13`. It preserves all V92.12 receipt and PWA repairs, then replaces the accidental three-card/two-column wallet gap with a deliberate mobile hierarchy and balanced tablet row.
+This is the complete source package, versioned `1.92.14`. It preserves all earlier V92 repairs, fixes the reported **Quick things to do** compression, and applies a shared responsive contract across dashboard, finance, settlements, expenses, Plan, More, notifications, offline tools, documents, settings and admin screens.
 
-The authenticated route audit covers phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
+The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 

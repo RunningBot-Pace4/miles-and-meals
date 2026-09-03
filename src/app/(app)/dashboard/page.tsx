@@ -328,8 +328,8 @@ export default async function DashboardPage({
     finishedOpenTrips.length > 0
       ? {
           icon: "◎",
-          title: `${finishedOpenTrips.length} finished trip${finishedOpenTrips.length === 1 ? " is" : "s are"} still open for expense changes`,
-          copy: "When everyone has finished adding spending, lock the expense ledger before final settlement.",
+          title: `${finishedOpenTrips.length} completed trip${finishedOpenTrips.length === 1 ? " still accepts" : "s still accept"} expenses`,
+          copy: "Lock the expense ledger once everyone has finished adding spending.",
           href: "/settlements",
         }
       : null,
@@ -337,7 +337,7 @@ export default async function DashboardPage({
       ? {
           icon: "✦",
           title: viewAll
-            ? `Smart settlement ready for ${postTripSmartPlans.length} trip${postTripSmartPlans.length === 1 ? "" : "s"}`
+            ? `Smart settlement ready · ${postTripSmartPlans.length} trip${postTripSmartPlans.length === 1 ? "" : "s"}`
             : `Trip complete · settle in ${smartTransferCount} transfer${smartTransferCount === 1 ? "" : "s"}`,
           copy:
             smartTransfersSaved > 0

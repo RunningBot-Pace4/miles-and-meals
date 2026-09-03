@@ -50,6 +50,14 @@ function dashboardMarkup() {
             <div class="journey-panel-stack"><div class="journey-live-panel is-active"><p class="eyebrow">SPEND · TRIP WALLET</p><h3>RM 177.36</h3><p class="journey-live-summary">Group total RM 722.20 · today you shared RM 0.00.</p><p class="journey-live-insight"><span>✦</span> RM 322.64 remains in your personal budget.</p><dl class="journey-metrics"><div><dt>Daily allowance</dt><dd>RM 0.00</dd></div><div><dt>Projected</dt><dd>RM 177.36</dd></div><div><dt>To settle</dt><dd>RM 145.85</dd></div></dl><div class="journey-live-actions"><a class="button journey-primary">Add quick expense</a><a class="button journey-secondary">Review settlement</a></div></div></div>
           </div>
         </section>
+        <section class="dashboard-action-centre">
+          <div class="travel-section-heading dashboard-action-heading"><div><p class="eyebrow">NEEDS YOUR ATTENTION</p><h2>Quick things to do</h2></div><span>3 open</span></div>
+          <div class="dashboard-action-grid">
+            <a class="dashboard-action-card"><span class="dashboard-action-icon">◎</span><span class="dashboard-action-copy"><strong>1 completed trip still accepts expenses</strong><small>Lock the expense ledger once everyone has finished adding spending.</small></span><span class="dashboard-action-arrow">›</span></a>
+            <a class="dashboard-action-card"><span class="dashboard-action-icon">✦</span><span class="dashboard-action-copy"><strong>Smart settlement ready · 1 trip</strong><small>Netting avoids an unnecessary transfer. Original records stay unchanged.</small></span><span class="dashboard-action-arrow">›</span></a>
+            <a class="dashboard-action-card"><span class="dashboard-action-icon">●</span><span class="dashboard-action-copy"><strong>5 unread notifications</strong><small>See what changed across your trips.</small></span><span class="dashboard-action-arrow">›</span></a>
+          </div>
+        </section>
         <section class="dashboard-budget-section">
           <div class="travel-section-heading compact"><div><p class="eyebrow">MY TRAVEL WALLET</p><h2>Personal budget</h2></div><a class="panel-link">Edit</a></div>
           <div class="stat-grid dashboard-stats travel-stat-grid"><article class="stat-card travel-stat budget"><span class="travel-stat-icon">◈</span><div><span>My budget</span><strong>RM 1,000.00</strong><small>Your own spending target</small></div></article><article class="stat-card travel-stat spent"><span class="travel-stat-icon">◈</span><div><span>My share spent</span><strong>RM 222.40</strong><small>Your personal share</small></div></article><article class="stat-card travel-stat success"><span class="travel-stat-icon">◈</span><div><span>My remaining</span><strong>RM 777.60</strong><small>Available in your wallet</small></div></article></div>
@@ -116,6 +124,30 @@ for (const width of widths) {
       ].map((element) =>
         element.getBoundingClientRect(),
       );
+      const actionHeading = rect(
+        ".dashboard-action-heading > div",
+      );
+      const actionCount = rect(
+        ".dashboard-action-heading > span",
+      );
+      const actionCard = rect(
+        ".dashboard-action-card",
+      );
+      const actionCopy = rect(
+        ".dashboard-action-copy",
+      );
+      const actionArrow = rect(
+        ".dashboard-action-arrow",
+      );
+      const actionTextFits = [
+        ...document.querySelectorAll(
+          ".dashboard-action-copy strong, .dashboard-action-copy small",
+        ),
+      ].every(
+        (element) =>
+          element.scrollWidth <=
+          element.clientWidth + 1,
+      );
 
       return {
         viewport:
@@ -156,6 +188,18 @@ for (const width of widths) {
             budgetCards[0].top -
               budgetCards[2].top,
           ) < 2,
+        actionHeadingSameRow:
+          Math.abs(
+            actionHeading.bottom -
+              actionCount.bottom,
+          ) < 12,
+        actionCopyHasRoom:
+          actionCopy.width >
+          actionCard.width * 0.54,
+        actionArrowInsideCard:
+          actionArrow.right <= actionCard.right + 1 &&
+          actionArrow.left >= actionCard.left - 1,
+        actionTextFits,
       };
     });
 
@@ -167,6 +211,10 @@ for (const width of widths) {
       expect(geometry.activitySameRow).toBe(true);
       expect(geometry.shortcutSameRow).toBe(true);
       expect(geometry.panelIsBelow).toBe(true);
+      expect(geometry.actionHeadingSameRow).toBe(true);
+      expect(geometry.actionCopyHasRoom).toBe(true);
+      expect(geometry.actionArrowInsideCard).toBe(true);
+      expect(geometry.actionTextFits).toBe(true);
     }
 
     if (width <= 640) {

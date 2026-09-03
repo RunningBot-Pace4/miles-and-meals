@@ -1,6 +1,6 @@
-# Miles & Meals V92.13 · Mobile Wallet Layout Repair
+# Miles & Meals V92.14 · Complete Web/PWA Responsive Repair
 
-Version `1.92.13` keeps the approved light Living Journey design and all V92.12 receipt/PWA repairs, then corrects the remaining three-card wallet layout on phones and tablets.
+Version `1.92.14` keeps the approved light Living Journey design and all earlier V92 repairs, then applies one shared responsive contract across the complete Web/PWA interface instead of waiting for individual screenshots.
 
 ## What changed
 
@@ -64,6 +64,14 @@ Version `1.92.13` keeps the approved light Living Journey design and all V92.12 
 - Very narrow 320–360 px phones use one full-width card per row to prevent currency amounts from wrapping awkwardly.
 - Small and standard tablets show all three wallet cards in one balanced row.
 - **Edit** and the submitted-budget count remain aligned to the right of their section headings.
+- The **Quick things to do** count now stays in the heading row as a compact status pill.
+- Attention rows use a protected icon–copy–arrow layout; long titles and explanations wrap without colliding with the arrow or being cut off.
+- Finished-Trip and Smart Settlement labels are shorter and clearer on phones while preserving their full action meaning.
+- Shared list rows, action groups, notification rows, documents, offline data, settlement history, receipt review, Trip cards and admin rows now follow the same mobile containment rules.
+- Phone-only data layouts collapse predictably to one column, while wider tablet and desktop layouts retain their useful multi-column structure.
+- Responsive tables scroll inside their own container instead of forcing the complete page outside the viewport.
+- The authenticated sweep now represents every static authenticated page route and checks row containment, clipped attention copy, controls, calendars and bottom-navigation clearance.
+- Login, registration, password recovery and the standalone offline page have a separate 320–1024 px public-layout sweep.
 
 ## Database
 
@@ -76,7 +84,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-13` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-14` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -86,6 +94,7 @@ npm install
 npm run v92:check
 npm run v92-12:check
 npm run v92-13:check
+npm run v92-14:check
 npm test
 npm run build
 ```
