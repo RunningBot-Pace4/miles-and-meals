@@ -7582,7 +7582,7 @@ body {
   font-size: 1rem;
 }
 
-.expense-scan-action > span:last-child {
+.expense-scan-copy {
   min-width: 0;
   display: grid;
   gap: 0.08rem;

@@ -16,10 +16,10 @@ const queue = read("src/components/OfflineQueueSync.tsx");
 const audit = read("e2e/v92-9-full-pwa-audit.spec.ts");
 const geometry = read("e2e/v92-15-mobile-control-layout.spec.ts");
 
-must(packageJson, '"version": "1.92.17"', "V92.15 package version missing");
+must(packageJson, '"version": "1.92.18"', "V92.15 package version missing");
 must(packageJson, '"v92-15:check"', "V92.15 validation script missing");
 must(packageJson, "npm run v92-15:check", "V92.15 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-17", "V92.15 PWA cache missing");
+must(worker, "miles-meals-static-v92-18", "V92.15 PWA cache missing");
 
 for (const marker of [
   "/* V92.15 · compact mobile controls",

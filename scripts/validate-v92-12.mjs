@@ -30,7 +30,7 @@ const geometryAudit = read(
 
 must(
   packageJson,
-  '"version": "1.92.17"',
+  '"version": "1.92.18"',
   "V92.12 package version missing",
 );
 must(
@@ -45,7 +45,7 @@ must(
 );
 must(
   worker,
-  "miles-meals-static-v92-17",
+  "miles-meals-static-v92-18",
   "V92.12 PWA cache missing",
 );
 must(

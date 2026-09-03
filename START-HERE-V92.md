@@ -1,6 +1,6 @@
-# Miles & Meals V92.17 · Stable Phone Viewport and Expense Keyboard Repair
+# Miles & Meals V92.18 · Add Expense PWA Layout Repair
 
-Version `1.92.17` includes the complete tested V92.16 layout/performance release, then fixes iOS input zoom and the Expense Save bar moving over the form when the software keyboard opens.
+Version `1.92.18` preserves the complete tested V92.17 release, then fixes the remaining Add Expense header, floating Save bar and whole-page horizontal movement reported on iOS PWA.
 
 ## What changed
 
@@ -94,6 +94,10 @@ Version `1.92.17` includes the complete tested V92.16 layout/performance release
 - Category Limits explicitly reports **Editing enabled**, **View only**, or **Closed Trip** before the rows, instead of presenting unexplained disabled fields.
 - Category currency prefixes remain on one line, and every editable row exposes a visible **Save limit** action.
 - The authenticated full-app audit now rejects oversized checkbox/radio controls, while a dedicated geometry audit measures the three reported screens at phone, tablet and desktop widths.
+- **V92.18:** Add Expense uses a compact blue-outlined receipt action with a professional camera icon and no repeated app name.
+- **V92.18:** The phone Total/Save action stays in normal document flow, so it cannot cover Date, Category, Amount or exchange-rate fields after the keyboard closes.
+- **V92.18:** The four exchange-rate choices fit the available width instead of creating an internal horizontal scroller.
+- **V92.18:** Expense-page width and overscroll are contained specifically for iOS installed PWA, while desktop keeps its useful sticky Save action.
 
 ## Database
 
@@ -106,7 +110,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-17` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-18` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -120,10 +124,11 @@ npm run v92-14:check
 npm run v92-15:check
 npm run v92-16:check
 npm run v92-17:check
+npm run v92-18:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.17 packaging validation: 173/173 unit tests, all historical and current release gates, TypeScript and the 82-route Next.js production build passed. The new focused-layout specification covers 320, 360, 390, 430, 600, 719 and 1024 px; authenticated physical-device PWA confirmation still requires the deployed staging login.
+V92.18 packaging validation: 178/178 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page Next.js production build passed. The focused Add Expense browser contract covers 320, 360, 390, 430, 600, 719 and 1024 px; authenticated physical-device PWA confirmation still requires the deployed staging login.

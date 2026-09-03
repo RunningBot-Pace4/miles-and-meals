@@ -1895,7 +1895,7 @@ export function ExpenseForm({
 
         <header className="expense-editor-hero">
           <div className="expense-editor-title">
-            <p className="eyebrow">MILES &amp; MEALS · EXPENSES</p>
+            <p className="eyebrow">EXPENSE</p>
             <h1>{initial ? "Edit expense" : "Add a spend"}</h1>
             <p className="muted">
               {initial
@@ -1922,9 +1922,14 @@ export function ExpenseForm({
             {receiptScanning ? (
               <span className="mini-spinner" />
             ) : (
-              <span className="expense-scan-icon">📷</span>
+              <span className="expense-scan-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M8.4 6.5 9.7 4.8h4.6l1.3 1.7H18a2 2 0 0 1 2 2v8.2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h2.4Z" />
+                  <circle cx="12" cy="12.6" r="3.2" />
+                </svg>
+              </span>
             )}
-            <span>
+            <span className="expense-scan-copy">
               <strong>
                 {receiptScanning
                   ? "Reading receipt…"
@@ -1932,7 +1937,15 @@ export function ExpenseForm({
                     ? "Scan another"
                     : "Scan receipt"}
               </strong>
+              <small>
+                {receiptScanning
+                  ? "Keep this page open"
+                  : receiptFile
+                    ? "Replace the attached photo"
+                    : "Take a photo or choose one"}
+              </small>
             </span>
+            <span className="expense-scan-chevron" aria-hidden="true">›</span>
           </label>
         </header>
 
