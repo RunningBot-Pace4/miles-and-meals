@@ -1,8 +1,10 @@
-# Miles & Meals V92.14 — Complete Web/PWA Responsive Package
+# Miles & Meals V92.15 — Mobile Controls and Editing Package
 
-This is the complete source package, versioned `1.92.14`. It preserves all earlier V92 repairs, fixes the reported **Quick things to do** compression, and applies a shared responsive contract across dashboard, finance, settlements, expenses, Plan, More, notifications, offline tools, documents, settings and admin screens.
+This is the complete source package, versioned `1.92.15`. It preserves all earlier V92 repairs and fixes the reported offline expense-sharing controls, traveler-permission cards and Category Limits editing experience. Compact purpose-built controls replace enlarged native checkboxes, permission labels remain aligned, category currencies cannot wrap vertically, and owner/view-only state is explained before the user reaches the inputs.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
+
+Validated for V92.15: 164/164 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-route production build. Browser-driven staging verification remains a deployment gate because it needs Playwright browser binaries and an authenticated test account.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 

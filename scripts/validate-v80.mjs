@@ -27,7 +27,7 @@ const css = read("src/app/globals.css");
 const worker = read("public/sw.js");
 const updater = read("src/components/PwaRegister.tsx");
 
-must(packageJson, '"version": "1.92.14"', "v80-or-newer package version missing");
+must(packageJson, '"version": "1.92.15"', "v80-or-newer package version missing");
 must(packageJson, '"v80:check"', "v80 validator command missing");
 must(newExpense, 'financialStatus !== "CLOSED"', "closed Trips are not removed from Add Expense");
 if (expenseForm.includes("financially locked trip")) throw new Error("retired locked Trip wording is still visible");
@@ -61,7 +61,7 @@ must(sync, "sync(true)", "online event does not force immediate retry");
 for (const marker of ["v80 — calendar containment", "position: relative !important", ".journey-route-card", ".offline-trip-picker"]) {
   must(css, marker, `v80 responsive CSS missing: ${marker}`);
 }
-must(worker, 'miles-meals-static-v92-14', "v80-or-newer service-worker cache bump missing");
+must(worker, 'miles-meals-static-v92-15', "v80-or-newer service-worker cache bump missing");
 must(worker, 'type === "SKIP_WAITING"', "v80 worker cannot be activated by the controlled update flow");
 must(updater, 'type: "SKIP_WAITING"', "v80-or-newer updater does not activate the waiting worker");
 

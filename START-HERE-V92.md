@@ -1,6 +1,6 @@
-# Miles & Meals V92.14 · Complete Web/PWA Responsive Repair
+# Miles & Meals V92.15 · Mobile Controls and Editing Repair
 
-Version `1.92.14` keeps the approved light Living Journey design and all earlier V92 repairs, then applies one shared responsive contract across the complete Web/PWA interface instead of waiting for individual screenshots.
+Version `1.92.15` keeps the approved light Living Journey design and all earlier V92 repairs, then applies one shared responsive contract across the complete Web/PWA interface instead of waiting for individual screenshots.
 
 ## What changed
 
@@ -72,6 +72,12 @@ Version `1.92.14` keeps the approved light Living Journey design and all earlier
 - Responsive tables scroll inside their own container instead of forcing the complete page outside the viewport.
 - The authenticated sweep now represents every static authenticated page route and checks row containment, clipped attention copy, controls, calendars and bottom-navigation clearance.
 - Login, registration, password recovery and the standalone offline page have a separate 320–1024 px public-layout sweep.
+- Offline expense sharing now uses compact 24 px controls; traveler names cannot sit underneath an enlarged native checkbox.
+- **Everyone** and **Only me** keep a white surface with the requested blue selection outline.
+- Traveler permissions show one compact full-access summary for the owner and aligned, accessible controls for editable travelers.
+- Category Limits explicitly reports **Editing enabled**, **View only**, or **Closed Trip** before the rows, instead of presenting unexplained disabled fields.
+- Category currency prefixes remain on one line, and every editable row exposes a visible **Save limit** action.
+- The authenticated full-app audit now rejects oversized checkbox/radio controls, while a dedicated geometry audit measures the three reported screens at phone, tablet and desktop widths.
 
 ## Database
 
@@ -84,7 +90,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-14` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-15` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -95,8 +101,11 @@ npm run v92:check
 npm run v92-12:check
 npm run v92-13:check
 npm run v92-14:check
+npm run v92-15:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
+
+V92.15 packaging validation: 164/164 unit tests, all source/release gates, TypeScript and the 82-route Next.js production build passed. The included Playwright geometry and authenticated PWA specifications require installed browser binaries; run them against staging before production sign-off.

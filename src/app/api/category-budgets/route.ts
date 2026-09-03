@@ -11,6 +11,22 @@ import { categoryBudgetSchema, uuidSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
+const categoryOrder = ["Food", "Transport", "Hotel", "Shopping", "Attractions", "Flights", "Other"];
+
+function normalizeCategory(category: string) {
+  const aliases: Record<string, string> = {
+    Meals: "Food",
+    Travel: "Transport",
+    Accommodation: "Hotel",
+    Stay: "Hotel",
+    Shop: "Shopping",
+    Activities: "Attractions",
+    Things: "Attractions",
+    Flight: "Flights",
+  };
+  return aliases[category] ?? (categoryOrder.includes(category) ? category : "Other");
+}
+
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -33,14 +49,23 @@ export async function GET(request: Request) {
     canManageTrip(session.user, tripId),
   ]);
 
-  const spent = new Map(spendingRows.map((row) => [row.category, toNumber(row.spent)]));
+  const spent = new Map<string, number>();
+  for (const row of spendingRows) {
+    const category = normalizeCategory(row.category);
+    spent.set(category, (spent.get(category) ?? 0) + toNumber(row.spent));
+  }
+  const limits = new Map<string, number>();
+  for (const row of budgetRows) {
+    const category = normalizeCategory(row.category);
+    limits.set(category, Math.max(limits.get(category) ?? 0, toNumber(row.amount)));
+  }
   return Response.json({
     baseCurrency: tripRows[0]?.baseCurrency ?? "MYR",
     canManage,
-    categories: budgetRows.map((row) => ({
-      category: row.category,
-      amount: toNumber(row.amount),
-      spent: spent.get(row.category) ?? 0,
+    categories: categoryOrder.map((category) => ({
+      category,
+      amount: limits.get(category) ?? 0,
+      spent: spent.get(category) ?? 0,
     })),
   });
 }

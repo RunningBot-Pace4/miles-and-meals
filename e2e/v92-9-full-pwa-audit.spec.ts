@@ -72,6 +72,14 @@ async function auditViewport(page: Page, route: string) {
       .filter(visible)
       .filter((element) => element.getBoundingClientRect().height < 44)
       .length;
+    const oversizedBooleanControls = [...document.querySelectorAll('main input[type="checkbox"],main input[type="radio"]')]
+      .filter(visible)
+      .filter((element) => {
+        const box = element.getBoundingClientRect();
+        return box.width > 32 || box.height > 32;
+      })
+      .map((element) => `${element.tagName.toLowerCase()}.${element.className}`)
+      .slice(0, 10);
     const responsiveRows = [
       ...document.querySelectorAll(
         "main .dashboard-action-card,main .travel-quick,main .menu-row,main .search-result-row,main .notification-center-item-main,main .document-row,main .offline-plan-row,main .offline-expense-row,main .offline-document-row,main .offline-contact-row,main .activity-row,main .settlement-status-row,main .settlement-history-row,main .receipt-review-row,main .owner-trip-card,main .admin-user-row",
@@ -105,6 +113,7 @@ async function auditViewport(page: Page, route: string) {
       escaped,
       narrowTextControls,
       nativeDates,
+      oversizedBooleanControls,
       responsiveRows,
       clippedActionCopy,
     };
@@ -114,6 +123,7 @@ async function auditViewport(page: Page, route: string) {
   expect(issues.escaped, `${route}: elements outside viewport`).toEqual([]);
   expect(issues.narrowTextControls, `${route}: text controls collapsed`).toEqual([]);
   expect(issues.nativeDates, `${route}: undersized calendar controls`).toBe(0);
+  expect(issues.oversizedBooleanControls, `${route}: checkbox or radio expanded into the label copy`).toEqual([]);
   expect(issues.responsiveRows, `${route}: row content escaped its card`).toEqual([]);
   expect(issues.clippedActionCopy, `${route}: action copy was clipped`).toEqual([]);
 

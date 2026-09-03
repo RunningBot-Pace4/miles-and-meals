@@ -329,7 +329,7 @@ export function OfflinePackWorkspace({
                 </div>
                 <div className="two-col">
                   <label>Date<input type="date" value={expenseDate} onChange={(event) => setExpenseDate(event.target.value)} /></label>
-                  <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
+                  <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>Food</option><option>Transport</option><option>Hotel</option><option>Shopping</option><option>Attractions</option><option>Flights</option><option>Other</option></select></label>
                 </div>
                 <fieldset className="offline-share-picker">
                   <legend>Share cost with</legend>
@@ -338,12 +338,21 @@ export function OfflinePackWorkspace({
                     <button className={splitMemberIds.length === 1 && splitMemberIds[0] === pack.currentUserId ? "selected" : ""} type="button" onClick={chooseOnlyMe}>Only me</button>
                   </div>
                   <div className="offline-share-members">
-                    {pack.members.map((member) => (
-                      <label key={member.id}>
-                        <input type="checkbox" checked={splitMemberIds.includes(member.id)} onChange={() => toggleSplitMember(member.id)} />
-                        <span>{member.name}{member.id === pack.currentUserId ? " · You" : ""}</span>
-                      </label>
-                    ))}
+                    {pack.members.map((member) => {
+                      const selected = splitMemberIds.includes(member.id);
+                      return (
+                        <label className={selected ? "selected" : ""} key={member.id}>
+                          <input
+                            className="offline-share-native-control"
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleSplitMember(member.id)}
+                          />
+                          <span className="offline-share-check" aria-hidden="true">{selected ? "✓" : ""}</span>
+                          <span className="offline-share-name">{member.name}{member.id === pack.currentUserId ? " · You" : ""}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                   <small>All Trip members can see the expense after sync. The cost is split equally only between the {splitMemberIds.length} selected traveler{splitMemberIds.length === 1 ? "" : "s"}.</small>
                 </fieldset>

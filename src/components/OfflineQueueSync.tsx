@@ -22,6 +22,10 @@ type QueueEditDraft = {
   area: string;
 };
 
+function canonicalExpenseCategory(value: string) {
+  return ({ Accommodation: "Hotel", Activities: "Attractions", Meals: "Food", Travel: "Transport" } as Record<string, string>)[value] ?? value;
+}
+
 const EMPTY_EDIT: QueueEditDraft = {
   description: "", expenseDate: "", transactionAmount: "", category: "Other",
   title: "", itemDate: "", itemTime: "", area: "",
@@ -174,7 +178,7 @@ export function OfflineQueueSync() {
       description: String(body.description ?? ""),
       expenseDate: String(body.expenseDate ?? ""),
       transactionAmount: String(body.transactionAmount ?? ""),
-      category: String(body.category ?? "Other"),
+      category: canonicalExpenseCategory(String(body.category ?? "Other")),
       title: String(body.title ?? ""),
       itemDate: String(body.itemDate ?? ""),
       itemTime: String(body.itemTime ?? ""),
@@ -372,7 +376,7 @@ export function OfflineQueueSync() {
                         <div className="offline-queue-editor-grid">
                           <label>Amount<input inputMode="decimal" data-numeric-input="decimal" value={editDraft.transactionAmount} onChange={(event) => setEditDraft({ ...editDraft, transactionAmount: event.target.value })} /></label>
                           <label>Date<input type="date" value={editDraft.expenseDate} onChange={(event) => setEditDraft({ ...editDraft, expenseDate: event.target.value })} /></label>
-                          <label>Category<select value={editDraft.category} onChange={(event) => setEditDraft({ ...editDraft, category: event.target.value })}><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label>
+                          <label>Category<select value={editDraft.category} onChange={(event) => setEditDraft({ ...editDraft, category: event.target.value })}><option>Food</option><option>Transport</option><option>Hotel</option><option>Shopping</option><option>Attractions</option><option>Flights</option><option>Other</option></select></label>
                         </div>
                       </> : <>
                         <label>Title<input value={editDraft.title} onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })} /></label>

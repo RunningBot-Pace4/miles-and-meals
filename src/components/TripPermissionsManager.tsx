@@ -74,13 +74,37 @@ export function TripPermissionsManager({ trips, initialTripId }: { trips: TripOp
     </section>
     <section className="permissions-list">
       {members.map((member) => <article className="panel permission-member-card" key={member.userId}>
-        <div><strong>{member.name}</strong><small>{member.role === "OWNER" ? "Trip Owner · full access" : "Traveler"}</small></div>
-        <div className="permission-toggle-grid">
-          {controls.map(([field, label]) => <label key={field}><input type="checkbox" checked={member[field]} disabled={!canManage || member.role === "OWNER" || trip?.financialStatus === "CLOSED" || busy === member.userId} onChange={(event) => void change(member, field, event.target.checked)} /><span>{label}</span></label>)}
-        </div>
+        <div className="permission-member-heading"><strong>{member.name}</strong><small>{member.role === "OWNER" ? "Trip Owner" : "Traveler"}</small></div>
+        {member.role === "OWNER" ? (
+          <div className="permission-owner-summary">
+            <span aria-hidden="true">✓</span>
+            <div><strong>Full Trip access</strong><small>Owner permissions are always enabled.</small></div>
+          </div>
+        ) : (
+          <div className="permission-toggle-grid">
+            {controls.map(([field, label]) => {
+              const selected = member[field];
+              return (
+                <label className={selected ? "permission-option selected" : "permission-option"} key={field}>
+                  <input
+                    className="permission-native-control"
+                    type="checkbox"
+                    checked={selected}
+                    disabled={!canManage || trip?.financialStatus === "CLOSED" || busy === member.userId}
+                    onChange={(event) => void change(member, field, event.target.checked)}
+                  />
+                  <span className="permission-check" aria-hidden="true">{selected ? "✓" : ""}</span>
+                  <span className="permission-label">{label}</span>
+                </label>
+              );
+            })}
+          </div>
+        )}
       </article>)}
       {!members.length ? <article className="empty-card"><h2>No travelers</h2><p>Add travelers to this Trip first.</p></article> : null}
     </section>
+    {!canManage && members.length ? <p className="permission-access-note" role="status">View only · Only the Trip Owner can change traveler permissions.</p> : null}
+    {trip?.financialStatus === "CLOSED" ? <p className="permission-access-note" role="status">This Trip is closed, so permissions are locked.</p> : null}
     {message ? <p className="form-success" role="status">{message}</p> : null}
   </div>;
 }

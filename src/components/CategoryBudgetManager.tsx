@@ -21,7 +21,9 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
   const [canManage, setCanManage] = useState(false);
   const [busyCategory, setBusyCategory] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const trip = useMemo(() => trips.find((item) => item.tripId === tripId), [tripId, trips]);
+  const editingEnabled = canManage && trip?.financialStatus !== "CLOSED";
 
   useEffect(() => {
     if (!tripId) return;
@@ -35,9 +37,10 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
         if (!response.ok) throw new Error(payload.error ?? "Unable to load category limits.");
         const nextRows = payload.categories ?? [];
         setRows(nextRows);
-        setValues(Object.fromEntries(nextRows.map((row) => [row.category, String(row.amount)])));
+        setValues(Object.fromEntries(nextRows.map((row) => [row.category, row.amount > 0 ? String(row.amount) : ""])));
         setCanManage(Boolean(payload.canManage));
         setError("");
+        setMessage("");
       })
       .catch((caught) => {
         if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Unable to load category limits.");
@@ -54,6 +57,7 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
     }
     setBusyCategory(category);
     setError("");
+    setMessage("");
     try {
       const response = await fetch("/api/category-budgets", {
         method: "POST",
@@ -64,10 +68,9 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
       if (!response.ok) throw new Error(payload.error ?? "Unable to save category limit.");
       setRows((current) => {
         const spent = current.find((row) => row.category === category)?.spent ?? 0;
-        return amount === 0
-          ? current.filter((row) => row.category !== category)
-          : [...current.filter((row) => row.category !== category), { category, amount, spent }];
+        return [...current.filter((row) => row.category !== category), { category, amount, spent }];
       });
+      setMessage(amount === 0 ? `${category} limit removed.` : `${category} limit saved.`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to save category limit.");
     } finally {
@@ -94,6 +97,14 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
         </select>
       </label>
 
+      <div className={editingEnabled ? "category-budget-access can-edit" : "category-budget-access"} role="status">
+        <span aria-hidden="true">{editingEnabled ? "✓" : "i"}</span>
+        <div>
+          <strong>{editingEnabled ? "Editing enabled" : trip?.financialStatus === "CLOSED" ? "Closed Trip · view only" : "View only"}</strong>
+          <small>{editingEnabled ? "Enter a limit and tap Save limit for that category." : trip?.financialStatus === "CLOSED" ? "Reopen the Trip before changing its category limits." : "Only the Trip Owner can change group category limits."}</small>
+        </div>
+      </div>
+
       <div className="category-budget-grid">
         {categories.map((category) => {
           const row = rows.find((item) => item.category === category);
@@ -108,30 +119,30 @@ export function CategoryBudgetManager({ trips }: { trips: TripOption[] }) {
               <div className="category-budget-progress" aria-label={`${percent.toFixed(0)}% used`}>
                 <span style={{ width: `${percent}%` }} />
               </div>
-              <label>
+              <label className="category-budget-limit">
                 Limit
-                <span>
+                <span className="category-budget-money-input">
                   <b>{trip?.baseCurrency ?? "MYR"}</b>
                   <input
                     inputMode="decimal"
                     data-numeric-input="decimal"
                     value={values[category] ?? ""}
-                    disabled={!canManage || trip?.financialStatus === "CLOSED"}
+                    disabled={!editingEnabled}
                     placeholder="No limit"
                     onChange={(event) => setValues((current) => ({ ...current, [category]: event.target.value }))}
                   />
                 </span>
               </label>
-              {canManage && trip?.financialStatus !== "CLOSED" ? (
-                <button type="button" disabled={busyCategory === category} onClick={() => void save(category)}>
-                  {busyCategory === category ? "Saving…" : "Save"}
+              {editingEnabled ? (
+                <button className="button secondary category-budget-save" type="button" disabled={busyCategory === category} onClick={() => void save(category)}>
+                  {busyCategory === category ? "Saving…" : "Save limit"}
                 </button>
               ) : null}
             </article>
           );
         })}
       </div>
-      {!canManage ? <p className="muted">Only the Trip Owner can change group limits. Everyone can view progress.</p> : null}
+      {message ? <p className="form-success" role="status">{message}</p> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
     </section>
   );

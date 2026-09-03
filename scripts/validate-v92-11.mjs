@@ -14,10 +14,10 @@ const expenses = read("src/components/LiveExpensesWorkspace.tsx");
 const css = read("src/app/v92-living-journey.css");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.14"', "V92.11 package version missing");
+must(packageJson, '"version": "1.92.15"', "V92.11 package version missing");
 must(packageJson, '"v92-11:check"', "V92.11 validation script missing");
 must(packageJson, "npm run v92-11:check", "V92.11 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-14", "V92.11 PWA cache missing");
+must(worker, "miles-meals-static-v92-15", "V92.11 PWA cache missing");
 must(worker, 'url.pathname.startsWith("/tesseract/")', "OCR runtime caching missing");
 
 for (const marker of [
