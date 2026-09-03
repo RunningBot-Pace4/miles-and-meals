@@ -2778,3 +2778,104 @@ button[role="tab"][aria-selected="true"] {
     width: min(100%, 340px) !important;
   }
 }
+
+/* V92.13 · intentional three-card wallet geometry ------------------------ */
+
+.dashboard-budget-section {
+  padding: clamp(0.85rem, 2vw, 1.1rem) !important;
+}
+
+.dashboard-budget-section > *,
+.dashboard-budget-section .travel-stat-grid,
+.dashboard-budget-section .travel-stat {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .dashboard-budget-section .travel-section-heading.compact {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    gap: 0.5rem 0.75rem !important;
+  }
+
+  .dashboard-budget-section .travel-section-heading.compact > div {
+    min-width: 0;
+  }
+
+  .dashboard-budget-section .travel-section-heading.compact > :is(.panel-link, span) {
+    align-self: end;
+    justify-self: end;
+    width: auto !important;
+    max-width: 9rem;
+    margin: 0 0 0.06rem !important;
+    text-align: right;
+    white-space: normal !important;
+  }
+
+  .dashboard-budget-section .travel-section-heading.compact > .panel-link {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.34rem 0.62rem;
+    border: 1.5px solid var(--v92-blue) !important;
+    border-radius: 9px;
+    color: #1764c7 !important;
+    background: white !important;
+    text-decoration: none;
+  }
+
+  .dashboard-budget-section .travel-section-heading.compact > span {
+    padding: 0.3rem 0.52rem;
+    border-radius: 999px;
+    color: #596068 !important;
+    background: #f0f1f3;
+    line-height: 1.3;
+  }
+
+  .dashboard-budget-section .travel-stat-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.65rem !important;
+  }
+
+  .dashboard-budget-section .travel-stat:first-child {
+    grid-column: 1 / -1;
+    min-height: 94px !important;
+  }
+
+  .dashboard-budget-section .travel-stat:not(:first-child) {
+    min-height: 116px !important;
+  }
+
+  .dashboard-budget-section .travel-stat > div > strong {
+    font-size: clamp(0.94rem, 4.8vw, 1.16rem) !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .dashboard-budget-section .travel-stat-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dashboard-budget-section .travel-stat:first-child {
+    grid-column: auto;
+  }
+
+  .dashboard-budget-section .travel-stat,
+  .dashboard-budget-section .travel-stat:not(:first-child) {
+    min-height: 94px !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 819px) {
+  .dashboard-budget-section .travel-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard-budget-section .travel-stat {
+    min-height: 112px !important;
+  }
+}

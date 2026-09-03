@@ -1,6 +1,6 @@
-# Miles & Meals V92.12 · Receipt Accuracy and PWA Layout Repair
+# Miles & Meals V92.13 · Mobile Wallet Layout Repair
 
-Version `1.92.12` keeps the approved light Living Journey design and all V92.11 money-state repairs, then improves receipt isolation and corrects the phone/tablet PWA layout system.
+Version `1.92.13` keeps the approved light Living Journey design and all V92.12 receipt/PWA repairs, then corrects the remaining three-card wallet layout on phones and tablets.
 
 ## What changed
 
@@ -59,6 +59,11 @@ Version `1.92.12` keeps the approved light Living Journey design and all V92.11 
 - 720–1023 px tablets now use a purpose-built two-column Trip Command Centre instead of a stretched, vertically stacked phone layout.
 - Tablet welcome content stays left aligned, the action stays right aligned and the Halo is capped at a comfortable reading size.
 - The full authenticated route audit now covers 320, 360, 390, 430, 600, 768, 820, 1024 and 1280 px layouts.
+- Personal and group wallet panels no longer leave an accidental empty fourth grid cell on phones.
+- The first budget card is intentionally featured at full width; the two related values form a balanced row beneath it.
+- Very narrow 320–360 px phones use one full-width card per row to prevent currency amounts from wrapping awkwardly.
+- Small and standard tablets show all three wallet cards in one balanced row.
+- **Edit** and the submitted-budget count remain aligned to the right of their section headings.
 
 ## Database
 
@@ -71,7 +76,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-12` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-13` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -80,6 +85,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 npm install
 npm run v92:check
 npm run v92-12:check
+npm run v92-13:check
 npm test
 npm run build
 ```

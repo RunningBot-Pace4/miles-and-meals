@@ -1,6 +1,6 @@
-# Miles & Meals V92.12 — Receipt Accuracy and PWA Layout Package
+# Miles & Meals V92.13 — Mobile Wallet Layout Package
 
-This is the complete source package, versioned `1.92.12`. It preserves the approved light Living Journey design while adding automatic receipt-paper isolation, higher-resolution local OCR preparation, balanced phone section headings and a true tablet command-centre layout.
+This is the complete source package, versioned `1.92.13`. It preserves all V92.12 receipt and PWA repairs, then replaces the accidental three-card/two-column wallet gap with a deliberate mobile hierarchy and balanced tablet row.
 
 The authenticated route audit covers phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 

@@ -13,10 +13,10 @@ const components = [
   read("src/components/LivingJourneyHalo.tsx"),
 ];
 
-must(packageJson, '"version": "1.92.12"', "V92.7 package version missing");
+must(packageJson, '"version": "1.92.13"', "V92.7 package version missing");
 must(packageJson, '"v92-7:check"', "V92.7 validation script missing");
 must(packageJson, "npm run v92-7:check", "V92.7 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-12", "V92.7 service-worker cache missing");
+must(worker, "miles-meals-static-v92-13", "V92.7 service-worker cache missing");
 
 for (const component of components) {
   must(component, 'className="journey-mode-switcher"', "Halo tabs do not have an independent switcher");

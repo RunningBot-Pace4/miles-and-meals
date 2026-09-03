@@ -13,10 +13,10 @@ const halo = read("src/components/LivingJourneyHalo.tsx");
 const expense = read("src/components/ExpenseForm.tsx");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.12"', "V92.8 package version missing");
+must(packageJson, '"version": "1.92.13"', "V92.8 package version missing");
 must(packageJson, '"v92-8:check"', "V92.8 validation script missing");
 must(packageJson, "npm run v92-8:check", "V92.8 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-12", "V92.8 service-worker cache missing");
+must(worker, "miles-meals-static-v92-13", "V92.8 service-worker cache missing");
 
 must(expense, 'aria-pressed={category === item.value}', "Expense category selection is not exposed");
 must(expense, 'className="split-preset-details"', "Optional saved split is not collapsed");

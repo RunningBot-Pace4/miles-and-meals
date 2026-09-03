@@ -50,6 +50,10 @@ function dashboardMarkup() {
             <div class="journey-panel-stack"><div class="journey-live-panel is-active"><p class="eyebrow">SPEND · TRIP WALLET</p><h3>RM 177.36</h3><p class="journey-live-summary">Group total RM 722.20 · today you shared RM 0.00.</p><p class="journey-live-insight"><span>✦</span> RM 322.64 remains in your personal budget.</p><dl class="journey-metrics"><div><dt>Daily allowance</dt><dd>RM 0.00</dd></div><div><dt>Projected</dt><dd>RM 177.36</dd></div><div><dt>To settle</dt><dd>RM 145.85</dd></div></dl><div class="journey-live-actions"><a class="button journey-primary">Add quick expense</a><a class="button journey-secondary">Review settlement</a></div></div></div>
           </div>
         </section>
+        <section class="dashboard-budget-section">
+          <div class="travel-section-heading compact"><div><p class="eyebrow">MY TRAVEL WALLET</p><h2>Personal budget</h2></div><a class="panel-link">Edit</a></div>
+          <div class="stat-grid dashboard-stats travel-stat-grid"><article class="stat-card travel-stat budget"><span class="travel-stat-icon">◈</span><div><span>My budget</span><strong>RM 1,000.00</strong><small>Your own spending target</small></div></article><article class="stat-card travel-stat spent"><span class="travel-stat-icon">◈</span><div><span>My share spent</span><strong>RM 222.40</strong><small>Your personal share</small></div></article><article class="stat-card travel-stat success"><span class="travel-stat-icon">◈</span><div><span>My remaining</span><strong>RM 777.60</strong><small>Available in your wallet</small></div></article></div>
+        </section>
         <section class="dashboard-recent-activity"><div class="travel-section-heading"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>What changed</h2></div><a class="dashboard-section-link">View all</a></div><div class="dashboard-activity-list"><div class="dashboard-activity-row"><span class="dashboard-activity-dot"></span><span class="dashboard-activity-copy"><strong>Parent added expense: Taxi</strong><small>Parent · 2 Sep, 10:24 am</small></span></div></div></section>
         <section class="dashboard-travel-shortcuts"><div class="travel-section-heading"><div><p class="eyebrow">TRAVEL SHORTCUTS</p><h2>Where next?</h2></div><span>Eat · Play · Sleep · Share</span></div><div class="quick-grid travel-quick-grid"><a class="quick-action travel-quick"><span class="quick-action-icon">⌁</span><span><strong>Explore the plan</strong><small>Itinerary, food & places</small></span></a></div></section>
       </div>
@@ -96,6 +100,22 @@ for (const width of widths) {
         ".dashboard-welcome-copy",
       );
       const add = rect(".dashboard-add");
+      const budgetHeading = rect(
+        ".dashboard-budget-section .travel-section-heading > div",
+      );
+      const budgetEdit = rect(
+        ".dashboard-budget-section .panel-link",
+      );
+      const budgetGrid = rect(
+        ".dashboard-budget-section .travel-stat-grid",
+      );
+      const budgetCards = [
+        ...document.querySelectorAll(
+          ".dashboard-budget-section .travel-stat",
+        ),
+      ].map((element) =>
+        element.getBoundingClientRect(),
+      );
 
       return {
         viewport:
@@ -116,6 +136,26 @@ for (const width of widths) {
         panelIsBelow: panel.top > halo.top + 80,
         welcomeIsLeft: welcome.left < add.left,
         haloWidth: halo.width,
+        budgetHeadingSameRow:
+          Math.abs(
+            budgetHeading.bottom -
+              budgetEdit.bottom,
+          ) < 12,
+        firstBudgetCardIsFeatured:
+          budgetCards[0].width >
+          budgetGrid.width * 0.9,
+        lowerBudgetCardsShareRow:
+          Math.abs(
+            budgetCards[1].top -
+              budgetCards[2].top,
+          ) < 2 &&
+          budgetCards[2].left >
+            budgetCards[1].left,
+        allBudgetCardsShareRow:
+          Math.abs(
+            budgetCards[0].top -
+              budgetCards[2].top,
+          ) < 2,
       };
     });
 
@@ -127,6 +167,21 @@ for (const width of widths) {
       expect(geometry.activitySameRow).toBe(true);
       expect(geometry.shortcutSameRow).toBe(true);
       expect(geometry.panelIsBelow).toBe(true);
+    }
+
+    if (width <= 640) {
+      expect(geometry.budgetHeadingSameRow).toBe(true);
+
+      if (width <= 360) {
+        expect(geometry.lowerBudgetCardsShareRow).toBe(false);
+      } else {
+        expect(geometry.firstBudgetCardIsFeatured).toBe(true);
+        expect(geometry.lowerBudgetCardsShareRow).toBe(true);
+      }
+    }
+
+    if (width >= 641) {
+      expect(geometry.allBudgetCardsShareRow).toBe(true);
     }
 
     if (width >= 720) {
