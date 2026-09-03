@@ -3571,3 +3571,29 @@ button[role="tab"][aria-selected="true"] {
     width: 100%;
   }
 }
+
+/* V92.17 · stable phone viewport and keyboard-safe expense editing ------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 719px) {
+  /* iOS zooms focused controls whose computed text is smaller than 16px. */
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea
+  ) {
+    font-size: 16px !important;
+  }
+
+  /* Do not let the reduced keyboard viewport pull the Save bar over fields. */
+  .expense-editor:has(input:focus, select:focus, textarea:focus) .sticky-save {
+    position: static !important;
+    inset: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+}
