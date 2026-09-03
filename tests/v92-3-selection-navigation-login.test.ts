@@ -11,9 +11,9 @@ describe("V92.3 mobile selection and transition reliability", () => {
   const login = read("src/components/LoginForm.tsx");
 
   it("uses Node 24 and a new coherent PWA cache", () => {
-    expect(packageJson).toContain('"version": "1.92.15"');
+    expect(packageJson).toContain('"version": "1.92.16"');
     expect(packageJson).toContain('"node": "24.x"');
-    expect(worker).toContain("miles-meals-static-v92-15");
+    expect(worker).toContain("miles-meals-static-v92-16");
   });
 
   it("keeps authenticated navigation on reliable full document requests", () => {

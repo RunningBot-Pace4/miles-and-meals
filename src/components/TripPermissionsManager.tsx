@@ -103,8 +103,18 @@ export function TripPermissionsManager({ trips, initialTripId }: { trips: TripOp
       </article>)}
       {!members.length ? <article className="empty-card"><h2>No travelers</h2><p>Add travelers to this Trip first.</p></article> : null}
     </section>
-    {!canManage && members.length ? <p className="permission-access-note" role="status">View only · Only the Trip Owner can change traveler permissions.</p> : null}
-    {trip?.financialStatus === "CLOSED" ? <p className="permission-access-note" role="status">This Trip is closed, so permissions are locked.</p> : null}
+    {!canManage && members.length ? (
+      <div className="permission-access-note" role="status">
+        <span className="permission-access-icon" aria-hidden="true">i</span>
+        <span className="permission-access-copy"><strong>View only</strong><small>Only the Trip Owner can change traveler permissions.</small></span>
+      </div>
+    ) : null}
+    {trip?.financialStatus === "CLOSED" ? (
+      <div className="permission-access-note" role="status">
+        <span className="permission-access-icon" aria-hidden="true">i</span>
+        <span className="permission-access-copy"><strong>Closed Trip</strong><small>Permissions are locked until the Trip is reopened.</small></span>
+      </div>
+    ) : null}
     {message ? <p className="form-success" role="status">{message}</p> : null}
   </div>;
 }

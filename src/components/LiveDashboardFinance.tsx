@@ -152,7 +152,7 @@ export function LiveDashboardFinance({
     const timer =
       window.setInterval(
         () => void refresh(),
-        15_000,
+        30_000,
       );
 
     function refreshVisible() {

@@ -60,12 +60,12 @@ for (const marker of [
 }
 
 if (
-  !bell.includes("NOTIFICATION_POLL_INTERVAL_MS = 30_000") ||
-  !center.includes("NOTIFICATION_POLL_INTERVAL_MS = 15_000") ||
+  !bell.includes("NOTIFICATION_POLL_INTERVAL_MS = 60_000") ||
+  !center.includes("NOTIFICATION_POLL_INTERVAL_MS = 30_000") ||
   !bell.includes("refreshingRef") ||
   !center.includes("reloadingRef")
 ) {
-  failures.push("Notification polling must use the tuned intervals and prevent overlapping requests.");
+  failures.push("Notification polling must use the current load-safe intervals and prevent overlapping requests.");
 }
 
 const cacheVersionMatch = worker.match(/miles-meals-static-v(\d+)/);

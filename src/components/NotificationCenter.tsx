@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 
-const NOTIFICATION_POLL_INTERVAL_MS = 15_000;
+const NOTIFICATION_POLL_INTERVAL_MS = 30_000;
 
 type NotificationItem = {
   id: string;

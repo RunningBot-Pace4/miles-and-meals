@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { auth } from "@/lib/auth";
 
 type BetterAuthSession = typeof auth.$Infer.Session;
@@ -12,7 +13,7 @@ export type AppSession = Omit<BetterAuthSession, "user"> & {
   user: AppSessionUser;
 };
 
-export async function getSession(): Promise<AppSession | null> {
+const readSession = cache(async (): Promise<AppSession | null> => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -23,6 +24,10 @@ export async function getSession(): Promise<AppSession | null> {
    * Keep the assertion centralized so authorization callers stay type-safe.
    */
   return session as AppSession | null;
+});
+
+export async function getSession(): Promise<AppSession | null> {
+  return readSession();
 }
 
 export async function requirePageSession(): Promise<AppSession> {

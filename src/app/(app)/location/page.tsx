@@ -1,3 +1,4 @@
+import "maplibre-gl/dist/maplibre-gl.css";
 import { LocationTracker } from "@/components/LocationTracker";
 import {
   getActiveTripContext,

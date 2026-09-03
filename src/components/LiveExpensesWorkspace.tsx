@@ -18,7 +18,7 @@ import {
 export const EXPENSE_UPDATED_EVENT =
   "mnm:expense-updated";
 
-const POLL_INTERVAL_MS = 8000;
+const POLL_INTERVAL_MS = 20_000;
 const REQUEST_TIMEOUT_MS = 4000;
 
 export function LiveExpensesWorkspace({

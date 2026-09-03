@@ -12,10 +12,10 @@ const picker = read("src/components/DateRangePicker.tsx");
 const e2e = read("e2e/v92-9-responsive-components.spec.ts");
 const fullPwaE2e = read("e2e/v92-9-full-pwa-audit.spec.ts");
 
-must(packageJson, '"version": "1.92.15"', "V92.9 package version missing");
+must(packageJson, '"version": "1.92.16"', "V92.9 package version missing");
 must(packageJson, '"v92-9:check"', "V92.9 validation script missing");
 must(packageJson, "npm run v92-9:check", "V92.9 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-15", "V92.9 service-worker cache missing");
+must(worker, "miles-meals-static-v92-16", "V92.9 service-worker cache missing");
 
 [
   'className="date-range-instruction"',

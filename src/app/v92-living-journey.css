@@ -3359,6 +3359,38 @@ button[role="tab"][aria-selected="true"] {
   line-height: 1.4;
 }
 
+.permission-access-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #555c65;
+  background: #e8eaed;
+  font-weight: 900;
+}
+
+.permission-access-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.permission-access-copy strong,
+.permission-access-copy small {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+
+.permission-access-copy small {
+  color: var(--v92-muted);
+  font-size: 0.7rem;
+}
+
 .category-budget-access > span {
   width: 28px;
   height: 28px;

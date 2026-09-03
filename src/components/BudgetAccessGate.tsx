@@ -8,7 +8,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-const BUDGET_POLL_INTERVAL_MS = 15_000;
+const BUDGET_POLL_INTERVAL_MS = 120_000;
 const PASSWORD_PATH = "/settings/password";
 
 type MissingBudgetPayload = {
@@ -96,8 +96,6 @@ export function BudgetAccessGate({
   ]);
 
   useEffect(() => {
-    void checkMissingBudgets();
-
     const timer = window.setInterval(
       () => {
         void checkMissingBudgets();
@@ -113,11 +111,19 @@ export function BudgetAccessGate({
       "focus",
       handleFocus,
     );
+    window.addEventListener(
+      "mnm:budget-updated",
+      handleFocus,
+    );
 
     return () => {
       window.clearInterval(timer);
       window.removeEventListener(
         "focus",
+        handleFocus,
+      );
+      window.removeEventListener(
+        "mnm:budget-updated",
         handleFocus,
       );
     };

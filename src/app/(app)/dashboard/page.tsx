@@ -144,33 +144,47 @@ export default async function DashboardPage({
       (country) => country.id,
     );
 
+  const emptyBudget = {
+    myBudget: 0,
+    combinedBudget: 0,
+    budgetsSubmitted: 0,
+    travelerCount: 0,
+    missingBudgetCount: 0,
+  };
+  const loadSelectedData = async () => {
+    const [summary, budget] = await Promise.all([
+      buildExpenseSummary(countryIds),
+      requestedTripId
+        ? loadTripBudgetSummary(
+            session.user.id,
+            requestedTripId,
+            countryIds,
+          )
+        : Promise.resolve(emptyBudget),
+    ]);
+
+    return { summary, budget };
+  };
+  const allTripsDataPromise = viewAll
+    ? loadAllTripsDashboardData(
+        session.user.id,
+        activeTrip,
+      )
+    : Promise.resolve(null);
+  const selectedDataPromise = viewAll
+    ? allTripsDataPromise.then(
+        (data) => data?.selectedTrip ?? loadSelectedData(),
+      )
+    : loadSelectedData();
+
   const [
-    summary,
-    budget,
+    selectedData,
     allTripsData,
     unreadNotificationCount,
     recentActivity,
   ] = await Promise.all([
-    buildExpenseSummary(countryIds),
-    requestedTripId
-      ? loadTripBudgetSummary(
-          session.user.id,
-          requestedTripId,
-          countryIds,
-        )
-      : Promise.resolve({
-          myBudget: 0,
-          combinedBudget: 0,
-          budgetsSubmitted: 0,
-          travelerCount: 0,
-          missingBudgetCount: 0,
-        }),
-    viewAll
-      ? loadAllTripsDashboardData(
-          session.user.id,
-          activeTrip,
-        )
-      : Promise.resolve(null),
+    selectedDataPromise,
+    allTripsDataPromise,
     loadUnreadNotificationCount(
       session.user.id,
     ),
@@ -181,6 +195,7 @@ export default async function DashboardPage({
       viewAll ? [] : countryIds,
     ),
   ]);
+  const { summary, budget } = selectedData;
 
   const me = summary.people.find(
     (person) =>

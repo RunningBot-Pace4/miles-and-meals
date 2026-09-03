@@ -2,7 +2,9 @@ import {
   and,
   eq,
   inArray,
+  isNull,
 } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/db";
 import {
   countries,
@@ -38,96 +40,46 @@ export type TripBudgetSummary = {
   missingBudgetCount: number;
 };
 
+const readMissingTripBudgets = cache(async (
+  userId: string,
+  tripId = "",
+): Promise<MissingTripBudget[]> => {
+  try {
+    return await db
+      .selectDistinct({
+        tripId: trips.id,
+        tripName: trips.name,
+        baseCurrency: trips.baseCurrency,
+        financialStatus: trips.financialStatus,
+      })
+      .from(countryMembers)
+      .innerJoin(countries, eq(countryMembers.countryId, countries.id))
+      .innerJoin(trips, eq(countries.tripId, trips.id))
+      .leftJoin(
+        tripBudgets,
+        and(
+          eq(tripBudgets.tripId, trips.id),
+          eq(tripBudgets.userId, userId),
+        ),
+      )
+      .where(
+        and(
+          eq(countryMembers.userId, userId),
+          eq(trips.financialStatus, "OPEN"),
+          isNull(tripBudgets.userId),
+          tripId ? eq(trips.id, tripId) : undefined,
+        ),
+      );
+  } catch {
+    return [];
+  }
+});
+
 export async function listMissingTripBudgets(
   userId: string,
   tripId = "",
 ): Promise<MissingTripBudget[]> {
-  try {
-    const accessibleTrips =
-      (
-        await db
-          .selectDistinct({
-            tripId: trips.id,
-            tripName: trips.name,
-            baseCurrency:
-              trips.baseCurrency,
-            financialStatus:
-              trips.financialStatus,
-          })
-          .from(countryMembers)
-          .innerJoin(
-            countries,
-            eq(
-              countryMembers.countryId,
-              countries.id,
-            ),
-          )
-          .innerJoin(
-            trips,
-            eq(
-              countries.tripId,
-              trips.id,
-            ),
-          )
-          .where(
-            eq(
-              countryMembers.userId,
-              userId,
-            ),
-          )
-      ).filter(
-        (trip) =>
-          trip.financialStatus === "OPEN" &&
-          (!tripId ||
-            trip.tripId ===
-              tripId),
-      );
-
-    if (
-      accessibleTrips.length === 0
-    ) {
-      return [];
-    }
-
-    const existing = await db
-      .select({
-        tripId:
-          tripBudgets.tripId,
-      })
-      .from(tripBudgets)
-      .where(
-        and(
-          eq(
-            tripBudgets.userId,
-            userId,
-          ),
-          inArray(
-            tripBudgets.tripId,
-            accessibleTrips.map(
-              (trip) =>
-                trip.tripId,
-            ),
-          ),
-        ),
-      );
-
-    const existingIds =
-      new Set(
-        existing.map(
-          (row) =>
-            row.tripId,
-        ),
-      );
-
-    return accessibleTrips.filter(
-      (trip) =>
-        !existingIds.has(
-          trip.tripId,
-        ),
-    );
-  } catch {
-    return [];
-  }
+  return readMissingTripBudgets(userId, tripId);
 }
 
 export async function listUserTripBudgets(

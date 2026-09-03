@@ -11,10 +11,10 @@ const action = read("src/components/SettlementActionButton.tsx");
 const workspace = read("src/components/LiveSettlementWorkspace.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.15"', "V92.10 package version missing");
+must(packageJson, '"version": "1.92.16"', "V92.10 package version missing");
 must(packageJson, '"v92-10:check"', "V92.10 validation script missing");
 must(packageJson, "npm run v92-10:check", "V92.10 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-15", "V92.10 service-worker cache missing");
+must(worker, "miles-meals-static-v92-16", "V92.10 service-worker cache missing");
 
 [
   "useEffect, useRef, useState",

@@ -7,7 +7,7 @@ import type {
   SmartSettlementPlan,
 } from "@/lib/settlement-ledger";
 import { serializeSettlementLiveData, type SettlementLiveData } from "@/lib/settlement-live";
-import { loadTripBudgetSummary } from "@/lib/trip-budget";
+import { loadTripBudgetSummary, type TripBudgetSummary } from "@/lib/trip-budget";
 
 export type DashboardFinanceData = {
   total: number;
@@ -30,6 +30,10 @@ export type AllTripsDashboardData = {
   settlement: SettlementLiveData;
   tripCount: number;
   destinationCount: number;
+  selectedTrip: {
+    summary: ExpenseSummary;
+    budget: TripBudgetSummary;
+  } | null;
 };
 
 type ExpenseSummary = Awaited<ReturnType<typeof buildExpenseSummary>>;
@@ -239,6 +243,7 @@ export async function loadAllTripsDashboardData(
       ]);
 
       return {
+        tripId: trip.id,
         summary,
         budget,
         factor,
@@ -313,11 +318,20 @@ export async function loadAllTripsDashboardData(
     budgetsSubmitted,
     travelerCount,
   };
+  const selectedTripRow = tripRows.find(
+    (row) => row.tripId === activeTrip.tripId,
+  );
 
   return {
     finance,
     settlement: serializeSettlementLiveData(aggregateSummary, displayCurrency),
     tripCount: activeTrip.trips.length,
     destinationCount: activeTrip.allCountries.length,
+    selectedTrip: selectedTripRow
+      ? {
+          summary: selectedTripRow.summary,
+          budget: selectedTripRow.budget,
+        }
+      : null,
   };
 }

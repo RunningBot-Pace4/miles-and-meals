@@ -17,7 +17,7 @@ import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_INTERVAL_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 3500;
 
 type WorkspaceVariant =

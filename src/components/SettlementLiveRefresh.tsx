@@ -35,7 +35,7 @@ function payloadVersion(
 }
 
 export function SettlementLiveRefresh({
-  intervalMs = 4000,
+  intervalMs = 15_000,
   showBadge = true,
   channels = ["settlement"],
 }: {

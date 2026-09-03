@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import "maplibre-gl/dist/maplibre-gl.css";
 import "@/app/globals.css";
 import "@/app/living-journey.css";
 import "@/app/v92-living-journey.css";

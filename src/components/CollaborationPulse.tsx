@@ -11,7 +11,7 @@ type CollaborationEvent = {
   createdAt: string;
 };
 
-const POLL_MS = 15_000;
+const POLL_MS = 60_000;
 const TOAST_MS = 6500;
 
 function destination(entityType: string): string {

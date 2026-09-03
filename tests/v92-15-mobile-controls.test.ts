@@ -32,7 +32,10 @@ describe("V92.15 PWA control and editing repair", () => {
     expect(permissions).toContain("Owner permissions are always enabled.");
     expect(permissions).toContain("permission-native-control");
     expect(permissions).toContain("permission-check");
-    expect(permissions).toContain("View only · Only the Trip Owner");
+    expect(permissions).toContain('className="permission-access-icon"');
+    expect(permissions).toContain('className="permission-access-copy"');
+    expect(permissions).toContain("Only the Trip Owner can change traveler permissions.");
+    expect(css).toContain("overflow-wrap: break-word !important");
   });
 
   it("makes category editing state and save behavior explicit", () => {
@@ -61,6 +64,7 @@ describe("V92.15 PWA control and editing repair", () => {
     expect(geometry).toContain("320, 360, 390, 430, 600, 719, 768, 1024");
     expect(geometry).toContain("shareSeparated");
     expect(geometry).toContain("permissionSeparated");
+    expect(geometry).toContain("permissionCopyHasRoom");
     expect(geometry).toContain("prefixFits");
     expect(geometry).toContain("saveInside");
   });

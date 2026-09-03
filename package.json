@@ -1,6 +1,6 @@
 {
   "name": "miles-and-meals",
-  "version": "1.92.15",
+  "version": "1.92.16",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,7 +17,7 @@
     "test": "vitest run",
     "db:reset": "tsx scripts/reset-db.ts",
     "predev": "npm run cleanup:legacy && npm run cleanup:next-types && node ./scripts/copy-maplibre-worker.mjs",
-    "prebuild": "npm run cleanup:next && npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check && npm run phase8:check && npm run v53:check && npm run v54:check && npm run v55:check && npm run v56:check && npm run v57:check && npm run v58:check && npm run v63:check && npm run v64:check && npm run v65:check && npm run v66:check && npm run v67:check && npm run v68:check && npm run v69:check && npm run v70:check && npm run v77:check && npm run v78:check && npm run v79:check && npm run v80:check && npm run v81:check && npm run v82:check && npm run v85:check && npm run v90:check && npm run v91:check && npm run v91-1:check && npm run v91-2:check && npm run v92:check && npm run v92-2:check && npm run v92-3:check && npm run v92-4:check && npm run v92-5:check && npm run v92-6:check && npm run v92-7:check && npm run v92-8:check && npm run v92-9:check && npm run v92-10:check && npm run v92-11:check && npm run v92-12:check && npm run v92-13:check && npm run v92-14:check && npm run v92-15:check && npm run routes:check && npm run source:check && npm run typecheck",
+    "prebuild": "npm run cleanup:next && npm run cleanup:legacy && node ./scripts/copy-maplibre-worker.mjs && npm run pwa:check && npm run navigation:check && npm run phase8:check && npm run v53:check && npm run v54:check && npm run v55:check && npm run v56:check && npm run v57:check && npm run v58:check && npm run v63:check && npm run v64:check && npm run v65:check && npm run v66:check && npm run v67:check && npm run v68:check && npm run v69:check && npm run v70:check && npm run v77:check && npm run v78:check && npm run v79:check && npm run v80:check && npm run v81:check && npm run v82:check && npm run v85:check && npm run v90:check && npm run v91:check && npm run v91-1:check && npm run v91-2:check && npm run v92:check && npm run v92-2:check && npm run v92-3:check && npm run v92-4:check && npm run v92-5:check && npm run v92-6:check && npm run v92-7:check && npm run v92-8:check && npm run v92-9:check && npm run v92-10:check && npm run v92-11:check && npm run v92-12:check && npm run v92-13:check && npm run v92-14:check && npm run v92-15:check && npm run v92-16:check && npm run routes:check && npm run source:check && npm run typecheck",
     "cleanup:legacy": "node ./scripts/cleanup-legacy-files.mjs",
     "cleanup:next": "node ./scripts/cleanup-next-cache.mjs",
     "cleanup:next-types": "node ./scripts/cleanup-next-cache.mjs --types",
@@ -72,7 +72,8 @@
     "v92-12:check": "node scripts/validate-v92-12.mjs",
     "v92-13:check": "node scripts/validate-v92-13.mjs",
     "v92-14:check": "node scripts/validate-v92-14.mjs",
-    "v92-15:check": "node scripts/validate-v92-15.mjs"
+    "v92-15:check": "node scripts/validate-v92-15.mjs",
+    "v92-16:check": "node scripts/validate-v92-16.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.0",

@@ -8,7 +8,7 @@ import {
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 
-const NOTIFICATION_POLL_INTERVAL_MS = 30_000;
+const NOTIFICATION_POLL_INTERVAL_MS = 60_000;
 
 export const NOTIFICATION_UPDATED_EVENT =
   "mnm:notifications-updated";

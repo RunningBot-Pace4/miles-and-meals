@@ -20,10 +20,10 @@ const offlineWarmup = read("src/components/OfflinePackWarmup.tsx");
 const health = read("src/app/(app)/admin/health/page.tsx");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.15"', "V92.2-or-newer package version missing");
+must(packageJson, '"version": "1.92.16"', "V92.2-or-newer package version missing");
 must(packageJson, '"v92-2:check"', "V92.2 release gate missing");
 must(packageJson, "npm run v92-2:check", "V92.2 gate is not part of prebuild");
-must(worker, 'miles-meals-static-v92-15', "V92.2-or-newer service-worker cache missing");
+must(worker, 'miles-meals-static-v92-16', "V92.2-or-newer service-worker cache missing");
 
 const installBlock = worker.slice(
   worker.indexOf('self.addEventListener("install"'),
@@ -55,10 +55,10 @@ for (const marker of [
   '.nav-item[aria-current="page"]',
 ]) must(css, marker, `V92.2 selected-state styling missing: ${marker}`);
 
-must(notificationBell, "30_000", "Notification bell still polls too aggressively");
-must(notificationCenter, "15_000", "Notification page still polls too aggressively");
-must(collaboration, "15_000", "Collaboration polling was not tuned");
-must(budgetGate, "15_000", "Budget polling was not tuned");
+must(notificationBell, "60_000", "Notification bell still polls too aggressively");
+must(notificationCenter, "30_000", "Notification page still polls too aggressively");
+must(collaboration, "60_000", "Collaboration polling was not tuned");
+must(budgetGate, "120_000", "Budget polling was not tuned");
 for (const text of [notificationBell, notificationCenter, collaboration, budgetGate]) {
   must(text, "Ref", "A tuned poller is missing in-flight protection");
 }

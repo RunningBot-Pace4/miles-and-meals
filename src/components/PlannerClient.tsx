@@ -790,7 +790,7 @@ export function PlannerClient({
   useEffect(() => {
     const timer = window.setInterval(
       () => void refreshItems(),
-      8000,
+      20_000,
     );
 
     function refreshWhenVisible() {

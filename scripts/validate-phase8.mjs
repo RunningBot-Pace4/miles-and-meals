@@ -398,14 +398,14 @@ if (
     "mnm:settlement-updated",
   ) ||
   !liveSettlementWorkspace.includes(
-    "POLL_INTERVAL_MS = 4000",
+    "POLL_INTERVAL_MS = 15_000",
   ) ||
   !liveSettlementWorkspace.includes(
     "SETTLEMENT_UPDATED_EVENT",
   )
 ) {
   fail(
-    "Settlement actions must trigger immediate in-place refresh and keep 4-second live polling.",
+    "Settlement actions must trigger immediate in-place refresh and keep load-safe live polling.",
   );
 }
 
@@ -554,13 +554,13 @@ if (
 
 if (
   !liveExpenses.includes(
-    "POLL_INTERVAL_MS = 8000",
+    "POLL_INTERVAL_MS = 20_000",
   ) ||
   !plannerClientV45.includes(
     "setItemsState",
   ) ||
   !plannerClientV45.includes(
-    "8000",
+    "20_000",
   )
 ) {
   fail(

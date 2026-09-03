@@ -12,10 +12,10 @@ const halo = read("src/components/LivingJourneyHalo.tsx");
 const nav = read("src/components/MobileNav.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.15"', "V92.4-or-newer package version missing");
+must(packageJson, '"version": "1.92.16"', "V92.4-or-newer package version missing");
 must(packageJson, '"v92-4:check"', "V92.4 release gate missing");
 must(packageJson, "npm run v92-4:check", "V92.4 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-15", "V92.4-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-16", "V92.4-or-newer service-worker cache missing");
 
 for (const source of [starter, halo]) {
   must(source, "onPointerDown={() => setActiveMode(mode)}", "Halo selection is not immediate on touch");

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/db";
 import { userPreferences } from "@/db/schema";
 import type { AvatarColor, AvatarIcon } from "@/lib/avatar";
@@ -19,9 +20,9 @@ export const defaultUserPreferences: UserPreferences = {
   timeZone: "Asia/Kuala_Lumpur",
 };
 
-export async function getUserPreferences(
+const readUserPreferences = cache(async (
   userId: string,
-): Promise<UserPreferences> {
+): Promise<UserPreferences> => {
   const rows = await db
     .select({
       avatarColor: userPreferences.avatarColor,
@@ -47,6 +48,12 @@ export async function getUserPreferences(
     locale: row.locale,
     timeZone: row.timeZone,
   };
+});
+
+export async function getUserPreferences(
+  userId: string,
+): Promise<UserPreferences> {
+  return readUserPreferences(userId);
 }
 
 export async function setMustChangePassword(

@@ -111,10 +111,13 @@ export function OfflineQueueSync() {
       }
     }
 
+    const initialItems = readOfflineQueue();
     refreshItems();
     // A page load immediately after connectivity returns must not inherit a
     // future backoff timestamp from the failed offline request.
-    void sync(navigator.onLine);
+    if (initialItems.length > 0) {
+      void sync(navigator.onLine);
+    }
 
     function onVisible() {
       if (document.visibilityState === "visible") void sync();
@@ -141,7 +144,9 @@ export function OfflineQueueSync() {
     window.addEventListener("mnm:offline-sync-history-changed", onQueueChanged);
     document.addEventListener("visibilitychange", onVisible);
 
-    const timer = window.setInterval(() => void sync(), 30_000);
+    const timer = window.setInterval(() => {
+      if (readOfflineQueue().length > 0) void sync();
+    }, 60_000);
 
     return () => {
       disposed = true;

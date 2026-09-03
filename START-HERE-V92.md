@@ -1,8 +1,18 @@
-# Miles & Meals V92.15 · Mobile Controls and Editing Repair
+# Miles & Meals V92.16 · PWA Layout and Performance Repair
 
-Version `1.92.15` keeps the approved light Living Journey design and all earlier V92 repairs, then applies one shared responsive contract across the complete Web/PWA interface instead of waiting for individual screenshots.
+Version `1.92.16` keeps the approved light Living Journey design and all earlier V92 repairs, fixes the reported permissions notice at its structural source, and reduces avoidable work during navigation and idle use.
 
 ## What changed
+
+- The traveler-permissions notice now has explicit icon and copy columns, so iOS cannot place the sentence inside a 28 px column or wrap it one letter at a time.
+- Repeated authentication, preference and notification reads are deduplicated within a server-render request.
+- Unread notification totals are calculated by PostgreSQL instead of loading every unread notification ID into the app.
+- Missing-budget detection uses one database anti-join instead of two sequential queries.
+- The default all-trips Home reuses its already-loaded active-trip expense and budget summary instead of calculating the same finance data twice.
+- The expensive all-trip offline pack warmup is delayed until the first page becomes interactive and its refresh timestamp survives full-page navigation.
+- An empty offline queue no longer starts a sync operation or calls the sync engine every 30 seconds.
+- Global and page-specific pollers use slower safety intervals while existing focus, online, save and collaboration events still refresh immediately.
+- MapLibre CSS is route-scoped to the live-location page rather than being included in every Home, Plan, Expense, Settlement and More response.
 
 - White/light app canvas with restrained blue, yellow, peach and green accents.
 - Thin four-segment Halo with Move, Plan, Spend and People modes.
@@ -90,7 +100,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-15` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-16` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -102,10 +112,11 @@ npm run v92-12:check
 npm run v92-13:check
 npm run v92-14:check
 npm run v92-15:check
+npm run v92-16:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.15 packaging validation: 164/164 unit tests, all source/release gates, TypeScript and the 82-route Next.js production build passed. The included Playwright geometry and authenticated PWA specifications require installed browser binaries; run them against staging before production sign-off.
+V92.16 packaging validation: 169/169 unit tests, all historical and current source/release gates, TypeScript and the 82-route Next.js production build passed. The production bundle confirms the 83,195-byte MapLibre stylesheet is referenced by only the map chunk. The included Playwright geometry and authenticated PWA specifications require installed browser binaries; run them against staging before production sign-off.

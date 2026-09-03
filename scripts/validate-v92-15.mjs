@@ -16,10 +16,10 @@ const queue = read("src/components/OfflineQueueSync.tsx");
 const audit = read("e2e/v92-9-full-pwa-audit.spec.ts");
 const geometry = read("e2e/v92-15-mobile-control-layout.spec.ts");
 
-must(packageJson, '"version": "1.92.15"', "V92.15 package version missing");
+must(packageJson, '"version": "1.92.16"', "V92.15 package version missing");
 must(packageJson, '"v92-15:check"', "V92.15 validation script missing");
 must(packageJson, "npm run v92-15:check", "V92.15 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-15", "V92.15 PWA cache missing");
+must(worker, "miles-meals-static-v92-16", "V92.15 PWA cache missing");
 
 for (const marker of [
   "/* V92.15 · compact mobile controls",
@@ -37,7 +37,7 @@ for (const marker of ["offline-share-native-control", "offline-share-check", "of
   must(offline, marker, `Offline sharing control missing: ${marker}`);
 }
 
-for (const marker of ["permission-owner-summary", "permission-check", "View only · Only the Trip Owner"]) {
+for (const marker of ["permission-owner-summary", "permission-check", "permission-access-icon", "permission-access-copy", "Only the Trip Owner can change traveler permissions."]) {
   must(permissions, marker, `Permission repair missing: ${marker}`);
 }
 
@@ -51,7 +51,7 @@ for (const marker of ["categoryOrder.map((category)", 'Accommodation: "Hotel"', 
 must(queue, "canonicalExpenseCategory", "Queued legacy expense categories are not normalized for editing");
 
 must(audit, "oversizedBooleanControls", "Full route audit does not detect oversized boolean controls");
-for (const marker of ["shareSeparated", "permissionSeparated", "prefixFits", "saveInside"]) {
+for (const marker of ["shareSeparated", "permissionSeparated", "permissionCopyHasRoom", "prefixFits", "saveInside"]) {
   must(geometry, marker, `V92.15 geometry check missing: ${marker}`);
 }
 

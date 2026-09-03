@@ -2,17 +2,19 @@ import {
   and,
   eq,
   isNull,
+  sql,
 } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/db";
 import { notifications } from "@/db/schema";
 
-export async function loadUnreadNotificationCount(
+const readUnreadNotificationCount = cache(async (
   userId: string,
-): Promise<number> {
+): Promise<number> => {
   try {
     const rows = await db
       .select({
-        id: notifications.id,
+        count: sql<number>`count(*)`,
       })
       .from(notifications)
       .where(
@@ -27,8 +29,14 @@ export async function loadUnreadNotificationCount(
         ),
       );
 
-    return rows.length;
+    return Number(rows[0]?.count ?? 0);
   } catch {
     return 0;
   }
+});
+
+export async function loadUnreadNotificationCount(
+  userId: string,
+): Promise<number> {
+  return readUnreadNotificationCount(userId);
 }
