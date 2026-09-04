@@ -13,10 +13,10 @@ describe("V92.21 single navigation and restored Halo", () => {
   const globalError = read("src/app/global-error.tsx");
 
   it("publishes one coherent V92.21 PWA version", () => {
-    expect(packageJson).toContain('"version": "1.92.21"');
+    expect(packageJson).toContain('"version": "1.92.23"');
     expect(packageJson).toContain('"v92-21:check"');
     expect(packageJson).toContain("npm run v92-21:check");
-    expect(worker).toContain("miles-meals-static-v92-21");
+    expect(worker).toContain("miles-meals-static-v92-23");
   });
 
   it("uses one native document request for every shared route link", () => {

@@ -20,6 +20,7 @@ import {
   loadTripBudgetSummary,
 } from "@/lib/trip-budget";
 import { loadTripCommandCenter } from "@/lib/trip-command-center";
+import { buildJourneyGreeting } from "@/lib/journey-greeting";
 
 function formatTripDateRange(
   startDate:
@@ -221,6 +222,21 @@ export default async function DashboardPage({
   const displayName =
     session.user.name.trim() ||
     "Traveler";
+  const journeyGreeting =
+    buildJourneyGreeting({
+      displayName,
+      viewAll,
+      tripCount:
+        tripOptions.length,
+      selectedTrip,
+      destinationNames:
+        selectedCountries.map(
+          (country) =>
+            country.name,
+        ),
+      today:
+        malaysiaDateString(),
+    });
   const allTripStartDates =
     tripOptions
       .map((trip) => trip.startDate)
@@ -399,37 +415,28 @@ export default async function DashboardPage({
 
   return (
     <div className="stack gap-lg dashboard-page">
-      <section className="dashboard-welcome">
+      <section
+        className={`dashboard-welcome journey-greeting journey-greeting--${journeyGreeting.tone}`}
+      >
         <div className="dashboard-welcome-copy">
-          <p className="eyebrow">
-            MILES &amp; MEALS
+          <p className="journey-greeting-meta">
+            <span className="journey-greeting-person">
+              For {displayName}
+            </span>
+            <span
+              className="journey-greeting-divider"
+              aria-hidden="true"
+            />
+            <span>
+              {journeyGreeting.context}
+            </span>
           </p>
           <h1 className="dashboard-welcome-title">
-            <span className="welcome-editorial">
-              <span className="welcome-prefix">
-                Welcome back,
-              </span>{" "}
-              <span className="welcome-name">
-                {displayName}.
-              </span>
-            </span>
-
-            <span className="welcome-tagline">
-              Make every{" "}
-              <strong className="tagline-mile">
-                mile
-              </strong>
-              ,{" "}
-              <strong className="tagline-meal">
-                meal
-              </strong>{" "}
-              &amp;{" "}
-              <strong className="tagline-memory">
-                memory
-              </strong>{" "}
-              count.
-            </span>
+            {journeyGreeting.title}
           </h1>
+          <p className="journey-greeting-subtitle">
+            {journeyGreeting.subtitle}
+          </p>
         </div>
 
         {selectedTrip ? (

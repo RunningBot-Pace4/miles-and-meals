@@ -14,10 +14,10 @@ const launch = read("src/app/layout.tsx");
 const globalError = read("src/app/global-error.tsx");
 const geometry = read("e2e/v92-21-single-navigation.spec.ts");
 
-must(packageJson, '"version": "1.92.21"', "V92.21 package version missing");
+must(packageJson, '"version": "1.92.23"', "V92.21 package version missing");
 must(packageJson, '"v92-21:check"', "V92.21 release gate missing");
 must(packageJson, "npm run v92-21:check", "V92.21 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-21", "V92.21 PWA cache missing");
+must(worker, "miles-meals-static-v92-23", "V92.21 PWA cache missing");
 
 for (const marker of [
   "<a",

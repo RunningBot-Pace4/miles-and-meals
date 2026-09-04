@@ -16,6 +16,11 @@ import { formatMoney } from "@/lib/money";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
+import {
+  buildIndividualPaymentLedgers,
+  type IndividualPaymentStatus,
+  type IndividualPaymentTransaction,
+} from "@/lib/individual-payment-ledger";
 
 const POLL_INTERVAL_MS = 15_000;
 const REQUEST_TIMEOUT_MS = 3500;
@@ -80,6 +85,80 @@ function formatSettlementDate(value: string): string {
     month: "short",
     year: "numeric",
   }).format(parsed);
+}
+
+function formatSettlementTimestamp(value: string): string {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-MY", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function individualPaymentStatusCopy(status: IndividualPaymentStatus): {
+  label: string;
+  className: string;
+} {
+  switch (status) {
+    case "PARTIAL_PENDING":
+      return {
+        label: "Partial · confirmation pending",
+        className: "partial-pending",
+      };
+    case "PENDING_CONFIRMATION":
+      return {
+        label: "Full payment pending",
+        className: "pending",
+      };
+    case "PARTIAL":
+      return {
+        label: "Partially settled",
+        className: "partial",
+      };
+    case "SETTLED":
+      return {
+        label: "Fully settled",
+        className: "settled",
+      };
+    default:
+      return {
+        label: "Payment due",
+        className: "due",
+      };
+  }
+}
+
+function transactionStatusCopy(transaction: IndividualPaymentTransaction): {
+  label: string;
+  className: string;
+} {
+  if (transaction.confirmationStatus === "PENDING") {
+    return {
+      label:
+        transaction.progressStatus === "FULL"
+          ? "Full payment · awaiting confirmation"
+          : "Partial payment · awaiting confirmation",
+      className: "pending",
+    };
+  }
+
+  return transaction.progressStatus === "FULL"
+    ? {
+        label: "Fully settled",
+        className: "settled",
+      }
+    : {
+        label: "Partial payment confirmed",
+        className: "partial",
+      };
 }
 
 function SmartSettlementPanel({
@@ -1034,66 +1113,177 @@ function PersonalSummary({
   );
 }
 
-function SettlementHistory({
+function IndividualPaymentDetails({
   data,
+  currentUserId,
 }: {
   data: SettlementLiveData;
+  currentUserId: string;
 }) {
+  const ledgers = useMemo(
+    () => buildIndividualPaymentLedgers(data, currentUserId),
+    [data, currentUserId],
+  );
+
   return (
-    <section className="panel">
+    <section className="panel individual-payment-panel">
       <div className="panel-title">
         <div>
           <p className="eyebrow">
-            HISTORY
+            YOUR PAYMENT DETAILS
           </p>
           <h2>
-            Completed payments
+            Payments by person
           </h2>
+          <p className="muted individual-payment-intro">
+            Open a person to see every full or partial payment, its confirmation status, and the balance left after that transaction.
+          </p>
         </div>
       </div>
 
-      <div className="settlement-history">
-        {data.settledSettlements.length ? (
-          data.settledSettlements
-            .slice(0, 30)
-            .map((payment) => (
-              <div
-                className="settlement-history-row"
-                key={payment.id}
+      <div className="individual-payment-list">
+        {ledgers.length ? (
+          ledgers.map((ledger) => {
+            const status = individualPaymentStatusCopy(ledger.status);
+            const safeTotal = Math.max(ledger.totalAmount, 0.01);
+            const confirmedWidth = Math.min(
+              100,
+              (ledger.confirmedAmount / safeTotal) * 100,
+            );
+            const pendingWidth = Math.min(
+              100 - confirmedWidth,
+              (ledger.pendingAmount / safeTotal) * 100,
+            );
+
+            return (
+              <details
+                className="individual-payment-card"
+                key={ledger.key}
+                open={ledgers.length === 1}
               >
-                <span className="settlement-history-check">
-                  ✓
-                </span>
-                <span>
-                  <strong>
-                    {payment.fromName} →{" "}
-                    {payment.toName}
-                  </strong>
-                  <small>
-                    {payment.tripName} ·
-                    Completed · View only ·{" "}
-                    {payment.confirmedAt
-                      ? new Date(
-                          payment.confirmedAt,
-                        ).toLocaleDateString(
-                          "en-MY",
-                        )
-                      : ""}
-                  </small>
-                </span>
-                <strong>
-                  {formatMoney(
-                    payment.amount,
-                    payment.currency,
-                  )}
-                </strong>
-              </div>
-            ))
+                <summary>
+                  <span
+                    className={`individual-payment-direction ${ledger.direction.toLowerCase()}`}
+                    aria-hidden="true"
+                  >
+                    {ledger.direction === "PAY" ? "↗" : "↙"}
+                  </span>
+                  <span className="individual-payment-person">
+                    <strong>
+                      {ledger.direction === "PAY"
+                        ? `You → ${ledger.counterpartyName}`
+                        : `${ledger.counterpartyName} → You`}
+                    </strong>
+                    <small>
+                      {ledger.tripName} · {ledger.transactionCount} payment transaction{ledger.transactionCount === 1 ? "" : "s"}
+                    </small>
+                  </span>
+                  <span className={`individual-payment-state ${status.className}`}>
+                    {status.label}
+                  </span>
+                  <span className="individual-payment-open">
+                    <strong>{formatMoney(ledger.openAmount, ledger.currency)}</strong>
+                    <small>{ledger.openAmount > 0.005 ? "open" : "cleared"}</small>
+                  </span>
+                  <span className="individual-payment-chevron" aria-hidden="true">⌄</span>
+                </summary>
+
+                <div className="individual-payment-body">
+                  <div className="individual-payment-metrics">
+                    <div>
+                      <span>Total balance</span>
+                      <strong>{formatMoney(ledger.totalAmount, ledger.currency)}</strong>
+                    </div>
+                    <div className="confirmed">
+                      <span>{ledger.direction === "PAY" ? "Confirmed paid" : "Confirmed received"}</span>
+                      <strong>{formatMoney(ledger.confirmedAmount, ledger.currency)}</strong>
+                    </div>
+                    <div className="pending">
+                      <span>Awaiting confirmation</span>
+                      <strong>{formatMoney(ledger.pendingAmount, ledger.currency)}</strong>
+                      <small>{ledger.pendingCount} pending</small>
+                    </div>
+                    <div className="remaining">
+                      <span>{ledger.direction === "PAY" ? "Still to pay" : "Still to receive"}</span>
+                      <strong>{formatMoney(ledger.remainingAmount, ledger.currency)}</strong>
+                    </div>
+                  </div>
+
+                  <div
+                    className="individual-payment-progress"
+                    aria-label={`${Math.round(confirmedWidth)} percent confirmed, ${Math.round(pendingWidth)} percent awaiting confirmation`}
+                  >
+                    <i className="confirmed" style={{ width: `${confirmedWidth}%` }} />
+                    <i className="pending" style={{ width: `${pendingWidth}%` }} />
+                  </div>
+                  <div className="individual-payment-progress-key">
+                    <span><i className="confirmed" />Confirmed</span>
+                    <span><i className="pending" />Awaiting confirmation</span>
+                    <span><i />Not paid yet</span>
+                  </div>
+
+                  <div className="individual-payment-transactions">
+                    <div className="individual-payment-transactions-head">
+                      <div>
+                        <strong>Payment transactions</strong>
+                        <small>Oldest to newest, with the balance after each payment.</small>
+                      </div>
+                      <span>
+                        {ledger.settledCount} confirmed · {ledger.pendingCount} pending
+                      </span>
+                    </div>
+
+                    {ledger.transactions.length ? (
+                      ledger.transactions.map((transaction) => {
+                        const transactionStatus = transactionStatusCopy(transaction);
+
+                        return (
+                          <article
+                            className="individual-payment-transaction"
+                            key={transaction.id}
+                          >
+                            <span className="individual-payment-sequence">
+                              {transaction.sequence}
+                            </span>
+                            <span className="individual-payment-transaction-copy">
+                              <strong>{formatMoney(transaction.amount, transaction.currency)}</strong>
+                              <small>
+                                Recorded {formatSettlementTimestamp(transaction.sentAt)}
+                                {transaction.confirmedAt
+                                  ? ` · Confirmed ${formatSettlementTimestamp(transaction.confirmedAt)}`
+                                  : ""}
+                              </small>
+                            </span>
+                            <span className={`individual-payment-transaction-state ${transactionStatus.className}`}>
+                              {transactionStatus.label}
+                            </span>
+                            <span className="individual-payment-after">
+                              <small>Remaining after</small>
+                              <strong>{formatMoney(transaction.remainingAfter, transaction.currency)}</strong>
+                            </span>
+                          </article>
+                        );
+                      })
+                    ) : (
+                      <div className="individual-payment-empty">
+                        <strong>No payment transaction recorded yet.</strong>
+                        <small>The full balance is still outstanding.</small>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="individual-payment-note">
+                    Pending payments count as open until the receiver confirms them. Completed · View only. Completed payments remain locked.
+                  </p>
+                </div>
+              </details>
+            );
+          })
         ) : (
-          <p className="muted">
-            No completed settlement
-            payments yet.
-          </p>
+          <div className="individual-payment-empty">
+            <strong>No individual payments to track yet.</strong>
+            <small>Payment details will appear here when a balance or transaction exists.</small>
+          </div>
         )}
       </div>
     </section>
@@ -1347,8 +1537,9 @@ export function LiveSettlementWorkspace({
 
       {variant ===
       "settlements" ? (
-        <SettlementHistory
+        <IndividualPaymentDetails
           data={data}
+          currentUserId={currentUserId}
         />
       ) : null}
     </div>

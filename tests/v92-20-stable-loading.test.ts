@@ -13,10 +13,10 @@ describe("V92.20 stable Web and PWA loading", () => {
   const css = read("src/app/v92-living-journey.css");
 
   it("publishes a coherent V92.20 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.21"');
+    expect(packageJson).toContain('"version": "1.92.23"');
     expect(packageJson).toContain('"v92-20:check"');
     expect(packageJson).toContain("npm run v92-20:check");
-    expect(worker).toContain("miles-meals-static-v92-21");
+    expect(worker).toContain("miles-meals-static-v92-23");
   });
 
   it("retains the branded PWA launch artwork", () => {

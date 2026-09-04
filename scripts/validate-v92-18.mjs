@@ -12,10 +12,10 @@ const css = read("src/app/v92-living-journey.css");
 const geometry = read("e2e/v92-18-expense-pwa-layout.spec.ts");
 const rules = css.slice(css.indexOf("/* V92.18 · fixed expense canvas"));
 
-must(packageJson, '"version": "1.92.21"', "V92.18 package version missing");
+must(packageJson, '"version": "1.92.23"', "V92.18 package version missing");
 must(packageJson, '"v92-18:check"', "V92.18 validation script missing");
 must(packageJson, "npm run v92-18:check", "V92.18 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-21", "V92.18 service-worker cache missing");
+must(worker, "miles-meals-static-v92-23", "V92.18 service-worker cache missing");
 
 for (const marker of [
   '<p className="eyebrow">EXPENSE</p>',

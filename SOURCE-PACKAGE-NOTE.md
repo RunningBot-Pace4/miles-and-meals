@@ -1,10 +1,10 @@
-# Miles & Meals V92.21 — Single Navigation Package
+# Miles & Meals V92.23 — Contextual Journey Greeting Package
 
-This is the complete source package, versioned `1.92.21`. It preserves all earlier V92 repairs, removes the dual client/fallback navigation that caused repeated loading and restores the approved rotating Halo loading design.
+This is the complete source package, versioned `1.92.23`. It preserves all earlier V92 repairs, the single Next.js Halo loading boundary and the per-person payment ledger, then replaces the ordinary dashboard welcome with responsive copy and styling for every trip stage.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 
-Validated for V92.21: 196/196 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Shared route CSS remains smaller than V92.18. Browser-driven staging verification remains a deployment gate because it needs Playwright browser binaries and an authenticated test account.
+Validated for V92.23: 219/219 unit and server-rendered UI tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Browser-driven authenticated staging and physical-device PWA verification remain deployment gates.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 

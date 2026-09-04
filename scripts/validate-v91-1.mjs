@@ -17,7 +17,7 @@ const nextConfig = read("next.config.ts");
 const manifest = read("public/manifest-v92.webmanifest");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.21"', "V91.1-or-newer package version missing");
+must(packageJson, '"version": "1.92.23"', "V91.1-or-newer package version missing");
 for (const marker of [
   '"cleanup:next"',
   '"cleanup:next-types"',
@@ -71,7 +71,7 @@ for (const file of [
 
 must(layout, "/manifest-v92.webmanifest", "Layout does not use the V92 versioned manifest");
 must(manifest, "/icons/v92/icon-192.png", "V92 manifest icon missing");
-must(worker, "miles-meals-static-v92-21", "V91.1-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-23", "V91.1-or-newer service-worker cache missing");
 must(worker, "/icons/v92/notification-icon-96.png", "V92 notification mark missing");
 must(nextConfig, 'source: "/sw.js"', "Service worker cache headers missing");
 must(nextConfig, 'source: "/manifest-v92.webmanifest"', "Manifest cache headers missing");

@@ -1,10 +1,10 @@
-# V92.21 Living Journey — single navigation release
+# V92.23 Living Journey — contextual dashboard greeting
 
-Version `1.92.21` fixes the repeated fresh-load prompt and true double navigation. Every shared route now opens through one reliable document request, with no delayed second fallback request. The approved PWA launch artwork and rotating Halo are restored. See `V92-21-SINGLE-NAVIGATION.md` for the release details.
+Version `1.92.23` replaces the generic dashboard welcome with a premium contextual journey greeting. The headline and supporting message now adapt to an empty account, all-trips overview, undated plan, upcoming countdown, active trip, or completed journey without adding horizontal overflow on PWA screens. V92.22's single loading boundary and individual payment ledger remain included. See `V92-23-CONTEXTUAL-GREETING.md` for release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-V92 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
+V92.23 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
 
 ---
 

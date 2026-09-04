@@ -14,10 +14,10 @@ describe("V92.19 payer layout and speed", () => {
   const geometry = read("e2e/v92-19-payer-layout.spec.ts");
 
   it("publishes a coherent PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.21"');
+    expect(packageJson).toContain('"version": "1.92.23"');
     expect(packageJson).toContain('"v92-19:check"');
     expect(packageJson).toContain("npm run v92-19:check");
-    expect(worker).toContain("miles-meals-static-v92-21");
+    expect(worker).toContain("miles-meals-static-v92-23");
   });
 
   it("uses one compact row language for one and multiple payers", () => {

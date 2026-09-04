@@ -13,10 +13,10 @@ const dismiss = read("src/components/PwaLaunchDismiss.tsx");
 const saving = read("src/components/SavingOverlay.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.21"', "V92.20 package version missing");
+must(packageJson, '"version": "1.92.23"', "V92.20 package version missing");
 must(packageJson, '"v92-20:check"', "V92.20 release gate missing");
 must(packageJson, "npm run v92-20:check", "V92.20 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-21", "V92.20 PWA cache missing");
+must(worker, "miles-meals-static-v92-23", "V92.20 PWA cache missing");
 
 for (const marker of [
   'const loadingKind = showCopy ? "action" : "route"',

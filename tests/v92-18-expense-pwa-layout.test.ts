@@ -10,10 +10,10 @@ const rules = css.slice(css.indexOf("/* V92.18 · fixed expense canvas"));
 
 describe("V92.18 expense PWA layout correction", () => {
   it("publishes a distinct release and service-worker cache", () => {
-    expect(packageJson).toContain('"version": "1.92.21"');
+    expect(packageJson).toContain('"version": "1.92.23"');
     expect(packageJson).toContain('"v92-18:check"');
     expect(packageJson).toContain("npm run v92-18:check");
-    expect(worker).toContain("miles-meals-static-v92-21");
+    expect(worker).toContain("miles-meals-static-v92-23");
   });
 
   it("uses a compact professional receipt action", () => {

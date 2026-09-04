@@ -15,10 +15,10 @@ const css = read("src/app/v92-living-journey.css");
 const livingJourneyCss = read("src/app/living-journey.css");
 const geometry = read("e2e/v92-19-payer-layout.spec.ts");
 
-must(packageJson, '"version": "1.92.21"', "V92.19 package version missing");
+must(packageJson, '"version": "1.92.23"', "V92.19 package version missing");
 must(packageJson, '"v92-19:check"', "V92.19 release gate missing");
 must(packageJson, "npm run v92-19:check", "V92.19 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-21", "V92.19 service-worker cache missing");
+must(worker, "miles-meals-static-v92-23", "V92.19 service-worker cache missing");
 
 for (const marker of [
   'className="single-payer-list"',
