@@ -23,11 +23,21 @@ export function SavingOverlay({
       document.documentElement.style.overflow;
     const previousBodyOverflow =
       document.body.style.overflow;
+    const previousBodyPaddingRight =
+      document.body.style.paddingRight;
     const previousLoadingState =
       document.body.dataset.actionLoading;
 
+    const scrollbarWidth = Math.max(
+      0,
+      window.innerWidth - document.documentElement.clientWidth,
+    );
+
     document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     document.body.dataset.actionLoading = "true";
 
     return () => {
@@ -35,6 +45,8 @@ export function SavingOverlay({
         previousHtmlOverflow;
       document.body.style.overflow =
         previousBodyOverflow;
+      document.body.style.paddingRight =
+        previousBodyPaddingRight;
 
       if (previousLoadingState === undefined) {
         delete document.body.dataset.actionLoading;

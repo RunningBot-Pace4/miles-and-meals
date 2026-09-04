@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 
-const MINIMUM_SPLASH_MS = 520;
-const DISMISS_ANIMATION_MS = 260;
+const MINIMUM_SPLASH_MS = 240;
+const DISMISS_ANIMATION_MS = 140;
 
 export function PwaLaunchDismiss() {
   useEffect(() => {
@@ -25,13 +25,15 @@ export function PwaLaunchDismiss() {
     }
 
     const launchScreen: HTMLElement = splash;
-    const startedAt = performance.now();
 
     let dismissTimer: number | null = null;
     let removeTimer: number | null = null;
+    let dismissFrame: number | null = null;
 
     function dismiss() {
-      const elapsed = performance.now() - startedAt;
+      // performance.now() is time since navigation began. Measuring from that
+      // point avoids adding a second artificial pause after React hydrates.
+      const elapsed = performance.now();
       const remaining = Math.max(
         0,
         MINIMUM_SPLASH_MS - elapsed,
@@ -46,16 +48,15 @@ export function PwaLaunchDismiss() {
       }, remaining);
     }
 
-    if (document.readyState === "complete") {
-      dismiss();
-    } else {
-      window.addEventListener("load", dismiss, {
-        once: true,
-      });
-    }
+    // This component can only run once the app is hydrated and interactive.
+    // Waiting for every image/font load made the PWA feel stalled and exposed
+    // a second route loader underneath the launch screen.
+    dismissFrame = window.requestAnimationFrame(dismiss);
 
     return () => {
-      window.removeEventListener("load", dismiss);
+      if (dismissFrame !== null) {
+        window.cancelAnimationFrame(dismissFrame);
+      }
 
       if (dismissTimer !== null) {
         window.clearTimeout(dismissTimer);

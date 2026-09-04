@@ -21,9 +21,9 @@ const css = `${read("src/app/globals.css")}\n${read("src/app/living-journey.css"
 const e2e = read("e2e/mobile-v91-living-journey.spec.ts");
 const tests = read("tests/v91-living-journey.test.ts");
 
-must(packageJson, '"version": "1.92.18"', "V91-or-newer package version missing");
+must(packageJson, '"version": "1.92.20"', "V91-or-newer package version missing");
 must(packageJson, '"v91:check"', "V91 validation command missing");
-must(serviceWorker, "miles-meals-static-v92-18", "V91-or-newer service-worker cache was not bumped");
+must(serviceWorker, "miles-meals-static-v92-20", "V91-or-newer service-worker cache was not bumped");
 
 for (const file of [
   "public/icons/icon-192.png",

@@ -18,17 +18,19 @@ describe("V92.2 PWA reliability and performance", () => {
       worker.indexOf('self.addEventListener("activate"'),
     );
     expect(installBlock).not.toContain("self.skipWaiting(");
-    expect(worker).toContain('miles-meals-static-v92-18');
+    expect(worker).toContain('miles-meals-static-v92-20');
     expect(updater).toContain("waitForWaitingWorker");
     expect(updater).toContain("UPDATE_RELOAD_TIMEOUT_MS");
     expect(updater).toContain('"Retry"');
   });
 
-  it("uses reliable native navigation and exposes the selected row while opening", () => {
-    expect(link).toContain("href={href}");
+  it("uses fast client navigation with a native timeout fallback", () => {
+    expect(link).toContain("<NextLink");
+    expect(link).toContain("prefetch={prefetch}");
+    expect(link).toContain("NATIVE_NAVIGATION_FALLBACK_MS");
+    expect(link).toContain("window.location.assign(targetUrl.href)");
     expect(link).toContain("data-navigation-pending");
-    expect(link).not.toContain("NextLink");
-    expect(navigationGate).not.toContain('relativePath === "src/components/FullPageLink.tsx"');
+    expect(navigationGate).toContain('relativePath === "src/components/FullPageLink.tsx"');
   });
 
   it("makes selected tabs and main destinations unmistakable", () => {

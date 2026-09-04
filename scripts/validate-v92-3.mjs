@@ -12,25 +12,27 @@ const navigationGate = read("scripts/validate-navigation.mjs");
 const css = read("src/app/v92-living-journey.css");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.18"', "V92.3-or-newer package version missing");
+must(packageJson, '"version": "1.92.20"', "V92.3-or-newer package version missing");
 must(packageJson, '"node": "24.x"', "V92.3 must match the Vercel Node.js 24 setting");
 must(packageJson, '"v92-3:check"', "V92.3 release gate missing");
 must(packageJson, "npm run v92-3:check", "V92.3 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-18", "V92.3-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-20", "V92.3-or-newer service-worker cache missing");
 
 for (const marker of [
   'data-full-page-link="true"',
   "data-navigation-pending",
   "onPointerDown={handlePointerDown}",
-  "href={href}",
+  "<NextLink",
+  "NATIVE_NAVIGATION_FALLBACK_MS",
+  "window.location.assign(targetUrl.href)",
 ]) must(links, marker, `V92.3 reliable navigation feedback missing: ${marker}`);
 
-if (links.includes("NextLink") || links.includes('from "next/link"')) {
-  throw new Error("V92.3 must not use client RSC transitions for authenticated FullPageLink navigation");
-}
-if (navigationGate.includes('relativePath === "src/components/FullPageLink.tsx"')) {
-  throw new Error("V92.3 navigation gate still contains the unsafe NextLink exception");
-}
+must(links, 'from "next/link"', "V92.3-or-newer fast client navigation missing");
+must(
+  navigationGate,
+  'relativePath === "src/components/FullPageLink.tsx"',
+  "V92.3-or-newer audited Link exception is not scoped to FullPageLink",
+);
 
 for (const marker of [
   'button[role="tab"][aria-selected="true"]',
@@ -47,4 +49,4 @@ if (login.includes('from "@/components/SavingOverlay"') || login.includes("<Savi
 must(login, 'aria-busy={busy}', "V92.3 login busy state is not accessible");
 must(login, 'busy ? "Signing in…"', "V92.3 login no longer gives inline progress feedback");
 
-console.log("V92.3 blue selection, native PWA navigation, Node 24 and single login loader validation passed.");
+console.log("V92.3 blue selection, resilient PWA navigation, Node 24 and single login loader validation passed.");

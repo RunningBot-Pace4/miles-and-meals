@@ -1,6 +1,6 @@
-# V92 Living Journey — complete approved light design
+# V92.20 Living Journey — stable loading release
 
-Version `1.92.0` applies the approved light Living Journey system across the full Miles & Meals PWA and PC experience. The interactive four-mode Halo remains data-driven for active Trips and explanatory before the first Trip exists. Plan, Map, expenses, receipts, settlement, documents, offline, Companion, people, memories, notifications, settings and administration now share the same calm white canvas, compact hierarchy and connected interaction language.
+Version `1.92.20` preserves the complete V92.19 payer and performance work, then removes loading flip/jump across Web and installed PWA. Cold PWA startup and route loading now share one fixed-size visual shell, geometric animation is removed, quick route transitions avoid loader flashes, and startup no longer waits unnecessarily for the full browser load event. See `V92-20-STABLE-LOADING.md` for the release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 

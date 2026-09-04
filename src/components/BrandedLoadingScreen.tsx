@@ -6,15 +6,17 @@ export function BrandedLoadingScreen({
   message?: string;
 }) {
   const showCopy = Boolean(title || message);
+  const loadingKind = showCopy ? "action" : "route";
 
   return (
     <div
-      className="trip-loading-overlay"
+      className={`trip-loading-overlay trip-loading-${loadingKind}-overlay`}
+      data-loading-kind={loadingKind}
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
-      <div className="trip-loading-card">
+      <div className={`trip-loading-card trip-loading-${loadingKind}-card`}>
         <div className="trip-loading-brand">
           <img src="/icons/v92/icon-192.png" width="46" height="46" alt="" />
           <div>

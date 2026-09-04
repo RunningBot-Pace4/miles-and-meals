@@ -8,6 +8,7 @@ describe("V91.2 Living Journey Home", () => {
   const starter = read("src/components/LivingJourneyStarter.tsx");
   const active = read("src/components/LivingJourneyHalo.tsx");
   const css = read("src/app/living-journey.css");
+  const currentCss = read("src/app/v92-living-journey.css");
 
   it("shows an interactive Halo even before the first Trip exists", () => {
     expect(dashboard).toContain("<LivingJourneyStarter isAdmin={admin} />");
@@ -26,7 +27,7 @@ describe("V91.2 Living Journey Home", () => {
   });
 
   it("prevents the oversized empty-state title and contains the starter on phones", () => {
-    expect(css).toContain("clamp(2.35rem, 5.4vw, 4.65rem)");
+    expect(currentCss).toContain("clamp(2rem, 5vw, 4.2rem)");
     expect(css).toContain(".living-journey-starter");
     expect(css).toContain(".journey-start-steps");
     expect(css).toContain("max-width: 430px");

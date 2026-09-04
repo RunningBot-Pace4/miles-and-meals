@@ -26,7 +26,7 @@ const geometry = read(
 
 must(
   packageJson,
-  '"version": "1.92.18"',
+  '"version": "1.92.20"',
   "V92.13 package version missing",
 );
 must(
@@ -41,7 +41,7 @@ must(
 );
 must(
   worker,
-  "miles-meals-static-v92-18",
+  "miles-meals-static-v92-20",
   "V92.13 PWA cache missing",
 );
 

@@ -11,10 +11,10 @@ const starter = read("src/components/LivingJourneyStarter.tsx");
 const halo = read("src/components/LivingJourneyHalo.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.18"', "V92.5 package version missing");
+must(packageJson, '"version": "1.92.20"', "V92.5 package version missing");
 must(packageJson, '"v92-5:check"', "V92.5 release gate missing");
 must(packageJson, "npm run v92-5:check", "V92.5 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-18", "V92.5 service-worker cache missing");
+must(worker, "miles-meals-static-v92-20", "V92.5 service-worker cache missing");
 
 for (const source of [starter, halo]) {
   for (const marker of [

@@ -125,6 +125,7 @@ export function MobileNav() {
               .filter(Boolean)
               .join(" ")}
             href={link.href}
+            prefetch
             key={link.href}
             aria-current={active ? "page" : undefined}
             onPointerCancel={() => setPendingHref(null)}

@@ -1,8 +1,16 @@
-# Miles & Meals V92.18 · Add Expense PWA Layout Repair
+# Miles & Meals V92.20 · Stable Web and PWA Loading
 
-Version `1.92.18` preserves the complete tested V92.17 release, then fixes the remaining Add Expense header, floating Save bar and whole-page horizontal movement reported on iOS PWA.
+Version `1.92.20` preserves the complete tested V92.19 release and removes the reported loading flip/jump. Web route loading, PWA cold launch and action-saving feedback now share stable geometry, while quick transitions and hydrated startup avoid unnecessary waiting.
 
 ## What changed
+
+- One payer and Multiple payers now use the same compact traveller-row design instead of switching between portrait cards and a different list language.
+- A selected multiple payer keeps the currency and amount in one fitted input. `MYR` can no longer collapse into a detached strip above a large empty box.
+- The two payer-mode choices and all four split methods use fixed equal-width columns; **Exact** no longer drops onto a second row.
+- At 320–360 px, selected payer details stack safely; from 361 px upward, the name and contribution remain in a compact two-column row.
+- Saved traveller groups are fetched only when **Reuse a traveller group** is opened, removing an unnecessary Add Expense request.
+- Main app destinations now use fast client transitions and are prefetched from the bottom navigation. A 4.5-second native-navigation watchdog remains as recovery if a PWA transition ever stalls.
+- The duplicated Living Journey base stylesheet was removed. The shared route CSS fell from 353,528 to 340,733 bytes, a 12,795-byte (3.6%) reduction, while the complete Add Expense initial CSS + JavaScript payload is 6,003 bytes smaller.
 
 - Mobile Web and installed PWA now publish one device-width, fixed-scale viewport so the interface starts fitted to the physical phone width.
 - Every text, number, date, select and textarea control uses a minimum 16 px computed font on screens up to 719 px, preventing iOS from auto-zooming when a field receives focus.
@@ -39,7 +47,7 @@ Version `1.92.18` preserves the complete tested V92.17 release, then fixes the r
 - Bottom navigation shows only the newly tapped destination while the page opens.
 - More-page rows keep a blue outline while the selected destination opens.
 - One controlled service-worker activation path with automatic reload timeout and a visible Retry state.
-- Reliable native document navigation for authenticated pages so a stale installed-PWA client cannot request an incompatible React Server Component payload.
+- Fast client navigation for authenticated pages, with a timed native document fallback if a PWA transition does not complete.
 - Reduced and protected background polling, plus a five-minute offline-pack refresh throttle.
 - Health checks now distinguish a genuinely missing table from a temporary Neon query failure.
 - Optional remembered email and persistent session; passwords remain with the device/browser password manager and are never stored by the app.
@@ -110,7 +118,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-18` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-20` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -125,10 +133,12 @@ npm run v92-15:check
 npm run v92-16:check
 npm run v92-17:check
 npm run v92-18:check
+npm run v92-19:check
+npm run v92-20:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.18 packaging validation: 178/178 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page Next.js production build passed. The focused Add Expense browser contract covers 320, 360, 390, 430, 600, 719 and 1024 px; authenticated physical-device PWA confirmation still requires the deployed staging login.
+V92.20 packaging validation: 190/190 unit tests, every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build passed. Stable loader contracts cover Web routes, action overlays and installed-PWA cold startup; the payer and complete Add Expense responsive contracts continue to cover 320, 360, 390, 430, 600, 719 and 1024 px. The packaging environment does not include Playwright browser binaries, so authenticated physical-device PWA confirmation remains a deployed-staging gate.

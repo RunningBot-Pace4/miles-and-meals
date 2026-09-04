@@ -20,10 +20,10 @@ const offlineWarmup = read("src/components/OfflinePackWarmup.tsx");
 const health = read("src/app/(app)/admin/health/page.tsx");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.18"', "V92.2-or-newer package version missing");
+must(packageJson, '"version": "1.92.20"', "V92.2-or-newer package version missing");
 must(packageJson, '"v92-2:check"', "V92.2 release gate missing");
 must(packageJson, "npm run v92-2:check", "V92.2 gate is not part of prebuild");
-must(worker, 'miles-meals-static-v92-18', "V92.2-or-newer service-worker cache missing");
+must(worker, 'miles-meals-static-v92-20', "V92.2-or-newer service-worker cache missing");
 
 const installBlock = worker.slice(
   worker.indexOf('self.addEventListener("install"'),
@@ -43,12 +43,18 @@ for (const marker of [
   "window.location.reload()",
 ]) must(updater, marker, `V92.2 updater recovery missing: ${marker}`);
 
-for (const marker of ['<a', 'href={href}', 'data-navigation-pending']) {
-  must(links, marker, `Reliable navigation wrapper missing: ${marker}`);
-}
-if (links.includes("NextLink") || navigationGate.includes('relativePath === "src/components/FullPageLink.tsx"')) {
-  throw new Error("Client navigation exception was not removed after the PWA transition failure");
-}
+for (const marker of [
+  "<NextLink",
+  "prefetch={prefetch}",
+  "NATIVE_NAVIGATION_FALLBACK_MS",
+  "window.location.assign(targetUrl.href)",
+  "data-navigation-pending",
+]) must(links, marker, `Resilient navigation wrapper missing: ${marker}`);
+must(
+  navigationGate,
+  'relativePath === "src/components/FullPageLink.tsx"',
+  "The audited Link exception is not scoped to FullPageLink",
+);
 must(nav, 'aria-current={active ? "page" : undefined}', "Active main destination is not exposed");
 for (const marker of [
   'button[role="tab"][aria-selected="true"]',

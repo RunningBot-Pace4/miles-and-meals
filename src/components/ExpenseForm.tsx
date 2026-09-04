@@ -369,6 +369,8 @@ export function ExpenseForm({
   const [duplicateWarning, setDuplicateWarning] =
     useState<DuplicateWarning | null>(null);
   const [splitPresets, setSplitPresets] = useState<SplitPreset[]>([]);
+  const [splitPresetsRequested, setSplitPresetsRequested] = useState(false);
+  const [splitPresetsLoading, setSplitPresetsLoading] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [presetBusy, setPresetBusy] = useState(false);
   const [offlineQueued, setOfflineQueued] = useState(false);
@@ -595,20 +597,33 @@ export function ExpenseForm({
 
   useEffect(() => {
     const tripId = currentCountry?.tripId;
-    if (!tripId || !navigator.onLine) {
+    if (!tripId || !navigator.onLine || !splitPresetsRequested) {
       setSplitPresets([]);
+      setSplitPresetsLoading(false);
       return;
     }
+
+    let active = true;
     const controller = new AbortController();
+    setSplitPresets([]);
+    setSplitPresetsLoading(true);
     fetch(`/api/split-presets?tripId=${encodeURIComponent(tripId)}`, {
       signal: controller.signal,
       cache: "no-store",
     })
       .then(async (response) => response.ok ? response.json() : { presets: [] })
-      .then((payload: { presets?: SplitPreset[] }) => setSplitPresets(payload.presets ?? []))
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [currentCountry?.tripId]);
+      .then((payload: { presets?: SplitPreset[] }) => {
+        if (active) setSplitPresets(payload.presets ?? []);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setSplitPresetsLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [currentCountry?.tripId, splitPresetsRequested]);
 
   useEffect(() => {
     const stored =
@@ -2243,18 +2258,29 @@ export function ExpenseForm({
           </div>
 
           {!multiplePayers ? (
-            <div className="people-scroll" role="group" aria-label="Paid by">
-              {members.map((member) => (
-                <button
-                  className={paidByUserId === member.id ? "person-pill active" : "person-pill"}
-                  key={member.id}
-                  onClick={() => chooseSinglePayer(member.id)}
-                  type="button"
-                >
-                  <span className="avatar">{initials(member.name)}</span>
-                  <span>{member.name}</span>
-                </button>
-              ))}
+            <div className="single-payer-list" role="radiogroup" aria-label="Paid by">
+              {members.map((member) => {
+                const selected = paidByUserId === member.id;
+                return (
+                  <button
+                    aria-checked={selected}
+                    className={selected ? "payer-choice-row selected" : "payer-choice-row"}
+                    key={member.id}
+                    onClick={() => chooseSinglePayer(member.id)}
+                    role="radio"
+                    type="button"
+                  >
+                    <span className="avatar">{initials(member.name)}</span>
+                    <span className="member-copy">
+                      <strong>{member.name}</strong>
+                      <small>{selected ? "Selected payer" : "Choose as payer"}</small>
+                    </span>
+                    <span className={selected ? "round-check checked" : "round-check"}>
+                      {selected ? "✓" : ""}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <div className="multi-payer-list">
@@ -2308,7 +2334,12 @@ export function ExpenseForm({
           )}
         </div>
 
-        <details className="split-preset-details">
+        <details
+          className="split-preset-details"
+          onToggle={(event) => {
+            if (event.currentTarget.open) setSplitPresetsRequested(true);
+          }}
+        >
           <summary>
             <span>
               <strong>Reuse a traveller group</strong>
@@ -2328,7 +2359,11 @@ export function ExpenseForm({
                 }}
               >
                 <option value="">
-                  {splitPresets.length ? "Choose a group…" : "No saved groups yet"}
+                  {splitPresetsLoading
+                    ? "Loading saved groups…"
+                    : splitPresets.length
+                      ? "Choose a group…"
+                      : "No saved groups yet"}
                 </option>
                 {splitPresets.map((preset) => (
                   <option value={preset.id} key={preset.id}>{preset.name}</option>

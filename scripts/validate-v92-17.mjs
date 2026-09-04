@@ -11,10 +11,10 @@ const layout = read("src/app/layout.tsx");
 const css = read("src/app/v92-living-journey.css");
 const geometry = read("e2e/v92-17-viewport-keyboard.spec.ts");
 
-must(packageJson, '"version": "1.92.18"', "V92.17 package version missing");
+must(packageJson, '"version": "1.92.20"', "V92.17 package version missing");
 must(packageJson, '"v92-17:check"', "V92.17 validation script missing");
 must(packageJson, "npm run v92-17:check", "V92.17 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-18", "V92.17 service-worker cache missing");
+must(worker, "miles-meals-static-v92-20", "V92.17 service-worker cache missing");
 
 for (const marker of ["minimumScale: 1", "maximumScale: 1", "userScalable: false"]) {
   must(layout, marker, `Fixed device viewport missing: ${marker}`);

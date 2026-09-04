@@ -1,10 +1,10 @@
-# Miles & Meals V92.18 — Add Expense PWA Layout Package
+# Miles & Meals V92.20 — Stable Loading Package
 
-This is the complete source package, versioned `1.92.18`. It preserves all earlier V92 repairs and corrects the remaining Add Expense issues: a compact receipt header, a Save action that never covers phone fields, a fitted exchange-rate selector and iOS-PWA-specific whole-page horizontal containment.
+This is the complete source package, versioned `1.92.20`. It preserves all earlier V92 repairs and stabilizes every shared Web/PWA loading surface. The cold launch and route loaders now match, the Halo keeps fixed geometry, short navigations avoid full-screen flashes, and PWA startup dismisses after hydration instead of waiting for all browser resources.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 
-Validated for V92.18: 178/178 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Browser-driven staging verification remains a deployment gate because it needs Playwright browser binaries and an authenticated test account.
+Validated for V92.20: 190/190 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Shared route CSS remains 12,795 bytes smaller than V92.18. Browser-driven staging verification remains a deployment gate because it needs Playwright browser binaries and an authenticated test account.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 
