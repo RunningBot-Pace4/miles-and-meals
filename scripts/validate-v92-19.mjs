@@ -15,10 +15,10 @@ const css = read("src/app/v92-living-journey.css");
 const livingJourneyCss = read("src/app/living-journey.css");
 const geometry = read("e2e/v92-19-payer-layout.spec.ts");
 
-must(packageJson, '"version": "1.92.24"', "V92.19 package version missing");
+must(packageJson, '"version": "1.92.25"', "V92.19 package version missing");
 must(packageJson, '"v92-19:check"', "V92.19 release gate missing");
 must(packageJson, "npm run v92-19:check", "V92.19 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-24", "V92.19 service-worker cache missing");
+must(worker, "miles-meals-static-v92-25", "V92.19 service-worker cache missing");
 
 for (const marker of [
   'className="single-payer-list"',
@@ -44,7 +44,7 @@ for (const marker of [
   'from "next/link"',
   "<NextLink",
   'data-navigation-mode="client"',
-  "prefetch = null",
+  "prefetch = false",
 ]) must(navigation, marker, `V92.19-or-newer single navigation missing: ${marker}`);
 must(mobileNav, "prefetch", "V92.19 main-navigation intent marker missing");
 for (const forbidden of [

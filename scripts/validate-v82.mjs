@@ -29,9 +29,9 @@ const dashboardFinance = read("src/components/LiveDashboardFinance.tsx");
 const settlementWorkspace = read("src/components/LiveSettlementWorkspace.tsx");
 const css = read("src/app/globals.css");
 
-must(packageJson, '"version": "1.92.24"', "v82-or-newer package version missing");
+must(packageJson, '"version": "1.92.25"', "v82-or-newer package version missing");
 must(packageJson, '"v82:check"', "v82 validator command missing");
-must(worker, "miles-meals-static-v92-24", "v82-or-newer service-worker cache bump missing");
+must(worker, "miles-meals-static-v92-25", "v82-or-newer service-worker cache bump missing");
 
 for (const source of [expenseRoute, expenseItemRoute, travelRoute, travelItemRoute]) {
   must(source, "canAccessCountry", "cross-Trip offline sync must verify durable Trip access");

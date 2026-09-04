@@ -13,18 +13,18 @@ const nav = read("src/components/MobileNav.tsx");
 const css = read("src/app/v92-living-journey.css");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.24"', "V92.3-or-newer package version missing");
+must(packageJson, '"version": "1.92.25"', "V92.3-or-newer package version missing");
 must(packageJson, '"node": "24.x"', "V92.3 must match the Vercel Node.js 24 setting");
 must(packageJson, '"v92-3:check"', "V92.3 release gate missing");
 must(packageJson, "npm run v92-3:check", "V92.3 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-24", "V92.3-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-25", "V92.3-or-newer service-worker cache missing");
 
 for (const marker of [
   'data-full-page-link="true"',
   'data-navigation-mode="client"',
   'from "next/link"',
   "<NextLink",
-  "prefetch = null",
+  "prefetch = false",
 ]) must(links, marker, `V92.3 reliable navigation feedback missing: ${marker}`);
 
 for (const forbidden of [

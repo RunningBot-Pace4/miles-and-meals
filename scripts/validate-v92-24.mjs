@@ -15,17 +15,17 @@ const css = read("src/app/v92-living-journey.css");
 const resetSql = read("neon-reset-all-data-keep-logins-v92-24.sql");
 const schema = read("src/db/schema.ts");
 
-must(packageJson, '"version": "1.92.24"', "V92.24 package version missing");
+must(packageJson, '"version": "1.92.25"', "V92.24 package version missing");
 must(packageJson, '"v92-24:check"', "V92.24 release gate missing");
 must(packageJson, "npm run v92-24:check", "V92.24 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-24", "V92.24 PWA cache missing");
+must(worker, "miles-meals-static-v92-25", "V92.24 PWA cache missing");
 
 for (const marker of [
   'from "next/link"',
   "<NextLink",
   'data-navigation-mode="client"',
-  "prefetch = null",
-  'data-prefetch-intent={prefetch === false ? "off" : "adaptive"}',
+  "prefetch = false",
+  'data-prefetch-intent={prefetch === false ? "fresh-on-tap" : "adaptive"}',
 ]) {
   must(navigation, marker, `Fast client navigation missing: ${marker}`);
 }

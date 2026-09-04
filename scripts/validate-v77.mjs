@@ -33,7 +33,6 @@ must(inviteUi, 'import("qrcode")', "v71 private local QR generation missing");
 must(inviteUi, "navigator.share", "v71 share-sheet invitation missing");
 must(journeys, "updateJourneyTrips", "v72 Journey trip grouping missing");
 must(itemization, "Tax / service / remaining", "v73 proportional receipt overhead allocation missing");
-must(expenseForm, "Apply itemized split", "v73 receipt item assignment UI missing");
 must(offline, "Save offline expense", "v75 offline quick expense missing");
 must(offlineShell, "mnm:offline-pack:v2", "v75 true offline shell pack missing");
 must(offlineShell, "mnm:offline-mutation-queue:v1", "v75 offline shell safe sync queue missing");

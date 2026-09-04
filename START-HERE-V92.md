@@ -1,6 +1,6 @@
-# Miles & Meals V92.23 · Contextual Journey Greeting
+# Miles & Meals V92.25 · Receipt PWA and route recovery
 
-Version `1.92.24` adds a contextual dashboard greeting that responds to the travel moment instead of always saying “Welcome back.” It presents purpose-built copy for no trips, all trips, planning, an upcoming countdown, travel happening now, and a completed journey. The redesigned hero remains compact and responsive across web, tablet and installed PWA screens. V92.22's single loading boundary and individual payment ledger remain included.
+Version `1.92.25` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Navigation stays client-side and single-request during normal use, while stale cross-deployment route payloads are prevented and a true route failure receives one bounded automatic recovery.
 
 ## What changed
 
@@ -125,7 +125,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-24` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-25` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -145,10 +145,12 @@ npm run v92-20:check
 npm run v92-21:check
 npm run v92-22:check
 npm run v92-23:check
+npm run v92-24:check
+npm run v92-25:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.22 packaging validation: 209/209 unit and server-rendered UI tests, every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build passed. Single-document navigation, the single rotating-Halo boundary, transaction-level payment details, payer controls and complete Add Expense responsive contracts remain covered. Authenticated physical-device PWA confirmation remains a deployed-staging gate.
+V92.25 packaging validation covers every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build. Receipt geometry also has a WebKit/Chromium specification; physical iPhone confirmation remains a deployed-staging gate.

@@ -17,7 +17,6 @@ import {
 } from "@/lib/draft-storage";
 import { sameCurrency, splitEqually } from "@/lib/money";
 import { parseTravelNumber } from "@/lib/numbers";
-import { buildReceiptItemization } from "@/lib/receipt-itemization";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import { compactOptionText } from "@/lib/display-text";
@@ -341,24 +340,8 @@ export function ExpenseForm({
   const [receiptScanProgress, setReceiptScanProgress] = useState(0);
   const [receiptResult, setReceiptResult] =
     useState<ReceiptAnalysis | null>(null);
-  const [receiptItems, setReceiptItems] = useState<Array<{ title: string; amount: number }>>(
-    initial?.itemization?.map((item) => ({
-      title: item.title,
-      amount: item.transactionAmount,
-    })) ?? [],
-  );
   const [receiptMessage, setReceiptMessage] = useState("");
-  const [receiptItemAssignees, setReceiptItemAssignees] = useState<Record<number, string>>(
-    Object.fromEntries(
-      (initial?.itemization ?? []).map((item, index) => [
-        index,
-        item.assigneeUserIds.length > 1
-          ? "ALL"
-          : item.assigneeUserIds[0] ?? currentUserId,
-      ]),
-    ),
-  );
-  const [itemizationEnabled, setItemizationEnabled] = useState(
+  const [preserveInitialItemization, setPreserveInitialItemization] = useState(
     Boolean(initial?.itemization?.length),
   );
   const [error, setError] = useState("");
@@ -1024,9 +1007,7 @@ export function ExpenseForm({
       setFxRateLoading(false);
       setFxRateMessage("");
       setReceiptResult(null);
-      setReceiptItems([]);
-      setReceiptItemAssignees({});
-      setItemizationEnabled(false);
+      setPreserveInitialItemization(false);
       setReceiptMessage("");
       setReceiptScanStatus("");
       setReceiptScanProgress(0);
@@ -1127,7 +1108,7 @@ export function ExpenseForm({
 
   function handleSplitMode(nextMode: SplitMode) {
     markFormEdited();
-    setItemizationEnabled(false);
+    setPreserveInitialItemization(false);
     setSplitMode(nextMode);
 
     if (nextMode === "PERCENTAGE") {
@@ -1147,7 +1128,7 @@ export function ExpenseForm({
 
   function toggleSplit(userId: string) {
     markFormEdited();
-    setItemizationEnabled(false);
+    setPreserveInitialItemization(false);
     setSplitUserIds((current) => {
       const next = current.includes(userId)
         ? current.filter((id) => id !== userId)
@@ -1223,7 +1204,7 @@ export function ExpenseForm({
       setError("The travelers saved in this preset are no longer assigned to this Trip.");
       return;
     }
-    setItemizationEnabled(false);
+    setPreserveInitialItemization(false);
     setSplitMode(preset.splitMode);
     setSplitUserIds(shares.map((share) => share.userId));
     setSplitValues(Object.fromEntries(
@@ -1264,57 +1245,13 @@ export function ExpenseForm({
     }
   }
 
-  function applyReceiptItemizedSplit() {
-    const items = receiptItems;
-    const transactionTotal = parseTravelNumber(amount);
-    if (!items.length || transactionTotal === null || transactionTotal <= 0 || settlementTotal <= 0) {
-      setError("Check the receipt items and final amount before applying itemized split.");
-      return;
-    }
-
-    try {
-      const itemization = buildReceiptItemization(
-        transactionTotal,
-        settlementTotal,
-        items.map((item, index) => {
-          const choice = receiptItemAssignees[index] ?? currentUserId;
-          return {
-            title: item.title,
-            transactionAmount: item.amount,
-            assigneeUserIds:
-              choice === "ALL" ? members.map((member) => member.id) : [choice],
-          };
-        }),
-      );
-
-      const exactValues = Object.fromEntries(
-        itemization.splits.map((split) => [split.userId, split.shareAmountBase]),
-      );
-      setSplitUserIds(itemization.splits.map((split) => split.userId));
-      setSplitMode("EXACT");
-      setSplitValues(exactValues);
-      setItemizationEnabled(true);
-      setError("");
-      markFormEdited();
-    } catch (caught) {
-      setItemizationEnabled(false);
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Unable to apply the receipt itemization.",
-      );
-    }
-  }
-
   async function analyzeReceipt(file: File) {
     setReceiptScanning(true);
     setReceiptScanStatus("Preparing receipt");
     setReceiptScanProgress(0);
     setReceiptMessage("");
     setReceiptResult(null);
-    setReceiptItems([]);
-    setReceiptItemAssignees({});
-    setItemizationEnabled(false);
+    setPreserveInitialItemization(false);
     setError("");
 
     try {
@@ -1332,10 +1269,6 @@ export function ExpenseForm({
       );
 
       setReceiptResult(detected);
-      setReceiptItems(detected.items);
-      setReceiptItemAssignees(Object.fromEntries(detected.items.map((_, index) => [index, currentUserId])));
-      setItemizationEnabled(false);
-
       if (detected.merchantName) {
         setDescription(detected.merchantName);
       }
@@ -1433,9 +1366,7 @@ export function ExpenseForm({
     setReceiptFile(null);
     setReceiptPreviewUrl("");
     setReceiptResult(null);
-    setReceiptItems([]);
-    setReceiptItemAssignees({});
-    setItemizationEnabled(false);
+    setPreserveInitialItemization(false);
     setReceiptMessage("");
     setReceiptScanStatus("");
     setReceiptScanProgress(0);
@@ -1692,16 +1623,12 @@ export function ExpenseForm({
         : "NOT_REQUIRED",
       notes,
       allowDuplicate: duplicateOverrideRef.current,
+      // Receipt-item assignment has been retired from the scan flow. Preserve
+      // a historical itemization only while editing it untouched so an
+      // ordinary metadata edit never destroys existing expense history.
       itemization:
-        itemizationEnabled && receiptItems.length
-          ? receiptItems.map((item, index) => {
-              const choice = receiptItemAssignees[index] ?? currentUserId;
-              return {
-                title: item.title,
-                transactionAmount: item.amount,
-                assigneeUserIds: choice === "ALL" ? members.map((member) => member.id) : [choice],
-              };
-            })
+        preserveInitialItemization && initial?.itemization?.length
+          ? initial.itemization
           : [],
       splitMode,
       splits: parsedSplits,
@@ -2444,7 +2371,7 @@ export function ExpenseForm({
               data-numeric-input="decimal"
                       value={splitValues[member.id] ?? ""}
                       onChange={(event) => {
-                        setItemizationEnabled(false);
+                        setPreserveInitialItemization(false);
                         setSplitValues((values) => ({
                           ...values,
                           [member.id]: event.target.value,
@@ -2631,43 +2558,6 @@ export function ExpenseForm({
                 </strong>
               </div>
             </div>
-          ) : null}
-
-          {receiptItems.length ? (
-            <section className="receipt-itemization-panel">
-              <div className="receipt-itemization-head">
-                <div>
-                  <strong>Split by receipt items</strong>
-                  <small>Assign each detected item. Tax/service/remaining amount is allocated proportionally.</small>
-                </div>
-                {itemizationEnabled ? <span className="admin-status-pill active">Applied</span> : null}
-              </div>
-              <div className="receipt-item-list">
-                {receiptItems.map((item, index) => (
-                  <div className="receipt-item-row" key={`${item.title}-${index}`}>
-                    <span><strong>{item.title}</strong><small>{receiptResult?.currencyCode ?? currency} {item.amount.toFixed(2)}</small></span>
-                    <select
-                      aria-label={`Who had ${item.title}`}
-                      value={receiptItemAssignees[index] ?? currentUserId}
-                      onChange={(event) => {
-                        setReceiptItemAssignees((current) => ({ ...current, [index]: event.target.value }));
-                        setItemizationEnabled(false);
-                      }}
-                    >
-                      <option value="ALL">Everyone</option>
-                      {members.map((member) => (
-                        <option value={member.id} key={member.id} title={member.name}>
-                          {compactOptionText(member.name, 32)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-              <button className="button secondary" type="button" onClick={applyReceiptItemizedSplit}>
-                Apply itemized split
-              </button>
-            </section>
           ) : null}
 
           {receiptResult?.merchantCandidates &&

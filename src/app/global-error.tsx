@@ -1,11 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { beginRouteRecovery } from "@/lib/route-recovery";
+
 export default function GlobalError({
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const [recovering, setRecovering] = useState(true);
+
+  useEffect(() => {
+    const decision = beginRouteRecovery();
+
+    if (decision === "offline") {
+      window.location.replace("/offline.html");
+      return;
+    }
+
+    if (decision === "manual") {
+      setRecovering(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      window.location.replace(window.location.href);
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   function reload() {
     window.location.reload();
   }
@@ -17,6 +42,51 @@ export default function GlobalError({
     }
 
     window.location.assign("/dashboard");
+  }
+
+  if (recovering) {
+    return (
+      <html lang="en">
+        <body
+          style={{
+            margin: 0,
+            minHeight: "100vh",
+            display: "grid",
+            placeItems: "center",
+            padding: "24px",
+            boxSizing: "border-box",
+            background: "linear-gradient(180deg,#fbf7ef,#f7f2e8)",
+            color: "#203934",
+            fontFamily: 'Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+          }}
+        >
+          <main
+            aria-live="polite"
+            style={{
+              width: "min(100%, 440px)",
+              display: "grid",
+              gap: "10px",
+              padding: "24px",
+              boxSizing: "border-box",
+              border: "1px solid #e5ddd1",
+              borderRadius: "26px",
+              background: "#fffdf9",
+              boxShadow: "0 22px 54px rgba(79,63,43,.13)",
+            }}
+          >
+            <small style={{ color: "#a1681d", fontWeight: 900, letterSpacing: ".11em" }}>
+              MILES &amp; MEALS
+            </small>
+            <h1 style={{ margin: 0, fontSize: "clamp(28px,7vw,38px)", letterSpacing: "-.055em" }}>
+              Reconnecting to this page…
+            </h1>
+            <p style={{ margin: 0, color: "#7a776f", lineHeight: 1.6 }}>
+              Matching this page with the current PWA version.
+            </p>
+          </main>
+        </body>
+      </html>
+    );
   }
 
   return (

@@ -18,10 +18,10 @@ const css = read("src/app/v92-living-journey.css");
 const test = read("tests/journey-greeting.test.ts");
 const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
-must(packageJson, '"version": "1.92.24"', "V92.23 package version missing");
+must(packageJson, '"version": "1.92.25"', "V92.23 package version missing");
 must(packageJson, '"v92-23:check"', "V92.23 release gate missing");
 must(packageJson, "npm run v92-23:check", "V92.23 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-24", "V92.23 PWA cache missing");
+must(worker, "miles-meals-static-v92-25", "V92.23 PWA cache missing");
 must(
   cleanup,
   '"src/app/loading.tsx"',

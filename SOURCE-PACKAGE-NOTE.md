@@ -1,10 +1,10 @@
-# Miles & Meals V92.23 — Contextual Journey Greeting Package
+# Miles & Meals V92.25 — Receipt PWA and Route Recovery Package
 
-This is the complete source package, versioned `1.92.24`. It preserves all earlier V92 repairs, the single Next.js Halo loading boundary and the per-person payment ledger, then replaces the ordinary dashboard welcome with responsive copy and styling for every trip stage.
+This is the complete source package, versioned `1.92.25`. It preserves all earlier V92 repairs, the rotating Next.js Halo boundary, per-person payment ledger, contextual Home header and faster client navigation. Receipt-item assignment is removed from new scans, the Add Expense canvas is contained to the phone, mobile navigation is pinned above receipt content, and interrupted cross-deployment routes recover once without adding a normal-navigation fallback.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 
-Validated for V92.23: 219/219 unit and server-rendered UI tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Browser-driven authenticated staging and physical-device PWA verification remain deployment gates.
+V92.25 includes focused receipt/PWA recovery checks plus all historical release gates. Browser-driven authenticated staging and physical-device PWA verification remain deployment gates.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 

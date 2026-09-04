@@ -11,10 +11,10 @@ describe("V92.22 payment details and single loading boundary", () => {
   const css = read("src/app/v92-living-journey.css");
 
   it("publishes a coherent V92.22 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.24"');
+    expect(packageJson).toContain('"version": "1.92.25"');
     expect(packageJson).toContain('"v92-22:check"');
     expect(packageJson).toContain("npm run v92-22:check");
-    expect(worker).toContain("miles-meals-static-v92-24");
+    expect(worker).toContain("miles-meals-static-v92-25");
   });
 
   it("keeps one Next.js loading boundary for authenticated app routes", () => {

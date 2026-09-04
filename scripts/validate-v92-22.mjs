@@ -18,10 +18,10 @@ const workspace = read("src/components/LiveSettlementWorkspace.tsx");
 const css = read("src/app/v92-living-journey.css");
 const test = read("tests/individual-payment-ledger.test.ts");
 
-must(packageJson, '"version": "1.92.24"', "V92.22 package version missing");
+must(packageJson, '"version": "1.92.25"', "V92.22 package version missing");
 must(packageJson, '"v92-22:check"', "V92.22 release gate missing");
 must(packageJson, "npm run v92-22:check", "V92.22 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-24", "V92.22 PWA cache missing");
+must(worker, "miles-meals-static-v92-25", "V92.22 PWA cache missing");
 
 if (existsSync("src/app/loading.tsx")) {
   throw new Error("Duplicate root loading boundary still exists");

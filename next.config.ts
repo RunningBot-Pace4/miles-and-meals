@@ -39,6 +39,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Tag React Server Component requests with the deployment that rendered
+  // the current shell. This prevents an installed PWA from silently mixing
+  // route payloads across Vercel deployments during an update handoff.
+  deploymentId:
+    process.env.NEXT_DEPLOYMENT_ID ??
+    process.env.VERCEL_GIT_COMMIT_SHA ??
+    "miles-meals-v92-25",
   async headers() {
     return [
       {

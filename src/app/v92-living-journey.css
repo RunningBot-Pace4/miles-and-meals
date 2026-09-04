@@ -4801,3 +4801,88 @@ html {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* V92.25 · receipt scan PWA containment and persistent bottom navigation -- */
+
+@media (max-width: 719px) {
+  html:has(.expense-editor),
+  body:has(.expense-editor) {
+    inline-size: 100%;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-x: none;
+  }
+
+  body:has(.expense-editor) {
+    touch-action: pan-y;
+  }
+
+  .app-shell:has(.expense-editor),
+  .page-container:has(.expense-editor),
+  .expense-editor,
+  .expense-editor form,
+  .receipt-inline-panel,
+  .receipt-preview-card,
+  .receipt-scan-result,
+  .receipt-detected-grid,
+  .receipt-ocr-text {
+    box-sizing: border-box;
+    inline-size: 100%;
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+  }
+
+  .app-shell:has(.expense-editor),
+  .page-container:has(.expense-editor),
+  .expense-editor,
+  .receipt-inline-panel,
+  .receipt-preview-card,
+  .receipt-scan-result,
+  .receipt-detected-grid {
+    overflow-x: hidden !important;
+  }
+
+  .expense-editor {
+    contain: inline-size;
+  }
+
+  .receipt-inline-panel > *,
+  .receipt-detected-grid > *,
+  .receipt-detected-grid strong,
+  .receipt-ai-status > div {
+    min-inline-size: 0 !important;
+    max-inline-size: 100% !important;
+    overflow-wrap: anywhere;
+  }
+
+  .receipt-preview-image {
+    inline-size: 100%;
+    block-size: auto;
+    object-fit: contain;
+  }
+
+  .receipt-ocr-text pre {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  body > .mobile-nav[data-app-mobile-nav="true"] {
+    position: fixed !important;
+    z-index: 10000 !important;
+    inset:
+      auto
+      max(0.58rem, env(safe-area-inset-right))
+      max(0.58rem, env(safe-area-inset-bottom))
+      max(0.58rem, env(safe-area-inset-left)) !important;
+    inline-size: auto !important;
+    min-inline-size: 0 !important;
+    max-inline-size: none !important;
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translate3d(0, 0, 0) !important;
+  }
+}
