@@ -1,5 +1,13 @@
 # V92.23 — Contextual journey greeting
 
+## Vercel overlay-deployment hotfix
+
+The prebuild cleanup now removes a retired `src/app/loading.tsx` left behind
+when this full-source package is extracted over an older checkout. The active
+authenticated Halo remains at `src/app/(app)/loading.tsx`, so the app keeps one
+continuous rotating loading boundary and the V92.22 validation gate can pass
+on both clean and overlay deployments.
+
 The dashboard no longer opens with the same generic “Welcome back” message. Its hero now reflects what the traveler is actually doing:
 
 - no trips: invites the traveler to put the next journey on the map;

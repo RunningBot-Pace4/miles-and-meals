@@ -15,6 +15,12 @@ const obsoletePaths = [
   "src/components/ResetPasswordForm.tsx",
   "src/app/reset-password",
 
+  // V92.22 consolidated the two root loading boundaries into the
+  // authenticated route-group boundary below. Full-source ZIPs extracted over
+  // an existing checkout cannot delete this retired file by themselves, so a
+  // stale copy would make the V92.22 release gate fail on Vercel.
+  "src/app/loading.tsx",
+
   // v82 retired Trip Inbox, booking/reservation import and live flight lookup.
   // Full-source ZIPs are sometimes extracted over an older checkout, which
   // does not delete files that disappeared from the new package. Remove those

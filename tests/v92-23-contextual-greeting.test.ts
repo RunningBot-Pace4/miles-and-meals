@@ -9,12 +9,18 @@ describe("V92.23 contextual dashboard greeting", () => {
   const dashboard = read("src/app/(app)/dashboard/page.tsx");
   const greeting = read("src/lib/journey-greeting.ts");
   const css = read("src/app/v92-living-journey.css");
+  const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
   it("publishes a coherent V92.23 PWA release", () => {
     expect(packageJson).toContain('"version": "1.92.23"');
     expect(packageJson).toContain('"v92-23:check"');
     expect(packageJson).toContain("npm run v92-23:check");
     expect(worker).toContain("miles-meals-static-v92-23");
+  });
+
+  it("cleans a stale root loading boundary from overlay deployments", () => {
+    expect(cleanup).toContain('"src/app/loading.tsx"');
+    expect(cleanup).toContain("rmSync");
   });
 
   it("replaces the generic welcome with trip-aware wording", () => {

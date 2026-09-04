@@ -16,11 +16,17 @@ const dashboard = read("src/app/(app)/dashboard/page.tsx");
 const greeting = read("src/lib/journey-greeting.ts");
 const css = read("src/app/v92-living-journey.css");
 const test = read("tests/journey-greeting.test.ts");
+const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
 must(packageJson, '"version": "1.92.23"', "V92.23 package version missing");
 must(packageJson, '"v92-23:check"', "V92.23 release gate missing");
 must(packageJson, "npm run v92-23:check", "V92.23 gate is not in prebuild");
 must(worker, "miles-meals-static-v92-23", "V92.23 PWA cache missing");
+must(
+  cleanup,
+  '"src/app/loading.tsx"',
+  "Overlay-deployment cleanup for the retired root loading boundary is missing",
+);
 
 for (const marker of [
   "buildJourneyGreeting",
