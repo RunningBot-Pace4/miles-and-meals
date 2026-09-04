@@ -2,6 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = path.join(process.cwd(), "src");
+const sharedLinkPath = path.join(
+  "src",
+  "components",
+  "FullPageLink.tsx",
+);
 const forbidden = [
   'from "next/link"',
   "useRouter",
@@ -44,6 +49,13 @@ function visit(directory) {
     );
 
     for (const pattern of forbidden) {
+      if (
+        pattern === 'from "next/link"' &&
+        relativePath === sharedLinkPath
+      ) {
+        continue;
+      }
+
       if (source.includes(pattern)) {
         failures.push(
           `${relativePath}: ${pattern}`,

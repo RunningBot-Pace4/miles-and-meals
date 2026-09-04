@@ -1,6 +1,6 @@
 # Miles & Meals V92.23 — Contextual Journey Greeting Package
 
-This is the complete source package, versioned `1.92.23`. It preserves all earlier V92 repairs, the single Next.js Halo loading boundary and the per-person payment ledger, then replaces the ordinary dashboard welcome with responsive copy and styling for every trip stage.
+This is the complete source package, versioned `1.92.24`. It preserves all earlier V92 repairs, the single Next.js Halo loading boundary and the per-person payment ledger, then replaces the ordinary dashboard welcome with responsive copy and styling for every trip stage.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 

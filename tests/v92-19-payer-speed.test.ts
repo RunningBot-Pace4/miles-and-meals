@@ -14,10 +14,10 @@ describe("V92.19 payer layout and speed", () => {
   const geometry = read("e2e/v92-19-payer-layout.spec.ts");
 
   it("publishes a coherent PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.23"');
+    expect(packageJson).toContain('"version": "1.92.24"');
     expect(packageJson).toContain('"v92-19:check"');
     expect(packageJson).toContain("npm run v92-19:check");
-    expect(worker).toContain("miles-meals-static-v92-23");
+    expect(worker).toContain("miles-meals-static-v92-24");
   });
 
   it("uses one compact row language for one and multiple payers", () => {
@@ -43,10 +43,12 @@ describe("V92.19 payer layout and speed", () => {
     expect(form).toContain("if (event.currentTarget.open) setSplitPresetsRequested(true)");
   });
 
-  it("uses one document navigation with an immediate Halo indicator", () => {
-    expect(navigation).toContain("<a");
-    expect(navigation).toContain('data-navigation-mode="document"');
-    expect(navigation).toContain("createPortal(<BrandedLoadingScreen />");
+  it("uses one prefetched client transition and the shared Halo boundary", () => {
+    expect(navigation).toContain('from "next/link"');
+    expect(navigation).toContain("<NextLink");
+    expect(navigation).toContain('data-navigation-mode="client"');
+    expect(navigation).toContain("prefetch = null");
+    expect(navigation).not.toContain("createPortal(<BrandedLoadingScreen />");
     expect(navigation).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(mobileNav).toContain("prefetch");
   });

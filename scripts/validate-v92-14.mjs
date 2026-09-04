@@ -14,10 +14,10 @@ const authenticatedAudit = read("e2e/v92-9-full-pwa-audit.spec.ts");
 const geometry = read("e2e/v92-12-pwa-layout.spec.ts");
 const publicAudit = read("e2e/public-pwa.spec.ts");
 
-must(packageJson, '"version": "1.92.23"', "V92.14 package version missing");
+must(packageJson, '"version": "1.92.24"', "V92.14 package version missing");
 must(packageJson, '"v92-14:check"', "V92.14 validation script missing");
 must(packageJson, "npm run v92-14:check", "V92.14 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-23", "V92.14 PWA cache missing");
+must(worker, "miles-meals-static-v92-24", "V92.14 PWA cache missing");
 
 for (const marker of [
   "/* V92.14 · full Web/PWA responsive contract",

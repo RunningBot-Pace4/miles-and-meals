@@ -9,10 +9,10 @@ const packageJson = read("package.json");
 const worker = read("public/sw.js");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.23"', "V92.6 package version missing");
+must(packageJson, '"version": "1.92.24"', "V92.6 package version missing");
 must(packageJson, '"v92-6:check"', "V92.6 validation script missing");
 must(packageJson, "npm run v92-6:check", "V92.6 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-23", "V92.6 service-worker cache missing");
+must(worker, "miles-meals-static-v92-24", "V92.6 service-worker cache missing");
 
 [
   ".journey-mode-switcher {",

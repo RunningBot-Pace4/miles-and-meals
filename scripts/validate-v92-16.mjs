@@ -23,10 +23,10 @@ const center = read("src/components/NotificationCenter.tsx");
 const collaboration = read("src/components/CollaborationPulse.tsx");
 const budgetGate = read("src/components/BudgetAccessGate.tsx");
 
-must(packageJson, '"version": "1.92.23"', "V92.16 package version missing");
+must(packageJson, '"version": "1.92.24"', "V92.16 package version missing");
 must(packageJson, '"v92-16:check"', "V92.16 validation script missing");
 must(packageJson, "npm run v92-16:check", "V92.16 validation is not in the build gate");
-must(worker, "miles-meals-static-v92-23", "V92.16 service-worker cache missing");
+must(worker, "miles-meals-static-v92-24", "V92.16 service-worker cache missing");
 
 for (const marker of ["permission-access-icon", "permission-access-copy", "Only the Trip Owner can change traveler permissions."]) {
   must(permissions, marker, `Permission notice structure missing: ${marker}`);

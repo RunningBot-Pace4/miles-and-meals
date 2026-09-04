@@ -12,10 +12,10 @@ describe("V92.23 contextual dashboard greeting", () => {
   const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
   it("publishes a coherent V92.23 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.23"');
+    expect(packageJson).toContain('"version": "1.92.24"');
     expect(packageJson).toContain('"v92-23:check"');
     expect(packageJson).toContain("npm run v92-23:check");
-    expect(worker).toContain("miles-meals-static-v92-23");
+    expect(worker).toContain("miles-meals-static-v92-24");
   });
 
   it("cleans a stale root loading boundary from overlay deployments", () => {
@@ -44,7 +44,10 @@ describe("V92.23 contextual dashboard greeting", () => {
   it("keeps the premium hero aligned from narrow PWA to desktop", () => {
     expect(css).toContain("/* V92.23 · contextual journey greeting");
     expect(css).toContain(".dashboard-welcome.journey-greeting");
-    expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto");
+    expect(css).toContain(".journey-greeting-route-art");
+    expect(css).toContain(".journey-greeting-footer");
+    expect(css).toContain(".journey-greeting-details");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
     expect(css).toContain("@media (max-width: 719px)");
     expect(css).toContain("@media (max-width: 360px)");
     expect(css).toContain("overflow-wrap: anywhere");

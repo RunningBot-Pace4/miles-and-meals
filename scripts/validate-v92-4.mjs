@@ -12,10 +12,10 @@ const halo = read("src/components/LivingJourneyHalo.tsx");
 const nav = read("src/components/MobileNav.tsx");
 const css = read("src/app/v92-living-journey.css");
 
-must(packageJson, '"version": "1.92.23"', "V92.4-or-newer package version missing");
+must(packageJson, '"version": "1.92.24"', "V92.4-or-newer package version missing");
 must(packageJson, '"v92-4:check"', "V92.4 release gate missing");
 must(packageJson, "npm run v92-4:check", "V92.4 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-23", "V92.4-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-24", "V92.4-or-newer service-worker cache missing");
 
 for (const source of [starter, halo]) {
   must(source, "onPointerDown={() => setActiveMode(mode)}", "Halo selection is not immediate on touch");
@@ -24,11 +24,13 @@ for (const source of [starter, halo]) {
 }
 
 for (const marker of [
-  "pendingHref",
-  'data-navigation-pending={pendingHref ? "true" : undefined}',
-  'pendingHref === link.href ? "navigation-pending" : ""',
-  "onPointerCancel={() => setPendingHref(null)}",
-]) must(nav, marker, `Immediate bottom-navigation feedback missing: ${marker}`);
+  "prefetch",
+  'aria-current={active ? "page" : undefined}',
+]) must(nav, marker, `Fast bottom-navigation marker missing: ${marker}`);
+
+if (nav.includes("pendingHref") || nav.includes("navigation-pending")) {
+  throw new Error("Bottom navigation retains obsolete pending state after client transitions");
+}
 
 for (const marker of [
   "-webkit-tap-highlight-color: transparent",
@@ -37,8 +39,7 @@ for (const marker of [
   "background: white !important",
   "min-height: 40px !important",
   ".journey-panel-stack > .journey-live-panel.is-active",
-  '.mobile-nav[data-navigation-pending="true"]',
-  ".nav-item.navigation-pending:not(.nav-action)",
+  ".mobile-nav .nav-item:active:not(.nav-action)",
   "calc(6.7rem + env(safe-area-inset-bottom))",
   "@media (min-width: 1024px)",
 ]) must(css, marker, `Shared web/PWA responsive treatment missing: ${marker}`);

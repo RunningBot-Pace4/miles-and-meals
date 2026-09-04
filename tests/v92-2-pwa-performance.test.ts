@@ -18,20 +18,21 @@ describe("V92.2 PWA reliability and performance", () => {
       worker.indexOf('self.addEventListener("activate"'),
     );
     expect(installBlock).not.toContain("self.skipWaiting(");
-    expect(worker).toContain('miles-meals-static-v92-23');
+    expect(worker).toContain('miles-meals-static-v92-24');
     expect(updater).toContain("waitForWaitingWorker");
     expect(updater).toContain("UPDATE_RELOAD_TIMEOUT_MS");
     expect(updater).toContain('"Retry"');
   });
 
-  it("uses one document navigation with visible progress and no fallback request", () => {
-    expect(link).toContain("<a");
-    expect(link).toContain('data-navigation-mode="document"');
-    expect(link).toContain("createPortal(<BrandedLoadingScreen />");
+  it("uses one prefetched client transition with no second loading overlay", () => {
+    expect(link).toContain('from "next/link"');
+    expect(link).toContain("<NextLink");
+    expect(link).toContain('data-navigation-mode="client"');
+    expect(link).toContain("prefetch = null");
     expect(link).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(link).not.toContain("window.location.assign(targetUrl.href)");
-    expect(link).toContain("data-navigation-pending");
-    expect(navigationGate).not.toContain('relativePath === "src/components/FullPageLink.tsx"');
+    expect(link).not.toContain("createPortal(<BrandedLoadingScreen />");
+    expect(navigationGate).toContain("sharedLinkPath");
   });
 
   it("makes selected tabs and main destinations unmistakable", () => {

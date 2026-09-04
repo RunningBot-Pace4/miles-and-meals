@@ -418,17 +418,23 @@ export default async function DashboardPage({
       <section
         className={`dashboard-welcome journey-greeting journey-greeting--${journeyGreeting.tone}`}
       >
+        <div className="journey-greeting-route-art" aria-hidden="true">
+          <svg viewBox="0 0 240 120" fill="none">
+            <path d="M18 88C58 40 94 102 132 61C164 27 188 44 222 20" />
+            <circle cx="18" cy="88" r="6" />
+            <circle cx="222" cy="20" r="8" />
+            <path d="m215 20 7-7 7 7-7 12-7-12Z" />
+          </svg>
+        </div>
+
         <div className="dashboard-welcome-copy">
           <p className="journey-greeting-meta">
+            <span className="journey-greeting-status">
+              <i aria-hidden="true" />
+              {journeyGreeting.context}
+            </span>
             <span className="journey-greeting-person">
               For {displayName}
-            </span>
-            <span
-              className="journey-greeting-divider"
-              aria-hidden="true"
-            />
-            <span>
-              {journeyGreeting.context}
             </span>
           </p>
           <h1 className="dashboard-welcome-title">
@@ -437,39 +443,60 @@ export default async function DashboardPage({
           <p className="journey-greeting-subtitle">
             {journeyGreeting.subtitle}
           </p>
-        </div>
 
-        {selectedTrip ? (
-          selectedTrip.financialStatus === "CLOSED" ? (
-            <Link
-              className="button secondary dashboard-add"
-              href="/settlements"
-            >
-              <span aria-hidden="true">✓</span>
-              Final settlement
-            </Link>
-          ) : (
-            <Link
-              className="button primary dashboard-add"
-              href="/expenses/new"
-            >
-              <span aria-hidden="true">
-                ＋
+          <div className="journey-greeting-footer">
+            <div className="journey-greeting-details" aria-label="Journey summary">
+              <span className="journey-greeting-detail">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 8.5h14M8 4v4M16 4v4M6 5.5h12a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2Z" />
+                </svg>
+                <span>
+                  <small>Travel dates</small>
+                  <strong>{selectedTrip ? tripDateLabel : "Ready when you are"}</strong>
+                </span>
               </span>
-              Add expense
-            </Link>
-          )
-        ) : (
-          <Link
-            className="button primary dashboard-add"
-            href="/trips"
-          >
-            <span aria-hidden="true">
-              ＋
-            </span>
-            Create trip
-          </Link>
-        )}
+
+              <span className="journey-greeting-detail">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z" />
+                  <circle cx="12" cy="10" r="2" />
+                </svg>
+                <span>
+                  <small>{viewAll ? "Journey collection" : "Destination"}</small>
+                  <strong>{selectedTrip ? heroDestination : "Start with one place"}</strong>
+                </span>
+              </span>
+            </div>
+
+            {selectedTrip ? (
+              selectedTrip.financialStatus === "CLOSED" ? (
+                <Link
+                  className="button secondary dashboard-add"
+                  href="/settlements"
+                >
+                  <span aria-hidden="true">✓</span>
+                  Final settlement
+                </Link>
+              ) : (
+                <Link
+                  className="button primary dashboard-add"
+                  href="/expenses/new"
+                >
+                  <span aria-hidden="true">＋</span>
+                  Add expense
+                </Link>
+              )
+            ) : (
+              <Link
+                className="button primary dashboard-add"
+                href="/trips"
+              >
+                <span aria-hidden="true">＋</span>
+                Create trip
+              </Link>
+            )}
+          </div>
+        </div>
       </section>
 
       {!selectedTrip ? (

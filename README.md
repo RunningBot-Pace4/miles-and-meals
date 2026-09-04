@@ -1,6 +1,6 @@
 # V92.23 Living Journey — contextual dashboard greeting
 
-Version `1.92.23` replaces the generic dashboard welcome with a premium contextual journey greeting. The headline and supporting message now adapt to an empty account, all-trips overview, undated plan, upcoming countdown, active trip, or completed journey without adding horizontal overflow on PWA screens. V92.22's single loading boundary and individual payment ledger remain included. See `V92-23-CONTEXTUAL-GREETING.md` for release details.
+Version `1.92.24` replaces the generic dashboard welcome with a premium contextual journey greeting. The headline and supporting message now adapt to an empty account, all-trips overview, undated plan, upcoming countdown, active trip, or completed journey without adding horizontal overflow on PWA screens. V92.22's single loading boundary and individual payment ledger remain included. See `V92-23-CONTEXTUAL-GREETING.md` for release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 

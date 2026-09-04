@@ -20,10 +20,10 @@ const offlineWarmup = read("src/components/OfflinePackWarmup.tsx");
 const health = read("src/app/(app)/admin/health/page.tsx");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.23"', "V92.2-or-newer package version missing");
+must(packageJson, '"version": "1.92.24"', "V92.2-or-newer package version missing");
 must(packageJson, '"v92-2:check"', "V92.2 release gate missing");
 must(packageJson, "npm run v92-2:check", "V92.2 gate is not part of prebuild");
-must(worker, 'miles-meals-static-v92-23', "V92.2-or-newer service-worker cache missing");
+must(worker, 'miles-meals-static-v92-24', "V92.2-or-newer service-worker cache missing");
 
 const installBlock = worker.slice(
   worker.indexOf('self.addEventListener("install"'),
@@ -44,18 +44,24 @@ for (const marker of [
 ]) must(updater, marker, `V92.2 updater recovery missing: ${marker}`);
 
 for (const marker of [
-  "<a",
+  'from "next/link"',
+  "<NextLink",
+  'data-navigation-mode="client"',
+  "prefetch = null",
+  'data-prefetch-intent={prefetch === false ? "off" : "adaptive"}',
+]) must(links, marker, `Resilient navigation wrapper missing: ${marker}`);
+for (const forbidden of [
   'data-navigation-mode="document"',
   "createPortal(<BrandedLoadingScreen />",
   "NAVIGATION_INDICATOR_TIMEOUT_MS",
-  "data-navigation-pending",
-]) must(links, marker, `Resilient navigation wrapper missing: ${marker}`);
-if (links.includes('from "next/link"') || links.includes("window.location.assign(targetUrl.href)")) {
-  throw new Error("The superseded dual client/native navigation path is still active");
+  "NATIVE_NAVIGATION_FALLBACK_MS",
+  "window.location.assign(targetUrl.href)",
+]) {
+  if (links.includes(forbidden)) {
+    throw new Error(`Superseded dual or document navigation remains: ${forbidden}`);
+  }
 }
-if (navigationGate.includes('relativePath === "src/components/FullPageLink.tsx"')) {
-  throw new Error("The Next Link navigation exception was not removed");
-}
+must(navigationGate, "sharedLinkPath", "Shared Next Link is not isolated by the navigation gate");
 must(nav, 'aria-current={active ? "page" : undefined}', "Active main destination is not exposed");
 for (const marker of [
   'button[role="tab"][aria-selected="true"]',

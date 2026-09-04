@@ -68,7 +68,6 @@ function NavIcon({ name }: { name: IconName }) {
 export function MobileNav() {
   const pathname = usePathname();
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   useEffect(() => {
     setPortalHost(document.body);
@@ -79,7 +78,6 @@ export function MobileNav() {
       className="mobile-nav"
       aria-label="Main navigation"
       data-app-mobile-nav="true"
-      data-navigation-pending={pendingHref ? "true" : undefined}
     >
       {links.map((link) => {
         const moreSection =
@@ -110,16 +108,11 @@ export function MobileNav() {
           (pathname === link.href ||
             pathname.startsWith(`${link.href}/`) ||
             moreSection);
-        const visuallyActive = pendingHref
-          ? pendingHref === link.href
-          : active;
-
         return (
           <Link
             className={[
               "nav-item",
-              visuallyActive ? "active" : "",
-              pendingHref === link.href ? "navigation-pending" : "",
+              active ? "active" : "",
               link.action ? "nav-action" : "",
             ]
               .filter(Boolean)
@@ -128,10 +121,6 @@ export function MobileNav() {
             prefetch
             key={link.href}
             aria-current={active ? "page" : undefined}
-            onPointerCancel={() => setPendingHref(null)}
-            onPointerDown={(event) => {
-              if (event.button === 0) setPendingHref(link.href);
-            }}
           >
             <span className="nav-icon">
               <NavIcon name={link.icon} />

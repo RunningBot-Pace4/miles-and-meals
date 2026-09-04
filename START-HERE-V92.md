@@ -1,6 +1,6 @@
 # Miles & Meals V92.23 · Contextual Journey Greeting
 
-Version `1.92.23` adds a contextual dashboard greeting that responds to the travel moment instead of always saying “Welcome back.” It presents purpose-built copy for no trips, all trips, planning, an upcoming countdown, travel happening now, and a completed journey. The redesigned hero remains compact and responsive across web, tablet and installed PWA screens. V92.22's single loading boundary and individual payment ledger remain included.
+Version `1.92.24` adds a contextual dashboard greeting that responds to the travel moment instead of always saying “Welcome back.” It presents purpose-built copy for no trips, all trips, planning, an upcoming countdown, travel happening now, and a completed journey. The redesigned hero remains compact and responsive across web, tablet and installed PWA screens. V92.22's single loading boundary and individual payment ledger remain included.
 
 ## What changed
 
@@ -125,7 +125,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-23` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-24` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

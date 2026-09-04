@@ -13,25 +13,25 @@ describe("V92.21 single navigation and restored Halo", () => {
   const globalError = read("src/app/global-error.tsx");
 
   it("publishes one coherent V92.21 PWA version", () => {
-    expect(packageJson).toContain('"version": "1.92.23"');
+    expect(packageJson).toContain('"version": "1.92.24"');
     expect(packageJson).toContain('"v92-21:check"');
     expect(packageJson).toContain("npm run v92-21:check");
-    expect(worker).toContain("miles-meals-static-v92-23");
+    expect(worker).toContain("miles-meals-static-v92-24");
   });
 
-  it("uses one native document request for every shared route link", () => {
-    expect(navigation).toContain("<a");
-    expect(navigation).toContain('data-navigation-mode="document"');
-    expect(navigation).not.toContain('from "next/link"');
+  it("uses one prefetched client transition for every shared route link", () => {
+    expect(navigation).toContain('from "next/link"');
+    expect(navigation).toContain("<NextLink");
+    expect(navigation).toContain('data-navigation-mode="client"');
+    expect(navigation).toContain("prefetch = null");
     expect(navigation).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(navigation).not.toContain("window.location.assign(targetUrl.href)");
-    expect(navigation).not.toContain("event.preventDefault()");
+    expect(navigation).not.toContain('data-navigation-mode="document"');
   });
 
-  it("shows one Halo indicator without launching a timeout navigation", () => {
-    expect(navigation).toContain("createPortal(<BrandedLoadingScreen />");
-    expect(navigation).toContain("NAVIGATION_INDICATOR_TIMEOUT_MS");
-    expect(navigation).toContain("never start a second");
+  it("leaves loading to the single route boundary", () => {
+    expect(navigation).not.toContain("createPortal(<BrandedLoadingScreen />");
+    expect(navigation).not.toContain("NAVIGATION_INDICATOR_TIMEOUT_MS");
   });
 
   it("restores the approved rotating Halo motion", () => {
@@ -42,8 +42,8 @@ describe("V92.21 single navigation and restored Halo", () => {
     expect(layout).toContain('className="pwa-launch-art"');
   });
 
-  it("removes the historical client-navigation exception", () => {
-    expect(navigationGate).not.toContain('relativePath === "src/components/FullPageLink.tsx"');
+  it("allows Next Link only inside the shared wrapper", () => {
+    expect(navigationGate).toContain("sharedLinkPath");
     expect(navigationGate).toContain('from "next/link"');
   });
 
