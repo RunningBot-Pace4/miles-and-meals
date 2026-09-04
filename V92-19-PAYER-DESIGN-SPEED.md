@@ -18,7 +18,7 @@
 | Main navigation | Full document request | Prefetched client transition | Shared app layout remains mounted |
 | Transition recovery | Native by default | Native after 4.5 s if stalled | Speed with PWA fallback |
 
-The service worker keeps authenticated page and React Server Component requests network-only. A new `miles-meals-static-v92-20` cache ensures the installed PWA activates these assets as one coherent release.
+The service worker keeps authenticated page and React Server Component requests network-only. A new `miles-meals-static-v92-21` cache ensures the installed PWA activates these assets as one coherent release.
 
 ## Validation
 

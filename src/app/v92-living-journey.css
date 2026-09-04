@@ -1392,7 +1392,7 @@ button.button {
   );
   -webkit-mask: radial-gradient(circle, transparent 0 59%, #000 60% 70%, transparent 71%);
   mask: radial-gradient(circle, transparent 0 59%, #000 60% 70%, transparent 71%);
-  animation: none;
+  animation: v92-halo-breathe 1.8s ease-in-out infinite;
 }
 
 .v92-loading-halo-core {
@@ -1418,8 +1418,7 @@ button.button {
   display: block;
   border-radius: inherit;
   background: #111;
-  margin-inline: auto;
-  animation: v92-loader-opacity 1.25s ease-in-out infinite;
+  animation: v92-route-progress 1.25s ease-in-out infinite alternate;
 }
 
 .v92-loading-halo-core i {
@@ -1441,13 +1440,16 @@ button.button {
 
 .trip-loading-pulse {
   background: var(--v92-green) !important;
-  box-shadow: none !important;
-  animation: v92-loader-opacity 1.25s ease-in-out infinite !important;
 }
 
-@keyframes v92-loader-opacity {
-  0%, 100% { opacity: 0.38; }
-  50% { opacity: 1; }
+@keyframes v92-halo-breathe {
+  0%, 100% { transform: rotate(-3deg) scale(0.98); opacity: 0.82; }
+  50% { transform: rotate(3deg) scale(1); opacity: 1; }
+}
+
+@keyframes v92-route-progress {
+  from { transform: translateX(0); }
+  to { transform: translateX(140%); }
 }
 
 @media (display-mode: standalone) {
@@ -1572,7 +1574,7 @@ button.button {
   }
 }
 
-/* V92.20 · stable loading without flip, jump or double wait --------------- */
+/* V92.20 · shared loading surface stability; V92.21 restores Halo motion --- */
 
 .trip-loading-overlay,
 .pwa-launch-screen {
@@ -1592,8 +1594,7 @@ button.button {
   -webkit-backdrop-filter: none;
 }
 
-.trip-loading-card,
-.pwa-launch-card {
+.trip-loading-card {
   width: min(100%, 340px) !important;
   min-width: 0;
   box-sizing: border-box;
@@ -1618,15 +1619,7 @@ button.button {
     visibility 140ms linear !important;
 }
 
-.pwa-launch-card {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-}
-
-.pwa-launch-screen.dismissed,
-.pwa-launch-screen.dismissed .pwa-launch-card {
+.pwa-launch-screen.dismissed {
   transform: none !important;
 }
 

@@ -11,16 +11,17 @@ describe("V92.3 mobile selection and transition reliability", () => {
   const login = read("src/components/LoginForm.tsx");
 
   it("uses Node 24 and a new coherent PWA cache", () => {
-    expect(packageJson).toContain('"version": "1.92.20"');
+    expect(packageJson).toContain('"version": "1.92.21"');
     expect(packageJson).toContain('"node": "24.x"');
-    expect(worker).toContain("miles-meals-static-v92-20");
+    expect(worker).toContain("miles-meals-static-v92-21");
   });
 
-  it("keeps authenticated navigation fast with native recovery", () => {
-    expect(links).toContain("<NextLink");
+  it("keeps authenticated navigation on one reliable document request", () => {
+    expect(links).toContain("<a");
+    expect(links).toContain('data-navigation-mode="document"');
     expect(links).toContain("data-navigation-pending");
-    expect(links).toContain("NATIVE_NAVIGATION_FALLBACK_MS");
-    expect(links).toContain("window.location.assign(targetUrl.href)");
+    expect(links).toContain("createPortal(<BrandedLoadingScreen />");
+    expect(links).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
   });
 
   it("shows selection with blue outlines only", () => {

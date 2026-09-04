@@ -85,7 +85,7 @@ export default function GlobalError({
               lineHeight: 1.04,
             }}
           >
-            This page needs a fresh load
+            This page couldn&apos;t open
           </h1>
 
           <p
@@ -95,9 +95,9 @@ export default function GlobalError({
               lineHeight: 1.6,
             }}
           >
-            Miles &amp; Meals could not finish this client-side
-            page transition. Reloading opens the destination as a
-            normal full page request.
+            An interrupted request or app update prevented this page
+            from opening. Reload once to reconnect to the current app
+            version.
           </p>
 
           <div
@@ -124,7 +124,7 @@ export default function GlobalError({
                 cursor: "pointer",
               }}
             >
-              Reload
+              Reload page
             </button>
 
             <button

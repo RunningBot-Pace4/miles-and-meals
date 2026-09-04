@@ -1,16 +1,16 @@
 "use client";
 
-import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { BrandedLoadingScreen } from "@/components/BrandedLoadingScreen";
 import type {
   AnchorHTMLAttributes,
   MouseEvent,
   PointerEvent,
   ReactNode,
 } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
-const NATIVE_NAVIGATION_FALLBACK_MS = 4_500;
+const NAVIGATION_INDICATOR_TIMEOUT_MS = 12_000;
 
 type FullPageLinkProps = Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -31,22 +31,25 @@ export function FullPageLink({
   ...props
 }: FullPageLinkProps) {
   const [navigationPending, setNavigationPending] = useState(false);
-  const pathname = usePathname();
-  const fallbackTimerRef = useRef<number | null>(null);
-
-  function clearNavigationFallback() {
-    if (fallbackTimerRef.current !== null) {
-      window.clearTimeout(fallbackTimerRef.current);
-      fallbackTimerRef.current = null;
-    }
-  }
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    setNavigationPending(false);
-    clearNavigationFallback();
+    setPortalHost(document.body);
+  }, []);
 
-    return clearNavigationFallback;
-  }, [pathname]);
+  useEffect(() => {
+    if (!navigationPending) return;
+
+    // A browser extension or a native beforeunload prompt can cancel a normal
+    // document navigation. Clear only the indicator; never start a second
+    // navigation as a timeout fallback.
+    const timer = window.setTimeout(
+      () => setNavigationPending(false),
+      NAVIGATION_INDICATOR_TIMEOUT_MS,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [navigationPending]);
 
   function isPrimaryNavigation(
     event: MouseEvent<HTMLAnchorElement> | PointerEvent<HTMLAnchorElement>,
@@ -63,10 +66,6 @@ export function FullPageLink({
   }
 
   function handlePointerDown(event: PointerEvent<HTMLAnchorElement>) {
-    if (isPrimaryNavigation(event)) {
-      setNavigationPending(true);
-    }
-
     onPointerDown?.(event);
   }
 
@@ -86,34 +85,38 @@ export function FullPageLink({
     const sourceUrl = window.location.href;
     const targetUrl = new URL(href, sourceUrl);
 
-    if (targetUrl.href === sourceUrl || targetUrl.origin !== window.location.origin) {
+    if (
+      targetUrl.href === sourceUrl ||
+      targetUrl.origin !== window.location.origin
+    ) {
       setNavigationPending(false);
       return;
     }
 
+    // Leave the anchor's native default action intact. This creates exactly
+    // one full-document request and avoids the fragile client RSC transition.
     setNavigationPending(true);
-    clearNavigationFallback();
-    fallbackTimerRef.current = window.setTimeout(() => {
-      if (window.location.href === sourceUrl) {
-        window.location.assign(targetUrl.href);
-      } else {
-        setNavigationPending(false);
-      }
-    }, NATIVE_NAVIGATION_FALLBACK_MS);
   }
 
   return (
-    <NextLink
-      href={href}
-      prefetch={prefetch}
-      data-full-page-link="true"
-      data-navigation-pending={navigationPending ? "true" : undefined}
-      onClick={handleClick}
-      onPointerCancel={handlePointerCancel}
-      onPointerDown={handlePointerDown}
-      {...props}
-    >
-      {children}
-    </NextLink>
+    <>
+      <a
+        href={href}
+        data-full-page-link="true"
+        data-navigation-mode="document"
+        data-navigation-pending={navigationPending ? "true" : undefined}
+        data-prefetch-intent={prefetch ? "true" : undefined}
+        onClick={handleClick}
+        onPointerCancel={handlePointerCancel}
+        onPointerDown={handlePointerDown}
+        {...props}
+      >
+        {children}
+      </a>
+
+      {navigationPending && portalHost
+        ? createPortal(<BrandedLoadingScreen />, portalHost)
+        : null}
+    </>
   );
 }

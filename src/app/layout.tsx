@@ -117,15 +117,7 @@ export default function RootLayout({
           className="pwa-launch-screen"
           aria-hidden="true"
         >
-          <div className="trip-loading-card trip-loading-route-card pwa-launch-card">
-            <div className="trip-loading-brand">
-              <img src="/icons/v92/icon-192.png" width="46" height="46" alt="" />
-              <div>
-                <strong>Miles &amp; Meals</strong>
-                <span>Your trip, ready when you are.</span>
-              </div>
-            </div>
-
+          <div className="pwa-launch-art">
             <div className="v92-loading-halo" aria-hidden="true">
               <span className="v92-loading-halo-ring" />
               <span className="v92-loading-halo-core">
@@ -134,12 +126,12 @@ export default function RootLayout({
                 <i />
               </span>
             </div>
-
-            <div className="trip-loading-foot">
-              <span className="trip-loading-pulse" />
-              <small>Getting your trip ready</small>
+            <div>
+              <strong>Miles &amp; Meals</strong>
+              <span>Getting your trip ready</span>
             </div>
           </div>
+          <small>Plan · Spend · Settle</small>
         </div>
 
         {children}

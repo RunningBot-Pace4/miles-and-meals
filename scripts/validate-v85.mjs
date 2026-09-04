@@ -35,7 +35,7 @@ const css = read("src/app/globals.css");
 const unitTests = read("tests/v85-combined.test.ts");
 const e2e = read("e2e/mobile-v85-combined.spec.ts");
 
-must(packageJson, '"version": "1.92.20"', "v85-or-newer package version missing");
+must(packageJson, '"version": "1.92.21"', "v85-or-newer package version missing");
 must(packageJson, '"v85:check"', "v85 release validator command missing");
 
 for (const marker of [

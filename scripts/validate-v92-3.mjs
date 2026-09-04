@@ -12,27 +12,26 @@ const navigationGate = read("scripts/validate-navigation.mjs");
 const css = read("src/app/v92-living-journey.css");
 const login = read("src/components/LoginForm.tsx");
 
-must(packageJson, '"version": "1.92.20"', "V92.3-or-newer package version missing");
+must(packageJson, '"version": "1.92.21"', "V92.3-or-newer package version missing");
 must(packageJson, '"node": "24.x"', "V92.3 must match the Vercel Node.js 24 setting");
 must(packageJson, '"v92-3:check"', "V92.3 release gate missing");
 must(packageJson, "npm run v92-3:check", "V92.3 gate is not part of prebuild");
-must(worker, "miles-meals-static-v92-20", "V92.3-or-newer service-worker cache missing");
+must(worker, "miles-meals-static-v92-21", "V92.3-or-newer service-worker cache missing");
 
 for (const marker of [
   'data-full-page-link="true"',
+  'data-navigation-mode="document"',
   "data-navigation-pending",
   "onPointerDown={handlePointerDown}",
-  "<NextLink",
-  "NATIVE_NAVIGATION_FALLBACK_MS",
-  "window.location.assign(targetUrl.href)",
+  "createPortal(<BrandedLoadingScreen />",
 ]) must(links, marker, `V92.3 reliable navigation feedback missing: ${marker}`);
 
-must(links, 'from "next/link"', "V92.3-or-newer fast client navigation missing");
-must(
-  navigationGate,
-  'relativePath === "src/components/FullPageLink.tsx"',
-  "V92.3-or-newer audited Link exception is not scoped to FullPageLink",
-);
+if (links.includes('from "next/link"') || links.includes("NATIVE_NAVIGATION_FALLBACK_MS")) {
+  throw new Error("V92.3-or-newer still contains the superseded dual navigation path");
+}
+if (navigationGate.includes('relativePath === "src/components/FullPageLink.tsx"')) {
+  throw new Error("V92.3-or-newer still exempts FullPageLink from the navigation gate");
+}
 
 for (const marker of [
   'button[role="tab"][aria-selected="true"]',

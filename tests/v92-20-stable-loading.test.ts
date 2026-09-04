@@ -11,31 +11,24 @@ describe("V92.20 stable Web and PWA loading", () => {
   const dismiss = read("src/components/PwaLaunchDismiss.tsx");
   const saving = read("src/components/SavingOverlay.tsx");
   const css = read("src/app/v92-living-journey.css");
-  const stableRules = css.slice(
-    css.indexOf(".v92-loading-halo {"),
-    css.indexOf("/* V92.3 · quiet blue selection"),
-  );
 
   it("publishes a coherent V92.20 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.20"');
+    expect(packageJson).toContain('"version": "1.92.21"');
     expect(packageJson).toContain('"v92-20:check"');
     expect(packageJson).toContain("npm run v92-20:check");
-    expect(worker).toContain("miles-meals-static-v92-20");
+    expect(worker).toContain("miles-meals-static-v92-21");
   });
 
-  it("uses one visual shell for cold PWA startup and route loading", () => {
-    expect(layout).toContain("trip-loading-card trip-loading-route-card pwa-launch-card");
-    expect(layout).toContain('className="trip-loading-brand"');
-    expect(layout).toContain('className="trip-loading-foot"');
-    expect(layout).not.toContain('className="pwa-launch-art"');
+  it("retains the branded PWA launch artwork", () => {
+    expect(layout).toContain('className="pwa-launch-art"');
+    expect(layout).toContain("v92-loading-halo");
+    expect(layout).toContain("Getting your trip ready");
   });
 
-  it("keeps the Halo geometry fixed", () => {
-    expect(stableRules).not.toContain("rotate(");
-    expect(stableRules).not.toContain("scale(");
-    expect(stableRules).not.toContain("translateX(");
-    expect(stableRules).toContain("animation: none");
-    expect(css).toContain("@keyframes v92-loader-opacity");
+  it("keeps loading surfaces fitted to stable viewport geometry", () => {
+    expect(css).toContain("height: 100svh");
+    expect(css).toContain("contain: layout");
+    expect(css).toContain("backdrop-filter: none");
   });
 
   it("delays only transient route loading while actions remain immediate", () => {

@@ -1,6 +1,6 @@
-# V92.20 Living Journey — stable loading release
+# V92.21 Living Journey — single navigation release
 
-Version `1.92.20` preserves the complete V92.19 payer and performance work, then removes loading flip/jump across Web and installed PWA. Cold PWA startup and route loading now share one fixed-size visual shell, geometric animation is removed, quick route transitions avoid loader flashes, and startup no longer waits unnecessarily for the full browser load event. See `V92-20-STABLE-LOADING.md` for the release details.
+Version `1.92.21` fixes the repeated fresh-load prompt and true double navigation. Every shared route now opens through one reliable document request, with no delayed second fallback request. The approved PWA launch artwork and rotating Halo are restored. See `V92-21-SINGLE-NAVIGATION.md` for the release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 

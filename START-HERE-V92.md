@@ -1,6 +1,6 @@
-# Miles & Meals V92.20 · Stable Web and PWA Loading
+# Miles & Meals V92.21 · Single Navigation and Rotating Halo
 
-Version `1.92.20` preserves the complete tested V92.19 release and removes the reported loading flip/jump. Web route loading, PWA cold launch and action-saving feedback now share stable geometry, while quick transitions and hydrated startup avoid unnecessary waiting.
+Version `1.92.21` preserves the complete tested V92.20 source while correcting the actual reported problem: one tap could start a client transition and later a second full-page navigation. Shared links now make exactly one document request, the repeated fresh-load prompt is avoided, and the approved rotating Halo is restored.
 
 ## What changed
 
@@ -118,7 +118,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-20` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-21` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -135,10 +135,11 @@ npm run v92-17:check
 npm run v92-18:check
 npm run v92-19:check
 npm run v92-20:check
+npm run v92-21:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.20 packaging validation: 190/190 unit tests, every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build passed. Stable loader contracts cover Web routes, action overlays and installed-PWA cold startup; the payer and complete Add Expense responsive contracts continue to cover 320, 360, 390, 430, 600, 719 and 1024 px. The packaging environment does not include Playwright browser binaries, so authenticated physical-device PWA confirmation remains a deployed-staging gate.
+V92.21 packaging validation: 196/196 unit tests, every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build passed. Single-document navigation, rotating Halo, payer and complete Add Expense responsive contracts remain covered. The packaging environment does not include Playwright browser binaries, so authenticated physical-device PWA confirmation remains a deployed-staging gate.
