@@ -1,4 +1,10 @@
-# Miles & Meals V92.25 · Receipt PWA and route recovery
+# Miles & Meals V92.25.1 · Vercel build hotfix
+
+V92.25.1 preserves the complete V92.25 receipt PWA and route-recovery release.
+It corrects the deployment identifier rejected by Vercel: standard deployments
+now use Vercel's unique per-deployment value, while the Git SHA fallback is
+capped at 32 characters. Reviewed install-script versions are also pinned in
+`allowScripts`. No Neon migration or PWA cache change is required.
 
 Version `1.92.25` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Navigation stays client-side and single-request during normal use, while stale cross-deployment route payloads are prevented and a true route failure receives one bounded automatic recovery.
 
@@ -147,6 +153,7 @@ npm run v92-22:check
 npm run v92-23:check
 npm run v92-24:check
 npm run v92-25:check
+npm run v92-25-1:check
 npm test
 npm run build
 ```
