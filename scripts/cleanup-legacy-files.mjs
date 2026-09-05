@@ -21,6 +21,11 @@ const obsoletePaths = [
   // stale copy would make the V92.22 release gate fail on Vercel.
   "src/app/loading.tsx",
 
+  // V92.26 retired the automatic route-recovery fallback. Source archives
+  // extracted over V92.25 cannot delete the old module, so remove a stale
+  // copy before the V92.25 and V92.26 release gates inspect the tree.
+  "src/lib/route-recovery.ts",
+
   // v82 retired Trip Inbox, booking/reservation import and live flight lookup.
   // Full-source ZIPs are sometimes extracted over an older checkout, which
   // does not delete files that disappeared from the new package. Remove those

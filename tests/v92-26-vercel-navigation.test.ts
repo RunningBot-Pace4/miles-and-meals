@@ -11,6 +11,7 @@ describe("V92.26 Vercel-managed navigation", () => {
   const appError = read("src/app/error.tsx");
   const globalError = read("src/app/global-error.tsx");
   const worker = read("public/sw.js");
+  const legacyCleanup = read("scripts/cleanup-legacy-files.mjs");
 
   it("publishes a coherent V92.26 PWA release", () => {
     expect(packageJson).toContain('"version": "1.92.26"');
@@ -41,6 +42,7 @@ describe("V92.26 Vercel-managed navigation", () => {
     }
 
     expect(existsSync("src/lib/route-recovery.ts")).toBe(false);
+    expect(legacyCleanup).toContain('"src/lib/route-recovery.ts"');
   });
 
   it("keeps the rotating Halo and one authenticated loading boundary", () => {
