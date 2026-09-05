@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Miles &amp; Meals</title>
+  <desc id="desc">A light four-colour journey halo surrounding a connected route mark.</desc>
+  <defs>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="28" stdDeviation="28" flood-color="#121417" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="#f7f8fa"/>
+  <circle cx="512" cy="512" r="344" fill="#ffffff" filter="url(#shadow)"/>
+  <path d="M512 168a344 344 0 0 1 326 235" fill="none" stroke="#3d82f6" stroke-width="90" stroke-linecap="round"/>
+  <path d="M848 527a344 344 0 0 1-197 298" fill="none" stroke="#9bd0a5" stroke-width="90" stroke-linecap="round"/>
+  <path d="M547 853a344 344 0 0 1-311-188" fill="none" stroke="#edb18d" stroke-width="90" stroke-linecap="round"/>
+  <path d="M188 591a344 344 0 0 1 184-373" fill="none" stroke="#f5d98b" stroke-width="90" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="224" fill="#ffffff"/>
+  <path d="M356 610c80-151 150-40 218-153 27-45 62-73 105-85" fill="none" stroke="#121417" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="354" cy="612" r="45" fill="#121417"/>
+  <circle cx="681" cy="371" r="45" fill="#121417"/>
+  <path d="m518 429 35 72 77 11-56 55 14 77-70-36-70 36 14-77-56-55 77-11z" fill="#127f7a"/>
+</svg>

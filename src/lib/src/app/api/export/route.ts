@@ -1,0 +1,457 @@
+import {
+  and,
+  asc,
+  eq,
+  inArray,
+  ne,
+  or,
+} from "drizzle-orm";
+import { db } from "@/db";
+import {
+  countries,
+  expenseComments,
+  expensePayers,
+  expenses,
+  settlements,
+  travelItems,
+  tripBudgets,
+  tripCategoryBudgets,
+  splitPresets,
+  tripDocuments,
+  tripEmergencyContacts,
+  tripMemories,
+  tripMemberPermissions,
+  user,
+} from "@/db/schema";
+import {
+  getActiveTripContext,
+} from "@/lib/active-trip";
+import { getSession } from "@/lib/session";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
+
+function csvCell(value: unknown): string {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
+  }
+
+  const text = String(value);
+
+  if (
+    text.includes(",") ||
+    text.includes('"') ||
+    text.includes("\n") ||
+    text.includes("\r")
+  ) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  return text;
+}
+
+function csvLine(values: unknown[]): string {
+  return values.map(csvCell).join(",");
+}
+
+export async function GET(request: Request) {
+  const session = await getSession();
+
+  if (!session) {
+    return Response.json(
+      { error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  const url = new URL(request.url);
+  const format =
+    url.searchParams.get("format") === "csv"
+      ? "csv"
+      : "json";
+
+  const activeTrip =
+    await getActiveTripContext(
+      session.user,
+    );
+  const allowed =
+    activeTrip.countries;
+  const countryIds = allowed.map(
+    (country) => country.id,
+  );
+
+  const countryById = new Map<
+    string,
+    (typeof allowed)[number]
+  >(
+    allowed.map((country) => [
+      country.id,
+      country,
+    ]),
+  );
+  const tripIds = [
+    ...new Set(
+      allowed.map(
+        (country) =>
+          country.tripId,
+      ),
+    ),
+  ];
+
+
+  if (countryIds.length === 0) {
+    const empty = {
+      exportedAt: new Date().toISOString(),
+      countries: [],
+      expenses: [],
+      planner: [],
+      settlements: [],
+      personalBudgets: [],
+      categoryBudgets: [],
+      expensePayers: [],
+      expenseComments: [],
+      splitPresets: [],
+      documents: [],
+      emergencyContacts: [],
+      memories: [],
+      myTripPermissions: [],
+    };
+
+    if (format === "json") {
+      return Response.json(empty, {
+        headers: {
+          "content-disposition":
+            'attachment; filename="miles-and-meals-export.json"',
+        },
+      });
+    }
+
+    return new Response(
+      csvLine([
+        "record_type",
+        "trip",
+        "country",
+        "date",
+        "title",
+        "category",
+        "amount",
+        "currency",
+        "status",
+        "person",
+      ]) + "\n",
+      {
+        headers: {
+          "content-type":
+            "text/csv; charset=utf-8",
+          "content-disposition":
+            'attachment; filename="miles-and-meals-export.csv"',
+        },
+      },
+    );
+  }
+
+  const [
+    expenseRows,
+    plannerRows,
+    settlementRows,
+    personalBudgetRows,
+    categoryBudgetRows,
+    splitPresetRows,
+    documentRows,
+    emergencyContactRows,
+    memoryRows,
+    myTripPermissionRows,
+  ] = await Promise.all([
+    db
+      .select({
+        id: expenses.id,
+        countryId: expenses.countryId,
+        expenseDate: expenses.expenseDate,
+        description: expenses.description,
+        category: expenses.category,
+        transactionCurrency:
+          expenses.transactionCurrency,
+        transactionAmount:
+          expenses.transactionAmount,
+        baseCurrency: expenses.baseCurrency,
+        convertedAmount:
+          expenses.convertedAmount,
+        actualConvertedAmount:
+          expenses.actualConvertedAmount,
+        paidByUserId:
+          expenses.paidByUserId,
+        paidByName: user.name,
+        notes: expenses.notes,
+        createdAt: expenses.createdAt,
+        updatedAt: expenses.updatedAt,
+      })
+      .from(expenses)
+      .leftJoin(
+        user,
+        eq(
+          expenses.paidByUserId,
+          user.id,
+        ),
+      )
+      .where(
+        inArray(
+          expenses.countryId,
+          countryIds,
+        ),
+      )
+      .orderBy(
+        asc(expenses.expenseDate),
+      ),
+    db
+      .select()
+      .from(travelItems)
+      .where(
+        and(
+          inArray(travelItems.countryId, countryIds),
+          ne(travelItems.itemType, "BOOKING"),
+        ),
+      )
+      .orderBy(
+        asc(travelItems.itemDate),
+      ),
+    db
+      .select()
+      .from(settlements)
+      .where(
+        inArray(
+          settlements.countryId,
+          countryIds,
+        ),
+      )
+      .orderBy(
+        asc(settlements.createdAt),
+      ),
+    db
+      .select()
+      .from(tripBudgets)
+      .where(
+        and(
+          inArray(
+            tripBudgets.tripId,
+            tripIds,
+          ),
+          eq(
+            tripBudgets.userId,
+            session.user.id,
+          ),
+        ),
+      ),
+    db.select().from(tripCategoryBudgets).where(inArray(tripCategoryBudgets.tripId, tripIds)),
+    db.select().from(splitPresets).where(inArray(splitPresets.tripId, tripIds)),
+    Promise.all(tripIds.map(async (tripId) => ({ tripId, capabilities: await getTripCapabilities(session.user, tripId) })))
+      .then(async (rows) => {
+        const permittedTripIds = rows.filter((row) => row.capabilities.canViewDocuments).map((row) => row.tripId);
+        if (!permittedTripIds.length) return [];
+        return db.select().from(tripDocuments).where(and(
+          inArray(tripDocuments.tripId, permittedTripIds),
+          or(eq(tripDocuments.visibility, "TRIP"), eq(tripDocuments.createdBy, session.user.id)),
+        ));
+      }),
+    db.select().from(tripEmergencyContacts).where(inArray(tripEmergencyContacts.tripId, tripIds)),
+    db.select().from(tripMemories).where(inArray(tripMemories.tripId, tripIds)),
+    db.select().from(tripMemberPermissions).where(and(
+      inArray(tripMemberPermissions.tripId, tripIds),
+      eq(tripMemberPermissions.userId, session.user.id),
+    )),
+  ]);
+
+  const allowedExpenseIds = new Set(expenseRows.map((row) => row.id));
+  const [scopedPayers, scopedComments] = expenseRows.length
+    ? await Promise.all([
+        db
+          .select({
+            expenseId: expensePayers.expenseId,
+            userId: expensePayers.userId,
+            name: user.name,
+            amountBase: expensePayers.amountBase,
+          })
+          .from(expensePayers)
+          .innerJoin(user, eq(expensePayers.userId, user.id))
+          .where(inArray(expensePayers.expenseId, [...allowedExpenseIds])),
+        db
+          .select()
+          .from(expenseComments)
+          .where(inArray(expenseComments.expenseId, [...allowedExpenseIds])),
+      ])
+    : [[], []] as const;
+
+  const exportData = {
+    exportedAt: new Date().toISOString(),
+    exportedBy: {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+    },
+    countries: allowed,
+    expenses: expenseRows,
+    planner: plannerRows,
+    settlements: settlementRows,
+    personalBudgets:
+      personalBudgetRows.filter(
+        (row) =>
+          row.userId ===
+          session.user.id,
+      ),
+    categoryBudgets: categoryBudgetRows,
+    expensePayers: scopedPayers,
+    expenseComments: scopedComments,
+    splitPresets: splitPresetRows.map((preset) => ({
+      ...preset,
+      shares: JSON.parse(preset.sharesJson) as unknown,
+      sharesJson: undefined,
+    })),
+    documents: documentRows,
+    emergencyContacts: emergencyContactRows,
+    memories: memoryRows,
+    myTripPermissions: myTripPermissionRows,
+  };
+
+  if (format === "json") {
+    return new Response(
+      JSON.stringify(
+        exportData,
+        null,
+        2,
+      ),
+      {
+        headers: {
+          "content-type":
+            "application/json; charset=utf-8",
+          "content-disposition":
+            'attachment; filename="miles-and-meals-export.json"',
+          "cache-control": "no-store",
+        },
+      },
+    );
+  }
+
+  const lines = [
+    csvLine([
+      "record_type",
+      "trip",
+      "country",
+      "date",
+      "title",
+      "category",
+      "amount",
+      "currency",
+      "status",
+      "person",
+    ]),
+  ];
+
+  for (const expense of expenseRows) {
+    const country =
+      countryById.get(expense.countryId);
+
+    lines.push(
+      csvLine([
+        "expense",
+        country?.tripName ?? "",
+        country?.name ?? "",
+        expense.expenseDate,
+        expense.description,
+        expense.category,
+        expense.transactionAmount,
+        expense.transactionCurrency,
+        "",
+        (scopedPayers.filter((payer) => payer.expenseId === expense.id).map((payer) => payer.name).join(" + ")) || expense.paidByName || "",
+      ]),
+    );
+  }
+
+  for (const item of plannerRows) {
+    const country =
+      countryById.get(item.countryId);
+
+    lines.push(
+      csvLine([
+        "planner",
+        country?.tripName ?? "",
+        country?.name ?? "",
+        item.itemDate ?? "",
+        item.title,
+        item.itemType,
+        item.estimatedCost ?? "",
+        country?.currencyCode ?? "",
+        item.status ?? "",
+        "",
+      ]),
+    );
+  }
+
+  for (const settlement of settlementRows) {
+    const country =
+      countryById.get(
+        settlement.countryId,
+      );
+
+    lines.push(
+      csvLine([
+        "settlement",
+        country?.tripName ?? "",
+        country?.name ?? "",
+        settlement.createdAt.toISOString(),
+        "Settlement",
+        "payment",
+        settlement.amount,
+        settlement.currency,
+        settlement.status,
+        `${settlement.fromUserId} -> ${settlement.toUserId}`,
+      ]),
+    );
+  }
+
+  for (
+    const budget of
+      personalBudgetRows
+  ) {
+    if (
+      budget.userId !==
+      session.user.id
+    ) {
+      continue;
+    }
+
+    const trip =
+      allowed.find(
+        (country) =>
+          country.tripId ===
+          budget.tripId,
+      );
+
+    lines.push(
+      csvLine([
+        "personal_budget",
+        trip?.tripName ?? "",
+        "",
+        "",
+        "My trip budget",
+        "budget",
+        budget.amount,
+        trip?.baseCurrency ?? "",
+        "",
+        session.user.name,
+      ]),
+    );
+  }
+
+  return new Response(
+    `${lines.join("\n")}\n`,
+    {
+      headers: {
+        "content-type":
+          "text/csv; charset=utf-8",
+        "content-disposition":
+          'attachment; filename="miles-and-meals-export.csv"',
+        "cache-control": "no-store",
+      },
+    },
+  );
+}

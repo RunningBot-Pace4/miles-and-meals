@@ -1,0 +1,2765 @@
+"use client";
+
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { SavingOverlay } from "@/components/SavingOverlay";
+import {
+  clearDraft,
+  draftKey,
+  readDraft,
+  writeDraft,
+} from "@/lib/draft-storage";
+import { sameCurrency, splitEqually } from "@/lib/money";
+import { parseTravelNumber } from "@/lib/numbers";
+import { enqueueOfflineMutation } from "@/lib/offline-queue";
+import { trackProductEvent } from "@/lib/product-analytics-client";
+import { compactOptionText } from "@/lib/display-text";
+
+type CountryOption = {
+  id: string;
+  name: string;
+  tripId: string;
+  tripName: string;
+  currencyCode: string;
+  defaultExchangeRate: string;
+  baseCurrency: string;
+};
+
+type Member = {
+  id: string;
+  name: string;
+};
+
+type ReceiptAnalysis = {
+  merchantName: string | null;
+  merchantCandidates: string[];
+  totalAmount: number | null;
+  totalCandidates: number[];
+  currencyCode: string | null;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  merchantConfidence: "HIGH" | "MEDIUM" | "LOW";
+  totalConfidence: "HIGH" | "MEDIUM" | "LOW";
+  receiptDate: string | null;
+  dateConfidence: "HIGH" | "MEDIUM" | "LOW";
+  categorySuggestion: string | null;
+  items: Array<{ title: string; amount: number }>;
+  rawText: string;
+};
+
+type DuplicateWarning = {
+  id: string;
+  description: string;
+  currency: string;
+  amount: number;
+};
+
+type SplitPreset = {
+  id: string;
+  name: string;
+  splitMode: SplitMode;
+  shares: Array<{ userId: string; value: number }>;
+};
+
+type SplitMode = "EQUAL" | "PERCENTAGE" | "SHARES" | "EXACT";
+type RateType = "DEFAULT" | "CASH_EXCHANGE" | "CREDIT_CARD" | "MANUAL";
+
+function normalizeOptionalActualCharge(
+  value: string | null | undefined,
+): string {
+  const trimmed = value?.trim() ?? "";
+
+  if (!trimmed) {
+    return "";
+  }
+
+  const parsed = parseTravelNumber(trimmed);
+
+  return parsed !== null && parsed > 0 ? trimmed : "";
+}
+
+type ExpensePrefill = {
+  countryId?: string;
+  expenseDate?: string;
+  description?: string;
+  category?: string;
+};
+
+type ExpenseInitial = {
+  id: string;
+  updatedAt: string;
+  countryId: string;
+  expenseDate: string;
+  category: string;
+  description: string;
+  transactionCurrency: string;
+  transactionAmount: string;
+  exchangeRate: string;
+  rateType: RateType;
+  actualConvertedAmount: string | null;
+  splitMode: SplitMode;
+  paidByUserId: string;
+  payers?: Array<{ userId: string; amountBase: string }>;
+  paymentMethod: string | null;
+  receiptUrl: string | null;
+  receiptReviewStatus?: "NOT_REQUIRED" | "NEEDS_REVIEW" | "REVIEWED";
+  receiptConfidence?: number | null;
+  notes: string | null;
+  splitUserIds: string[];
+  splitValues: Record<string, string>;
+  itemization?: Array<{
+    title: string;
+    transactionAmount: number;
+    assigneeUserIds: string[];
+  }>;
+};
+
+type ExpenseDraft = {
+  clientRequestId?: string;
+  countryId: string;
+  expenseDate: string;
+  category: string;
+  currency: string;
+  rate: string;
+  rateType: RateType;
+  amount: string;
+  actualConvertedAmount: string;
+  splitMode: SplitMode;
+  splitUserIds: string[];
+  splitValues: Record<string, string>;
+  paidByUserId: string;
+  multiplePayers?: boolean;
+  payerUserIds?: string[];
+  payerValues?: Record<string, string>;
+  description: string;
+  receiptUrl: string;
+  paymentMethod: string;
+  notes: string;
+};
+
+const categories = [
+  { value: "Food", label: "Meals", icon: "🍜" },
+  { value: "Transport", label: "Travel", icon: "🚕" },
+  { value: "Hotel", label: "Stay", icon: "🏨" },
+  { value: "Shopping", label: "Shop", icon: "🛍️" },
+  { value: "Attractions", label: "Things", icon: "🎟️" },
+  { value: "Flights", label: "Flight", icon: "✈️" },
+  { value: "Other", label: "Other", icon: "•••" },
+] as const;
+
+const rateTypes: { value: RateType; label: string }[] = [
+  { value: "DEFAULT", label: "Default" },
+  { value: "CASH_EXCHANGE", label: "Cash" },
+  { value: "CREDIT_CARD", label: "Card" },
+  { value: "MANUAL", label: "Manual" },
+];
+
+const commonCurrencies = [
+  ["MYR", "Malaysian Ringgit"],
+  ["SGD", "Singapore Dollar"],
+  ["THB", "Thai Baht"],
+  ["VND", "Vietnamese Dong"],
+  ["IDR", "Indonesian Rupiah"],
+  ["PHP", "Philippine Peso"],
+  ["USD", "US Dollar"],
+  ["JPY", "Japanese Yen"],
+  ["KRW", "South Korean Won"],
+  ["CNY", "Chinese Yuan"],
+  ["HKD", "Hong Kong Dollar"],
+  ["TWD", "New Taiwan Dollar"],
+  ["AUD", "Australian Dollar"],
+  ["NZD", "New Zealand Dollar"],
+  ["EUR", "Euro"],
+  ["GBP", "British Pound"],
+  ["CHF", "Swiss Franc"],
+  ["CAD", "Canadian Dollar"],
+  ["AED", "UAE Dirham"],
+  ["SAR", "Saudi Riyal"],
+] as const;
+
+const splitModes: { value: SplitMode; label: string }[] = [
+  { value: "EQUAL", label: "Equal" },
+  { value: "PERCENTAGE", label: "%" },
+  { value: "SHARES", label: "Shares" },
+  { value: "EXACT", label: "Exact" },
+];
+
+function equalPercentages(userIds: string[]): Record<string, string> {
+  if (userIds.length === 0) {
+    return {};
+  }
+
+  const base = Math.floor(10000 / userIds.length) / 100;
+  let used = 0;
+
+  return Object.fromEntries(
+    userIds.map((userId, index) => {
+      const value =
+        index === userIds.length - 1
+          ? Math.round((100 - used) * 100) / 100
+          : base;
+      used += value;
+      return [userId, value.toFixed(2)];
+    }),
+  );
+}
+
+function createClientRequestId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  // RFC 4122 v4-shaped fallback for older embedded webviews.
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16);
+    const value = char === "x" ? random : (random & 0x3) | 0x8;
+    return value.toString(16);
+  });
+}
+
+function localDateString() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function friendlyExpenseSaveError(status: number, serverError?: string): string {
+  if (serverError && serverError !== "Forbidden") return serverError;
+  if (status === 401) return "Your sign-in expired. Sign in again, then save the expense.";
+  if (status === 403) {
+    return "You no longer have access to this Trip. Ask the Trip Owner to add you again, then retry.";
+  }
+  if (status === 423) {
+    return "This Trip is closed and read-only. Reopen it before adding expenses.";
+  }
+  return "Unable to save expense. Check your connection and Trip access, then try again.";
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+export function ExpenseForm({
+  countries,
+  activeTripId,
+  currentUserId,
+  initial,
+  prefill,
+}: {
+  countries: CountryOption[];
+  activeTripId: string;
+  currentUserId: string;
+  initial?: ExpenseInitial;
+  prefill?: ExpensePrefill;
+}) {
+  const first =
+    countries.find((country) => country.id === initial?.countryId) ??
+    countries.find((country) => country.id === prefill?.countryId) ??
+    countries.find((country) => country.tripId === activeTripId) ??
+    countries[0];
+
+  const startingCurrency = (
+    initial?.transactionCurrency ??
+    first?.currencyCode ??
+    ""
+  ).toUpperCase();
+
+  const startingRate =
+    first && sameCurrency(startingCurrency, first.baseCurrency)
+      ? "1"
+      : initial?.exchangeRate ?? first?.defaultExchangeRate ?? "1";
+
+  const [countryId, setCountryId] = useState(first?.id ?? "");
+  const [category, setCategory] = useState(
+    initial?.category ?? prefill?.category ?? "Food",
+  );
+  const [currency, setCurrency] = useState(startingCurrency);
+  const [rate, setRate] = useState(startingRate);
+  const [rateType, setRateType] = useState<RateType>(
+    initial?.rateType ?? "DEFAULT",
+  );
+  const [amount, setAmount] = useState(initial?.transactionAmount ?? "");
+  const [actualConvertedAmount, setActualConvertedAmount] = useState(
+    normalizeOptionalActualCharge(initial?.actualConvertedAmount),
+  );
+  const [members, setMembers] = useState<Member[]>([]);
+  const [splitMode, setSplitMode] = useState<SplitMode>(
+    initial?.splitMode ?? "EQUAL",
+  );
+  const [splitUserIds, setSplitUserIds] = useState<string[]>(
+    initial?.splitUserIds ??
+      (currentUserId ? [currentUserId] : []),
+  );
+  const [splitValues, setSplitValues] = useState<Record<string, string>>(
+    initial?.splitValues ?? {},
+  );
+  const [paidByUserId, setPaidByUserId] = useState(
+    initial?.paidByUserId ?? currentUserId,
+  );
+  const [multiplePayers, setMultiplePayers] = useState(
+    (initial?.payers?.length ?? 0) > 1,
+  );
+  const [payerUserIds, setPayerUserIds] = useState<string[]>(
+    initial?.payers?.map((payer) => payer.userId) ??
+      (initial?.paidByUserId ? [initial.paidByUserId] : currentUserId ? [currentUserId] : []),
+  );
+  const [payerValues, setPayerValues] = useState<Record<string, string>>(
+    Object.fromEntries(
+      (initial?.payers ?? []).map((payer) => [payer.userId, payer.amountBase]),
+    ),
+  );
+  const [description, setDescription] = useState(
+    initial?.description ?? prefill?.description ?? "",
+  );
+  const [expenseDate, setExpenseDate] = useState(
+    initial?.expenseDate ?? prefill?.expenseDate ?? localDateString(),
+  );
+  const [paymentMethod, setPaymentMethod] = useState(
+    initial?.paymentMethod ?? "",
+  );
+  const [notes, setNotes] = useState(
+    initial?.notes ?? "",
+  );
+  const [receiptUrl, setReceiptUrl] = useState(
+    initial?.receiptUrl ?? "",
+  );
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState("");
+  const [receiptScanning, setReceiptScanning] = useState(false);
+  const [receiptScanStatus, setReceiptScanStatus] = useState("");
+  const [receiptScanProgress, setReceiptScanProgress] = useState(0);
+  const [receiptResult, setReceiptResult] =
+    useState<ReceiptAnalysis | null>(null);
+  const [receiptMessage, setReceiptMessage] = useState("");
+  const [preserveInitialItemization, setPreserveInitialItemization] = useState(
+    Boolean(initial?.itemization?.length),
+  );
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [tripSwitching, setTripSwitching] = useState(false);
+  const [fxRateLoading, setFxRateLoading] = useState(false);
+  const [fxRateMessage, setFxRateMessage] = useState("");
+  const [duplicateWarning, setDuplicateWarning] =
+    useState<DuplicateWarning | null>(null);
+  const [splitPresets, setSplitPresets] = useState<SplitPreset[]>([]);
+  const [splitPresetsRequested, setSplitPresetsRequested] = useState(false);
+  const [splitPresetsLoading, setSplitPresetsLoading] = useState(false);
+  const [presetName, setPresetName] = useState("");
+  const [presetBusy, setPresetBusy] = useState(false);
+  const [offlineQueued, setOfflineQueued] = useState(false);
+  const fxRequestIdRef = useRef(0);
+  const duplicateOverrideRef = useRef(false);
+  const submitInFlightRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitFeedbackRef = useRef<HTMLParagraphElement>(null);
+  const duplicateWarningRef = useRef<HTMLElement>(null);
+  const clientRequestIdRef = useRef<string>(
+    initial?.id ?? createClientRequestId(),
+  );
+
+  const expenseDraftKey = draftKey(
+    "expense",
+    initial
+      ? `edit:${initial.id}`
+      : "new",
+  );
+  const [draftState, setDraftState] =
+    useState<
+      "CHECKING" | "PENDING" | "ACTIVE"
+    >("CHECKING");
+  const [draftSavedAt, setDraftSavedAt] =
+    useState<string | null>(null);
+  const [draftDirty, setDraftDirty] =
+    useState(false);
+  const preserveMembersRef =
+    useRef(false);
+
+  function markFormEdited() {
+    setDraftDirty(true);
+    setError("");
+    duplicateOverrideRef.current = false;
+    setDuplicateWarning(null);
+  }
+
+  useEffect(() => {
+    if (!offlineQueued) {
+      return;
+    }
+
+    function synced() {
+      window.location.assign("/expenses");
+    }
+
+    window.addEventListener("mnm:data-synced", synced);
+
+    return () => {
+      window.removeEventListener("mnm:data-synced", synced);
+    };
+  }, [offlineQueued]);
+
+  const currentCountry = countries.find(
+    (country) => country.id === countryId,
+  );
+  const isBaseCurrency = sameCurrency(
+    currency,
+    currentCountry?.baseCurrency,
+  );
+
+  const currencyOptions = useMemo(() => {
+    const labels = new Map<string, string>(
+      commonCurrencies.map(([code, label]) => [code, label]),
+    );
+
+    if (currentCountry?.currencyCode) {
+      labels.set(
+        currentCountry.currencyCode.toUpperCase(),
+        labels.get(currentCountry.currencyCode.toUpperCase()) ??
+          "Trip default currency",
+      );
+    }
+
+    if (currentCountry?.baseCurrency) {
+      labels.set(
+        currentCountry.baseCurrency.toUpperCase(),
+        labels.get(currentCountry.baseCurrency.toUpperCase()) ??
+          "Trip base currency",
+      );
+    }
+
+    if (/^[A-Z]{3}$/.test(currency)) {
+      labels.set(
+        currency,
+        labels.get(currency) ?? "Detected currency",
+      );
+    }
+
+    const preferred = [
+      currentCountry?.currencyCode?.toUpperCase(),
+      currentCountry?.baseCurrency?.toUpperCase(),
+    ].filter((value): value is string => Boolean(value));
+
+    return [...labels.entries()]
+      .map(([code, label]) => ({
+        code,
+        label,
+        preferred: preferred.indexOf(code),
+      }))
+      .sort((left, right) => {
+        if (left.preferred >= 0 || right.preferred >= 0) {
+          if (left.preferred < 0) return 1;
+          if (right.preferred < 0) return -1;
+          return left.preferred - right.preferred;
+        }
+
+        return left.code.localeCompare(right.code);
+      });
+  }, [
+    currency,
+    currentCountry?.baseCurrency,
+    currentCountry?.currencyCode,
+  ]);
+
+  const converted = useMemo(() => {
+    const parsedAmount = parseTravelNumber(amount);
+    const parsedRate = parseTravelNumber(rate);
+
+    if (
+      parsedAmount === null ||
+      parsedRate === null ||
+      parsedAmount < 0 ||
+      parsedRate < 0
+    ) {
+      return 0;
+    }
+
+    return parsedAmount * parsedRate;
+  }, [amount, rate]);
+
+  const settlementTotal = useMemo(() => {
+    const actual = parseTravelNumber(actualConvertedAmount);
+
+    if (
+      rateType === "CREDIT_CARD" &&
+      actualConvertedAmount.trim() !== "" &&
+      actual !== null &&
+      actual > 0
+    ) {
+      return actual;
+    }
+
+    return converted;
+  }, [actualConvertedAmount, converted, rateType]);
+
+  const equalShares = useMemo(() => {
+    if (splitMode !== "EQUAL" || splitUserIds.length === 0) {
+      return new Map<string, string>();
+    }
+
+    return new Map(
+      splitEqually(settlementTotal, splitUserIds).map((split) => [
+        split.userId,
+        split.shareAmountBase,
+      ]),
+    );
+  }, [settlementTotal, splitMode, splitUserIds]);
+
+  const splitStatus = useMemo(() => {
+    if (splitMode === "EQUAL") {
+      return {
+        label:
+          splitUserIds.length > 0
+            ? `${currentCountry?.baseCurrency ?? "MYR"} ${settlementTotal.toFixed(2)} shared by ${splitUserIds.length} ${splitUserIds.length === 1 ? "traveler" : "travelers"}`
+            : "Choose at least one traveler",
+        valid: splitUserIds.length > 0,
+      };
+    }
+
+    const entered = splitUserIds.reduce(
+      (sum, userId) => sum + (parseTravelNumber(splitValues[userId]) ?? 0),
+      0,
+    );
+
+    if (splitMode === "PERCENTAGE") {
+      return {
+        label: `${entered.toFixed(2)}% assigned`,
+        valid: Math.abs(entered - 100) < 0.01,
+      };
+    }
+
+    if (splitMode === "SHARES") {
+      const allPositive = splitUserIds.every(
+        (userId) => (parseTravelNumber(splitValues[userId]) ?? 0) > 0,
+      );
+      return {
+        label: allPositive
+          ? `${entered.toFixed(2)} total shares · amounts calculated automatically`
+          : "Enter a share weight above zero for every selected traveler",
+        valid: allPositive && entered > 0,
+      };
+    }
+
+    return {
+      label: `${currentCountry?.baseCurrency ?? "MYR"} ${entered.toFixed(2)} of ${settlementTotal.toFixed(2)}`,
+      valid: Math.abs(entered - settlementTotal) < 0.01,
+    };
+  }, [
+    currentCountry?.baseCurrency,
+    settlementTotal,
+    splitMode,
+    splitUserIds,
+    splitValues,
+  ]);
+
+  const payerStatus = useMemo(() => {
+    if (!multiplePayers) {
+      return { valid: Boolean(paidByUserId), entered: settlementTotal };
+    }
+
+    const entered = payerUserIds.reduce(
+      (sum, userId) => sum + (parseTravelNumber(payerValues[userId]) ?? 0),
+      0,
+    );
+    return {
+      entered,
+      valid:
+        payerUserIds.length > 1 &&
+        payerUserIds.every((userId) => (parseTravelNumber(payerValues[userId]) ?? 0) > 0) &&
+        Math.abs(entered - settlementTotal) < 0.01,
+    };
+  }, [multiplePayers, paidByUserId, payerUserIds, payerValues, settlementTotal]);
+
+  useEffect(() => {
+    const tripId = currentCountry?.tripId;
+    if (!tripId || !navigator.onLine || !splitPresetsRequested) {
+      setSplitPresets([]);
+      setSplitPresetsLoading(false);
+      return;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+    setSplitPresets([]);
+    setSplitPresetsLoading(true);
+    fetch(`/api/split-presets?tripId=${encodeURIComponent(tripId)}`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => response.ok ? response.json() : { presets: [] })
+      .then((payload: { presets?: SplitPreset[] }) => {
+        if (active) setSplitPresets(payload.presets ?? []);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setSplitPresetsLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [currentCountry?.tripId, splitPresetsRequested]);
+
+  useEffect(() => {
+    const stored =
+      readDraft<ExpenseDraft>(
+        expenseDraftKey,
+      );
+
+    if (stored) {
+      setDraftSavedAt(
+        stored.savedAt,
+      );
+      setDraftState("PENDING");
+      return;
+    }
+
+    setDraftState("ACTIVE");
+  }, [expenseDraftKey]);
+
+  useEffect(() => {
+    if (
+      draftState !== "ACTIVE" ||
+      !draftDirty ||
+      busy ||
+      offlineQueued ||
+      receiptScanning
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => {
+        writeDraft<ExpenseDraft>(
+          expenseDraftKey,
+          {
+            clientRequestId: clientRequestIdRef.current,
+            countryId,
+            expenseDate,
+            category,
+            currency,
+            rate,
+            rateType,
+            amount,
+            actualConvertedAmount,
+            splitMode,
+            splitUserIds,
+            splitValues,
+            paidByUserId,
+            multiplePayers,
+            payerUserIds,
+            payerValues,
+            description,
+            receiptUrl:
+              receiptUrl.startsWith(
+                "data:image/",
+              )
+                ? "__KEEP_EXISTING_RECEIPT__"
+                : receiptUrl,
+            paymentMethod,
+            notes,
+          },
+        );
+      },
+      350,
+    );
+
+    return () =>
+      window.clearTimeout(timer);
+  }, [
+    actualConvertedAmount,
+    amount,
+    busy,
+    category,
+    countryId,
+    currency,
+    description,
+    draftDirty,
+    draftState,
+    expenseDate,
+    expenseDraftKey,
+    notes,
+    offlineQueued,
+    paidByUserId,
+    multiplePayers,
+    payerUserIds,
+    payerValues,
+    paymentMethod,
+    rate,
+    rateType,
+    receiptScanning,
+    receiptUrl,
+    splitMode,
+    splitUserIds,
+    splitValues,
+  ]);
+
+  async function restoreExpenseDraft() {
+    const stored =
+      readDraft<ExpenseDraft>(
+        expenseDraftKey,
+      );
+
+    if (!stored) {
+      setDraftState("ACTIVE");
+      return;
+    }
+
+    const draft = stored.data;
+    if (draft.clientRequestId) {
+      clientRequestIdRef.current = draft.clientRequestId;
+    }
+    const countryChanged =
+      draft.countryId !== countryId;
+
+    if (countryChanged && !initial) {
+      const switched =
+        await handleTripChange(
+          draft.countryId,
+        );
+
+      if (!switched) {
+        return;
+      }
+    }
+
+    if (countryChanged) {
+      preserveMembersRef.current =
+        true;
+    }
+
+    setCountryId(draft.countryId);
+    setExpenseDate(
+      draft.expenseDate,
+    );
+    setCategory(draft.category);
+    setCurrency(draft.currency);
+    setRate(draft.rate);
+    setRateType(draft.rateType);
+    setAmount(draft.amount);
+    setActualConvertedAmount(
+      draft.actualConvertedAmount,
+    );
+    setSplitMode(
+      draft.splitMode,
+    );
+    setSplitUserIds(
+      draft.splitUserIds,
+    );
+    setSplitValues(
+      draft.splitValues,
+    );
+    setPaidByUserId(
+      draft.paidByUserId,
+    );
+    setMultiplePayers(Boolean(draft.multiplePayers));
+    setPayerUserIds(draft.payerUserIds ?? [draft.paidByUserId].filter(Boolean));
+    setPayerValues(draft.payerValues ?? {});
+    setDescription(
+      draft.description,
+    );
+    setReceiptUrl(
+      draft.receiptUrl ===
+        "__KEEP_EXISTING_RECEIPT__"
+        ? initial?.receiptUrl ??
+            receiptUrl
+        : draft.receiptUrl,
+    );
+    setPaymentMethod(
+      draft.paymentMethod,
+    );
+    setNotes(draft.notes);
+    setDraftDirty(true);
+    setDraftState("ACTIVE");
+
+    if (!countryChanged) {
+      preserveMembersRef.current =
+        false;
+    }
+  }
+
+  function discardExpenseDraft() {
+    clearDraft(
+      expenseDraftKey,
+    );
+    setDraftSavedAt(null);
+    setDraftDirty(false);
+    setDraftState("ACTIVE");
+  }
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreviewUrl) {
+        URL.revokeObjectURL(receiptPreviewUrl);
+      }
+    };
+  }, [receiptPreviewUrl]);
+
+  useEffect(() => {
+    if (!countryId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadMembers() {
+      const response = await fetch(`/api/countries/${countryId}/members`, {
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        setMembers([]);
+        return;
+      }
+
+      const payload = (await response.json()) as { members: Member[] };
+      setMembers(payload.members);
+
+      if (preserveMembersRef.current) {
+        preserveMembersRef.current =
+          false;
+        return;
+      }
+
+      if (!initial || countryId !== initial.countryId) {
+        const loggedInUserIsAvailable = payload.members.some(
+          (member) => member.id === currentUserId,
+        );
+        const defaultUserId = loggedInUserIsAvailable
+          ? currentUserId
+          : payload.members[0]?.id ?? "";
+        const defaultSplitIds = defaultUserId
+          ? [defaultUserId]
+          : [];
+
+        setSplitUserIds(defaultSplitIds);
+        setSplitValues(
+          splitMode === "PERCENTAGE"
+            ? equalPercentages(defaultSplitIds)
+            : splitMode === "SHARES"
+              ? Object.fromEntries(defaultSplitIds.map((userId) => [userId, "1"]))
+            : {},
+        );
+        setPaidByUserId(defaultUserId);
+        setMultiplePayers(false);
+        setPayerUserIds(defaultUserId ? [defaultUserId] : []);
+        setPayerValues({});
+      }
+    }
+
+    loadMembers().catch(() => undefined);
+    return () => controller.abort();
+  }, [countryId, initial]);
+
+  async function handleCurrencyChange(
+    nextCurrency: string,
+  ): Promise<void> {
+    const normalized = nextCurrency
+      .trim()
+      .toUpperCase()
+      .slice(0, 3);
+
+    if (!/^[A-Z]{3}$/.test(normalized)) {
+      return;
+    }
+
+    const requestId = fxRequestIdRef.current + 1;
+    fxRequestIdRef.current = requestId;
+
+    setCurrency(normalized);
+    setFxRateMessage("");
+    setActualConvertedAmount("");
+
+    if (!currentCountry) {
+      return;
+    }
+
+    const baseCurrency =
+      currentCountry.baseCurrency.toUpperCase();
+    const tripCurrency =
+      currentCountry.currencyCode.toUpperCase();
+
+    if (sameCurrency(normalized, baseCurrency)) {
+      setRate("1");
+      setRateType("DEFAULT");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `${normalized} is the trip base currency, so the rate is 1:1.`,
+      );
+      return;
+    }
+
+    if (sameCurrency(normalized, tripCurrency)) {
+      setRate(currentCountry.defaultExchangeRate);
+      setRateType("DEFAULT");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `Using the saved trip default for ${normalized}.`,
+      );
+      return;
+    }
+
+    setRate("");
+    setRateType("DEFAULT");
+
+    if (!navigator.onLine) {
+      setRateType("MANUAL");
+      setFxRateLoading(false);
+      setFxRateMessage(
+        `Offline: enter the ${normalized} → ${baseCurrency} rate manually.`,
+      );
+      return;
+    }
+
+    setFxRateLoading(true);
+    setFxRateMessage(
+      `Loading today's ${normalized} → ${baseCurrency} reference rate…`,
+    );
+
+    try {
+      const response = await fetch(
+        `/api/fx?base=${encodeURIComponent(
+          normalized,
+        )}&quote=${encodeURIComponent(baseCurrency)}`,
+        {
+          cache: "no-store",
+        },
+      );
+
+      const payload =
+        (await response.json().catch(() => ({}))) as {
+          rate?: number;
+          rateDate?: string;
+          provider?: string;
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Unable to load the reference FX rate.",
+        );
+      }
+
+      const nextRate = Number(payload.rate);
+
+      if (!Number.isFinite(nextRate) || nextRate <= 0) {
+        throw new Error("The FX service returned an invalid rate.");
+      }
+
+      if (fxRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRate(
+        nextRate
+          .toFixed(10)
+          .replace(/0+$/, "")
+          .replace(/\.$/, ""),
+      );
+      setRateType("DEFAULT");
+      setFxRateMessage(
+        `Daily reference${payload.rateDate ? ` · ${payload.rateDate}` : ""}${
+          payload.provider ? ` · ${payload.provider}` : ""
+        }. You can still choose Cash, Card or Manual below.`,
+      );
+    } catch {
+      if (fxRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setRateType("MANUAL");
+      setFxRateMessage(
+        `Reference rate unavailable. Enter the ${normalized} → ${baseCurrency} rate manually.`,
+      );
+    } finally {
+      if (fxRequestIdRef.current === requestId) {
+        setFxRateLoading(false);
+      }
+    }
+  }
+
+  function applyTripCountry(nextId: string) {
+    fxRequestIdRef.current += 1;
+    setCountryId(nextId);
+    const country = countries.find((item) => item.id === nextId);
+
+    if (country) {
+      const nextCurrency = country.currencyCode.toUpperCase();
+      const nextRate = sameCurrency(
+        nextCurrency,
+        country.baseCurrency,
+      )
+        ? "1"
+        : country.defaultExchangeRate;
+
+      setCurrency(nextCurrency);
+      setRate(nextRate);
+      setRateType("DEFAULT");
+      setActualConvertedAmount("");
+      setFxRateLoading(false);
+      setFxRateMessage("");
+      setReceiptResult(null);
+      setPreserveInitialItemization(false);
+      setReceiptMessage("");
+      setReceiptScanStatus("");
+      setReceiptScanProgress(0);
+    }
+  }
+
+  async function handleTripChange(nextId: string): Promise<boolean> {
+    if (nextId === countryId) {
+      return true;
+    }
+
+    const country = countries.find((item) => item.id === nextId);
+
+    if (!country) {
+      return false;
+    }
+
+    if (initial) {
+      applyTripCountry(nextId);
+      return true;
+    }
+
+    if (!navigator.onLine) {
+      window.location.assign("/offline.html");
+      return false;
+    }
+
+    const previousId = countryId;
+    setError("");
+    setTripSwitching(true);
+
+    try {
+      const response = await fetch("/api/active-trip", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          tripId: country.tripId,
+        }),
+      });
+
+      const payload =
+        (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ?? "Unable to switch trip.",
+        );
+      }
+
+      applyTripCountry(nextId);
+      return true;
+    } catch (caught) {
+      setCountryId(previousId);
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to switch trip.",
+      );
+      return false;
+    } finally {
+      setTripSwitching(false);
+    }
+  }
+
+  function handleRateType(nextType: RateType) {
+    markFormEdited();
+
+    if (isBaseCurrency) {
+      setRateType("DEFAULT");
+      setRate("1");
+      setActualConvertedAmount("");
+      return;
+    }
+
+    setRateType(nextType);
+
+    if (nextType === "DEFAULT" && currentCountry) {
+      if (
+        sameCurrency(
+          currency,
+          currentCountry.currencyCode,
+        )
+      ) {
+        setRate(currentCountry.defaultExchangeRate);
+        setActualConvertedAmount("");
+        setFxRateMessage(
+          `Using the saved trip default for ${currency}.`,
+        );
+      } else {
+        void handleCurrencyChange(currency);
+      }
+    }
+  }
+
+  function handleSplitMode(nextMode: SplitMode) {
+    markFormEdited();
+    setPreserveInitialItemization(false);
+    setSplitMode(nextMode);
+
+    if (nextMode === "PERCENTAGE") {
+      setSplitValues(equalPercentages(splitUserIds));
+    } else if (nextMode === "EQUAL") {
+      setSplitValues({});
+    } else if (nextMode === "SHARES") {
+      setSplitValues(
+        Object.fromEntries(splitUserIds.map((userId) => [userId, "1"])),
+      );
+    } else {
+      setSplitValues(
+        Object.fromEntries(splitUserIds.map((userId) => [userId, ""])),
+      );
+    }
+  }
+
+  function toggleSplit(userId: string) {
+    markFormEdited();
+    setPreserveInitialItemization(false);
+    setSplitUserIds((current) => {
+      const next = current.includes(userId)
+        ? current.filter((id) => id !== userId)
+        : [...current, userId];
+
+      if (splitMode === "PERCENTAGE") {
+        setSplitValues(equalPercentages(next));
+      } else {
+        setSplitValues((values) => {
+          const nextValues = { ...values };
+
+          if (next.includes(userId)) {
+            nextValues[userId] ??= splitMode === "SHARES" ? "1" : "";
+          } else {
+            delete nextValues[userId];
+          }
+
+          return nextValues;
+        });
+      }
+
+      return next;
+    });
+  }
+
+  function chooseSinglePayer(userId: string) {
+    setPaidByUserId(userId);
+    setPayerUserIds([userId]);
+    setPayerValues({});
+    markFormEdited();
+  }
+
+  function switchPayerMode(nextMultiple: boolean) {
+    setMultiplePayers(nextMultiple);
+    if (nextMultiple) {
+      const primary = paidByUserId || currentUserId || members[0]?.id || "";
+      setPayerUserIds(primary ? [primary] : []);
+      setPayerValues(primary ? { [primary]: settlementTotal.toFixed(2) } : {});
+    } else {
+      const primary = payerUserIds[0] ?? paidByUserId ?? currentUserId;
+      setPaidByUserId(primary);
+      setPayerUserIds(primary ? [primary] : []);
+      setPayerValues({});
+    }
+    markFormEdited();
+  }
+
+  function togglePayer(userId: string) {
+    setPayerUserIds((current) => {
+      const selected = current.includes(userId);
+      const next = selected
+        ? current.filter((id) => id !== userId)
+        : [...current, userId];
+      setPayerValues((values) => {
+        const updated = { ...values };
+        if (selected) delete updated[userId];
+        else updated[userId] = "";
+        return updated;
+      });
+      if (!selected && next.length === 1) setPaidByUserId(userId);
+      if (selected && paidByUserId === userId) setPaidByUserId(next[0] ?? "");
+      return next;
+    });
+    markFormEdited();
+  }
+
+  function applySplitPreset(presetId: string) {
+    const preset = splitPresets.find((item) => item.id === presetId);
+    if (!preset) return;
+    const availableIds = new Set(members.map((member) => member.id));
+    const shares = preset.shares.filter((share) => availableIds.has(share.userId));
+    if (!shares.length) {
+      setError("The travelers saved in this preset are no longer assigned to this Trip.");
+      return;
+    }
+    setPreserveInitialItemization(false);
+    setSplitMode(preset.splitMode);
+    setSplitUserIds(shares.map((share) => share.userId));
+    setSplitValues(Object.fromEntries(
+      shares.map((share) => [share.userId, preset.splitMode === "EQUAL" ? "" : String(share.value)]),
+    ));
+    markFormEdited();
+  }
+
+  async function saveSplitPreset() {
+    const tripId = currentCountry?.tripId;
+    const name = presetName.trim();
+    if (!tripId || !name || !splitStatus.valid || !navigator.onLine) return;
+
+    const shares = splitUserIds.map((userId) => ({
+      userId,
+      value: splitMode === "EQUAL" ? 0 : parseTravelNumber(splitValues[userId]) ?? 0,
+    }));
+    setPresetBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/split-presets", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tripId, name, splitMode, shares }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { id?: string; error?: string };
+      if (!response.ok || !payload.id) throw new Error(payload.error ?? "Unable to save preset.");
+      const nextPreset: SplitPreset = { id: payload.id, name, splitMode, shares };
+      setSplitPresets((current) => [
+        ...current.filter((preset) => preset.name.toLowerCase() !== name.toLowerCase()),
+        nextPreset,
+      ].sort((left, right) => left.name.localeCompare(right.name)));
+      setPresetName("");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to save split preset.");
+    } finally {
+      setPresetBusy(false);
+    }
+  }
+
+  async function analyzeReceipt(file: File) {
+    setReceiptScanning(true);
+    setReceiptScanStatus("Preparing receipt");
+    setReceiptScanProgress(0);
+    setReceiptMessage("");
+    setReceiptResult(null);
+    setPreserveInitialItemization(false);
+    setError("");
+
+    try {
+      const { recognizeReceiptLocally } = await import(
+        "@/lib/receipt-ocr-client"
+      );
+
+      const detected = await recognizeReceiptLocally(
+        file,
+        currency,
+        ({ status, progress }) => {
+          setReceiptScanStatus(status);
+          setReceiptScanProgress(progress);
+        },
+      );
+
+      setReceiptResult(detected);
+      if (detected.merchantName) {
+        setDescription(detected.merchantName);
+      }
+
+      if (
+        detected.totalAmount !== null &&
+        Number.isFinite(detected.totalAmount) &&
+        detected.totalAmount > 0
+      ) {
+        setAmount(
+          detected.totalAmount
+            .toFixed(2)
+            .replace(/\.00$/, ""),
+        );
+      }
+
+      if (
+        detected.currencyCode &&
+        /^[A-Z]{3}$/.test(detected.currencyCode)
+      ) {
+        void handleCurrencyChange(detected.currencyCode);
+      }
+
+      if (
+        detected.receiptDate &&
+        detected.dateConfidence !== "LOW"
+      ) {
+        setExpenseDate(detected.receiptDate);
+      }
+
+      if (detected.categorySuggestion) {
+        setCategory(detected.categorySuggestion);
+      }
+
+      if (!detected.merchantName && detected.totalAmount === null) {
+        setReceiptMessage(
+          "The receipt text was read, but the shop or final total is still uncertain. Try one of the suggestions below or enter it manually.",
+        );
+      } else if (detected.confidence === "LOW") {
+        setReceiptMessage(
+          "Receipt read with low confidence — please verify the shop name and amount.",
+        );
+      } else {
+        setReceiptMessage(
+          "Receipt read locally. Please verify the detected fields before saving.",
+        );
+      }
+    } catch (caught) {
+      const technicalMessage =
+        caught instanceof Error
+          ? caught.message
+          : typeof caught === "string"
+            ? caught
+            : "";
+      const engineUnavailable =
+        /worker|tesseract|traineddata|webassembly|wasm|network error/i.test(
+          technicalMessage,
+        );
+
+      setReceiptMessage(
+        engineUnavailable
+          ? "The receipt reader could not start. Check your connection once, then tap Try scan again."
+          : technicalMessage ||
+              "Unable to read this receipt on this device. Retake it closer, in bright light, then try again.",
+      );
+    } finally {
+      setReceiptScanning(false);
+      setReceiptScanProgress(1);
+    }
+  }
+
+  function handleReceiptFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+
+    setReceiptFile(file);
+    setReceiptPreviewUrl(URL.createObjectURL(file));
+    void analyzeReceipt(file);
+
+    event.target.value = "";
+  }
+
+  function removeReceiptPhoto() {
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+    }
+
+    setReceiptFile(null);
+    setReceiptPreviewUrl("");
+    setReceiptResult(null);
+    setPreserveInitialItemization(false);
+    setReceiptMessage("");
+    setReceiptScanStatus("");
+    setReceiptScanProgress(0);
+  }
+
+  async function prepareReceiptForSave(
+    file: File,
+  ): Promise<string> {
+    const { compressReceiptForDatabase } = await import(
+      "@/lib/receipt-image-storage"
+    );
+
+    return compressReceiptForDatabase(file);
+  }
+
+  function revealSubmitProblem(fieldName?: string) {
+    window.requestAnimationFrame(() => {
+      const form = formRef.current;
+      let target: HTMLElement | null = null;
+
+      if (form && fieldName) {
+        const named = form.elements.namedItem(fieldName);
+
+        if (named instanceof HTMLElement) {
+          target = named;
+        } else if (named instanceof RadioNodeList) {
+          target = Array.from(named).find(
+            (item) => item instanceof HTMLElement,
+          ) ?? null;
+        }
+      }
+
+      const fallback = submitFeedbackRef.current;
+      const focusTarget = target ?? fallback;
+
+      focusTarget?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) {
+        target.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  function failSubmit(message: string, fieldName?: string) {
+    submitInFlightRef.current = false;
+    setBusy(false);
+    setError(message);
+    revealSubmitProblem(fieldName);
+  }
+
+  function validReceiptLink(value: string): boolean {
+    const trimmed = value.trim();
+
+    if (!trimmed || trimmed.startsWith("data:image/")) {
+      return true;
+    }
+
+    try {
+      const url = new URL(trimmed);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (submitInFlightRef.current) {
+      return;
+    }
+
+    setError("");
+
+    if (!countryId || !currentCountry) {
+      failSubmit("Choose a trip before saving this expense.", "countryId");
+      return;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) {
+      failSubmit("Choose a valid expense date.", "expenseDate");
+      return;
+    }
+
+    if (!description.trim()) {
+      failSubmit("Add a shop name or expense description before saving.", "description");
+      return;
+    }
+
+    if (!category.trim()) {
+      failSubmit("Choose an expense category before saving.");
+      return;
+    }
+
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      failSubmit("Choose a valid 3-letter currency.", "transactionCurrency");
+      return;
+    }
+
+    if (fxRateLoading) {
+      failSubmit(
+        "The exchange rate is still loading. Wait a moment, or choose Manual and enter the rate yourself.",
+        "exchangeRate",
+      );
+      return;
+    }
+
+    if (!paidByUserId) {
+      failSubmit("Choose who paid for this expense.");
+      return;
+    }
+
+    if (multiplePayers && !payerStatus.valid) {
+      failSubmit(
+        `Payer contributions must total ${currentCountry.baseCurrency} ${settlementTotal.toFixed(2)}.`,
+      );
+      return;
+    }
+
+    if (splitUserIds.length === 0) {
+      failSubmit("Choose at least one person to share this expense.");
+      return;
+    }
+
+    if (!splitStatus.valid) {
+      failSubmit(
+        splitMode === "PERCENTAGE"
+          ? "Percentage shares must add up to 100%."
+          : splitMode === "SHARES"
+            ? "Enter a share weight above zero for every selected traveler."
+          : "Exact shares must add up to the amount being split.",
+      );
+      return;
+    }
+
+    if (!validReceiptLink(receiptUrl)) {
+      failSubmit(
+        "Enter a complete receipt link starting with http:// or https://, or leave it blank.",
+        "receiptUrl",
+      );
+      return;
+    }
+
+    const parsedAmount = parseTravelNumber(amount);
+    const parsedRate = parseTravelNumber(rate);
+    const parsedActual =
+      actualConvertedAmount.trim() === ""
+        ? null
+        : parseTravelNumber(actualConvertedAmount);
+
+    if (parsedAmount === null || parsedAmount <= 0 || parsedAmount > 1_000_000_000) {
+      failSubmit(
+        "Enter a valid transaction amount greater than 0 and below 1,000,000,000.",
+        "transactionAmount",
+      );
+      return;
+    }
+
+    if (parsedRate === null || parsedRate <= 0 || parsedRate > 1_000_000) {
+      failSubmit(
+        "Enter a valid exchange rate greater than 0 and below 1,000,000.",
+        "exchangeRate",
+      );
+      return;
+    }
+
+    if (
+      actualConvertedAmount.trim() !== "" &&
+      (parsedActual === null || parsedActual <= 0 || parsedActual > 1_000_000_000)
+    ) {
+      failSubmit(
+        "Enter a valid actual card charge or leave it blank.",
+        "actualConvertedAmount",
+      );
+      return;
+    }
+
+    const parsedSplits = splitUserIds.map((userId) => ({
+      userId,
+      value:
+        splitMode === "EQUAL"
+          ? 0
+          : parseTravelNumber(splitValues[userId]) ?? Number.NaN,
+    }));
+
+    const parsedPayers = multiplePayers
+      ? payerUserIds.map((userId) => ({
+          userId,
+          value: parseTravelNumber(payerValues[userId]) ?? Number.NaN,
+        }))
+      : [];
+
+    if (
+      splitMode !== "EQUAL" &&
+      parsedSplits.some(
+        (split) => !Number.isFinite(split.value) || split.value < 0,
+      )
+    ) {
+      failSubmit("Enter a valid share for every selected traveler.");
+      return;
+    }
+
+    submitInFlightRef.current = true;
+    setBusy(true);
+    let finalReceiptUrl = receiptUrl.trim();
+
+    try {
+      if (receiptFile) {
+        finalReceiptUrl =
+          await prepareReceiptForSave(receiptFile);
+      }
+    } catch (caught) {
+      failSubmit(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to prepare the receipt photo.",
+      );
+      return;
+    }
+
+    const body = {
+      clientRequestId: initial ? undefined : clientRequestIdRef.current,
+      expectedUpdatedAt: initial?.updatedAt,
+      countryId,
+      expenseDate,
+      category,
+      description,
+      transactionCurrency: currency,
+      transactionAmount: parsedAmount,
+      exchangeRate: parsedRate,
+      rateType,
+      actualConvertedAmount:
+        rateType === "CREDIT_CARD" && parsedActual !== null
+          ? parsedActual
+          : "",
+      paidByUserId,
+      payers: parsedPayers,
+      paymentMethod,
+      receiptUrl: finalReceiptUrl,
+      receiptConfidence: receiptResult
+        ? receiptResult.confidence === "HIGH"
+          ? 95
+          : receiptResult.confidence === "MEDIUM"
+            ? 75
+            : 45
+        : initial?.receiptConfidence ?? null,
+      receiptReviewStatus: finalReceiptUrl
+        ? receiptResult
+          ? "REVIEWED"
+          : initial?.receiptReviewStatus ?? "NEEDS_REVIEW"
+        : "NOT_REQUIRED",
+      notes,
+      allowDuplicate: duplicateOverrideRef.current,
+      // Receipt-item assignment has been retired from the scan flow. Preserve
+      // a historical itemization only while editing it untouched so an
+      // ordinary metadata edit never destroys existing expense history.
+      itemization:
+        preserveInitialItemization && initial?.itemization?.length
+          ? initial.itemization
+          : [],
+      splitMode,
+      splits: parsedSplits,
+    };
+
+    if (!navigator.onLine) {
+      try {
+        enqueueOfflineMutation({
+          url: initial ? `/api/expenses/${initial.id}` : "/api/expenses",
+          method: initial ? "PUT" : "POST",
+          label: initial ? "Expense update" : "Expense",
+          body: {
+            ...body,
+            allowDuplicate: true,
+          },
+          meta: {
+            tripId: currentCountry.tripId,
+            tripName: currentCountry.tripName,
+            currency,
+            sharing: `${splitUserIds.length} traveler${splitUserIds.length === 1 ? "" : "s"}`,
+            description: description.trim(),
+          },
+        });
+        clearDraft(expenseDraftKey);
+        setDraftDirty(false);
+        setDraftSavedAt(null);
+        setDraftState("ACTIVE");
+        setOfflineQueued(true);
+        trackProductEvent("offline_change_queued", "/expenses/new");
+        submitInFlightRef.current = false;
+        setBusy(false);
+        return;
+      } catch (caught) {
+        failSubmit(
+          caught instanceof Error
+            ? caught.message
+            : "Unable to store this expense offline.",
+        );
+        return;
+      }
+    }
+
+    const controller = new AbortController();
+    const saveTimeout = window.setTimeout(
+      () => controller.abort(),
+      20_000,
+    );
+
+    try {
+      const response = await fetch(
+        initial ? `/api/expenses/${initial.id}` : "/api/expenses",
+        {
+          method: initial ? "PUT" : "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          code?: string;
+          duplicate?: DuplicateWarning;
+        };
+
+        if (
+          response.status === 409 &&
+          payload.code === "POSSIBLE_DUPLICATE" &&
+          payload.duplicate
+        ) {
+          duplicateOverrideRef.current = false;
+          submitInFlightRef.current = false;
+          setDuplicateWarning(payload.duplicate);
+          trackProductEvent("duplicate_warning", "/expenses/new");
+          setError(
+            "Possible duplicate found. Review it below, then choose Review expenses or Save anyway.",
+          );
+          setBusy(false);
+          window.requestAnimationFrame(() =>
+            duplicateWarningRef.current?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            }),
+          );
+          return;
+        }
+
+        if (response.status === 409 && payload.code === "STALE_EDIT") {
+          trackProductEvent("expense_save_failed", "/expenses/new");
+          failSubmit(
+            payload.error ??
+              "This expense changed on another device. Reload the page before saving so you do not overwrite newer changes.",
+          );
+          return;
+        }
+
+        trackProductEvent("expense_save_failed", "/expenses/new");
+        failSubmit(friendlyExpenseSaveError(response.status, payload.error));
+        return;
+      }
+
+      trackProductEvent("expense_saved", initial ? "/expenses/edit" : "/expenses/new");
+      clearDraft(
+        expenseDraftKey,
+      );
+      setDraftDirty(false);
+      setDraftSavedAt(null);
+      setDraftState("ACTIVE");
+      duplicateOverrideRef.current = false;
+      setDuplicateWarning(null);
+      window.location.assign("/expenses");
+    } catch (caught) {
+      const timedOut =
+        caught instanceof DOMException && caught.name === "AbortError";
+      trackProductEvent("expense_save_failed", "/expenses/new");
+      failSubmit(
+        timedOut
+          ? "Saving took too long. Your expense is still saved as a draft on this device. Check your connection and try again."
+          : "Unable to reach Miles & Meals. Your expense is still saved as a draft on this device. Check your connection and try again.",
+      );
+    } finally {
+      window.clearTimeout(saveTimeout);
+    }
+  }
+
+  if (countries.length === 0) {
+    return (
+      <article className="empty-card">
+        <h2>No country available</h2>
+        <p>Ask the trip admin to assign you to a country first.</p>
+      </article>
+    );
+  }
+
+  return (
+    <>
+      {tripSwitching ? (
+        <SavingOverlay
+          title="Switching trip"
+          message="Updating this expense to the selected trip."
+        />
+      ) : receiptScanning ? (
+        <SavingOverlay
+          title="Reading your receipt"
+          message="Finding the shop name and final amount on this device."
+        />
+      ) : busy ? (
+        <SavingOverlay
+          title={initial ? "Saving expense changes" : "Saving your expense"}
+          message={
+            receiptFile
+              ? "Storing the receipt, totals and traveler shares."
+              : "Updating totals and traveler shares."
+          }
+        />
+      ) : null}
+      <form
+        ref={formRef}
+        className="expense-editor"
+        onSubmit={submit}
+        noValidate
+        onInput={markFormEdited}
+        onChange={markFormEdited}
+      >
+        {draftState === "PENDING" ? (
+          <div className="draft-recovery-banner expense-draft">
+            <div>
+              <strong>
+                Unsaved expense found
+              </strong>
+              <small>
+                {draftSavedAt
+                  ? `Saved ${new Date(
+                      draftSavedAt,
+                    ).toLocaleString(
+                      "en-MY",
+                    )}`
+                  : "A previous unfinished expense is available."}
+                {" "}Receipt photos must be reattached if they were not saved yet.
+              </small>
+            </div>
+
+            <div>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() =>
+                  void restoreExpenseDraft()
+                }
+              >
+                Restore draft
+              </button>
+              <button
+                className="button secondary"
+                type="button"
+                onClick={
+                  discardExpenseDraft
+                }
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <header className="expense-editor-hero">
+          <div className="expense-editor-title">
+            <p className="eyebrow">EXPENSE</p>
+            <h1>{initial ? "Edit expense" : "Add a spend"}</h1>
+            <p className="muted">
+              {initial
+                ? "Update the spend, exchange rate and sharing details."
+                : "Record it quickly, split it fairly, keep the trip moving."}
+            </p>
+          </div>
+
+          <label
+            className={
+              receiptScanning
+                ? "expense-scan-action scanning"
+                : "expense-scan-action"
+            }
+          >
+            <input
+              className="receipt-file-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              onChange={handleReceiptFile}
+              disabled={receiptScanning || busy}
+            />
+            {receiptScanning ? (
+              <span className="mini-spinner" />
+            ) : (
+              <span className="expense-scan-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M8.4 6.5 9.7 4.8h4.6l1.3 1.7H18a2 2 0 0 1 2 2v8.2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h2.4Z" />
+                  <circle cx="12" cy="12.6" r="3.2" />
+                </svg>
+              </span>
+            )}
+            <span className="expense-scan-copy">
+              <strong>
+                {receiptScanning
+                  ? "Reading receipt…"
+                  : receiptFile
+                    ? "Scan another"
+                    : "Scan receipt"}
+              </strong>
+              <small>
+                {receiptScanning
+                  ? "Keep this page open"
+                  : receiptFile
+                    ? "Replace the attached photo"
+                    : "Take a photo or choose one"}
+              </small>
+            </span>
+            <span className="expense-scan-chevron" aria-hidden="true">›</span>
+          </label>
+        </header>
+
+      <section className="expense-section amount-section">
+        <div className="section-heading">
+          <span className="section-number">1</span>
+          <div>
+            <h2>What did you spend?</h2>
+            <p>Record the original amount exactly as you paid it.</p>
+          </div>
+        </div>
+
+        <div className="two-col compact-fields">
+          <label>
+            Trip
+            <select
+              name="countryId"
+              aria-label="Choose expense trip"
+              value={countryId}
+              disabled={tripSwitching || busy || Boolean(initial)}
+              onChange={(event) =>
+                void handleTripChange(event.target.value)
+              }
+            >
+              {countries.map((country) => (
+                <option
+                  value={country.id}
+                  key={country.id}
+                  title={`${country.tripName} · ${country.name}`}
+                >
+                  {compactOptionText(`${country.tripName} · ${country.name}`, 38)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="expense-date-field">
+            Date
+            <input
+              name="expenseDate"
+              type="date"
+              required
+              value={expenseDate}
+              onChange={(event) =>
+                setExpenseDate(
+                  event.target.value,
+                )
+              }
+            />
+          </label>
+        </div>
+
+        <label className="description-field">
+          Description
+          <input
+            name="description"
+            required
+            maxLength={250}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Shop name or expense description"
+          />
+        </label>
+
+        <div>
+          <span className="field-label">Category</span>
+          <div className="category-grid" role="group" aria-label="Expense category">
+            {categories.map((item) => (
+              <button
+                className={category === item.value ? "category-chip active" : "category-chip"}
+                key={item.value}
+                aria-pressed={category === item.value}
+                onClick={() => {
+                  setCategory(item.value);
+                  markFormEdited();
+                }}
+                type="button"
+              >
+                <span className="category-icon">{item.icon}</span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="advanced-money-card">
+          <div className="advanced-money-heading">
+            <div>
+              <span>Amount paid</span>
+              <small>Enter the original amount exactly as you paid it.</small>
+            </div>
+            <span className="advanced-money-code" aria-label={`Selected currency ${currency}`}>
+              {currency || "CUR"}
+            </span>
+          </div>
+
+          <label className="advanced-amount-control">
+            <span className="sr-only">Transaction amount</span>
+            <div className="advanced-amount-shell">
+              <span className="advanced-amount-prefix" aria-hidden="true">
+                {currency || "CUR"}
+              </span>
+              <input
+                name="transactionAmount"
+                inputMode="decimal"
+                data-numeric-input="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                required
+                placeholder="0.00"
+                aria-label="Transaction amount"
+              />
+            </div>
+          </label>
+
+          <div className="advanced-money-settings">
+            <label className="advanced-currency-control">
+              <span>Currency</span>
+              <select
+                name="transactionCurrency"
+                value={currency}
+                onChange={(event) =>
+                  void handleCurrencyChange(event.target.value)
+                }
+                required
+                aria-label="Transaction currency"
+                disabled={busy || fxRateLoading}
+              >
+                {currencyOptions.map((option) => (
+                  <option
+                    value={option.code}
+                    key={option.code}
+                    title={`${option.code} — ${option.label}`}
+                  >
+                    {compactOptionText(`${option.code} — ${option.label}`, 36)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="advanced-trip-currency" aria-label="Trip default currency">
+              <span>Trip default</span>
+              <strong>{currentCountry?.currencyCode ?? "—"}</strong>
+            </div>
+          </div>
+
+          {!isBaseCurrency ? (
+            <div className="advanced-conversion-preview">
+              <div>
+                <span>Estimated trip amount</span>
+                <strong>
+                  {currentCountry?.baseCurrency ?? "MYR"} {converted.toFixed(2)}
+                </strong>
+              </div>
+              <small>Final amount follows the rate selected below.</small>
+            </div>
+          ) : (
+            <div className="advanced-base-currency-note">
+              <span aria-hidden="true">✓</span>
+              <small>No conversion needed — this matches the trip base currency.</small>
+            </div>
+          )}
+        </div>
+
+        {fxRateLoading || fxRateMessage ? (
+          <div
+            className={
+              fxRateLoading
+                ? "expense-fx-helper loading"
+                : "expense-fx-helper"
+            }
+            role="status"
+          >
+            {fxRateLoading ? (
+              <span className="mini-spinner" aria-hidden="true" />
+            ) : (
+              <span aria-hidden="true">↔</span>
+            )}
+            <small>{fxRateMessage}</small>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="expense-section fx-section">
+        <div className="section-heading">
+          <span className="section-number amber">2</span>
+          <div>
+            <h2>Exchange rate</h2>
+            {!isBaseCurrency ? (
+              <p>
+                Use the actual cash or card rate for accurate trip totals.
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="segmented-control" role="group" aria-label="Exchange rate source">
+          {rateTypes.map((item) => (
+            <button
+              className={rateType === item.value ? "segment active" : "segment"}
+              key={item.value}
+              onClick={() => handleRateType(item.value)}
+              type="button"
+              disabled={isBaseCurrency}
+              aria-disabled={isBaseCurrency}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="fx-row">
+          <label>
+            1 {currency || "CUR"} =
+            <input
+              name="exchangeRate"
+              inputMode="decimal"
+              data-numeric-input="decimal"
+              value={isBaseCurrency ? "1" : rate}
+              onChange={(event) => {
+                if (!isBaseCurrency) {
+                  setRate(event.target.value);
+                }
+              }}
+              readOnly={isBaseCurrency}
+              className={isBaseCurrency ? "fx-rate-locked" : undefined}
+              required
+            />
+          </label>
+          <div className="fx-currency">
+            {currentCountry?.baseCurrency ?? "MYR"}
+          </div>
+          {isBaseCurrency ? (
+            <span className="base-currency-badge">1:1 Base currency</span>
+          ) : null}
+        </div>
+
+        <div className="conversion-hero">
+          <div>
+            <span>Trip amount</span>
+            <strong>
+              {currentCountry?.baseCurrency ?? "MYR"} {converted.toFixed(2)}
+            </strong>
+          </div>
+          <small>
+            This rate is stored with the expense, so future default-rate changes
+            will not change this record.
+          </small>
+        </div>
+
+        {rateType === "CREDIT_CARD" && !isBaseCurrency ? (
+          <label className="actual-charge">
+            Actual card charge in {currentCountry?.baseCurrency ?? "MYR"}
+            <input
+              name="actualConvertedAmount"
+              inputMode="decimal"
+              data-numeric-input="decimal"
+              value={actualConvertedAmount}
+              onChange={(event) => setActualConvertedAmount(event.target.value)}
+              placeholder={`Optional — e.g. ${converted.toFixed(2)}`}
+            />
+            <small>Enter this later when the final bank/card amount is available.</small>
+          </label>
+        ) : null}
+      </section>
+
+      <section className="expense-section people-section">
+        <div className="section-heading">
+          <span className="section-number">3</span>
+          <div>
+            <h2>Who paid & who shares?</h2>
+            <p>Only people assigned to this country are available.</p>
+          </div>
+        </div>
+
+        <div>
+          <div className="split-heading-row payer-heading-row">
+            <span className="field-label">Paid by</span>
+            <div className="mini-segments" role="group" aria-label="Number of payers">
+              <button
+                className={!multiplePayers ? "mini-segment active" : "mini-segment"}
+                type="button"
+                onClick={() => switchPayerMode(false)}
+              >
+                One payer
+              </button>
+              <button
+                className={multiplePayers ? "mini-segment active" : "mini-segment"}
+                type="button"
+                onClick={() => switchPayerMode(true)}
+              >
+                Multiple payers
+              </button>
+            </div>
+          </div>
+
+          {!multiplePayers ? (
+            <div className="single-payer-list" role="radiogroup" aria-label="Paid by">
+              {members.map((member) => {
+                const selected = paidByUserId === member.id;
+                return (
+                  <button
+                    aria-checked={selected}
+                    className={selected ? "payer-choice-row selected" : "payer-choice-row"}
+                    key={member.id}
+                    onClick={() => chooseSinglePayer(member.id)}
+                    role="radio"
+                    type="button"
+                  >
+                    <span className="avatar">{initials(member.name)}</span>
+                    <span className="member-copy">
+                      <strong>{member.name}</strong>
+                      <small>{selected ? "Selected payer" : "Choose as payer"}</small>
+                    </span>
+                    <span className={selected ? "round-check checked" : "round-check"}>
+                      {selected ? "✓" : ""}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="multi-payer-list">
+              {members.map((member) => {
+                const selected = payerUserIds.includes(member.id);
+                return (
+                  <div className={selected ? "multi-payer-row selected" : "multi-payer-row"} key={member.id}>
+                    <button
+                      className="member-select"
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => togglePayer(member.id)}
+                    >
+                      <span className="avatar">{initials(member.name)}</span>
+                      <span className="member-copy">
+                        <strong>{member.name}</strong>
+                        <small>{selected ? "Contributed" : "Not a payer"}</small>
+                      </span>
+                      <span className={selected ? "round-check checked" : "round-check"}>
+                        {selected ? "✓" : ""}
+                      </span>
+                    </button>
+                    {selected ? (
+                      <label className="payer-amount-input">
+                        <span>{currentCountry?.baseCurrency ?? "MYR"}</span>
+                        <input
+                          inputMode="decimal"
+                          data-numeric-input="decimal"
+                          value={payerValues[member.id] ?? ""}
+                          onChange={(event) => {
+                            setPayerValues((values) => ({
+                              ...values,
+                              [member.id]: event.target.value,
+                            }));
+                            markFormEdited();
+                          }}
+                          aria-label={`${member.name} paid amount`}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                );
+              })}
+              <div className={payerStatus.valid ? "split-summary valid" : "split-summary invalid"}>
+                <span>{payerStatus.valid ? "✓" : "!"}</span>
+                <strong>
+                  {currentCountry?.baseCurrency ?? "MYR"} {payerStatus.entered.toFixed(2)} of {settlementTotal.toFixed(2)} paid
+                </strong>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <details
+          className="split-preset-details"
+          onToggle={(event) => {
+            if (event.currentTarget.open) setSplitPresetsRequested(true);
+          }}
+        >
+          <summary>
+            <span>
+              <strong>Reuse a traveller group</strong>
+              <small>Optional · remembers who shares, not the amount</small>
+            </span>
+            <span aria-hidden="true">⌄</span>
+          </summary>
+          <div className="split-preset-bar">
+            <label>
+              Apply saved group
+              <select
+                defaultValue=""
+                disabled={splitPresets.length === 0}
+                onChange={(event) => {
+                  applySplitPreset(event.target.value);
+                  event.currentTarget.value = "";
+                }}
+              >
+                <option value="">
+                  {splitPresetsLoading
+                    ? "Loading saved groups…"
+                    : splitPresets.length
+                      ? "Choose a group…"
+                      : "No saved groups yet"}
+                </option>
+                {splitPresets.map((preset) => (
+                  <option value={preset.id} key={preset.id}>{preset.name}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Save selected travellers
+              <span className="split-preset-save">
+                <input
+                  value={presetName}
+                  onChange={(event) => setPresetName(event.target.value)}
+                  maxLength={80}
+                  placeholder="Family, roommates…"
+                />
+                <button
+                  className="button secondary"
+                  type="button"
+                  disabled={presetBusy || !presetName.trim() || !splitStatus.valid}
+                  onClick={() => void saveSplitPreset()}
+                >
+                  {presetBusy ? "Saving…" : "Save group"}
+                </button>
+              </span>
+            </label>
+          </div>
+        </details>
+
+        <div className="split-heading-row">
+          <span className="field-label">Split with</span>
+          <div className="mini-segments" role="group" aria-label="Split method">
+            {splitModes.map((item) => (
+              <button
+                className={splitMode === item.value ? "mini-segment active" : "mini-segment"}
+                key={item.value}
+                onClick={() => handleSplitMode(item.value)}
+                type="button"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="member-split-list">
+          {members.map((member) => {
+            const selected = splitUserIds.includes(member.id);
+
+            return (
+              <div className={selected ? "member-split-card selected" : "member-split-card"} key={member.id}>
+                <button
+                  className="member-select"
+                  onClick={() => toggleSplit(member.id)}
+                  type="button"
+                  aria-pressed={selected}
+                >
+                  <span className="avatar">{initials(member.name)}</span>
+                  <span className="member-copy">
+                    <strong>{member.name}</strong>
+                    <small>{selected ? "Sharing" : "Not included"}</small>
+                  </span>
+                  <span className={selected ? "round-check checked" : "round-check"}>
+                    {selected ? "✓" : ""}
+                  </span>
+                </button>
+
+                {selected && splitMode !== "EQUAL" ? (
+                  <label className="split-input">
+                    <span>
+                      {splitMode === "PERCENTAGE"
+                        ? "%"
+                        : splitMode === "SHARES"
+                          ? "×"
+                        : currentCountry?.baseCurrency ?? "MYR"}
+                    </span>
+                    <input
+                      inputMode="decimal"
+              data-numeric-input="decimal"
+                      value={splitValues[member.id] ?? ""}
+                      onChange={(event) => {
+                        setPreserveInitialItemization(false);
+                        setSplitValues((values) => ({
+                          ...values,
+                          [member.id]: event.target.value,
+                        }));
+                      }}
+                      required
+                      aria-label={`${member.name} split value`}
+                    />
+                  </label>
+                ) : selected ? (
+                  <strong className="equal-share">
+                    {currentCountry?.baseCurrency ?? "MYR"}{" "}
+                    {equalShares.get(member.id) ?? "0.00"}
+                  </strong>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={splitStatus.valid ? "split-summary valid" : "split-summary invalid"}>
+          <span>{splitStatus.valid ? "✓" : "!"}</span>
+          <strong>{splitStatus.label}</strong>
+        </div>
+      </section>
+
+      {(receiptFile ||
+        receiptPreviewUrl ||
+        receiptScanning ||
+        receiptMessage ||
+        initial?.receiptUrl) ? (
+        <section className="receipt-inline-panel">
+          <div className="receipt-inline-heading">
+            <div>
+              <strong>Receipt scan</strong>
+              <small>
+                Detected values stay editable before you save.
+              </small>
+            </div>
+          </div>
+
+          <div className="receipt-scanner">
+          {receiptPreviewUrl ? (
+            <div className="receipt-preview-card">
+              <img
+                src={receiptPreviewUrl}
+                alt="Receipt preview"
+                className="receipt-preview-image"
+              />
+              <button
+                className="receipt-remove-button"
+                type="button"
+                onClick={removeReceiptPhoto}
+                disabled={receiptScanning || busy}
+              >
+                Remove
+              </button>
+            </div>
+          ) : initial?.receiptUrl ? (
+            <div className="receipt-existing">
+              <span>🧾</span>
+              <div>
+                <strong>Receipt already attached</strong>
+                <small>
+                  Take a new photo above if you want to replace it.
+                </small>
+              </div>
+            </div>
+          ) : null}
+
+          {receiptScanning ? (
+            <div className="receipt-ai-status scanning" role="status">
+              <span className="mini-spinner" />
+              <div className="receipt-ocr-progress-copy">
+                <strong>{receiptScanStatus || "Reading receipt…"}</strong>
+                <small>
+                  {Math.round(receiptScanProgress * 100)}% · First scan can
+                  take longer while the local OCR engine starts.
+                </small>
+                <span className="receipt-ocr-progress-track">
+                  <span
+                    style={{
+                      width: `${Math.max(
+                        4,
+                        Math.round(receiptScanProgress * 100),
+                      )}%`,
+                    }}
+                  />
+                </span>
+              </div>
+            </div>
+          ) : receiptMessage ? (
+            <div className="receipt-scan-result">
+              <div
+                className={
+                  receiptResult
+                    ? "receipt-ai-status success"
+                    : "receipt-ai-status warning"
+                }
+                role="status"
+              >
+                <span>{receiptResult ? "✓" : "!"}</span>
+                <div>
+                  <strong>
+                    {receiptResult ? "Receipt read" : "Could not auto-fill"}
+                  </strong>
+                  <small>{receiptMessage}</small>
+                </div>
+              </div>
+              {!receiptResult && receiptFile ? (
+                <button
+                  className="receipt-scan-retry"
+                  disabled={receiptScanning || busy}
+                  onClick={() => void analyzeReceipt(receiptFile)}
+                  type="button"
+                >
+                  Try scan again
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {receiptResult ? (
+            <div className="receipt-detected-grid">
+              <div>
+                <small>Shop</small>
+                <strong>
+                  {receiptResult.merchantName ?? "Not detected"}
+                </strong>
+              </div>
+              <div>
+                <small>Total</small>
+                <strong>
+                  {receiptResult.currencyCode ?? currency}{" "}
+                  {receiptResult.totalAmount?.toFixed(2) ?? "—"}
+                </strong>
+              </div>
+              <div>
+                <small>
+                  Shop confidence
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.merchantConfidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.merchantConfidence
+                  }
+                </strong>
+              </div>
+              <div>
+                <small>
+                  Total confidence
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.totalConfidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.totalConfidence
+                  }
+                </strong>
+              </div>
+              <div>
+                <small>Receipt date</small>
+                <strong>
+                  {receiptResult.receiptDate ?? "Not detected"}
+                </strong>
+              </div>
+              <div>
+                <small>Suggested category</small>
+                <strong>
+                  {receiptResult.categorySuggestion ?? "Review manually"}
+                </strong>
+              </div>
+              <div>
+                <small>
+                  Overall OCR
+                </small>
+                <strong
+                  className={`receipt-confidence ${receiptResult.confidence.toLowerCase()}`}
+                >
+                  {
+                    receiptResult.confidence
+                  }
+                </strong>
+              </div>
+            </div>
+          ) : null}
+
+          {receiptResult?.merchantCandidates &&
+          receiptResult.merchantCandidates.length > 1 ? (
+            <div className="receipt-shop-suggestions">
+              <small>Shop suggestions</small>
+              <div>
+                {receiptResult.merchantCandidates.map((candidate) => (
+                  <button
+                    className={
+                      description === candidate
+                        ? "receipt-shop-chip active"
+                        : "receipt-shop-chip"
+                    }
+                    key={candidate}
+                    type="button"
+                    onClick={() => setDescription(candidate)}
+                  >
+                    {candidate}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {receiptResult?.totalCandidates &&
+          receiptResult.totalCandidates.length > 1 ? (
+            <div className="receipt-shop-suggestions">
+              <small>Total suggestions</small>
+              <div>
+                {receiptResult.totalCandidates.map((candidate) => {
+                  const candidateValue = candidate
+                    .toFixed(2)
+                    .replace(/\.00$/, "");
+
+                  return (
+                    <button
+                      className={
+                        amount === candidateValue
+                          ? "receipt-shop-chip active"
+                          : "receipt-shop-chip"
+                      }
+                      key={candidate.toFixed(2)}
+                      type="button"
+                      onClick={() => setAmount(candidateValue)}
+                    >
+                      {receiptResult.currencyCode ?? currency}{" "}
+                      {candidate.toLocaleString("en-MY", {
+                        maximumFractionDigits: 2,
+                      })}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {receiptResult?.rawText ? (
+            <details className="receipt-ocr-text">
+              <summary>View detected receipt text</summary>
+              <pre>{receiptResult.rawText}</pre>
+            </details>
+          ) : null}
+
+        </div>
+        </section>
+      ) : null}
+
+      <section className="expense-section details-section">
+        <div className="section-heading">
+          <span className="section-number">4</span>
+          <div>
+            <h2>Payment details</h2>
+            <p>Optional information that helps you reconcile later.</p>
+          </div>
+        </div>
+
+        <div className="two-col compact-fields">
+          <label>
+            Payment method
+            <input
+              name="paymentMethod"
+              value={paymentMethod}
+              onChange={(event) =>
+                setPaymentMethod(
+                  event.target.value,
+                )
+              }
+              placeholder="Maybank Visa / Cash / Wise"
+            />
+          </label>
+
+          <label>
+            Receipt / link
+            <input
+              name="receiptUrl"
+              type="url"
+              value={
+                receiptUrl.startsWith("data:image/")
+                  ? ""
+                  : receiptUrl
+              }
+              onChange={(event) =>
+                setReceiptUrl(event.target.value)
+              }
+              placeholder={
+                receiptUrl.startsWith("data:image/")
+                  ? "Receipt photo stored with expense"
+                  : "Optional external receipt URL"
+              }
+            />
+          </label>
+        </div>
+
+        <label>
+          Notes
+          <textarea
+            name="notes"
+            value={notes}
+            onChange={(event) =>
+              setNotes(
+                event.target.value,
+              )
+            }
+            rows={3}
+            placeholder="Optional note"
+          />
+        </label>
+      </section>
+
+      {offlineQueued ? (
+        <section className="offline-saved-card" role="status">
+          <span aria-hidden="true">✓</span>
+          <div>
+            <strong>Saved offline</strong>
+            <p>This expense is safe on this device and will sync automatically when your connection returns.</p>
+          </div>
+        </section>
+      ) : null}
+
+      {duplicateWarning ? (
+        <section
+          ref={duplicateWarningRef}
+          className="duplicate-expense-warning"
+          role="alert"
+          tabIndex={-1}
+        >
+          <span className="duplicate-warning-icon" aria-hidden="true">⚠</span>
+          <div>
+            <strong>Possible duplicate</strong>
+            <p>
+              {duplicateWarning.description} · {duplicateWarning.currency}{" "}
+              {duplicateWarning.amount.toLocaleString("en-MY", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+              {" "}is already recorded for this date.
+            </p>
+            <div className="duplicate-warning-actions">
+              <a className="button secondary" href="/expenses">Review expenses</a>
+              <button
+                className="button primary"
+                type="button"
+                onClick={() => {
+                  duplicateOverrideRef.current = true;
+                  setDuplicateWarning(null);
+                  setError("");
+                  window.requestAnimationFrame(() =>
+                    formRef.current?.requestSubmit(),
+                  );
+                }}
+              >
+                Save anyway
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      <div className={error ? "sticky-save has-feedback" : "sticky-save"}>
+        {error ? (
+          <p
+            ref={submitFeedbackRef}
+            className="form-error-banner sticky-save-feedback"
+            role="alert"
+            aria-live="assertive"
+            tabIndex={-1}
+          >
+            {error}
+          </p>
+        ) : null}
+        <div className="save-total">
+          <span>Total</span>
+          <strong>
+            {currentCountry?.baseCurrency ?? "MYR"} {settlementTotal.toFixed(2)}
+          </strong>
+        </div>
+        <button className="button primary save-expense-button" disabled={busy || offlineQueued} type="submit">
+          {busy ? "Saving…" : offlineQueued ? "Waiting to sync" : initial ? "Save changes" : "Save expense"}
+        </button>
+      </div>
+      </form>
+    </>
+  );
+}

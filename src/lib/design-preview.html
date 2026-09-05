@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miles & Meals v10 Preview</title>
+<style>
+:root{--bg:#fbfaf7;--card:#fff;--ink:#0d3b35;--muted:#6b7c77;--teal:#0f766e;--teal2:#0b5f58;--soft:#e6f4f1;--amber:#f59e0b;--line:#dfe8e4}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 5% 20%,#f59e0b12,transparent 30rem),radial-gradient(circle at 95% 25%,#0f766e12,transparent 34rem),var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+.top{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--line);background:#fbfaf7ee;position:sticky;top:0}.brand{font-weight:900;font-size:22px}.brand b{color:var(--amber)}.avatar{width:42px;height:42px;border-radius:14px;background:linear-gradient(145deg,var(--teal),var(--teal2));color:white;display:grid;place-items:center;font-weight:900}
+.nav{position:fixed;left:24px;top:96px;width:194px;padding:10px;border:1px solid var(--line);border-radius:24px;background:#fffffff5;box-shadow:0 18px 48px #17312c18}.nav a{display:flex;gap:12px;padding:14px;border-radius:15px;margin:4px 0;text-decoration:none;color:#63756f;font-weight:750}.nav a.active{background:var(--soft);color:var(--teal)}.nav a.add{background:linear-gradient(145deg,var(--teal),var(--teal2));color:white}
+main{max-width:1440px;margin:auto;padding:36px 28px 70px 250px}.welcome{display:flex;justify-content:space-between;gap:20px;align-items:center}.eyebrow{font-size:12px;letter-spacing:.13em;font-weight:900;color:#0d9488}.welcome h1{font-size:clamp(36px,5vw,58px);margin:8px 0 6px;letter-spacing:-.055em}.muted{color:var(--muted)}.btn{border:0;border-radius:14px;padding:15px 20px;background:var(--teal);color:white;font-weight:850}
+.hero{margin-top:28px;padding:28px;border-radius:28px;color:white;min-height:220px;display:grid;align-items:center;background:radial-gradient(circle at 85% 15%,#f59e0b55,transparent 22%),linear-gradient(135deg,#0b615a,var(--teal) 65%,#0d6a63);box-shadow:0 22px 50px #0f5c541f}.hero h2{font-size:34px;margin:8px 0}.steps{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:24px;overflow:hidden;background:white}.step{padding:22px;border-right:1px solid var(--line)}.step:last-child{border:0}.num{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:var(--soft);color:var(--teal);font-weight:900;margin-bottom:14px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}.card{padding:22px;border:1px solid var(--line);border-radius:24px;background:white;box-shadow:0 8px 28px #17312c0d}
+.bottom{display:none}
+@media(max-width:1023px){.nav{display:none}main{padding:24px 18px 100px}.bottom{position:fixed;display:grid;grid-template-columns:repeat(5,1fr);left:12px;right:12px;bottom:12px;background:#fffffff5;border:1px solid var(--line);border-radius:22px;padding:8px;box-shadow:0 18px 48px #17312c2a}.bottom span{text-align:center;font-size:12px;color:#63756f;padding:8px}.bottom .plus{background:var(--teal);color:white;border-radius:16px}.steps{grid-template-columns:1fr}.step{border-right:0;border-bottom:1px solid var(--line)}}
+@media(max-width:600px){.welcome{align-items:flex-start}.welcome .btn{display:none}.welcome h1{font-size:38px}.hero{padding:22px;min-height:190px}.hero h2{font-size:28px}.cards{grid-template-columns:1fr}.brand{font-size:18px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">📍 Miles <b>&</b> Meals</div><div class="avatar">T</div></header>
+<nav class="nav"><a class="active" href="#">⌂ Home</a><a href="#">▣ Plan</a><a class="add" href="#">＋ Add expense</a><a href="#">⌖ Map</a><a href="#">••• More</a></nav>
+<main>
+<section class="welcome"><div><div class="eyebrow">MILES & MEALS</div><h1>Ready for the next stop, Admin?</h1><div class="muted">Everything for the trip, without the spreadsheet scroll.</div></div><button class="btn">＋ Add expense</button></section>
+<section class="hero"><div><div class="eyebrow" style="color:#bfeee6">CURRENT TRIP</div><h2>Your journey starts here</h2><div style="color:#ffffffbf">Create a trip, add a country and bring your crew.</div></div></section>
+<section class="steps"><article class="step"><div class="num">01</div><strong>Create a trip</strong><p class="muted">Name, dates, currency and budget.</p></article><article class="step"><div class="num">02</div><strong>Add countries</strong><p class="muted">Local currency and exchange rate.</p></article><article class="step"><div class="num">03</div><strong>Assign your crew</strong><p class="muted">Control country-level access.</p></article></section>
+<section class="cards"><article class="card"><div class="eyebrow">NEXT MOVE</div><h2>Plan the day</h2><p class="muted">Itinerary, food, places and shopping stay together.</p></article><article class="card"><div class="eyebrow">TRIP CREW</div><h2>Find everyone</h2><p class="muted">Shared location tools for the people in the same country.</p></article></section>
+
+
+<section class="card" style="margin-top:18px">
+  <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+    <div><small style="color:#0f766e;font-weight:900;letter-spacing:.12em">SETTLE UP</small><h2 style="margin:6px 0">Who paid, who's waiting</h2></div>
+    <strong style="color:#0f766e">No manual amount</strong>
+  </div>
+  <div style="display:grid;gap:10px;margin-top:14px">
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;border:1px solid #f59e0b55;border-radius:16px;background:#fff8e8">
+      <div><strong>JH owes JY</strong><div style="color:#6b7c77;font-size:13px;margin-top:4px">Vietnam · Waiting for payment</div></div>
+      <strong>MYR 50.00</strong>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;border:1px solid #0f766e44;border-radius:16px;background:#e6f4f1">
+      <div><strong>JJ marked payment sent</strong><div style="color:#6b7c77;font-size:13px;margin-top:4px">Waiting for JY to confirm</div></div>
+      <strong>MYR 50.00</strong>
+    </div>
+  </div>
+</section>
+
+</main>
+<nav class="bottom"><span>⌂<br>Home</span><span>▣<br>Plan</span><span class="plus">＋<br>Add</span><span>⌖<br>Map</span><span>•••<br>More</span></nav>
+</body>
+</html>

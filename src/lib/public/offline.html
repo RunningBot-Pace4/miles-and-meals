@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>Offline · Miles & Meals</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f8fa;color:#121417}*{box-sizing:border-box}html,body{margin:0;min-width:0;max-width:100%;min-height:100%;overflow-x:clip}body{min-height:100svh;padding:max(1rem,env(safe-area-inset-top)) max(1rem,env(safe-area-inset-right)) max(1.25rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left));background:radial-gradient(circle at 8% 5%,rgb(61 130 246/7%),transparent 24rem),radial-gradient(circle at 92% 90%,rgb(237 177 141/8%),transparent 26rem),#f7f8fa}main{width:min(100%,560px);min-width:0;margin:auto;display:grid;gap:1rem}.card{min-width:0;max-width:100%;padding:1rem;border:1px solid #e1e3e6;border-radius:15px;background:#fff;box-shadow:0 16px 38px rgb(23 28 35/7%);overflow:hidden}.hero{display:grid;grid-template-columns:58px minmax(0,1fr);gap:.9rem;align-items:center}.hero>div{min-width:0}.logo{width:58px;height:58px;border:1px solid #e1e3e6;border-radius:15px}.eyebrow{margin:0;color:#127f7a;font-size:.68rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase}h1,h2,p{max-width:100%;overflow-wrap:anywhere;margin:.15rem 0}h1{font-size:1.7rem;letter-spacing:-.045em}h2{font-size:1.15rem}.muted,small{color:#74787f;line-height:1.45}.pill-row{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.7rem}.pill{max-width:100%;overflow-wrap:anywhere;padding:.32rem .55rem;border-radius:999px;background:#eaf3ff;color:#3d82f6;font-size:.7rem;font-weight:800}.list{display:grid;gap:.55rem;margin-top:.75rem}.row{display:flex;min-width:0;max-width:100%;justify-content:space-between;gap:.8rem;padding:.7rem;border:1px solid #e1e3e6;border-radius:12px;background:#fff}.row span{display:grid;gap:.1rem;min-width:0}.row strong{overflow-wrap:anywhere}form,label,.grid,.grid>*{min-width:0;max-width:100%}label{display:grid;gap:.35rem;font-size:.78rem;font-weight:800}input,select{display:block;width:100%;min-width:0;max-width:100%;min-height:46px;padding:.7rem .75rem;border:1px solid #dfe1e4;border-radius:11px;background:#fff;color:#121417;font:inherit;font-size:16px}input[type=date]{min-inline-size:0;-webkit-appearance:none;appearance:none}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}button{width:100%;min-width:0;max-width:100%;min-height:46px;border:1px solid #111;border-radius:11px;background:#111;color:#fff;font:inherit;font-weight:850;cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}.secondary{border:1px solid #d9dbdf;background:#fff;color:#222}.status{font-size:.75rem;text-align:center}.online{color:#157a59;font-weight:800}.empty{padding:.8rem;border-radius:12px;background:#f3f3f4;color:#74787f;font-size:.8rem}.share{min-width:0;display:grid;gap:.6rem;margin:.75rem 0;padding:.75rem;border:1px solid #e1e3e6;border-radius:13px;background:#f6f6f7}.share legend{padding:0 .25rem;font-size:.78rem;font-weight:850}.share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.share-actions button{min-height:40px;border:1px solid #d9dbdf;background:#fff;color:#222}.share-actions button.selected{border-color:#111;background:#111;color:#fff}.share-members{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.45rem}.share-members label{grid-template-columns:20px minmax(0,1fr);align-items:center;padding:.55rem;border:1px solid #e1e3e6;border-radius:11px;background:#fff}.share-members input{width:20px;height:20px;min-height:20px;margin:0;padding:0;accent-color:#127f7a}@media(max-width:640px){.grid,.share-members{grid-template-columns:minmax(0,1fr)}.hero{grid-template-columns:48px minmax(0,1fr)}.logo{width:48px;height:48px}.row{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<main>
+  <section class="card hero">
+    <img class="logo" src="/icons/v92/icon-192.png" alt="">
+    <div><p class="eyebrow">OFFLINE · OPEN TRIPS</p><h1>Your trip keeps moving.</h1><p class="muted">Plans, travel essentials and quick expenses stay available even when the signal disappears.</p></div>
+  </section>
+
+  <section class="card" id="trip-card" hidden>
+    <p class="eyebrow">SAVED TRIPS</p><h2 id="trip-name"></h2><p class="muted" id="trip-destination"></p>
+    <label>Trip<select id="saved-trip" aria-label="Choose saved offline trip"></select></label>
+    <div class="pill-row"><span class="pill" id="saved-at"></span><span class="pill" id="queue-count"></span></div>
+  </section>
+
+  <section class="card" id="quick-card" hidden>
+    <p class="eyebrow">QUICK EXPENSE</p><h2>Save spending without internet</h2>
+    <form id="quick-form">
+      <label>Description<input id="description" maxlength="250" placeholder="Dinner, taxi, tickets…" required></label>
+      <div class="grid"><label>Amount<input id="amount" inputmode="decimal" placeholder="0.00" required></label><label>Date<input id="expense-date" type="date" required></label></div>
+      <div class="grid"><label>Currency<select id="currency"></select></label><label>Category<select id="category"><option>Food</option><option>Transport</option><option>Accommodation</option><option>Shopping</option><option>Activities</option><option>Other</option></select></label></div>
+      <fieldset class="share"><legend>Share cost with</legend><div class="share-actions"><button id="share-everyone" type="button">Everyone</button><button id="share-me" type="button">Only me</button></div><div class="share-members" id="share-members"></div><small>All Trip members can see the synced expense. The cost is assigned only to selected travelers.</small></fieldset>
+      <p class="muted" id="split-note"></p>
+      <button type="submit">Save offline expense</button>
+    </form>
+  </section>
+
+  <section class="card" id="plan-card" hidden><p class="eyebrow">SAVED PLAN</p><h2>Travel essentials</h2><div class="list" id="plan-list"></div></section>
+
+  <section class="card" id="finance-card" hidden><p class="eyebrow">FINANCE SNAPSHOT</p><h2>Saved totals</h2><div class="list" id="finance-list"></div></section>
+
+  <section class="card" id="expenses-card" hidden><p class="eyebrow">RECENT EXPENSES</p><h2>Saved ledger</h2><div class="list" id="expenses-list"></div></section>
+
+  <section class="card" id="safety-card" hidden><p class="eyebrow">SAFETY & DOCUMENTS</p><h2>Available on this device</h2><div class="list" id="safety-list"></div></section>
+
+  <section class="card" id="no-pack">
+    <p class="eyebrow">NO OPEN TRIP OFFLINE</p><h2>Reconnect once to prepare an open Trip.</h2><p class="muted">When you are signed in and online, Miles & Meals securely refreshes open Trips you can access. Closed Trips stay hidden.</p>
+  </section>
+
+  <section class="card"><button class="secondary" type="button" id="retry">Try connection again</button><p class="status" id="status" role="status">Waiting for a connection…</p></section>
+</main>
+<script>
+(() => {
+  const PACK_KEY="mnm:offline-pack:v2";
+  const PACKS_KEY="mnm:offline-packs:v3";
+  const SELECTED_KEY="mnm:offline-selected-trip:v1";
+  const QUEUE_KEY="mnm:offline-mutation-queue:v1";
+  const $=id=>document.getElementById(id);
+  const isOpen=x=>x&&(x.version===2||x.version===3)&&x.trip&&x.trip.id&&x.trip.financialStatus!=="CLOSED";
+  let packs=[];
+  try{const parsed=JSON.parse(localStorage.getItem(PACKS_KEY)||"[]");if(Array.isArray(parsed))packs=parsed.filter(isOpen)}catch{}
+  if(!packs.length){try{const legacy=JSON.parse(localStorage.getItem(PACK_KEY)||"null");if(isOpen(legacy))packs=[legacy]}catch{}}
+  localStorage.setItem(PACKS_KEY,JSON.stringify(packs));
+  let selectedId=localStorage.getItem(SELECTED_KEY)||packs[0]?.trip?.id||"";
+  let pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
+  let selectedMembers=[];
+  let queue=[];
+  try{queue=JSON.parse(localStorage.getItem(QUEUE_KEY)||"[]");if(!Array.isArray(queue))queue=[]}catch{queue=[]}
+  const today=()=>{const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)};
+  $("expense-date").value=today();
+
+  function row(title,meta,badge){const article=document.createElement("article");article.className="row";const span=document.createElement("span");const strong=document.createElement("strong");strong.textContent=title;const small=document.createElement("small");small.textContent=meta;span.append(strong,small);const b=document.createElement("small");b.textContent=badge||"";article.append(span,b);return article}
+  function queueLabel(){$("queue-count").textContent=`${queue.length} waiting to sync`}
+  function createId(){if(crypto.randomUUID)return crypto.randomUUID();const bytes=new Uint8Array(16);if(crypto.getRandomValues)crypto.getRandomValues(bytes);else for(let i=0;i<bytes.length;i+=1)bytes[i]=Math.floor(Math.random()*256);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const hex=Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`}
+
+  function renderSharing(){
+    const members=pack?.members||[];
+    $("share-members").replaceChildren(...members.map(member=>{const label=document.createElement("label");const input=document.createElement("input");input.type="checkbox";input.checked=selectedMembers.includes(member.id);input.addEventListener("change",()=>{selectedMembers=input.checked?[...selectedMembers,member.id]:selectedMembers.filter(id=>id!==member.id);renderSharing()});const span=document.createElement("span");span.textContent=`${member.name}${member.id===pack.currentUserId?" · You":""}`;label.append(input,span);return label}));
+    $("share-everyone").classList.toggle("selected",members.length>0&&selectedMembers.length===members.length);
+    $("share-me").classList.toggle("selected",selectedMembers.length===1&&selectedMembers[0]===pack?.currentUserId);
+    $("split-note").textContent=`Saving to ${pack?.trip.name||"this Trip"} · paid by you · split equally between ${selectedMembers.length} selected traveler${selectedMembers.length===1?"":"s"}.`;
+  }
+
+  function renderPack(){
+    pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
+    const has=Boolean(pack&&pack.currentUserId);
+    $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;$("finance-card").hidden=!has;$("expenses-card").hidden=!has;$("safety-card").hidden=!has;
+    if(!has){localStorage.removeItem(PACK_KEY);localStorage.removeItem(SELECTED_KEY);return}
+    selectedId=pack.trip.id;localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack));
+    $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · trip ${pack.trip.currencyCode} · base ${pack.trip.baseCurrency}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
+    selectedMembers=(pack.members||[]).map(member=>member.id);renderSharing();
+    const currencyCodes=[...new Set([String(pack.trip.currencyCode).toUpperCase(),String(pack.trip.baseCurrency).toUpperCase()])];$("currency").replaceChildren(...currencyCodes.map(code=>{const option=document.createElement("option");option.value=code;option.textContent=`${code}${code===String(pack.trip.currencyCode).toUpperCase()?" · destination":" · base"}`;return option}));
+    $("plan-list").replaceChildren();const plan=(pack.plan||[]).filter(x=>!x.date||x.date>=today()).slice(0,12);if(!plan.length)$("plan-list").innerHTML='<div class="empty">No saved plan items.</div>';else plan.forEach(x=>$("plan-list").append(row(x.title,`${x.date||"Any day"}${x.time?` · ${x.time}`:""}${x.area?` · ${x.area}`:""}`,x.type)));
+    const base=pack.finance?.baseCurrency||pack.trip.baseCurrency;const amount=value=>`${base} ${Number(value||0).toFixed(2)}`;
+    $("finance-list").replaceChildren(row("My budget",amount(pack.finance?.myBudget),""),row("My share spent",amount(pack.finance?.myShareSpent),""),row("Group spent",amount(pack.finance?.groupSpent),""));
+    $("expenses-list").replaceChildren();const expenses=(pack.expenses||[]).slice(0,20);if(!expenses.length)$("expenses-list").innerHTML='<div class="empty">No saved expenses.</div>';else expenses.forEach(x=>$("expenses-list").append(row(x.description,`${x.date} · ${x.category} · my share ${amount(x.myShare)}`,`${x.currency} ${Number(x.amount||0).toFixed(2)}`)));
+    $("safety-list").replaceChildren();const contacts=pack.emergencyContacts||[],documents=pack.documents||[];if(!contacts.length&&!documents.length)$("safety-list").innerHTML='<div class="empty">No safety contacts or accessible documents saved.</div>';contacts.forEach(x=>$("safety-list").append(row(`${x.label} · ${x.contactName}`,x.notes||"Emergency contact",x.phone)));documents.forEach(x=>$("safety-list").append(row(x.title,`${x.documentType}${x.expiryDate?` · expires ${x.expiryDate}`:""}`,x.offlineAvailable?"Saved":"Reconnect to open")));
+  }
+  $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>{selectedId=event.target.value;renderPack()});renderPack();
+
+  $("share-everyone").addEventListener("click",()=>{selectedMembers=(pack?.members||[]).map(member=>member.id);renderSharing()});
+  $("share-me").addEventListener("click",()=>{const mine=(pack?.members||[]).find(member=>member.id===pack.currentUserId)?.id||(pack?.members||[])[0]?.id;selectedMembers=mine?[mine]:[];renderSharing()});
+
+  $("quick-form").addEventListener("submit",event=>{event.preventDefault();if(!pack)return;const description=$("description").value.trim();const amount=Number($("amount").value);const members=selectedMembers.filter(id=>(pack.members||[]).some(member=>member.id===id));const currency=$("currency").value;if(!description||!Number.isFinite(amount)||amount<=0){$("status").textContent="Enter a valid description and amount.";return}if(!members.length){$("status").textContent="Choose at least one traveler to share this expense.";return}if(queue.length>=60){$("status").textContent="This device already has 60 unsynced changes. Reconnect and sync them before adding more so no offline data is lost.";return}const rate=currency===String(pack.trip.baseCurrency).toUpperCase()?1:Number(pack.trip.defaultExchangeRate)||1;const id=createId();queue.push({id,url:"/api/expenses",method:"POST",label:`${pack.trip.name} · ${currency} · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:currency,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:`Saved offline for ${pack.trip.name}`,allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});localStorage.setItem(QUEUE_KEY,JSON.stringify(queue));queueLabel();$("description").value="";$("amount").value="";$("status").textContent=`Expense saved for ${pack.trip.name} in ${currency}. It will sync automatically after reconnection.`});
+
+  function updateStatus(){if(navigator.onLine){$("status").textContent="Connection restored. Returning to Miles & Meals…";$("status").classList.add("online");location.href="/dashboard";return}$("status").textContent="Still offline. Saved trip essentials remain available here.";$("status").classList.remove("online")}
+  $("retry").addEventListener("click",()=>{location.href="/dashboard"});window.addEventListener("online",updateStatus);window.addEventListener("offline",updateStatus);
+})();
+</script>
+</body>
+</html>
