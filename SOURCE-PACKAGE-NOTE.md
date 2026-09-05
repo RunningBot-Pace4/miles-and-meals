@@ -1,6 +1,6 @@
 # Miles & Meals V92.25 — Receipt PWA and Route Recovery Package
 
-This is the complete source package, versioned `1.92.25`. It preserves all earlier V92 repairs, the rotating Next.js Halo boundary, per-person payment ledger, contextual Home header and faster client navigation. Receipt-item assignment is removed from new scans, the Add Expense canvas is contained to the phone, mobile navigation is pinned above receipt content, and interrupted cross-deployment routes recover once without adding a normal-navigation fallback.
+This is the complete source package, versioned `1.92.26`. It preserves all earlier V92 repairs, the rotating Next.js Halo boundary, per-person payment ledger, contextual Home header and faster client navigation. Receipt-item assignment is removed from new scans, the Add Expense canvas is contained to the phone, mobile navigation is pinned above receipt content, and normal Vercel source deployments use platform-managed skew protection without a competing custom deployment identity or automatic second request.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 

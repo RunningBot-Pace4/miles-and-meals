@@ -36,39 +36,9 @@ const securityHeaders = [
   },
 ];
 
-export function resolveDeploymentId(
-  env: Record<string, string | undefined> = process.env,
-) {
-  const explicitDeploymentId = env.NEXT_DEPLOYMENT_ID;
-
-  if (explicitDeploymentId) {
-    if (!/^[A-Za-z0-9_-]{1,32}$/.test(explicitDeploymentId)) {
-      throw new Error(
-        "NEXT_DEPLOYMENT_ID must contain only letters, numbers, hyphens or underscores and be 32 characters or fewer.",
-      );
-    }
-
-    return explicitDeploymentId;
-  }
-
-  const vercelDeploymentId = env.VERCEL_DEPLOYMENT_ID?.replace(/^dpl_/, "");
-  const deploymentId =
-    vercelDeploymentId ??
-    env.VERCEL_GIT_COMMIT_SHA?.slice(0, 32) ??
-    "miles-meals-v92-25";
-
-  return deploymentId.replace(/[^A-Za-z0-9_-]/g, "-").slice(0, 32);
-}
-
-const configuredDeploymentId = resolveDeploymentId();
-
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  // Tag React Server Component requests with the deployment that rendered
-  // the current shell. This prevents an installed PWA from silently mixing
-  // route payloads across Vercel deployments during an update handoff.
-  deploymentId: configuredDeploymentId,
   async headers() {
     return [
       {

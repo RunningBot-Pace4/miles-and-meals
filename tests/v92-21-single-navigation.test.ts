@@ -13,17 +13,17 @@ describe("V92.21 single navigation and restored Halo", () => {
   const globalError = read("src/app/global-error.tsx");
 
   it("publishes one coherent V92.21 PWA version", () => {
-    expect(packageJson).toContain('"version": "1.92.25"');
+    expect(packageJson).toContain('"version": "1.92.26"');
     expect(packageJson).toContain('"v92-21:check"');
     expect(packageJson).toContain("npm run v92-21:check");
-    expect(worker).toContain("miles-meals-static-v92-25");
+    expect(worker).toContain("miles-meals-static-v92-26");
   });
 
   it("uses one fresh client transition for every shared route link", () => {
     expect(navigation).toContain('from "next/link"');
     expect(navigation).toContain("<NextLink");
     expect(navigation).toContain('data-navigation-mode="client"');
-    expect(navigation).toContain("prefetch = false");
+    expect(navigation).toContain("prefetch = null");
     expect(navigation).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(navigation).not.toContain("window.location.assign(targetUrl.href)");
     expect(navigation).not.toContain('data-navigation-mode="document"');
@@ -49,7 +49,7 @@ describe("V92.21 single navigation and restored Halo", () => {
 
   it("keeps a truthful fallback for genuine non-navigation failures", () => {
     expect(globalError).toContain("This page couldn&apos;t open");
-    expect(globalError).toContain("interrupted request or app update");
+    expect(globalError).toContain("page request stopped unexpectedly");
     expect(globalError).not.toContain("client-side");
     expect(globalError).not.toContain("page transition");
   });

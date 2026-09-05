@@ -14,15 +14,13 @@
 - Horizontal page gestures are disabled for the expense editor while vertical scrolling remains native.
 - The five-item bottom navigation is explicitly fixed, visible and placed above receipt content and iPhone safe areas.
 
-## Navigation recovery
+## Navigation recovery — superseded by V92.26
 
 - Next.js links remain client-side, so the shared app shell is retained.
-- Route prefetch is disabled by default so a tap requests the current deployment instead of reusing a stale prefetched React Server Component payload.
-- Production route requests carry the Next.js deployment identifier.
-- If a route still fails because a request was interrupted during an update, the error boundary claims one automatic document recovery for that exact path.
-- The recovery guard prevents loops and is cleared only after successful hydration. Normal navigation does not perform a second request or delayed fallback.
+- V92.26 restores adaptive prefetching for faster common destinations.
+- Normal Vercel source builds use the platform's own skew protection; the app no longer supplies a competing custom deployment ID.
+- Error boundaries never start an automatic reload, so one tap cannot become a client request followed by a second document request.
 
 ## Deployment
 
 No Neon schema migration is required. Deploy the complete source package, accept the PWA update once while online, then completely close and reopen the installed app.
-

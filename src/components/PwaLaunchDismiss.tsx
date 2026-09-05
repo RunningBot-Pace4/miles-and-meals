@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { clearRouteRecovery } from "@/lib/route-recovery";
 
 const MINIMUM_SPLASH_MS = 240;
 const DISMISS_ANIMATION_MS = 140;
 
 export function PwaLaunchDismiss() {
   useEffect(() => {
-    // Reaching hydration proves that a one-time route recovery succeeded.
-    // Clear its guard so a future, unrelated interrupted update can recover.
-    clearRouteRecovery();
-
     try {
       sessionStorage.setItem(
         "mnm:pwa-launch-seen",

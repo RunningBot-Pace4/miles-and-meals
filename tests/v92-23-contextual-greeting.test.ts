@@ -12,10 +12,10 @@ describe("V92.23 contextual dashboard greeting", () => {
   const cleanup = read("scripts/cleanup-legacy-files.mjs");
 
   it("publishes a coherent V92.23 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.25"');
+    expect(packageJson).toContain('"version": "1.92.26"');
     expect(packageJson).toContain('"v92-23:check"');
     expect(packageJson).toContain("npm run v92-23:check");
-    expect(worker).toContain("miles-meals-static-v92-25");
+    expect(worker).toContain("miles-meals-static-v92-26");
   });
 
   it("cleans a stale root loading boundary from overlay deployments", () => {

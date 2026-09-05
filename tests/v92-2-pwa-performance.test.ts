@@ -18,7 +18,7 @@ describe("V92.2 PWA reliability and performance", () => {
       worker.indexOf('self.addEventListener("activate"'),
     );
     expect(installBlock).not.toContain("self.skipWaiting(");
-    expect(worker).toContain('miles-meals-static-v92-25');
+    expect(worker).toContain('miles-meals-static-v92-26');
     expect(updater).toContain("waitForWaitingWorker");
     expect(updater).toContain("UPDATE_RELOAD_TIMEOUT_MS");
     expect(updater).toContain('"Retry"');
@@ -28,7 +28,7 @@ describe("V92.2 PWA reliability and performance", () => {
     expect(link).toContain('from "next/link"');
     expect(link).toContain("<NextLink");
     expect(link).toContain('data-navigation-mode="client"');
-    expect(link).toContain("prefetch = false");
+    expect(link).toContain("prefetch = null");
     expect(link).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(link).not.toContain("window.location.assign(targetUrl.href)");
     expect(link).not.toContain("createPortal(<BrandedLoadingScreen />");

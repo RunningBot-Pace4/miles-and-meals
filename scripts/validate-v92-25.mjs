@@ -11,16 +11,15 @@ const expenseForm = read("src/components/ExpenseForm.tsx");
 const css = read("src/app/v92-living-journey.css");
 const navigation = read("src/components/FullPageLink.tsx");
 const mobileNav = read("src/components/MobileNav.tsx");
-const recovery = read("src/lib/route-recovery.ts");
 const appError = read("src/app/error.tsx");
 const globalError = read("src/app/global-error.tsx");
 const launchDismiss = read("src/components/PwaLaunchDismiss.tsx");
 const nextConfig = read("next.config.ts");
 
-must(packageJson, '"version": "1.92.25"', "V92.25 package version missing");
+must(packageJson, '"version": "1.92.26"', "V92.25 package version missing");
 must(packageJson, '"v92-25:check"', "V92.25 release gate missing");
 must(packageJson, "npm run v92-25:check", "V92.25 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-25", "V92.25 PWA cache missing");
+must(worker, "miles-meals-static-v92-26", "V92.25 PWA cache missing");
 
 for (const retiredMarker of [
   "Split by receipt items",
@@ -56,33 +55,43 @@ for (const marker of [
 }
 
 for (const marker of [
-  "prefetch = false",
+  "prefetch = null",
   'data-navigation-mode="client"',
-  'data-prefetch-intent={prefetch === false ? "fresh-on-tap" : "adaptive"}',
+  'data-prefetch-intent={prefetch === false ? "off" : "adaptive"}',
 ]) {
-  must(navigation, marker, `Fresh single client navigation missing: ${marker}`);
+  must(navigation, marker, `Single client navigation missing: ${marker}`);
 }
-must(mobileNav, "prefetch={false}", "Mobile navigation can reuse a stale prefetched route");
-must(nextConfig, "deploymentId:", "RSC requests are not tagged with their deployment");
-must(nextConfig, "NEXT_DEPLOYMENT_ID", "Platform deployment identity is not respected");
-must(nextConfig, "VERCEL_GIT_COMMIT_SHA", "Vercel deployment identity is not used");
-must(nextConfig, "miles-meals-v92-25", "Local deployment fallback is missing");
+must(mobileNav, "prefetch", "Mobile navigation does not warm destinations");
 
-for (const marker of [
-  "mnm:route-recovery:v92-25",
-  "shouldAttemptRouteRecovery",
-  'return "manual"',
-  'return "reload"',
+for (const retiredMarker of [
+  "deploymentId:",
+  "NEXT_DEPLOYMENT_ID",
+  "VERCEL_DEPLOYMENT_ID",
+  "VERCEL_GIT_COMMIT_SHA",
 ]) {
-  must(recovery, marker, `Bounded route recovery missing: ${marker}`);
+  if (nextConfig.includes(retiredMarker)) {
+    throw new Error(`Custom deployment skew configuration remains: ${retiredMarker}`);
+  }
 }
-must(appError, "beginRouteRecovery", "App error boundary does not recover an interrupted route");
-must(globalError, "beginRouteRecovery", "Global error boundary does not recover an interrupted route");
-must(globalError, "window.location.replace(window.location.href)", "Global recovery does not fetch the current document once");
-must(launchDismiss, "clearRouteRecovery", "Successful hydration does not clear the route recovery guard");
+
+for (const source of [appError, globalError, launchDismiss]) {
+  for (const retiredMarker of [
+    "beginRouteRecovery",
+    "clearRouteRecovery",
+    "window.location.replace(window.location.href)",
+  ]) {
+    if (source.includes(retiredMarker)) {
+      throw new Error(`Automatic second-load recovery remains: ${retiredMarker}`);
+    }
+  }
+}
+
+if (existsSync("src/lib/route-recovery.ts")) {
+  throw new Error("Retired automatic route-recovery module remains");
+}
 
 if (existsSync("src/app/loading.tsx")) {
   throw new Error("Duplicate root loading boundary returned");
 }
 
-console.log("V92.25 receipt scan, mobile navigation, viewport containment and bounded PWA recovery gate passed.");
+console.log("V92.25 receipt scan, mobile navigation, viewport containment and single-request navigation gate passed.");

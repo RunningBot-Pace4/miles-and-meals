@@ -118,7 +118,7 @@ export function MobileNav() {
               .filter(Boolean)
               .join(" ")}
             href={link.href}
-            prefetch={false}
+            prefetch
             key={link.href}
             aria-current={active ? "page" : undefined}
           >

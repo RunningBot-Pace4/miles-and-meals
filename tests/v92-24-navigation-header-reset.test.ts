@@ -14,17 +14,17 @@ describe("V92.24 fast navigation, Home header and Neon reset", () => {
   const schema = read("src/db/schema.ts");
 
   it("publishes one coherent V92.24 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.25"');
+    expect(packageJson).toContain('"version": "1.92.26"');
     expect(packageJson).toContain('"v92-24:check"');
     expect(packageJson).toContain("npm run v92-24:check");
-    expect(worker).toContain("miles-meals-static-v92-25");
+    expect(worker).toContain("miles-meals-static-v92-26");
   });
 
   it("keeps the app shell mounted during prefetched page transitions", () => {
     expect(navigation).toContain('from "next/link"');
     expect(navigation).toContain("<NextLink");
     expect(navigation).toContain('data-navigation-mode="client"');
-    expect(navigation).toContain("prefetch = false");
+    expect(navigation).toContain("prefetch = null");
     expect(navigation).not.toContain('data-navigation-mode="document"');
     expect(navigation).not.toContain("createPortal(<BrandedLoadingScreen />");
     expect(navigation).not.toContain("NAVIGATION_INDICATOR_TIMEOUT_MS");

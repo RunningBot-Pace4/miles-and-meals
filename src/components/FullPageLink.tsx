@@ -18,7 +18,7 @@ type FullPageLinkProps = Omit<
 export function FullPageLink({
   href,
   children,
-  prefetch = false,
+  prefetch = null,
   ...props
 }: FullPageLinkProps) {
   return (
@@ -28,7 +28,7 @@ export function FullPageLink({
       prefetch={prefetch}
       data-full-page-link="true"
       data-navigation-mode="client"
-      data-prefetch-intent={prefetch === false ? "fresh-on-tap" : "adaptive"}
+      data-prefetch-intent={prefetch === false ? "off" : "adaptive"}
     >
       {children}
     </NextLink>

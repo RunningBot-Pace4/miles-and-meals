@@ -1,6 +1,6 @@
 # V92.25 — Receipt PWA and route recovery
 
-Version `1.92.25` removes receipt-item assignment from the scan flow, contains the Add Expense canvas at phone width, and keeps the five-item mobile navigation fixed above receipt content. Client navigation remains fast, but routes are fetched fresh on tap and deployment-tagged so an installed PWA does not mix React Server Component payloads across releases. A bounded recovery performs one document refresh only after a real route failure; normal navigation never starts a second load. See `V92-25-RECEIPT-PWA-RECOVERY.md` for release details.
+Version `1.92.26` preserves the receipt and mobile PWA repairs, removes the custom deployment identity that conflicted with normal Vercel source builds, restores adaptive route prefetching, and prevents error boundaries from launching a second automatic page request. The rotating Halo remains. See `V92-26-VERCEL-NAVIGATION-RECOVERY.md` for release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 

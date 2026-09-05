@@ -1,12 +1,12 @@
-# Miles & Meals V92.25.1 · Vercel build hotfix
+# Miles & Meals V92.26 · Vercel-managed navigation recovery
 
-V92.25.1 preserves the complete V92.25 receipt PWA and route-recovery release.
-It corrects the deployment identifier rejected by Vercel: standard deployments
-now use Vercel's unique per-deployment value, while the Git SHA fallback is
-capped at 32 characters. Reviewed install-script versions are also pinned in
-`allowScripts`. No Neon migration or PWA cache change is required.
+V92.26 preserves the complete V92.25 receipt and PWA layout release. It removes
+the custom deployment identity that conflicted with normal Vercel source builds,
+returns page transitions to Vercel-managed skew protection, restores safe route
+prefetching, and prevents an error boundary from starting a second page load.
+The rotating Halo remains. No Neon migration is required.
 
-Version `1.92.25` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Navigation stays client-side and single-request during normal use, while stale cross-deployment route payloads are prevented and a true route failure receives one bounded automatic recovery.
+Version `1.92.26` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Navigation stays client-side and single-request during normal use, with Vercel managing deployment skew and error screens never launching a second automatic request.
 
 ## What changed
 
@@ -131,7 +131,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-25` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-26` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -153,7 +153,7 @@ npm run v92-22:check
 npm run v92-23:check
 npm run v92-24:check
 npm run v92-25:check
-npm run v92-25-1:check
+npm run v92-26:check
 npm test
 npm run build
 ```

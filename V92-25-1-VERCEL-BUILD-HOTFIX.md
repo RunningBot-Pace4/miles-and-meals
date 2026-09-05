@@ -1,4 +1,7 @@
-# V92.25.1 — Vercel build hotfix
+# V92.25.1 — Vercel build hotfix (superseded by V92.26)
+
+V92.26 removes the custom deployment identity entirely for normal Vercel
+source builds. Use the V92.26 package instead of this interim approach.
 
 This source package preserves the complete V92.25 receipt, mobile-navigation,
 viewport-containment and PWA recovery release.
