@@ -51,8 +51,7 @@ export function FullPageLink({
 
     if (
       event.defaultPrevented ||
-      !isPrimaryNavigation(event) ||
-      !isInstalledPwa()
+      !isPrimaryNavigation(event)
     ) {
       return;
     }
@@ -67,9 +66,8 @@ export function FullPageLink({
       return;
     }
 
-    // Installed PWAs use one immediate document request. Preventing the
-    // Next.js click first guarantees that an RSC request and a document
-    // request can never compete or create the global route-error screen.
+    // A single document request avoids the interrupted RSC transition
+    // that can otherwise send valid destinations to the global error boundary.
     event.preventDefault();
     window.location.href = targetUrl.href;
   }
