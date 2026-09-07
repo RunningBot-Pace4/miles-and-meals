@@ -6,7 +6,7 @@ returns page transitions to Vercel-managed skew protection, restores safe route
 prefetching, and prevents an error boundary from starting a second page load.
 The rotating Halo remains. No Neon migration is required.
 
-Version `1.92.26` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Navigation stays client-side and single-request during normal use, with Vercel managing deployment skew and error screens never launching a second automatic request.
+Version `1.92.27` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Normal web navigation stays fast and client-side. Installed PWAs use one immediate document request per tap so an interrupted RSC transition cannot open the global error boundary, and no delayed fallback can start a second request.
 
 ## What changed
 
@@ -131,7 +131,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-26` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-27` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally

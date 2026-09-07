@@ -16,10 +16,10 @@ const globalError = read("src/app/global-error.tsx");
 const launchDismiss = read("src/components/PwaLaunchDismiss.tsx");
 const nextConfig = read("next.config.ts");
 
-must(packageJson, '"version": "1.92.26"', "V92.25 package version missing");
+must(packageJson, '"version": "1.92.27"', "V92.25 package version missing");
 must(packageJson, '"v92-25:check"', "V92.25 release gate missing");
 must(packageJson, "npm run v92-25:check", "V92.25 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-26", "V92.25 PWA cache missing");
+must(worker, "miles-meals-static-v92-27", "V92.25 PWA cache missing");
 
 for (const retiredMarker of [
   "Split by receipt items",

@@ -35,6 +35,21 @@ const obsoletePaths = [
   "src/lib/src",
   "src/lib/tests",
   "src/lib/scripts",
+  "src/lib/public",
+  "src/lib/e2e",
+  "src/lib/.next",
+  "src/lib/node_modules",
+  "src/lib/package.json",
+  "src/lib/package-lock.json",
+  "src/lib/next.config.ts",
+  "src/lib/next-env.d.ts",
+  "src/lib/tsconfig.json",
+  "src/lib/drizzle.config.ts",
+  "src/lib/playwright.config.ts",
+  "src/lib/vitest.config.ts",
+  "src/lib/eng.traineddata",
+  "src/lib/vie.traineddata",
+  "src/lib/design-preview.html",
 
   // v82 retired Trip Inbox, booking/reservation import and live flight lookup.
   // Full-source ZIPs are sometimes extracted over an older checkout, which

@@ -14,9 +14,9 @@ describe("V92.26 Vercel-managed navigation", () => {
   const legacyCleanup = read("scripts/cleanup-legacy-files.mjs");
 
   it("publishes a coherent V92.26 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.26"');
+    expect(packageJson).toContain('"version": "1.92.27"');
     expect(packageJson).toContain('"v92-26:check"');
-    expect(worker).toContain("miles-meals-static-v92-26");
+    expect(worker).toContain("miles-meals-static-v92-27");
   });
 
   it("does not override Vercel's source-build skew protection", () => {
@@ -26,11 +26,13 @@ describe("V92.26 Vercel-managed navigation", () => {
     expect(nextConfig).not.toContain("VERCEL_GIT_COMMIT_SHA");
   });
 
-  it("uses one prefetched Next.js request per normal page tap", () => {
+  it("uses one prefetched Next.js request per normal web page tap", () => {
     expect(navigation).toContain("prefetch = null");
     expect(navigation).toContain('data-navigation-mode="client"');
     expect(navigation).toContain("adaptive");
-    expect(navigation).not.toContain("window.location");
+    expect(navigation).toContain('data-pwa-navigation-mode="document"');
+    expect(navigation).not.toContain("window.location.replace");
+    expect(navigation).not.toContain("setTimeout");
     expect(mobileNav).toContain("prefetch");
   });
 
@@ -50,6 +52,10 @@ describe("V92.26 Vercel-managed navigation", () => {
     expect(legacyCleanup).toContain('"src/lib/src"');
     expect(legacyCleanup).toContain('"src/lib/tests"');
     expect(legacyCleanup).toContain('"src/lib/scripts"');
+    expect(legacyCleanup).toContain('"src/lib/public"');
+    expect(legacyCleanup).toContain('"src/lib/e2e"');
+    expect(legacyCleanup).toContain('"src/lib/package.json"');
+    expect(legacyCleanup).toContain('"src/lib/next.config.ts"');
   });
 
   it("keeps the rotating Halo and one authenticated loading boundary", () => {

@@ -13,10 +13,10 @@ const appError = read("src/app/error.tsx");
 const globalError = read("src/app/global-error.tsx");
 const worker = read("public/sw.js");
 
-must(packageJson, '"version": "1.92.26"', "V92.26 package version missing");
+must(packageJson, '"version": "1.92.27"', "V92.26 package version missing");
 must(packageJson, '"v92-26:check"', "V92.26 release gate missing");
 must(packageJson, "npm run v92-26:check", "V92.26 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-26", "V92.26 PWA cache missing");
+must(worker, "miles-meals-static-v92-27", "V92.26 PWA cache missing");
 must(navigation, "prefetch = null", "Adaptive link prefetch default missing");
 must(navigation, 'data-navigation-mode="client"', "Client navigation mode missing");
 must(mobileNav, "prefetch", "Main mobile destinations are not warmed");

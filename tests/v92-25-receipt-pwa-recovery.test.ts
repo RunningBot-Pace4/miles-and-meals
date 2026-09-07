@@ -16,9 +16,9 @@ describe("V92.25 receipt scan and PWA recovery", () => {
   const nextConfig = read("next.config.ts");
 
   it("publishes one coherent V92.25 PWA release", () => {
-    expect(packageJson).toContain('"version": "1.92.26"');
+    expect(packageJson).toContain('"version": "1.92.27"');
     expect(packageJson).toContain('"v92-25:check"');
-    expect(worker).toContain("miles-meals-static-v92-26");
+    expect(worker).toContain("miles-meals-static-v92-27");
   });
 
   it("removes receipt-item splitting without deleting untouched historical itemization", () => {
