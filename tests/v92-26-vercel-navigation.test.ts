@@ -43,6 +43,13 @@ describe("V92.26 Vercel-managed navigation", () => {
 
     expect(existsSync("src/lib/route-recovery.ts")).toBe(false);
     expect(legacyCleanup).toContain('"src/lib/route-recovery.ts"');
+    expect(legacyCleanup).toContain(
+      '"tests/v92-25-1-deployment-id.test.ts"',
+    );
+    expect(legacyCleanup).toContain('"scripts/validate-v92-25-1.mjs"');
+    expect(legacyCleanup).toContain('"src/lib/src"');
+    expect(legacyCleanup).toContain('"src/lib/tests"');
+    expect(legacyCleanup).toContain('"src/lib/scripts"');
   });
 
   it("keeps the rotating Halo and one authenticated loading boundary", () => {

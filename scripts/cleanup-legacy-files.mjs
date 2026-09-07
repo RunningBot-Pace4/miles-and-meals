@@ -25,6 +25,16 @@ const obsoletePaths = [
   // extracted over V92.25 cannot delete the old module, so remove a stale
   // copy before the V92.25 and V92.26 release gates inspect the tree.
   "src/lib/route-recovery.ts",
+  "tests/v92-25-1-deployment-id.test.ts",
+  "scripts/validate-v92-25-1.mjs",
+
+  // A repository/archive uploaded while the destination was src/lib can
+  // create a second project tree below the real library directory. These
+  // paths are never part of the application and make navigation and
+  // TypeScript validators scan duplicate source and test files.
+  "src/lib/src",
+  "src/lib/tests",
+  "src/lib/scripts",
 
   // v82 retired Trip Inbox, booking/reservation import and live flight lookup.
   // Full-source ZIPs are sometimes extracted over an older checkout, which
