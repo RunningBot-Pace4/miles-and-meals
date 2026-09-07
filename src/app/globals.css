@@ -19527,3 +19527,213 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+
+/* v92.27 performance hotfix: native-feeling client navigation. */
+.app-navigation-progress {
+  position: fixed;
+  z-index: 2147483600;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.app-navigation-progress > span {
+  width: 42%;
+  height: 100%;
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--journey-blue), var(--journey-violet));
+  transform: translateX(-120%);
+}
+
+html[data-app-navigating="true"] .app-navigation-progress {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+html[data-app-navigating="true"] .app-navigation-progress > span {
+  animation: app-navigation-progress 900ms ease-in-out infinite;
+}
+
+.mobile-nav .nav-item.pending {
+  transform: translateY(-1px);
+}
+
+.mobile-nav .nav-item.pending .nav-icon {
+  transform: scale(1.06);
+}
+
+.mobile-nav .nav-item.pending::after {
+  animation: app-navigation-pulse 760ms ease-in-out infinite alternate;
+}
+
+.route-loading-state {
+  min-height: min(68svh, 760px);
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  padding-top: 0.15rem;
+}
+
+.route-loading-hero,
+.route-loading-panel,
+.route-loading-grid > span {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(211 224 232 / 78%);
+  background: rgb(255 255 255 / 82%);
+  box-shadow: var(--shadow-soft);
+}
+
+.route-loading-hero {
+  min-height: clamp(150px, 28vw, 230px);
+  display: grid;
+  align-content: center;
+  gap: 0.75rem;
+  padding: clamp(1.15rem, 4vw, 2rem);
+  border-radius: 30px;
+}
+
+.route-loading-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.route-loading-grid > span {
+  min-height: 112px;
+  border-radius: 22px;
+}
+
+.route-loading-panel {
+  min-height: 170px;
+  display: grid;
+  align-content: center;
+  gap: 0.7rem;
+  padding: 1.15rem;
+  border-radius: 26px;
+}
+
+.route-loading-line {
+  width: 72%;
+  height: 12px;
+  display: block;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(219 229 235 / 76%);
+}
+
+.route-loading-line-short {
+  width: 24%;
+  height: 9px;
+}
+
+.route-loading-line-title {
+  width: 58%;
+  height: 27px;
+}
+
+.route-loading-line-medium {
+  width: 44%;
+}
+
+.route-loading-line-long {
+  width: 86%;
+}
+
+.route-loading-hero::after,
+.route-loading-panel::after,
+.route-loading-grid > span::after,
+.route-loading-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgb(255 255 255 / 70%) 45%,
+    transparent 70%
+  );
+  transform: translateX(-110%);
+  animation: route-loading-shimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes app-navigation-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  70% {
+    transform: translateX(185%);
+  }
+
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@keyframes app-navigation-pulse {
+  from {
+    opacity: 0.52;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes route-loading-shimmer {
+  to {
+    transform: translateX(110%);
+  }
+}
+
+@media (max-width: 640px) {
+  .route-loading-state {
+    gap: 0.75rem;
+  }
+
+  .route-loading-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .route-loading-grid > span {
+    min-height: 92px;
+    border-radius: 18px;
+  }
+
+  .route-loading-hero {
+    min-height: 160px;
+    border-radius: 26px;
+  }
+
+  .route-loading-panel {
+    min-height: 150px;
+    border-radius: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-navigation-progress,
+  .mobile-nav .nav-item.pending,
+  .mobile-nav .nav-item.pending .nav-icon {
+    transition: none;
+  }
+
+  html[data-app-navigating="true"] .app-navigation-progress > span,
+  .mobile-nav .nav-item.pending::after,
+  .route-loading-hero::after,
+  .route-loading-panel::after,
+  .route-loading-grid > span::after,
+  .route-loading-line::after {
+    animation: none;
+  }
+}

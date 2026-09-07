@@ -19,7 +19,10 @@ import { serializeSettlementLiveData } from "@/lib/settlement-live";
 import {
   loadTripBudgetSummary,
 } from "@/lib/trip-budget";
-import { loadTripCommandCenter } from "@/lib/trip-command-center";
+import {
+  buildTripCommandCenter,
+  loadTripCommandCenterSnapshot,
+} from "@/lib/trip-command-center";
 import { buildJourneyGreeting } from "@/lib/journey-greeting";
 
 function formatTripDateRange(
@@ -144,6 +147,16 @@ export default async function DashboardPage({
     selectedCountries.map(
       (country) => country.id,
     );
+  const commandCenterSnapshotPromise = selectedTrip
+    ? loadTripCommandCenterSnapshot({
+        tripId: selectedTrip.id,
+        countryIds,
+        userId: session.user.id,
+        startDate: selectedTrip.startDate,
+        endDate: selectedTrip.endDate,
+        financialStatus: selectedTrip.financialStatus,
+      })
+    : Promise.resolve(null);
 
   const emptyBudget = {
     myBudget: 0,
@@ -183,6 +196,7 @@ export default async function DashboardPage({
     allTripsData,
     unreadNotificationCount,
     recentActivity,
+    commandCenterSnapshot,
   ] = await Promise.all([
     selectedDataPromise,
     allTripsDataPromise,
@@ -195,6 +209,7 @@ export default async function DashboardPage({
       viewAll ? "" : requestedTripId,
       viewAll ? [] : countryIds,
     ),
+    commandCenterSnapshotPromise,
   ]);
   const { summary, budget } = selectedData;
 
@@ -311,14 +326,8 @@ export default async function DashboardPage({
         budget.travelerCount,
     };
 
-  const commandCenter = selectedTrip
-    ? await loadTripCommandCenter({
-        tripId: selectedTrip.id,
-        countryIds,
-        userId: session.user.id,
-        startDate: selectedTrip.startDate,
-        endDate: selectedTrip.endDate,
-        financialStatus: selectedTrip.financialStatus,
+  const commandCenter = commandCenterSnapshot
+    ? buildTripCommandCenter(commandCenterSnapshot, {
         myBudget: budget.myBudget,
         myShareSpent: individualMyShareSpent,
       })

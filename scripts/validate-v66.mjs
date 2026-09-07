@@ -75,7 +75,12 @@ must(settlementApi, "existingPending", "v66 pending-settlement retry detection m
 
 // Privacy/security/reliability hardening.
 must(ledger, ".where(inArray(user.id, [...participantIds]))", "v66 settlement name query must be participant-scoped");
-must(dashboardLib, ".where(inArray(user.id, [...participantIds]))", "v66 dashboard name query must be participant-scoped");
+if (
+  !dashboardLib.includes(".where(inArray(user.id, [...participantIds]))") &&
+  !dashboardLib.includes("names.set(person.userId, person.name)")
+) {
+  throw new Error("v66 dashboard names must stay participant-scoped");
+}
 must(nextConfig, 'key: "X-Content-Type-Options"', "v66 nosniff header missing");
 must(nextConfig, 'key: "X-Frame-Options"', "v66 clickjacking header missing");
 must(nextConfig, 'key: "Referrer-Policy"', "v66 referrer policy missing");

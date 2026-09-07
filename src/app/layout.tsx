@@ -4,6 +4,7 @@ import "@/app/living-journey.css";
 import "@/app/v92-living-journey.css";
 import { ClientErrorReporter } from "@/components/ClientErrorReporter";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
+import { NavigationExperience } from "@/components/NavigationExperience";
 import { NumericInputGuard } from "@/components/NumericInputGuard";
 import { OfflineNavigationGuard } from "@/components/OfflineNavigationGuard";
 import { OnlineActionGuard } from "@/components/OnlineActionGuard";
@@ -136,6 +137,7 @@ export default function RootLayout({
 
         {children}
 
+        <NavigationExperience />
         <NetworkStatusBanner />
         <NumericInputGuard />
         <PullToRefresh />

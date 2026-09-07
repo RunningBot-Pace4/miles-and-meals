@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { recoverInterruptedNavigation } from "@/lib/navigation-intent";
 
 export default function AppError({
   error,
@@ -11,6 +12,7 @@ export default function AppError({
 }) {
   useEffect(() => {
     console.error("[Miles & Meals] Page boundary error", error);
+    recoverInterruptedNavigation();
   }, [error]);
 
   function goBack() {

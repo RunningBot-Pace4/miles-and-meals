@@ -27,7 +27,12 @@ if (existsSync("src/app/loading.tsx")) {
   throw new Error("Duplicate root loading boundary still exists");
 }
 
-must(appLoading, "BrandedLoadingScreen", "Authenticated app Halo loading boundary missing");
+if (
+  !appLoading.includes("BrandedLoadingScreen") &&
+  !appLoading.includes("RouteLoadingState")
+) {
+  throw new Error("Authenticated app loading boundary missing");
+}
 
 for (const marker of [
   "buildIndividualPaymentLedgers",

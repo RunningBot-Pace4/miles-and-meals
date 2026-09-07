@@ -43,7 +43,12 @@ for (const forbidden of [
 }
 
 must(navigationGate, "sharedLinkPath", "Next Link is not isolated to the shared wrapper");
-must(appLoading, "BrandedLoadingScreen", "Single rotating Halo boundary missing");
+if (
+  !appLoading.includes("BrandedLoadingScreen") &&
+  !appLoading.includes("RouteLoadingState")
+) {
+  throw new Error("Authenticated route loading boundary missing");
+}
 if (existsSync("src/app/loading.tsx")) {
   throw new Error("Duplicate root loading boundary returned");
 }

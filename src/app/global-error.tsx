@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { recoverInterruptedNavigation } from "@/lib/navigation-intent";
 
 export default function GlobalError({
   error,
@@ -11,6 +12,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     console.error("[Miles & Meals] Global boundary error", error);
+    recoverInterruptedNavigation();
   }, [error]);
 
   function reload() {

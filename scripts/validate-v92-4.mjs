@@ -28,8 +28,21 @@ for (const marker of [
   'aria-current={active ? "page" : undefined}',
 ]) must(nav, marker, `Fast bottom-navigation marker missing: ${marker}`);
 
-if (nav.includes("pendingHref") || nav.includes("navigation-pending")) {
+if (nav.includes("pendingHref")) {
   throw new Error("Bottom navigation retains obsolete pending state after client transitions");
+}
+
+if (nav.includes("pendingPathname")) {
+  must(
+    nav,
+    "NAVIGATION_COMPLETE_EVENT",
+    "Optimistic bottom-navigation state is not tied to route completion",
+  );
+  must(
+    nav,
+    "setPendingPathname(null)",
+    "Optimistic bottom-navigation state is not cleared after navigation",
+  );
 }
 
 for (const marker of [

@@ -6,6 +6,7 @@ import type {
   MouseEvent,
   ReactNode,
 } from "react";
+import { beginNavigationIntent } from "@/lib/navigation-intent";
 
 type FullPageLinkProps = Omit<
   ComponentProps<typeof NextLink>,
@@ -15,17 +16,6 @@ type FullPageLinkProps = Omit<
   children: ReactNode;
   prefetch?: boolean | null;
 };
-
-type StandaloneNavigator = Navigator & {
-  standalone?: boolean;
-};
-
-function isInstalledPwa() {
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    Boolean((navigator as StandaloneNavigator).standalone)
-  );
-}
 
 function isPrimaryNavigation(event: MouseEvent<HTMLAnchorElement>) {
   return (
@@ -49,10 +39,7 @@ export function FullPageLink({
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.(event);
 
-    if (
-      event.defaultPrevented ||
-      !isPrimaryNavigation(event)
-    ) {
+    if (event.defaultPrevented || !isPrimaryNavigation(event)) {
       return;
     }
 
@@ -60,16 +47,13 @@ export function FullPageLink({
     const targetUrl = new URL(href, sourceUrl);
 
     if (
-      targetUrl.href === sourceUrl ||
-      targetUrl.origin !== window.location.origin
+      targetUrl.origin !== window.location.origin ||
+      targetUrl.href === sourceUrl
     ) {
       return;
     }
 
-    // A single document request avoids the interrupted RSC transition
-    // that can otherwise send valid destinations to the global error boundary.
-    event.preventDefault();
-    window.location.href = targetUrl.href;
+    beginNavigationIntent(targetUrl.href);
   }
 
   return (
@@ -80,7 +64,7 @@ export function FullPageLink({
       onClick={handleClick}
       data-full-page-link="true"
       data-navigation-mode="client"
-      data-pwa-navigation-mode="document"
+      data-navigation-recovery="document-on-interrupted-transition"
       data-prefetch-intent={prefetch === false ? "off" : "adaptive"}
     >
       {children}
