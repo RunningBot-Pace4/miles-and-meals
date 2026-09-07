@@ -1,9 +1,14 @@
 import { inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { expenses } from "@/db/schema";
-import { effectiveConvertedAmount } from "@/lib/money";
 import {
-  buildCountrySettlementLedgers,
+  expenseSplits,
+  expensePayers,
+  expenses,
+  user,
+} from "@/db/schema";
+import { effectiveConvertedAmount, toNumber } from "@/lib/money";
+import {
+  buildCountrySettlementLedger,
   type CountrySettlementTransfer,
   type SettlementRecordView,
   type SmartSettlementPlan,
@@ -41,20 +46,21 @@ export async function buildExpenseSummary(countryIds: string[]) {
     };
   }
 
-  const [rows, ledgers] = await Promise.all([
-    db
-      .select({
-        id: expenses.id,
-        category: expenses.category,
-        convertedAmount: expenses.convertedAmount,
-        actualConvertedAmount: expenses.actualConvertedAmount,
-      })
-      .from(expenses)
-      .where(inArray(expenses.countryId, countryIds)),
-    buildCountrySettlementLedgers(countryIds),
-  ]);
+  const rows = await db
+    .select({
+      id: expenses.id,
+      category: expenses.category,
+      paidByUserId: expenses.paidByUserId,
+      convertedAmount: expenses.convertedAmount,
+      actualConvertedAmount: expenses.actualConvertedAmount,
+    })
+    .from(expenses)
+    .where(inArray(expenses.countryId, countryIds));
+
+  const expenseIds = rows.map((row) => row.id);
 
   const categories = new Map<string, number>();
+  const paid = new Map<string, number>();
 
   for (const row of rows) {
     const amount = effectiveConvertedAmount(
@@ -68,64 +74,83 @@ export async function buildExpenseSummary(countryIds: string[]) {
     );
   }
 
-  const paid = new Map<string, number>();
-  const owed = new Map<string, number>();
-  const names = new Map<string, string>();
+  const [splits, payerRows] =
+    expenseIds.length === 0
+      ? [[], []] as const
+      : await Promise.all([
+          db
+            .select({
+              userId: expenseSplits.userId,
+              shareAmountBase: expenseSplits.shareAmountBase,
+            })
+            .from(expenseSplits)
+            .where(inArray(expenseSplits.expenseId, expenseIds)),
+          db
+            .select({
+              expenseId: expensePayers.expenseId,
+              userId: expensePayers.userId,
+              amountBase: expensePayers.amountBase,
+            })
+            .from(expensePayers)
+            .where(inArray(expensePayers.expenseId, expenseIds)),
+        ]);
 
-  for (const ledger of ledgers) {
-    for (const person of ledger.people) {
-      paid.set(
-        person.userId,
-        (paid.get(person.userId) ?? 0) + person.paid,
-      );
-      owed.set(
-        person.userId,
-        (owed.get(person.userId) ?? 0) + person.share,
-      );
-      names.set(person.userId, person.name);
-    }
+  const expensesWithPayerRows = new Set(payerRows.map((row) => row.expenseId));
+  for (const payer of payerRows) {
+    paid.set(
+      payer.userId,
+      (paid.get(payer.userId) ?? 0) + toNumber(payer.amountBase),
+    );
   }
+
+  for (const row of rows) {
+    if (expensesWithPayerRows.has(row.id)) continue;
+    const amount = effectiveConvertedAmount(row.convertedAmount, row.actualConvertedAmount);
+    paid.set(row.paidByUserId, (paid.get(row.paidByUserId) ?? 0) + amount);
+  }
+
+  const owed = new Map<string, number>();
+
+  for (const split of splits) {
+    owed.set(
+      split.userId,
+      (owed.get(split.userId) ?? 0) + toNumber(split.shareAmountBase),
+    );
+  }
+
+  const ledgers = (
+    await Promise.all(countryIds.map((countryId) => buildCountrySettlementLedger(countryId)))
+  ).filter((ledger) => ledger !== null);
 
   const waitingTransfers = ledgers.flatMap(
     (ledger) => ledger.waitingTransfers,
   );
   const pendingSettlements = ledgers
     .flatMap((ledger) => ledger.pendingSettlements)
-    .sort((left, right) => right.sentAt.getTime() - left.sentAt.getTime());
+    .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime());
   const settledSettlements = ledgers
     .flatMap((ledger) => ledger.settledSettlements)
-    .sort((left, right) => right.sentAt.getTime() - left.sentAt.getTime());
+    .sort((a, b) => b.sentAt.getTime() - a.sentAt.getTime());
   const smartPlans = ledgers.map((ledger) => ledger.smartPlan);
 
   const participantIds = new Set<string>([
     ...paid.keys(),
     ...owed.keys(),
-    ...waitingTransfers.flatMap((row) => [
-      row.fromUserId,
-      row.toUserId,
-    ]),
-    ...pendingSettlements.flatMap((row) => [
-      row.fromUserId,
-      row.toUserId,
-    ]),
-    ...settledSettlements.flatMap((row) => [
-      row.fromUserId,
-      row.toUserId,
-    ]),
+    ...waitingTransfers.flatMap((row) => [row.fromUserId, row.toUserId]),
+    ...pendingSettlements.flatMap((row) => [row.fromUserId, row.toUserId]),
+    ...settledSettlements.flatMap((row) => [row.fromUserId, row.toUserId]),
   ]);
 
-  for (const transfer of waitingTransfers) {
-    names.set(transfer.fromUserId, transfer.fromName);
-    names.set(transfer.toUserId, transfer.toName);
-  }
-
-  for (const settlement of [
-    ...pendingSettlements,
-    ...settledSettlements,
-  ]) {
-    names.set(settlement.fromUserId, settlement.fromName);
-    names.set(settlement.toUserId, settlement.toName);
-  }
+  const userRows =
+    participantIds.size === 0
+      ? []
+      : await db
+          .select({ id: user.id, name: user.name })
+          .from(user)
+          .where(inArray(user.id, [...participantIds]));
+  const names = new Map<string, string>(
+    userRows.map((row) => [row.id, row.name]),
+  );
 
   const people = [...participantIds]
     .map((userId): PersonExpenseSummary => {
@@ -151,7 +176,8 @@ export async function buildExpenseSummary(countryIds: string[]) {
         .filter((row) => row.toUserId === userId)
         .reduce((sum, row) => sum + row.amount, 0);
 
-      const totalSettlementPaid = settledPaid + paymentSent;
+      const totalSettlementPaid =
+        settledPaid + paymentSent;
       const totalSettlementReceived =
         settledReceived + awaitingConfirmation;
       const confirmedBalance =
@@ -172,7 +198,9 @@ export async function buildExpenseSummary(countryIds: string[]) {
         share: shareAmount,
         balanceBeforeSettlement: paidAmount - shareAmount,
         toPay,
-        toReceive: waitingToReceive + awaitingConfirmation,
+        toReceive:
+          waitingToReceive +
+          awaitingConfirmation,
         paymentSent,
         awaitingConfirmation,
         settledPaid,
@@ -183,7 +211,7 @@ export async function buildExpenseSummary(countryIds: string[]) {
         ledgerBalance,
       };
     })
-    .sort((left, right) => left.name.localeCompare(right.name));
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return {
     total: rows.reduce(
@@ -197,14 +225,14 @@ export async function buildExpenseSummary(countryIds: string[]) {
     ),
     categories: [...categories.entries()]
       .map(([category, amount]) => ({ category, amount }))
-      .sort((left, right) => right.amount - left.amount),
+      .sort((a, b) => b.amount - a.amount),
     payers: [...paid.entries()]
       .map(([userId, amount]) => ({
         userId,
         name: names.get(userId) ?? "Traveler",
         amount,
       }))
-      .sort((left, right) => right.amount - left.amount),
+      .sort((a, b) => b.amount - a.amount),
     people,
     waitingTransfers,
     pendingSettlements,

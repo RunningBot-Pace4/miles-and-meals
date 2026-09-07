@@ -1,20 +1,11 @@
 "use client";
 
 import { FullPageLink as Link } from "@/components/FullPageLink";
-import {
-  NAVIGATION_COMPLETE_EVENT,
-  NAVIGATION_START_EVENT,
-} from "@/lib/navigation-intent";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 type IconName = "home" | "plan" | "plus" | "map" | "more";
-
-type NavigationStartEvent = CustomEvent<{
-  href: string;
-  pathname: string;
-}>;
 
 const links: {
   href: string;
@@ -28,33 +19,6 @@ const links: {
   { href: "/location", label: "Map", icon: "map" },
   { href: "/more", label: "More", icon: "more" },
 ];
-
-const morePrefixes = [
-  "/expenses",
-  "/settlements",
-  "/admin",
-  "/settings",
-  "/trips",
-  "/notifications",
-  "/activity",
-  "/export",
-  "/search",
-  "/wrapped",
-  "/journeys",
-  "/offline",
-  "/documents",
-  "/companion",
-  "/memories",
-  "/receipts",
-];
-
-function matchesPath(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function isMoreSection(pathname: string): boolean {
-  return morePrefixes.some((prefix) => matchesPath(pathname, prefix));
-}
 
 function NavIcon({ name }: { name: IconName }) {
   if (name === "plus") {
@@ -104,66 +68,51 @@ function NavIcon({ name }: { name: IconName }) {
 export function MobileNav() {
   const pathname = usePathname();
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
-  const [pendingPathname, setPendingPathname] = useState<string | null>(null);
 
   useEffect(() => {
     setPortalHost(document.body);
   }, []);
 
-  useEffect(() => {
-    function handleNavigationStart(event: Event) {
-      const navigationEvent = event as NavigationStartEvent;
-      setPendingPathname(navigationEvent.detail?.pathname ?? null);
-    }
-
-    function handleNavigationComplete() {
-      setPendingPathname(null);
-    }
-
-    window.addEventListener(NAVIGATION_START_EVENT, handleNavigationStart);
-    window.addEventListener(
-      NAVIGATION_COMPLETE_EVENT,
-      handleNavigationComplete,
-    );
-
-    return () => {
-      window.removeEventListener(NAVIGATION_START_EVENT, handleNavigationStart);
-      window.removeEventListener(
-        NAVIGATION_COMPLETE_EVENT,
-        handleNavigationComplete,
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    setPendingPathname(null);
-  }, [pathname]);
-
-  const visiblePathname = pendingPathname ?? pathname;
   const navigation = (
     <nav
       className="mobile-nav"
       aria-label="Main navigation"
       data-app-mobile-nav="true"
-      data-navigation-pending={pendingPathname ? "true" : "false"}
     >
       {links.map((link) => {
         const moreSection =
-          link.href === "/more" && isMoreSection(visiblePathname);
+          link.href === "/more" &&
+          [
+            "/expenses",
+            "/settlements",
+            "/admin",
+            "/settings",
+            "/trips",
+            "/notifications",
+            "/activity",
+            "/export",
+            "/search",
+            "/wrapped",
+            "/journeys",
+            "/offline",
+            "/documents",
+            "/companion",
+            "/memories",
+            "/receipts",
+          ].some(
+            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+          );
+
         const active =
           !link.action &&
-          (matchesPath(visiblePathname, link.href) || moreSection);
-        const pending =
-          Boolean(pendingPathname) &&
-          (matchesPath(pendingPathname ?? "", link.href) ||
-            (link.href === "/more" && isMoreSection(pendingPathname ?? "")));
-
+          (pathname === link.href ||
+            pathname.startsWith(`${link.href}/`) ||
+            moreSection);
         return (
           <Link
             className={[
               "nav-item",
               active ? "active" : "",
-              pending ? "pending" : "",
               link.action ? "nav-action" : "",
             ]
               .filter(Boolean)
@@ -172,7 +121,6 @@ export function MobileNav() {
             prefetch
             key={link.href}
             aria-current={active ? "page" : undefined}
-            aria-busy={pending || undefined}
           >
             <span className="nav-icon">
               <NavIcon name={link.icon} />

@@ -1,5 +1,5 @@
-import { RouteLoadingState } from "@/components/RouteLoadingState";
+import { BrandedLoadingScreen } from "@/components/BrandedLoadingScreen";
 
 export default function AppLoading() {
-  return <RouteLoadingState />;
+  return <BrandedLoadingScreen />;
 }
