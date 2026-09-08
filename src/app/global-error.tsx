@@ -1,18 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
-
 export default function GlobalError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("[Miles & Meals] Global boundary error", error);
-  }, [error]);
-
   function reload() {
     window.location.reload();
   }
@@ -102,8 +95,9 @@ export default function GlobalError({
               lineHeight: 1.6,
             }}
           >
-            The page request stopped unexpectedly. Try it again first;
-            reload the app only if the problem continues.
+            An interrupted request or app update prevented this page
+            from opening. Reload once to reconnect to the current app
+            version.
           </p>
 
           <div
@@ -116,7 +110,7 @@ export default function GlobalError({
           >
             <button
               type="button"
-              onClick={reset}
+              onClick={reload}
               style={{
                 flex: "1 1 150px",
                 minHeight: "48px",
@@ -130,12 +124,12 @@ export default function GlobalError({
                 cursor: "pointer",
               }}
             >
-              Try again
+              Reload page
             </button>
 
             <button
               type="button"
-              onClick={reload}
+              onClick={goBack}
               style={{
                 flex: "1 1 120px",
                 minHeight: "48px",
@@ -148,13 +142,13 @@ export default function GlobalError({
                 cursor: "pointer",
               }}
             >
-              Reload app
+              Back
             </button>
           </div>
 
           <button
             type="button"
-            onClick={goBack}
+            onClick={reset}
             style={{
               border: 0,
               color: "#12786f",
@@ -164,19 +158,8 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Back
+            Try recovery
           </button>
-
-          {error.digest ? (
-            <small
-              style={{
-                color: "#8b877f",
-                overflowWrap: "anywhere",
-              }}
-            >
-              Reference: {error.digest}
-            </small>
-          ) : null}
         </main>
       </body>
     </html>

@@ -1,28 +1,15 @@
-# Miles & Meals V92.26 · Vercel-managed navigation recovery
+# Miles & Meals V92.21 · Single Navigation and Rotating Halo
 
-V92.26 preserves the complete V92.25 receipt and PWA layout release. It removes
-the custom deployment identity that conflicted with normal Vercel source builds,
-returns page transitions to Vercel-managed skew protection, restores safe route
-prefetching, and prevents an error boundary from starting a second page load.
-The rotating Halo remains. No Neon migration is required.
-
-Version `1.92.27` removes receipt-item assignment from receipt scanning, prevents the Add Expense canvas from moving horizontally, and keeps the mobile bottom navigation visible. Normal web navigation stays fast and client-side. Installed PWAs use one immediate document request per tap so an interrupted RSC transition cannot open the global error boundary, and no delayed fallback can start a second request.
+Version `1.92.21` preserves the complete tested V92.20 source while correcting the actual reported problem: one tap could start a client transition and later a second full-page navigation. Shared links now make exactly one document request, the repeated fresh-load prompt is avoided, and the approved rotating Halo is restored.
 
 ## What changed
 
-- The generic “Welcome back” headline and marker-style name highlight were replaced with a compact premium journey card.
-- Greeting copy now changes for no trips, all trips, planning, upcoming, active and completed travel states.
-- Upcoming trips use the destination and an exact day countdown; active trips switch to present-tense travel guidance.
-- The card uses one restrained state accent, a personalized context pill and safe wrapping at phone, tablet and desktop widths.
-- Seven pure unit tests and a release-contract suite cover the greeting states and responsive integration.
 - One payer and Multiple payers now use the same compact traveller-row design instead of switching between portrait cards and a different list language.
 - A selected multiple payer keeps the currency and amount in one fitted input. `MYR` can no longer collapse into a detached strip above a large empty box.
 - The two payer-mode choices and all four split methods use fixed equal-width columns; **Exact** no longer drops onto a second row.
 - At 320–360 px, selected payer details stack safely; from 361 px upward, the name and contribution remain in a compact two-column row.
 - Saved traveller groups are fetched only when **Reuse a traveller group** is opened, removing an unnecessary Add Expense request.
-- Main app destinations use one reliable document navigation. There is no delayed fallback request, and authenticated pages now have one scoped Next.js Halo loading boundary instead of two nested boundaries.
-- Payments are grouped by person, direction and trip. Each payment remains a separate row showing its amount, recorded and confirmation times, partial or full status, and remaining balance.
-- Person summaries separate confirmed money, money awaiting receiver confirmation, money not paid yet, and the total amount still open.
+- Main app destinations now use fast client transitions and are prefetched from the bottom navigation. A 4.5-second native-navigation watchdog remains as recovery if a PWA transition ever stalls.
 - The duplicated Living Journey base stylesheet was removed. The shared route CSS fell from 353,528 to 340,733 bytes, a 12,795-byte (3.6%) reduction, while the complete Add Expense initial CSS + JavaScript payload is 6,003 bytes smaller.
 
 - Mobile Web and installed PWA now publish one device-width, fixed-scale viewport so the interface starts fitted to the physical phone width.
@@ -131,7 +118,7 @@ If App Health reports that required tables are missing with PostgreSQL code `42P
 1. Upload or connect the complete V92 source to Vercel.
 2. Keep the same production environment variables used by V90/V91.
 3. Deploy without running a new SQL script.
-4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-27` activates.
+4. Open the deployed app once online, accept the update, then allow the app to reload so `miles-meals-static-v92-21` activates.
 5. If an older installed icon remains, remove the old PWA once and install it again; operating systems can retain home-screen icon caches independently from Vercel.
 
 ## Validate locally
@@ -149,15 +136,10 @@ npm run v92-18:check
 npm run v92-19:check
 npm run v92-20:check
 npm run v92-21:check
-npm run v92-22:check
-npm run v92-23:check
-npm run v92-24:check
-npm run v92-25:check
-npm run v92-26:check
 npm test
 npm run build
 ```
 
 Authenticated Playwright verification needs `E2E_EMAIL` and `E2E_PASSWORD`.
 
-V92.25 packaging validation covers every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build. Receipt geometry also has a WebKit/Chromium specification; physical iPhone confirmation remains a deployed-staging gate.
+V92.21 packaging validation: 196/196 unit tests, every historical and current release gate, TypeScript, source/route integrity and the 82-page Next.js production build passed. Single-document navigation, rotating Halo, payer and complete Add Expense responsive contracts remain covered. The packaging environment does not include Playwright browser binaries, so authenticated physical-device PWA confirmation remains a deployed-staging gate.

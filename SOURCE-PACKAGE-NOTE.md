@@ -1,10 +1,10 @@
-# Miles & Meals V92.25 — Receipt PWA and Route Recovery Package
+# Miles & Meals V92.21 — Single Navigation Package
 
-This is the complete source package, versioned `1.92.27`. It preserves all earlier V92 repairs, the rotating Halo, per-person payment ledger and contextual Home header. Receipt-item assignment is removed from new scans, the Add Expense canvas is contained to the phone, and mobile navigation is pinned above receipt content. Normal web use keeps fast client navigation; installed PWAs use one immediate document request without a delayed fallback. Prebuild also removes accidental project copies below `src/lib`.
+This is the complete source package, versioned `1.92.21`. It preserves all earlier V92 repairs, removes the dual client/fallback navigation that caused repeated loading and restores the approved rotating Halo loading design.
 
 The route audit represents all 30 authenticated page routes plus public login, registration, recovery and offline surfaces across phone, small-tablet, iPad, landscape-tablet and desktop widths. **No new Neon migration is required** when upgrading from an already migrated V90/V91/V92 deployment.
 
-V92.25 includes focused receipt/PWA recovery checks plus all historical release gates. Browser-driven authenticated staging and physical-device PWA verification remain deployment gates.
+Validated for V92.21: 196/196 unit tests, all historical and current release gates, TypeScript, source/route integrity and the 82-page production build. Shared route CSS remains smaller than V92.18. Browser-driven staging verification remains a deployment gate because it needs Playwright browser binaries and an authenticated test account.
 
 See `START-HERE-V92.md` for deployment and validation instructions.
 

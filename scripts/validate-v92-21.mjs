@@ -14,32 +14,34 @@ const launch = read("src/app/layout.tsx");
 const globalError = read("src/app/global-error.tsx");
 const geometry = read("e2e/v92-21-single-navigation.spec.ts");
 
-must(packageJson, '"version": "1.92.27"', "V92.21 package version missing");
+must(packageJson, '"version": "1.92.21"', "V92.21 package version missing");
 must(packageJson, '"v92-21:check"', "V92.21 release gate missing");
 must(packageJson, "npm run v92-21:check", "V92.21 gate is not in prebuild");
-must(worker, "miles-meals-static-v92-27", "V92.21 PWA cache missing");
+must(worker, "miles-meals-static-v92-21", "V92.21 PWA cache missing");
 
 for (const marker of [
-  'from "next/link"',
-  "<NextLink",
-  'data-navigation-mode="client"',
-  "prefetch = null",
-  'data-prefetch-intent={prefetch === false ? "off" : "adaptive"}',
-]) must(navigation, marker, `V92.21 single-navigation marker missing: ${marker}`);
-
-for (const forbidden of [
+  "<a",
   'data-navigation-mode="document"',
   "createPortal(<BrandedLoadingScreen />",
   "NAVIGATION_INDICATOR_TIMEOUT_MS",
+  "Leave the anchor's native default action intact",
+]) must(navigation, marker, `V92.21 single-navigation marker missing: ${marker}`);
+
+for (const forbidden of [
+  'from "next/link"',
+  "<NextLink",
   "NATIVE_NAVIGATION_FALLBACK_MS",
   "window.location.assign(targetUrl.href)",
+  "event.preventDefault()",
 ]) {
   if (navigation.includes(forbidden)) {
     throw new Error(`V92.21 still contains dual-navigation behavior: ${forbidden}`);
   }
 }
 
-must(navigationGate, "sharedLinkPath", "V92.21 shared navigation exception missing");
+if (navigationGate.includes('relativePath === "src/components/FullPageLink.tsx"')) {
+  throw new Error("V92.21 navigation integrity still exempts FullPageLink");
+}
 
 for (const marker of [
   "animation: v92-halo-breathe 1.8s ease-in-out infinite",
@@ -61,9 +63,9 @@ if (globalError.includes("client-side") || globalError.includes("page transition
 }
 
 for (const marker of [
-  "single client navigation",
+  "single document navigation",
   "data-navigation-mode",
-  "__mnmClientNavigationProbe",
+  "performance.getEntriesByType",
   "This page couldn't open",
 ]) must(geometry, marker, `V92.21 browser navigation coverage missing: ${marker}`);
 

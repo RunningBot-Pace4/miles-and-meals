@@ -27,11 +27,10 @@ describe("V92.4 web and installed-PWA layout", () => {
     expect(css).toContain("animation: none !important");
   });
 
-  it("shows immediate tap feedback without retaining a fake pending route", () => {
-    expect(nav).toContain("prefetch");
-    expect(nav).toContain('aria-current={active ? "page" : undefined}');
-    expect(nav).not.toContain("pendingHref");
-    expect(css).toContain(".mobile-nav .nav-item:active:not(.nav-action)");
+  it("moves bottom-navigation feedback to the newly tapped destination", () => {
+    expect(nav).toContain("pendingHref");
+    expect(nav).toContain("navigation-pending");
+    expect(css).toContain('.mobile-nav[data-navigation-pending="true"]');
   });
 
   it("retains mobile safe areas and the desktop rail breakpoint", () => {

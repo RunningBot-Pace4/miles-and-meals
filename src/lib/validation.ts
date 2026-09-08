@@ -227,6 +227,7 @@ export const locationSchema = z.object({
 
 
 export const settlementActionSchema = z.object({
+  requestId: uuidSchema.optional(),
   countryId: uuidSchema,
   counterpartyUserId: z.string().min(1),
   action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),

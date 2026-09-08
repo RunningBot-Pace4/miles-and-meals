@@ -1,10 +1,10 @@
-# V92.25 — Receipt PWA and route recovery
+# V92.21 Living Journey — single navigation release
 
-Version `1.92.27` preserves the receipt and mobile PWA repairs, keeps fast prefetched navigation in the normal web app, and moves installed PWAs to one immediate document request per tap so fragile RSC transitions cannot open the global error boundary. It also removes complete project copies accidentally uploaded below `src/lib`. The rotating Halo remains. See `V92-27-PWA-NAVIGATION-RELIABILITY.md` for release details.
+Version `1.92.21` fixes the repeated fresh-load prompt and true double navigation. Every shared route now opens through one reliable document request, with no delayed second fallback request. The approved PWA launch artwork and rotating Halo are restored. See `V92-21-SINGLE-NAVIGATION.md` for the release details.
 
 Start with `START-HERE-V92.md`, then review `V92-LIVING-JOURNEY-DESIGN.md`. The V90 market-evidence boundary remains documented in `V90-COMBINED-WORLD-CLASS-TARGET.md`.
 
-V92.25 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
+V92 has no new database migration. Existing deployments must already have the V85 and V90 migrations applied.
 
 ---
 

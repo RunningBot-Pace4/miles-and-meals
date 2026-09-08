@@ -3,15 +3,16 @@
 import { useEffect } from "react";
 
 export default function AppError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Miles & Meals] Page boundary error", error);
-  }, [error]);
+    if (!navigator.onLine) {
+      window.location.replace("/offline.html");
+    }
+  }, []);
 
   function goBack() {
     if (window.history.length > 1) {
@@ -29,10 +30,11 @@ export default function AppError({
           !
         </span>
         <p className="eyebrow">MILES &amp; MEALS</p>
-        <h1>This page didn’t finish loading</h1>
+        <h1>That page didn’t finish loading</h1>
         <p>
-          The page request stopped unexpectedly. Try it again without
-          starting a second page load.
+          Your connection may have changed while Miles &amp; Meals
+          was updating. Try the page again, or return to the
+          previous screen.
         </p>
 
         <div className="app-error-actions">
@@ -51,12 +53,6 @@ export default function AppError({
             Go back
           </button>
         </div>
-
-        {error.digest ? (
-          <small className="app-error-reference">
-            Reference: {error.digest}
-          </small>
-        ) : null}
       </section>
     </main>
   );

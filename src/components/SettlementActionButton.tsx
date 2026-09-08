@@ -9,6 +9,24 @@ type SettlementAction =
 export const SETTLEMENT_UPDATED_EVENT =
   "mnm:settlement-updated";
 
+function createSettlementRequestId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+    /[xy]/g,
+    (char) => {
+      const random = Math.floor(Math.random() * 16);
+      const value =
+        char === "x"
+          ? random
+          : (random & 0x3) | 0x8;
+      return value.toString(16);
+    },
+  );
+}
+
 export function SettlementActionButton({
   countryId,
   counterpartyUserId,
@@ -39,6 +57,7 @@ export function SettlementActionButton({
     action: SettlementAction;
     currency: string;
   } | null>(null);
+  const requestIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (maximumAmount === undefined) {
@@ -71,6 +90,12 @@ export function SettlementActionButton({
     setError("");
     setSuccessMessage("");
 
+    const requestId =
+      requestIdRef.current ??
+      createSettlementRequestId();
+    requestIdRef.current = requestId;
+    let responseReceived = false;
+
     try {
       const response = await fetch(
         "/api/settlements",
@@ -81,13 +106,18 @@ export function SettlementActionButton({
               "application/json",
           },
           body: JSON.stringify({
+            requestId,
             countryId,
             counterpartyUserId,
             action,
-            amount: maximumAmount !== undefined ? Number(amount) : undefined,
+            amount:
+              maximumAmount !== undefined
+                ? Number(amount)
+                : undefined,
           }),
         },
       );
+      responseReceived = true;
 
       const payload =
         (await response
@@ -97,21 +127,26 @@ export function SettlementActionButton({
         };
 
       if (!response.ok) {
+        requestIdRef.current = null;
         throw new Error(
           payload.error ??
             "Unable to update payment status.",
         );
       }
 
-      submittedActionRef.current = maximumAmount !== undefined
-        ? {
-            action,
-            currency: currency ?? "",
-          }
-        : null;
+      requestIdRef.current = null;
+      submittedActionRef.current =
+        maximumAmount !== undefined
+          ? {
+              action,
+              currency: currency ?? "",
+            }
+          : null;
       setAwaitingRefresh(true);
       setSuccessMessage(
-        maximumAmount !== undefined && Number(amount) < maximumAmount - 0.009
+        maximumAmount !== undefined &&
+          Number(amount) <
+            maximumAmount - 0.009
           ? `Partial ${action === "MARK_RECEIVED" ? "receipt" : "payment"} recorded. Refreshing the remaining balance…`
           : "Payment recorded. Refreshing the settlement…",
       );
@@ -122,6 +157,10 @@ export function SettlementActionButton({
       );
       setBusy(false);
     } catch (caught) {
+      if (responseReceived) {
+        requestIdRef.current = null;
+      }
+
       setError(
         caught instanceof Error
           ? caught.message
