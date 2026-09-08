@@ -163,6 +163,10 @@ function convertSettlement(
     ...settlement,
     amount: settlement.amount * factor,
     currency: displayCurrency,
+    allocations: settlement.allocations.map((allocation) => ({
+      ...allocation,
+      amount: allocation.amount * factor,
+    })),
   };
 }
 
@@ -185,10 +189,15 @@ function convertSmartPlan(
       ...balance,
       amount: balance.amount * factor,
       directPaid: balance.directPaid * factor,
+      allocatedPaid: balance.allocatedPaid * factor,
+      unallocatedDirectPaid: balance.unallocatedDirectPaid * factor,
       directRemaining: balance.directRemaining * factor,
+      billRemaining: balance.billRemaining * factor,
       expenses: balance.expenses.map((expense) => ({
         ...expense,
         shareAmount: expense.shareAmount * factor,
+        allocatedPaid: expense.allocatedPaid * factor,
+        remainingAmount: expense.remainingAmount * factor,
         expenseTotal: expense.expenseTotal * factor,
         currency: displayCurrency,
       })),
@@ -197,6 +206,10 @@ function convertSmartPlan(
       ...payment,
       amount: payment.amount * factor,
       currency: displayCurrency,
+      allocations: payment.allocations.map((allocation) => ({
+        ...allocation,
+        amount: allocation.amount * factor,
+      })),
     })),
     netPositions: plan.netPositions.map((position) => ({
       ...position,

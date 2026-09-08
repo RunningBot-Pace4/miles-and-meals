@@ -286,6 +286,33 @@ export const settlementActionSchema = z
       .max(50)
       .optional()
       .default([]),
+    paymentMethod: z
+      .union([
+        z.enum([
+          "CASH",
+          "DUITNOW",
+          "BANK_TRANSFER",
+          "TOUCH_N_GO",
+          "CARD",
+          "OTHER",
+        ]),
+        z.literal(""),
+      ])
+      .optional()
+      .default(""),
+    paymentReference: z.string().trim().max(120).optional().default(""),
+    paymentNote: z.string().trim().max(500).optional().default(""),
+    paymentProofData: z
+      .string()
+      .max(700_000)
+      .refine(
+        (value) =>
+          !value ||
+          /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(value),
+        "Payment proof must be a JPEG, PNG or WebP image.",
+      )
+      .optional()
+      .default(""),
   })
   .superRefine((value, context) => {
     const seen = new Set<string>();

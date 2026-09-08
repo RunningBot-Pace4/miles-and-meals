@@ -19822,3 +19822,373 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+
+
+/* V95 · clearer information architecture, person statements and payment evidence */
+.spend-hub-grid,
+.hub-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.spend-hub-card,
+.hub-choice-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 112px;
+  padding: 18px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.spend-hub-card > span,
+.hub-choice-card > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.spend-hub-card div,
+.hub-choice-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.spend-hub-card small,
+.hub-choice-card small,
+.spend-hub-note p {
+  color: var(--muted);
+}
+
+.spend-hub-card > b,
+.hub-choice-card > b {
+  font-size: 1.5rem;
+  color: var(--muted);
+}
+
+.spend-hub-note {
+  display: grid;
+  gap: 6px;
+}
+
+.spend-hub-note p {
+  margin: 0;
+}
+
+.more-advanced-tools {
+  overflow: hidden;
+}
+
+.more-advanced-tools > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.more-advanced-tools > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-advanced-tools > summary span {
+  display: grid;
+  gap: 3px;
+}
+
+.more-advanced-tools > summary small {
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.more-advanced-tools[open] > summary b {
+  transform: rotate(180deg);
+}
+
+.settlement-payment-details {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.settlement-payment-details > summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.settlement-payment-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 14px 14px;
+}
+
+.settlement-payment-details-grid label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settlement-payment-details-grid label > span {
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: var(--muted);
+}
+
+.settlement-payment-details-grid input,
+.settlement-payment-details-grid select,
+.settlement-payment-details-grid textarea {
+  width: 100%;
+  min-height: 42px;
+}
+
+.settlement-payment-note-field,
+.settlement-payment-proof-field,
+.settlement-payment-details-grid > .settlement-action-error {
+  grid-column: 1 / -1;
+}
+
+.settlement-payment-note-field textarea {
+  resize: vertical;
+}
+
+.settlement-payment-proof-field small {
+  color: var(--muted);
+}
+
+.settlement-proof-remove {
+  justify-self: start;
+  border: 0;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.settlement-payment-metadata {
+  display: grid;
+  gap: 3px;
+  align-content: start;
+  min-width: 140px;
+}
+
+.settlement-payment-metadata small {
+  color: var(--muted);
+}
+
+.settlement-payment-metadata a {
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.person-statement-entry {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 0 14px;
+}
+
+.person-statement-page {
+  padding-bottom: 24px;
+}
+
+.person-statement-heading {
+  align-items: end;
+}
+
+.person-statement-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.person-statement-summary > div {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  padding: 18px;
+  background: var(--surface);
+}
+
+.person-statement-summary span,
+.person-statement-summary small {
+  color: var(--muted);
+}
+
+.person-statement-summary strong {
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+}
+
+.person-statement-disclosure {
+  display: grid;
+  gap: 6px;
+  border-style: dashed;
+}
+
+.person-statement-disclosure p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.person-statement-section {
+  display: grid;
+  gap: 18px;
+}
+
+.person-statement-bills,
+.person-statement-payments {
+  display: grid;
+  gap: 10px;
+}
+
+.person-statement-bill {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr) auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.person-statement-bill:last-child {
+  border-bottom: 0;
+}
+
+.person-statement-bill > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.person-statement-bill small {
+  color: var(--muted);
+}
+
+.person-statement-bill dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.person-statement-bill dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.person-statement-bill dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.person-statement-bill dd {
+  margin: 0;
+  font-weight: 800;
+}
+
+.person-statement-payment {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.9fr) minmax(220px, 1.4fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.person-statement-payment.inactive {
+  opacity: 0.68;
+  background: var(--surface-2);
+}
+
+.person-statement-payment > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.person-statement-payment small,
+.person-statement-payment p {
+  color: var(--muted);
+}
+
+.person-statement-payment p {
+  margin: 4px 0 0;
+}
+
+.person-statement-payment-allocations {
+  display: grid;
+  gap: 5px;
+}
+
+.person-statement-payment-allocations > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .spend-hub-grid,
+  .hub-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-payment-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-payment-details-grid > label,
+  .settlement-payment-note-field,
+  .settlement-payment-proof-field {
+    grid-column: 1;
+  }
+
+  .person-statement-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .person-statement-bill,
+  .person-statement-payment {
+    grid-template-columns: 1fr;
+  }
+
+  .person-statement-bill dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .person-statement-entry {
+    justify-content: stretch;
+  }
+
+  .person-statement-entry .button {
+    width: 100%;
+  }
+
+  .settlement-payment-metadata {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .person-statement-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .person-statement-bill dl {
+    grid-template-columns: 1fr;
+  }
+}

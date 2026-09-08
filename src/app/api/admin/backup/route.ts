@@ -39,7 +39,7 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 5;
+const BACKUP_VERSION = 6;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
@@ -50,6 +50,7 @@ const backupSchema = z.object({
     z.literal(2),
     z.literal(3),
     z.literal(4),
+    z.literal(5),
     z.literal(BACKUP_VERSION),
   ]),
   exportedAt: z.string(),
@@ -1173,6 +1174,10 @@ async function restoreBackup(
         to_user_id,
         amount,
         currency,
+        payment_method,
+        payment_reference,
+        payment_note,
+        payment_proof_data,
         status,
         initiated_by,
         confirmed_by,
@@ -1191,6 +1196,10 @@ async function restoreBackup(
         ${value(row, "toUserId")},
         ${value(row, "amount")},
         ${value(row, "currency")},
+        ${value(row, "paymentMethod")},
+        ${value(row, "paymentReference")},
+        ${value(row, "paymentNote")},
+        ${value(row, "paymentProofData")},
         ${value(row, "status")},
         ${value(row, "initiatedBy")},
         ${value(row, "confirmedBy")},

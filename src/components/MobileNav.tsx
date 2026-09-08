@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-type IconName = "home" | "plan" | "plus" | "map" | "more";
+type IconName = "home" | "plan" | "plus" | "spend" | "more";
 
 const links: {
   href: string;
@@ -15,10 +15,47 @@ const links: {
 }[] = [
   { href: "/dashboard", label: "Home", icon: "home" },
   { href: "/planner", label: "Plan", icon: "plan" },
-  { href: "/expenses/new", label: "Add", icon: "plus", action: true },
-  { href: "/location", label: "Map", icon: "map" },
+  { href: "/add", label: "Add", icon: "plus", action: true },
+  { href: "/spend", label: "Spend", icon: "spend" },
   { href: "/more", label: "More", icon: "more" },
 ];
+
+const spendPrefixes = [
+  "/spend",
+  "/expenses",
+  "/settlements",
+  "/receipts",
+  "/settings/budgets",
+];
+
+const morePrefixes = [
+  "/more",
+  "/location",
+  "/trips",
+  "/updates",
+  "/notifications",
+  "/activity",
+  "/trip-story",
+  "/memories",
+  "/wrapped",
+  "/offline",
+  "/documents",
+  "/companion",
+  "/journeys",
+  "/export",
+  "/search",
+  "/settings/profile",
+  "/settings/notifications",
+  "/settings/password",
+  "/settings/permissions",
+  "/admin",
+];
+
+function routeMatches(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
 
 function NavIcon({ name }: { name: IconName }) {
   if (name === "plus") {
@@ -47,11 +84,12 @@ function NavIcon({ name }: { name: IconName }) {
     );
   }
 
-  if (name === "map") {
+  if (name === "spend") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m3.5 6.5 5-2 7 2 5-2v13l-5 2-7-2-5 2v-13Z" />
-        <path d="M8.5 4.5v13M15.5 6.5v13" />
+        <path d="M4 7.5h14.5A1.5 1.5 0 0 1 20 9v9.5A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-11Z" />
+        <path d="M4 8V6a2 2 0 0 1 2-2h10" />
+        <path d="M15 13h5M16.5 13h.01" />
       </svg>
     );
   }
@@ -82,34 +120,15 @@ export function MobileNav() {
       data-navigation-pending={pendingHref ? "true" : undefined}
     >
       {links.map((link) => {
-        const moreSection =
-          link.href === "/more" &&
-          [
-            "/expenses",
-            "/settlements",
-            "/admin",
-            "/settings",
-            "/trips",
-            "/notifications",
-            "/activity",
-            "/export",
-            "/search",
-            "/wrapped",
-            "/journeys",
-            "/offline",
-            "/documents",
-            "/companion",
-            "/memories",
-            "/receipts",
-          ].some(
-            (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-          );
+        const sectionActive =
+          link.href === "/spend"
+            ? routeMatches(pathname, spendPrefixes)
+            : link.href === "/more"
+              ? routeMatches(pathname, morePrefixes)
+              : pathname === link.href ||
+                pathname.startsWith(`${link.href}/`);
 
-        const active =
-          !link.action &&
-          (pathname === link.href ||
-            pathname.startsWith(`${link.href}/`) ||
-            moreSection);
+        const active = !link.action && sectionActive;
         const visuallyActive = pendingHref
           ? pendingHref === link.href
           : active;

@@ -700,16 +700,18 @@ export function PlannerClient({
   items,
   trips,
   activeTripId,
+  initialShowForm = false,
 }: {
   countries: CountryOption[];
   items: PlannerItem[];
   trips: TripOption[];
   activeTripId: string;
+  initialShowForm?: boolean;
 }) {
   const [itemsState, setItemsState] =
     useState<PlannerItem[]>(items);
   const [tab, setTab] = useState<TabValue>("ITINERARY");
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(initialShowForm);
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
   const [detailItem, setDetailItem] = useState<PlannerItem | null>(null);
   const [error, setError] = useState("");

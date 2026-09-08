@@ -7,8 +7,15 @@ import {
 } from "@/lib/active-trip";
 import { requirePageSession } from "@/lib/session";
 
-export default async function PlannerPage() {
+type PlannerPageProps = {
+  searchParams: Promise<{ add?: string }>;
+};
+
+export default async function PlannerPage({
+  searchParams,
+}: PlannerPageProps) {
   const session = await requirePageSession();
+  const query = await searchParams;
   const activeTrip =
     await getActiveTripContext(
       session.user,
@@ -75,6 +82,7 @@ export default async function PlannerPage() {
         }))}
         trips={activeTrip.trips}
         activeTripId={activeTrip.tripId}
+        initialShowForm={query.add === "1"}
       />
     </div>
   );

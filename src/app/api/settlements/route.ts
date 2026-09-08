@@ -49,6 +49,13 @@ function amountsMatch(
   );
 }
 
+function textMatches(
+  stored: string | null,
+  requested: string,
+): boolean {
+  return (stored ?? "") === requested;
+}
+
 function validateBillAllocations(
   ledger: CountrySettlementLedger,
   fromUserId: string,
@@ -248,6 +255,10 @@ export async function POST(request: Request) {
                 existingRequest.countryId === input.countryId &&
                 existingRequest.initiatedBy === session.user.id &&
                 amountsMatch(existingRequest.amount, requestedAmount) &&
+                textMatches(existingRequest.paymentMethod, input.paymentMethod) &&
+                textMatches(existingRequest.paymentReference, input.paymentReference) &&
+                textMatches(existingRequest.paymentNote, input.paymentNote) &&
+                textMatches(existingRequest.paymentProofData, input.paymentProofData) &&
                 allocationsMatch(
                   existingAllocations.map((allocation) => ({
                     expenseId: allocation.expenseId,
@@ -400,6 +411,10 @@ export async function POST(request: Request) {
                 toUserId: input.counterpartyUserId,
                 amount: paymentAmount.toFixed(2),
                 currency: ledger.currency,
+                paymentMethod: input.paymentMethod || null,
+                paymentReference: input.paymentReference || null,
+                paymentNote: input.paymentNote || null,
+                paymentProofData: input.paymentProofData || null,
                 status: "SENT",
                 initiatedBy: session.user.id,
               })
@@ -551,6 +566,10 @@ export async function POST(request: Request) {
               toUserId: session.user.id,
               amount: receivedAmount.toFixed(2),
               currency: ledger.currency,
+              paymentMethod: input.paymentMethod || null,
+              paymentReference: input.paymentReference || null,
+              paymentNote: input.paymentNote || null,
+              paymentProofData: input.paymentProofData || null,
               status: "SETTLED",
               initiatedBy: session.user.id,
               confirmedBy: session.user.id,

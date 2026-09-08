@@ -102,6 +102,16 @@ function paymentStatusLabel(
   return "Payment sent · awaiting receiver";
 }
 
+function paymentMethodLabel(value: string | null): string {
+  if (value === "DUITNOW") return "DuitNow";
+  if (value === "BANK_TRANSFER") return "Bank transfer";
+  if (value === "TOUCH_N_GO") return "Touch 'n Go";
+  if (value === "CASH") return "Cash";
+  if (value === "CARD") return "Card";
+  if (value === "OTHER") return "Other";
+  return "Method not specified";
+}
+
 function SmartSettlementPanel({
   data,
   currentUserId,
@@ -555,6 +565,14 @@ function SmartSettlementPanel({
                       <strong>{formatMoney(balance.directRemaining, plan.currency)}</strong>
                     </span>
                   </div>
+                  <div className="person-statement-entry">
+                    <Link
+                      className="button settlement-action-secondary"
+                      href={`/settlements/statement?countryId=${encodeURIComponent(plan.countryId)}&fromUserId=${encodeURIComponent(balance.fromUserId)}&toUserId=${encodeURIComponent(balance.toUserId)}`}
+                    >
+                      View person statement
+                    </Link>
+                  </div>
                   <div className="smart-original-expenses">
                     {balance.expenses.map((expense) => (
                       <div
@@ -673,6 +691,24 @@ function SmartSettlementPanel({
                       ) : null}
                     </span>
                     <strong>{formatMoney(payment.amount, payment.currency)}</strong>
+                    <div className="settlement-payment-metadata">
+                      <small>{paymentMethodLabel(payment.paymentMethod)}</small>
+                      {payment.paymentReference ? (
+                        <small>Ref · {payment.paymentReference}</small>
+                      ) : null}
+                      {payment.paymentNote ? (
+                        <small>{payment.paymentNote}</small>
+                      ) : null}
+                      {payment.paymentProofAvailable ? (
+                        <a
+                          href={`/api/settlements/${payment.id}/proof`}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          View payment proof
+                        </a>
+                      ) : null}
+                    </div>
                     <div className="smart-payment-allocation-audit">
                       {payment.allocations.length ? (
                         <>
@@ -917,6 +953,25 @@ function SettlementStatus({
                 <small>
                   {payment.tripName}
                 </small>
+                {payment.paymentMethod ? (
+                  <small>
+                    {paymentMethodLabel(payment.paymentMethod)}
+                    {payment.paymentReference
+                      ? ` · Ref ${payment.paymentReference}`
+                      : ""}
+                  </small>
+                ) : null}
+                {payment.paymentProofAvailable ? (
+                  <small>
+                    <a
+                      href={`/api/settlements/${payment.id}/proof`}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      View payment proof
+                    </a>
+                  </small>
+                ) : null}
                 {payment.allocations.length ? (
                   <small>
                     Bills: {payment.allocations

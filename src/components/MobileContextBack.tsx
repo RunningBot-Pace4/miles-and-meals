@@ -6,6 +6,7 @@ import { useEffect, useMemo } from "react";
 const PRIMARY_ROUTES = new Set([
   "/dashboard",
   "/planner",
+  "/add",
   "/expenses/new",
   "/location",
   "/more",

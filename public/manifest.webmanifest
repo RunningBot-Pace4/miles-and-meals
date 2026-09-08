@@ -1,7 +1,7 @@
 {
   "name": "Miles & Meals",
   "short_name": "Miles & Meals",
-  "description": "Your whole journey connected—move, plan, spend and travel together.",
+  "description": "Your whole journey connected\u2014move, plan, spend and travel together.",
   "id": "/dashboard",
   "start_url": "/dashboard",
   "scope": "/",
@@ -41,9 +41,9 @@
       "url": "/planner"
     },
     {
-      "name": "Add expense",
-      "short_name": "Expense",
-      "url": "/expenses/new"
+      "name": "Add to trip",
+      "short_name": "Add",
+      "url": "/add"
     },
     {
       "name": "Settle up",

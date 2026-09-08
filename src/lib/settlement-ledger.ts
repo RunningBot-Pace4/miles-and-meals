@@ -81,6 +81,10 @@ export type SmartSettlementPaymentLine = {
   amount: number;
   currency: string;
   status: SettlementStatus;
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  paymentNote: string | null;
+  paymentProofAvailable: boolean;
   sentAt: string;
   confirmedAt: string | null;
   reversedAt: string | null;
@@ -135,6 +139,10 @@ export type SettlementRecordView = {
   toName: string;
   amount: number;
   status: "SENT" | "SETTLED";
+  paymentMethod: string | null;
+  paymentReference: string | null;
+  paymentNote: string | null;
+  paymentProofAvailable: boolean;
   sentAt: Date;
   confirmedAt: Date | null;
   allocations: Array<{
@@ -247,6 +255,10 @@ export async function buildCountrySettlementLedger(
       amount: settlements.amount,
       currency: settlements.currency,
       status: settlements.status,
+      paymentMethod: settlements.paymentMethod,
+      paymentReference: settlements.paymentReference,
+      paymentNote: settlements.paymentNote,
+      paymentProofData: settlements.paymentProofData,
       sentAt: settlements.sentAt,
       confirmedAt: settlements.confirmedAt,
       reversedAt: settlements.reversedAt,
@@ -608,6 +620,10 @@ export async function buildCountrySettlementLedger(
     toName: names.get(row.toUserId) ?? "Traveler",
     amount: toNumber(row.amount),
     currency: row.currency || country.currency,
+    paymentMethod: row.paymentMethod ?? null,
+    paymentReference: row.paymentReference ?? null,
+    paymentNote: row.paymentNote ?? null,
+    paymentProofAvailable: Boolean(row.paymentProofData),
     status:
       row.status === "SETTLED" ||
       row.status === "CANCELLED" ||
@@ -715,6 +731,10 @@ export async function buildCountrySettlementLedger(
       toName: names.get(row.toUserId) ?? "Traveler",
       amount: toNumber(row.amount),
       status: row.status === "SETTLED" ? "SETTLED" : "SENT",
+      paymentMethod: row.paymentMethod ?? null,
+      paymentReference: row.paymentReference ?? null,
+      paymentNote: row.paymentNote ?? null,
+      paymentProofAvailable: Boolean(row.paymentProofData),
       sentAt: row.sentAt,
       confirmedAt: row.confirmedAt,
       allocations: (allocationsBySettlementId.get(row.id) ?? []).map(

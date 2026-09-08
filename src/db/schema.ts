@@ -744,6 +744,10 @@ export const settlements = pgTable(
       .references(() => user.id, { onDelete: "restrict" }),
     amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
     currency: text("currency").notNull(),
+    paymentMethod: text("payment_method"),
+    paymentReference: text("payment_reference"),
+    paymentNote: text("payment_note"),
+    paymentProofData: text("payment_proof_data"),
     status: text("status").default("SENT").notNull(),
     initiatedBy: text("initiated_by")
       .notNull()
@@ -766,6 +770,7 @@ export const settlements = pgTable(
     index("settlement_trip_idx").on(table.tripId),
     index("settlement_from_user_idx").on(table.fromUserId),
     index("settlement_to_user_idx").on(table.toUserId),
+    index("settlement_payment_method_idx").on(table.paymentMethod),
   ],
 );
 

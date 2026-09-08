@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { compressPaymentProofForDatabase } from "@/lib/payment-proof-storage";
 
 type SettlementAction =
   | "MARK_PAID"
@@ -10,6 +11,15 @@ type SettlementAllocation = {
   expenseId: string;
   amount: number;
 };
+
+type PaymentMethod =
+  | ""
+  | "CASH"
+  | "DUITNOW"
+  | "BANK_TRANSFER"
+  | "TOUCH_N_GO"
+  | "CARD"
+  | "OTHER";
 
 export const SETTLEMENT_UPDATED_EVENT =
   "mnm:settlement-updated";
@@ -62,11 +72,27 @@ export function SettlementActionButton({
   const [amount, setAmount] = useState(
     maximumAmount !== undefined ? maximumAmount.toFixed(2) : "",
   );
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("");
+  const [paymentReference, setPaymentReference] =
+    useState("");
+  const [paymentNote, setPaymentNote] =
+    useState("");
+  const [paymentProofData, setPaymentProofData] =
+    useState("");
+  const [paymentProofName, setPaymentProofName] =
+    useState("");
+  const [paymentProofBusy, setPaymentProofBusy] =
+    useState(false);
+  const [paymentProofError, setPaymentProofError] =
+    useState("");
   const submittedActionRef = useRef<{
     action: SettlementAction;
     currency: string;
   } | null>(null);
   const requestIdRef = useRef<string | null>(null);
+
+  const showPaymentDetails = maximumAmount !== undefined;
 
   useEffect(() => {
     if (maximumAmount === undefined) {
@@ -93,6 +119,43 @@ export function SettlementActionButton({
 
     return () => window.clearTimeout(timer);
   }, [maximumAmount]);
+
+  async function handleProofFile(file: File | null) {
+    setPaymentProofError("");
+
+    if (!file) {
+      setPaymentProofData("");
+      setPaymentProofName("");
+      return;
+    }
+
+    setPaymentProofBusy(true);
+
+    try {
+      const compressed = await compressPaymentProofForDatabase(file);
+      setPaymentProofData(compressed);
+      setPaymentProofName(file.name);
+    } catch (caught) {
+      setPaymentProofData("");
+      setPaymentProofName("");
+      setPaymentProofError(
+        caught instanceof Error
+          ? caught.message
+          : "Unable to prepare the payment screenshot.",
+      );
+    } finally {
+      setPaymentProofBusy(false);
+    }
+  }
+
+  function clearPaymentDetails() {
+    setPaymentMethod("");
+    setPaymentReference("");
+    setPaymentNote("");
+    setPaymentProofData("");
+    setPaymentProofName("");
+    setPaymentProofError("");
+  }
 
   async function runAction() {
     setBusy(true);
@@ -126,6 +189,10 @@ export function SettlementActionButton({
                   : Number(amount)
                 : undefined,
             allocations,
+            paymentMethod: paymentMethod || undefined,
+            paymentReference: paymentReference.trim() || undefined,
+            paymentNote: paymentNote.trim() || undefined,
+            paymentProofData: paymentProofData || undefined,
           }),
         },
       );
@@ -162,6 +229,7 @@ export function SettlementActionButton({
           ? `Partial ${action === "MARK_RECEIVED" ? "receipt" : "payment"} recorded. Refreshing the remaining balance…`
           : "Payment recorded. Refreshing the settlement…",
       );
+      clearPaymentDetails();
       window.dispatchEvent(
         new CustomEvent(
           SETTLEMENT_UPDATED_EVENT,
@@ -201,6 +269,88 @@ export function SettlementActionButton({
           <small>Enter the full or partial amount received/paid.</small>
         </label>
       ) : null}
+
+      {showPaymentDetails ? (
+        <details className="settlement-payment-details">
+          <summary>Payment details · optional</summary>
+          <div className="settlement-payment-details-grid">
+            <label>
+              <span>Method</span>
+              <select
+                value={paymentMethod}
+                onChange={(event) =>
+                  setPaymentMethod(event.target.value as PaymentMethod)
+                }
+              >
+                <option value="">Not specified</option>
+                <option value="DUITNOW">DuitNow</option>
+                <option value="BANK_TRANSFER">Bank transfer</option>
+                <option value="TOUCH_N_GO">Touch &apos;n Go</option>
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Reference number</span>
+              <input
+                maxLength={120}
+                onChange={(event) => setPaymentReference(event.target.value)}
+                placeholder="Optional transfer reference"
+                value={paymentReference}
+              />
+            </label>
+
+            <label className="settlement-payment-note-field">
+              <span>Note</span>
+              <textarea
+                maxLength={500}
+                onChange={(event) => setPaymentNote(event.target.value)}
+                placeholder="What this payment was for"
+                rows={2}
+                value={paymentNote}
+              />
+            </label>
+
+            <label className="settlement-payment-proof-field">
+              <span>Payment proof</span>
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                disabled={paymentProofBusy}
+                onChange={(event) =>
+                  void handleProofFile(event.target.files?.[0] ?? null)
+                }
+                type="file"
+              />
+              <small>
+                {paymentProofBusy
+                  ? "Compressing screenshot…"
+                  : paymentProofName
+                    ? `${paymentProofName} ready`
+                    : "Optional JPEG, PNG or WebP screenshot."}
+              </small>
+            </label>
+
+            {paymentProofData ? (
+              <button
+                className="settlement-proof-remove"
+                onClick={() => void handleProofFile(null)}
+                type="button"
+              >
+                Remove proof
+              </button>
+            ) : null}
+
+            {paymentProofError ? (
+              <small className="settlement-action-error" role="alert">
+                {paymentProofError}
+              </small>
+            ) : null}
+          </div>
+        </details>
+      ) : null}
+
       <button
         className={
           action ===
@@ -209,7 +359,7 @@ export function SettlementActionButton({
             : "button settlement-action-button settlement-action-secondary"
         }
         disabled={
-          busy || awaitingRefresh ||
+          busy || awaitingRefresh || paymentProofBusy ||
           (maximumAmount !== undefined &&
             (fixedAmount
               ? maximumAmount <= 0
