@@ -83,6 +83,12 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
             settlements.confirmedBy,
           confirmedAt:
             settlements.confirmedAt,
+          reversedBy:
+            settlements.reversedBy,
+          reversedAt:
+            settlements.reversedAt,
+          reversalReason:
+            settlements.reversalReason,
         })
         .from(settlements),
       db
@@ -326,6 +332,40 @@ export async function runConsistencyChecks(): Promise<ConsistencyReport> {
         count: invalidPendingStateCount,
         detail:
           "A pending settlement already contains confirmation metadata and should be reviewed.",
+      });
+    }
+
+    const invalidReversalMetadataCount =
+      settlementRows.filter(
+        (settlement) =>
+          (settlement.status === "CANCELLED" ||
+            settlement.status === "REVERSED") &&
+          (!settlement.reversedBy || !settlement.reversedAt),
+      ).length;
+
+    if (invalidReversalMetadataCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_REVERSAL_METADATA_MISSING",
+        count: invalidReversalMetadataCount,
+        detail:
+          "A cancelled or reversed settlement is missing reversal audit metadata.",
+      });
+    }
+
+    const invalidActiveReversalMetadataCount =
+      settlementRows.filter(
+        (settlement) =>
+          (settlement.status === "SENT" ||
+            settlement.status === "SETTLED") &&
+          Boolean(settlement.reversedAt),
+      ).length;
+
+    if (invalidActiveReversalMetadataCount > 0) {
+      issues.push({
+        type: "SETTLEMENT_ACTIVE_WITH_REVERSAL_METADATA",
+        count: invalidActiveReversalMetadataCount,
+        detail:
+          "An active settlement contains reversal metadata and should be reviewed.",
       });
     }
 

@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { createTransactionalDatabase } from "@/db/transaction";
-import { settlements, trips } from "@/db/schema";
+import {
+  settlementExpenseAllocations,
+  settlements,
+  trips,
+} from "@/db/schema";
 import {
   canAccessCountry,
   getCountryWithTrip,
@@ -12,7 +16,15 @@ import {
 } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { sendPushToUsers } from "@/lib/push";
-import { buildCountrySettlementLedger } from "@/lib/settlement-ledger";
+import {
+  buildCountrySettlementLedger,
+  type CountrySettlementLedger,
+} from "@/lib/settlement-ledger";
+import {
+  allocationTotal,
+  allocationsMatch,
+  type SettlementExpenseAllocationInput,
+} from "@/lib/settlement-allocation";
 import { settlementActionSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -35,6 +47,74 @@ function amountsMatch(
     requestedAmount === undefined ||
     Math.abs(Number(storedAmount) - requestedAmount) < 0.009
   );
+}
+
+function validateBillAllocations(
+  ledger: CountrySettlementLedger,
+  fromUserId: string,
+  toUserId: string,
+  allocations: SettlementExpenseAllocationInput[],
+  paymentAmount: number,
+): void {
+  if (allocations.length === 0) {
+    return;
+  }
+
+  const balance = ledger.smartPlan.originalExpenseBalances.find(
+    (candidate) =>
+      candidate.fromUserId === fromUserId &&
+      candidate.toUserId === toUserId,
+  );
+
+  if (!balance) {
+    throw new SettlementMutationError(
+      "Selected bills do not belong to a direct outstanding balance between these travelers.",
+      400,
+      "INVALID_BILL_ALLOCATION",
+    );
+  }
+
+  const total = allocationTotal(allocations);
+
+  if (Math.abs(total - paymentAmount) >= 0.009) {
+    throw new SettlementMutationError(
+      "Selected bill amounts must add up exactly to the payment amount.",
+      400,
+      "ALLOCATION_TOTAL_MISMATCH",
+    );
+  }
+
+  if (paymentAmount > balance.directRemaining + 0.009) {
+    throw new SettlementMutationError(
+      `Bill payment cannot exceed the direct outstanding ${ledger.currency} ${balance.directRemaining.toFixed(2)}.`,
+      400,
+      "BILL_PAYMENT_EXCEEDS_DIRECT_BALANCE",
+    );
+  }
+
+  const billsById = new Map(
+    balance.expenses.map((expense) => [expense.expenseId, expense]),
+  );
+
+  for (const allocation of allocations) {
+    const bill = billsById.get(allocation.expenseId);
+
+    if (!bill) {
+      throw new SettlementMutationError(
+        "One or more selected bills do not belong to this payer and receiver.",
+        400,
+        "INVALID_BILL_ALLOCATION",
+      );
+    }
+
+    if (allocation.amount > bill.remainingAmount + 0.009) {
+      throw new SettlementMutationError(
+        `${bill.description} only has ${ledger.currency} ${bill.remainingAmount.toFixed(2)} remaining.`,
+        400,
+        "BILL_ALLOCATION_EXCEEDS_OUTSTANDING",
+      );
+    }
+  }
 }
 
 async function runBestEffortSideEffects(
@@ -61,6 +141,11 @@ export async function POST(request: Request) {
     const input = settlementActionSchema.parse(
       await request.json(),
     );
+    const requestedAmount =
+      input.amount ??
+      (input.allocations.length
+        ? allocationTotal(input.allocations)
+        : undefined);
 
     if (!(await canAccessCountry(session.user, input.countryId))) {
       return Response.json(
@@ -144,11 +229,32 @@ export async function POST(request: Request) {
             )[0];
 
             if (existingRequest) {
+              const existingAllocations = await tx
+                .select({
+                  expenseId:
+                    settlementExpenseAllocations.expenseId,
+                  amountBase:
+                    settlementExpenseAllocations.amountBase,
+                })
+                .from(settlementExpenseAllocations)
+                .where(
+                  eq(
+                    settlementExpenseAllocations.settlementId,
+                    existingRequest.id,
+                  ),
+                );
               const commonMatch =
                 existingRequest.tripId === country.tripId &&
                 existingRequest.countryId === input.countryId &&
                 existingRequest.initiatedBy === session.user.id &&
-                amountsMatch(existingRequest.amount, input.amount);
+                amountsMatch(existingRequest.amount, requestedAmount) &&
+                allocationsMatch(
+                  existingAllocations.map((allocation) => ({
+                    expenseId: allocation.expenseId,
+                    amount: Number(allocation.amountBase),
+                  })),
+                  input.allocations,
+                );
 
               const actionMatch =
                 input.action === "MARK_PAID"
@@ -206,6 +312,17 @@ export async function POST(request: Request) {
               );
 
             if (existingPending) {
+              if (
+                input.requestId &&
+                input.requestId !== existingPending.id
+              ) {
+                throw new SettlementMutationError(
+                  "A payment to this traveler is already awaiting confirmation. Confirm or resolve it before recording another payment.",
+                  409,
+                  "PAYMENT_AWAITING_CONFIRMATION",
+                );
+              }
+
               return {
                 kind: "idempotent" as const,
                 settlementId: existingPending.id,
@@ -218,8 +335,14 @@ export async function POST(request: Request) {
                 row.fromUserId === session.user.id &&
                 row.toUserId === input.counterpartyUserId,
             );
+            const hasBillAllocations = input.allocations.length > 0;
+            const paymentAmount =
+              requestedAmount ??
+              (hasBillAllocations
+                ? allocationTotal(input.allocations)
+                : transfer?.amount);
 
-            if (!transfer) {
+            if (!paymentAmount) {
               const existingSettled =
                 ledger.settledSettlements.find(
                   (row) =>
@@ -227,7 +350,7 @@ export async function POST(request: Request) {
                     row.toUserId === input.counterpartyUserId,
                 );
 
-              if (existingSettled) {
+              if (existingSettled && !hasBillAllocations) {
                 return {
                   kind: "idempotent" as const,
                   settlementId: existingSettled.id,
@@ -241,13 +364,28 @@ export async function POST(request: Request) {
               );
             }
 
-            const paymentAmount = input.amount ?? transfer.amount;
-
-            if (paymentAmount > transfer.amount + 0.009) {
-              throw new SettlementMutationError(
-                `Payment cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.`,
-                400,
+            if (hasBillAllocations) {
+              validateBillAllocations(
+                ledger,
+                session.user.id,
+                input.counterpartyUserId,
+                input.allocations,
+                paymentAmount,
               );
+            } else {
+              if (!transfer) {
+                throw new SettlementMutationError(
+                  "There is no unpaid balance to mark as paid for this traveler.",
+                  409,
+                );
+              }
+
+              if (paymentAmount > transfer.amount + 0.009) {
+                throw new SettlementMutationError(
+                  `Payment cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.`,
+                  400,
+                );
+              }
             }
 
             const inserted = await tx
@@ -272,6 +410,18 @@ export async function POST(request: Request) {
               throw new Error("Unable to record payment.");
             }
 
+            if (input.allocations.length) {
+              await tx
+                .insert(settlementExpenseAllocations)
+                .values(
+                  input.allocations.map((allocation) => ({
+                    settlementId,
+                    expenseId: allocation.expenseId,
+                    amountBase: allocation.amount.toFixed(2),
+                  })),
+                );
+            }
+
             return {
               kind: "markedPaid" as const,
               settlementId,
@@ -289,6 +439,14 @@ export async function POST(request: Request) {
           );
 
           if (pending) {
+            if (input.allocations.length) {
+              throw new SettlementMutationError(
+                "This payment is already awaiting confirmation. Confirm it as recorded; bill allocations cannot be changed during confirmation.",
+                409,
+                "PENDING_ALLOCATION_IMMUTABLE",
+              );
+            }
+
             const confirmed = await tx
               .update(settlements)
               .set({
@@ -326,8 +484,14 @@ export async function POST(request: Request) {
               row.fromUserId === input.counterpartyUserId &&
               row.toUserId === session.user.id,
           );
+          const hasBillAllocations = input.allocations.length > 0;
+          const receivedAmount =
+            requestedAmount ??
+            (hasBillAllocations
+              ? allocationTotal(input.allocations)
+              : transfer?.amount);
 
-          if (!transfer) {
+          if (!receivedAmount) {
             const alreadySettled =
               ledger.settledSettlements.find(
                 (row) =>
@@ -335,7 +499,7 @@ export async function POST(request: Request) {
                   row.toUserId === session.user.id,
               );
 
-            if (alreadySettled) {
+            if (alreadySettled && !hasBillAllocations) {
               return {
                 kind: "idempotent" as const,
                 settlementId: alreadySettled.id,
@@ -350,13 +514,28 @@ export async function POST(request: Request) {
             );
           }
 
-          const receivedAmount = input.amount ?? transfer.amount;
-
-          if (receivedAmount > transfer.amount + 0.009) {
-            throw new SettlementMutationError(
-              `Received amount cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.`,
-              400,
+          if (hasBillAllocations) {
+            validateBillAllocations(
+              ledger,
+              input.counterpartyUserId,
+              session.user.id,
+              input.allocations,
+              receivedAmount,
             );
+          } else {
+            if (!transfer) {
+              throw new SettlementMutationError(
+                "There is no outstanding balance to mark as received for this traveler.",
+                409,
+              );
+            }
+
+            if (receivedAmount > transfer.amount + 0.009) {
+              throw new SettlementMutationError(
+                `Received amount cannot exceed the outstanding ${ledger.currency} ${transfer.amount.toFixed(2)}.`,
+                400,
+              );
+            }
           }
 
           const now = new Date();
@@ -383,6 +562,18 @@ export async function POST(request: Request) {
 
           if (!settlementId) {
             throw new Error("Unable to record received payment.");
+          }
+
+          if (input.allocations.length) {
+            await tx
+              .insert(settlementExpenseAllocations)
+              .values(
+                input.allocations.map((allocation) => ({
+                  settlementId,
+                  expenseId: allocation.expenseId,
+                  amountBase: allocation.amount.toFixed(2),
+                })),
+              );
           }
 
           return {

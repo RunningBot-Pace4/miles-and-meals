@@ -150,6 +150,40 @@ function editableBody(body: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function hasNonEmptyArray(
+  body: Record<string, unknown>,
+  key: string,
+): boolean {
+  const value = body[key];
+  return Array.isArray(value) && value.length > 0;
+}
+
+function canSafelyEditOfflineExpenseAmount(
+  body: Record<string, unknown>,
+): boolean {
+  if (
+    hasNonEmptyArray(body, "itemization") ||
+    hasNonEmptyArray(body, "payers")
+  ) {
+    return false;
+  }
+
+  const splitMode = String(body.splitMode ?? "EQUAL").toUpperCase();
+  if (splitMode === "EXACT") {
+    return false;
+  }
+
+  const actualConvertedAmount = Number(body.actualConvertedAmount);
+  if (
+    Number.isFinite(actualConvertedAmount) &&
+    actualConvertedAmount > 0
+  ) {
+    return false;
+  }
+
+  return ["EQUAL", "PERCENTAGE", "SHARES"].includes(splitMode);
+}
+
 /**
  * Edits only user-facing fields. Trip, country, currency, payer and sharing
  * remain bound to the original mutation so an offline correction can never be
@@ -164,10 +198,22 @@ export function editOfflineMutation(id: string, edit: OfflineMutationEdit): bool
     const isPlan = current.url === "/api/travel-items" && current.method === "POST";
     if (!isExpense && !isPlan) return current;
 
+    let unsafeAmountEdit = false;
+
     if (isExpense) {
       if (typeof edit.description === "string" && edit.description.trim()) body.description = edit.description.trim();
       if (typeof edit.expenseDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(edit.expenseDate)) body.expenseDate = edit.expenseDate;
-      if (typeof edit.transactionAmount === "number" && Number.isFinite(edit.transactionAmount) && edit.transactionAmount > 0) body.transactionAmount = edit.transactionAmount;
+      if (
+        typeof edit.transactionAmount === "number" &&
+        Number.isFinite(edit.transactionAmount) &&
+        edit.transactionAmount > 0
+      ) {
+        if (canSafelyEditOfflineExpenseAmount(body)) {
+          body.transactionAmount = edit.transactionAmount;
+        } else {
+          unsafeAmountEdit = true;
+        }
+      }
       if (typeof edit.category === "string" && edit.category.trim()) body.category = edit.category.trim();
     }
 
@@ -191,8 +237,10 @@ export function editOfflineMutation(id: string, edit: OfflineMutationEdit): bool
       label,
       attempts: 0,
       lastAttemptAt: undefined,
-      lastError: "Edited and ready to sync.",
-      blocked: false,
+      lastError: unsafeAmountEdit
+        ? "Amount was not changed because this offline expense has exact, itemized, multi-payer, or card-charge allocations. Recreate it online to change the amount safely."
+        : "Edited and ready to sync.",
+      blocked: unsafeAmountEdit,
       nextAttemptAt: undefined,
       meta: current.meta ? { ...current.meta, description } : current.meta,
     };

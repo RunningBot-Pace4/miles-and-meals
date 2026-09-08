@@ -237,4 +237,51 @@ describe("offline mutation resync", () => {
     expect(result).toEqual({ synced: 1, remaining: 0, blocked: 0 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
+
+  it("blocks unsafe offline amount edits that would desync exact allocations", () => {
+    const item = enqueueOfflineMutation({
+      url: "/api/expenses",
+      method: "POST",
+      label: "Hotel",
+      body: {
+        countryId: "country-vn",
+        description: "Hotel",
+        expenseDate: "2026-08-25",
+        transactionCurrency: "MYR",
+        transactionAmount: 100,
+        splitMode: "EXACT",
+        payers: [
+          { userId: "member-1", value: 50 },
+          { userId: "member-2", value: 50 },
+        ],
+        splits: [
+          { userId: "member-1", value: 50 },
+          { userId: "member-2", value: 50 },
+        ],
+        itemization: [],
+      },
+      meta: {
+        tripId: "trip-1",
+        tripName: "Vietnam Working",
+        currency: "MYR",
+        sharing: "2 travelers",
+      },
+    });
+
+    expect(
+      editOfflineMutation(item.id, {
+        transactionAmount: 120,
+      }),
+    ).toBe(true);
+
+    const [edited] = readOfflineQueue();
+    expect(edited.body).toMatchObject({
+      transactionAmount: 100,
+    });
+    expect(edited.blocked).toBe(true);
+    expect(edited.lastError).toMatch(
+      /amount was not changed/i,
+    );
+  });
+
 });

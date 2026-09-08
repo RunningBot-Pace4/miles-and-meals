@@ -35,6 +35,7 @@ await sql`
     expense_comments,
     expense_payers,
     expense_splits,
+    settlement_expense_allocations,
     settlements,
     expenses,
     trip_documents,

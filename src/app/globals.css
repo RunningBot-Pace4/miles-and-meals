@@ -18149,6 +18149,29 @@ body {
   white-space: nowrap;
 }
 
+.smart-original-payment-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.72rem 0.82rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.smart-original-payment-progress > span {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.smart-original-payment-progress small {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.smart-original-payment-progress strong {
+  font-size: 0.78rem;
+}
+
 .smart-original-expenses {
   border-top: 1px solid var(--border);
   background: rgb(250 252 251 / 82%);
@@ -18212,6 +18235,256 @@ body {
   white-space: nowrap;
 }
 
+
+
+.bill-payment-status {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 22px;
+  padding: 0.18rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 850;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.bill-payment-status.unpaid {
+  background: rgb(148 64 67 / 10%);
+  color: #8f3133;
+}
+
+.bill-payment-status.partial {
+  background: rgb(191 124 20 / 12%);
+  color: #8d5b13;
+}
+
+.bill-payment-status.settled {
+  background: rgb(22 133 91 / 11%);
+  color: #126d4d;
+}
+
+.bill-payment-allocator {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.bill-payment-allocator.settled,
+.bill-payment-allocator.pending,
+.bill-payment-allocator.legacy-covered {
+  gap: 0.18rem;
+}
+
+.bill-payment-allocator > small,
+.bill-payment-allocator-head small,
+.bill-payment-select-row small,
+.bill-payment-allocator-footer small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.bill-payment-allocator-head,
+.bill-payment-allocator-footer {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bill-payment-allocator-head > div,
+.bill-payment-allocator-footer > span {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.bill-payment-allocator-head > span {
+  flex: 0 0 auto;
+  padding: 0.34rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 780;
+}
+
+.bill-payment-select-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.bill-payment-select-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(125px, 160px);
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.bill-payment-select-row.selected {
+  border-color: color-mix(in srgb, var(--primary) 34%, var(--border));
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.bill-payment-select-row > input[type="checkbox"] {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.bill-payment-select-row > span:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.bill-payment-select-row > span:nth-child(2) strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bill-payment-amount-input {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.bill-payment-amount-input b {
+  padding-left: 0.55rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.bill-payment-amount-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+}
+
+.bill-payment-error {
+  color: #9d3033 !important;
+}
+
+.bill-payment-hint {
+  align-self: center;
+}
+
+.smart-payment-allocation-audit {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 0.28rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed var(--border);
+}
+
+.smart-payment-allocation-audit > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.smart-payment-allocation-audit > span > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smart-payment-audit-row > span:first-child.cancelled,
+.smart-payment-audit-row > span:first-child.reversed {
+  background: rgb(109 118 131 / 12%);
+  color: #5f6671;
+}
+
+.smart-payment-audit-row.inactive-payment {
+  background: color-mix(in srgb, var(--surface) 88%, var(--surface-2));
+}
+
+.smart-payment-audit-row.inactive-payment > strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.settlement-reversal-meta {
+  display: block;
+  margin-top: 0.12rem;
+}
+
+.settlement-reversal-link {
+  grid-column: 2 / -1;
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9d3033;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+  cursor: pointer;
+}
+
+.settlement-reversal-confirm {
+  grid-column: 2 / -1;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid color-mix(in srgb, #9d3033 24%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, #9d3033 4%, var(--surface));
+}
+
+.settlement-reversal-confirm > small {
+  line-height: 1.45;
+}
+
+.settlement-reversal-confirm label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.settlement-reversal-confirm label > span {
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.settlement-reversal-confirm textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.settlement-reversal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.settlement-reversal-danger {
+  border-color: #9d3033;
+  background: #9d3033;
+  color: white;
+}
+
+.settlement-reversal-danger:hover {
+  background: #84272a;
+}
+
 @media (max-width: 720px) {
   .smart-settlement-tabs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -18258,6 +18531,28 @@ body {
 
   .smart-transfer-net-grid {
     grid-template-columns: 1fr;
+  }
+
+  .smart-original-payment-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .bill-payment-allocator-head,
+  .bill-payment-allocator-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bill-payment-allocator-head > span {
+    justify-self: start;
+  }
+
+  .bill-payment-select-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .bill-payment-amount-input {
+    grid-column: 2;
   }
 
   .smart-proof-row,

@@ -137,7 +137,31 @@ export async function GET() {
   }
 
   const rows = await db
-    .select()
+    .select({
+      id: expenses.id,
+      tripId: expenses.tripId,
+      countryId: expenses.countryId,
+      expenseDate: expenses.expenseDate,
+      category: expenses.category,
+      description: expenses.description,
+      transactionCurrency: expenses.transactionCurrency,
+      transactionAmount: expenses.transactionAmount,
+      exchangeRate: expenses.exchangeRate,
+      rateType: expenses.rateType,
+      baseCurrency: expenses.baseCurrency,
+      convertedAmount: expenses.convertedAmount,
+      actualConvertedAmount: expenses.actualConvertedAmount,
+      splitMode: expenses.splitMode,
+      paidByUserId: expenses.paidByUserId,
+      paymentMethod: expenses.paymentMethod,
+      receiptReviewStatus: expenses.receiptReviewStatus,
+      receiptConfidence: expenses.receiptConfidence,
+      receiptReviewedAt: expenses.receiptReviewedAt,
+      notes: expenses.notes,
+      createdBy: expenses.createdBy,
+      createdAt: expenses.createdAt,
+      updatedAt: expenses.updatedAt,
+    })
     .from(expenses)
     .where(inArray(expenses.countryId, ids))
     .orderBy(desc(expenses.expenseDate), desc(expenses.createdAt));

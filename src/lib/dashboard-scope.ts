@@ -184,6 +184,8 @@ function convertSmartPlan(
     originalExpenseBalances: plan.originalExpenseBalances.map((balance) => ({
       ...balance,
       amount: balance.amount * factor,
+      directPaid: balance.directPaid * factor,
+      directRemaining: balance.directRemaining * factor,
       expenses: balance.expenses.map((expense) => ({
         ...expense,
         shareAmount: expense.shareAmount * factor,

@@ -14,6 +14,8 @@ import {
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
+import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
+import { SettlementReversalButton } from "@/components/SettlementReversalButton";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
@@ -82,12 +84,32 @@ function formatSettlementDate(value: string): string {
   }).format(parsed);
 }
 
+function paymentStatusLabel(
+  status: "SENT" | "SETTLED" | "CANCELLED" | "REVERSED",
+): string {
+  if (status === "SETTLED") {
+    return "Confirmed received";
+  }
+
+  if (status === "CANCELLED") {
+    return "Cancelled before confirmation";
+  }
+
+  if (status === "REVERSED") {
+    return "Reversed";
+  }
+
+  return "Payment sent · awaiting receiver";
+}
+
 function SmartSettlementPanel({
   data,
   currentUserId,
+  canManageFinancials,
 }: {
   data: SettlementLiveData;
   currentUserId: string;
+  canManageFinancials: boolean;
 }) {
   const [activeView, setActiveView] = useState<
     "SMART" | "ORIGINAL" | "HISTORY"
@@ -515,6 +537,24 @@ function SmartSettlementPanel({
                     </span>
                     <strong>{formatMoney(balance.amount, plan.currency)}</strong>
                   </summary>
+                  <div className="smart-original-payment-progress">
+                    <span>
+                      <small>Original owed</small>
+                      <strong>{formatMoney(balance.amount, plan.currency)}</strong>
+                    </span>
+                    <span>
+                      <small>Bill-specific paid</small>
+                      <strong>{formatMoney(balance.allocatedPaid, plan.currency)}</strong>
+                    </span>
+                    <span>
+                      <small>Unassigned direct payments</small>
+                      <strong>{formatMoney(balance.unallocatedDirectPaid, plan.currency)}</strong>
+                    </span>
+                    <span>
+                      <small>Direct remaining</small>
+                      <strong>{formatMoney(balance.directRemaining, plan.currency)}</strong>
+                    </span>
+                  </div>
                   <div className="smart-original-expenses">
                     {balance.expenses.map((expense) => (
                       <div
@@ -528,8 +568,19 @@ function SmartSettlementPanel({
                           </small>
                         </span>
                         <span className="smart-proof-amount">
-                          <strong>{formatMoney(expense.shareAmount, expense.currency)}</strong>
-                          <small>Expense total {formatMoney(expense.expenseTotal, expense.currency)}</small>
+                          <strong>{formatMoney(expense.remainingAmount, expense.currency)} remaining</strong>
+                          <small>
+                            {formatMoney(expense.allocatedPaid, expense.currency)} paid of {formatMoney(expense.shareAmount, expense.currency)}
+                          </small>
+                          <span
+                            className={`bill-payment-status ${expense.paymentStatus.toLowerCase()}`}
+                          >
+                            {expense.paymentStatus === "UNPAID"
+                              ? "Unpaid"
+                              : expense.paymentStatus === "PARTIAL"
+                                ? "Partial"
+                                : "Settled"}
+                          </span>
                         </span>
                         <Link className="smart-proof-link" href={`/expenses/${expense.expenseId}/edit`}>
                           View expense
@@ -537,6 +588,23 @@ function SmartSettlementPanel({
                       </div>
                     ))}
                   </div>
+                  <BillSettlementAllocator
+                    countryId={plan.countryId}
+                    currentUserId={currentUserId}
+                    directRemaining={balance.directRemaining}
+                    expenses={balance.expenses}
+                    fromName={balance.fromName}
+                    fromUserId={balance.fromUserId}
+                    hasPendingPayment={plan.recordedPayments.some(
+                      (payment) =>
+                        payment.status === "SENT" &&
+                        payment.fromUserId === balance.fromUserId &&
+                        payment.toUserId === balance.toUserId,
+                    )}
+                    currency={plan.currency}
+                    toName={balance.toName}
+                    toUserId={balance.toUserId}
+                  />
                 </details>
               ))
             ) : (
@@ -545,7 +613,7 @@ function SmartSettlementPanel({
           </div>
 
           <p className="smart-settlement-note smart-audit-footnote">
-            These are original expense-share relationships. Payments may later be routed differently by Smart Settlement, so payment activity is shown separately instead of being forced back onto a receipt that it may not directly represent.
+            Bill-specific payments are assigned only when a traveler explicitly selects the receipts they are paying. Older or Smart Settlement payments can remain unassigned, so Miles &amp; Meals never guesses which Hotel, Dinner or Breakfast bill they covered.
           </p>
         </div>
       ) : null}
@@ -555,27 +623,88 @@ function SmartSettlementPanel({
           <div className="smart-audit-heading">
             <div>
               <strong>Payments already recorded</strong>
-              <small>Both sent payments and receiver-confirmed payments are deducted before Smart Settlement recalculates.</small>
+              <small>Sent and receiver-confirmed payments reduce balances. Cancelled or reversed payments stay here for audit but no longer affect outstanding amounts.</small>
             </div>
             <span>{recordedPayments.length} payment{recordedPayments.length === 1 ? "" : "s"}</span>
           </div>
 
           <div className="smart-payment-audit-list">
             {recordedPayments.length ? (
-              recordedPayments.map(({ plan, payment }) => (
-                <article className="smart-payment-audit-row" key={payment.id}>
-                  <span className={payment.status === "SETTLED" ? "settled" : "sent"} aria-hidden="true">
-                    {payment.status === "SETTLED" ? "✓" : "↗"}
-                  </span>
-                  <span>
-                    <strong>{payment.fromName} → {payment.toName}</strong>
-                    <small>
-                      {plan.tripName} · {payment.status === "SETTLED" ? "Confirmed received" : "Payment sent · awaiting receiver"} · {formatSettlementDate(payment.sentAt)}
-                    </small>
-                  </span>
-                  <strong>{formatMoney(payment.amount, payment.currency)}</strong>
-                </article>
-              ))
+              recordedPayments.map(({ plan, payment }) => {
+                const isInactive =
+                  payment.status === "CANCELLED" ||
+                  payment.status === "REVERSED";
+                const statusClass = payment.status.toLowerCase();
+
+                return (
+                  <article
+                    className={[
+                      "smart-payment-audit-row",
+                      isInactive ? "inactive-payment" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    key={payment.id}
+                  >
+                    <span className={statusClass} aria-hidden="true">
+                      {payment.status === "SETTLED"
+                        ? "✓"
+                        : payment.status === "SENT"
+                          ? "↗"
+                          : "↶"}
+                    </span>
+                    <span>
+                      <strong>{payment.fromName} → {payment.toName}</strong>
+                      <small>
+                        {plan.tripName} · {paymentStatusLabel(payment.status)} · {formatSettlementDate(payment.sentAt)}
+                      </small>
+                      {isInactive && payment.reversedAt ? (
+                        <small className="settlement-reversal-meta">
+                          {payment.reversedByName
+                            ? `${payment.status === "CANCELLED" ? "Cancelled" : "Reversed"} by ${payment.reversedByName}`
+                            : payment.status === "CANCELLED"
+                              ? "Cancelled"
+                              : "Reversed"}{" "}
+                          · {formatSettlementDate(payment.reversedAt)}
+                          {payment.reversalReason
+                            ? ` · ${payment.reversalReason}`
+                            : ""}
+                        </small>
+                      ) : null}
+                    </span>
+                    <strong>{formatMoney(payment.amount, payment.currency)}</strong>
+                    <div className="smart-payment-allocation-audit">
+                      {payment.allocations.length ? (
+                        <>
+                          <small>
+                            {isInactive
+                              ? "Previously applied to bills"
+                              : "Applied to bills"}
+                          </small>
+                          {payment.allocations.map((allocation) => (
+                            <span key={`${payment.id}-${allocation.expenseId}`}>
+                              <span>{allocation.description}</span>
+                              <strong>{formatMoney(allocation.amount, payment.currency)}</strong>
+                            </span>
+                          ))}
+                        </>
+                      ) : (
+                        <small>
+                          Unassigned payment · no receipt was selected for this transfer.
+                        </small>
+                      )}
+                    </div>
+                    <SettlementReversalButton
+                      canManageFinancials={canManageFinancials}
+                      currentUserId={currentUserId}
+                      fromUserId={payment.fromUserId}
+                      settlementId={payment.id}
+                      status={payment.status}
+                      toUserId={payment.toUserId}
+                    />
+                  </article>
+                );
+              })
             ) : (
               <p className="muted">No settlement payments have been recorded yet.</p>
             )}
@@ -788,6 +917,16 @@ function SettlementStatus({
                 <small>
                   {payment.tripName}
                 </small>
+                {payment.allocations.length ? (
+                  <small>
+                    Bills: {payment.allocations
+                      .map(
+                        (allocation) =>
+                          `${allocation.description} ${formatMoney(allocation.amount, payment.currency)}`,
+                      )
+                      .join(" · ")}
+                  </small>
+                ) : null}
               </div>
 
               <strong className="settlement-amount">
@@ -1106,6 +1245,7 @@ export function LiveSettlementWorkspace({
   countryId = "",
   tripId = "",
   allTrips = false,
+  canManageFinancials = false,
   variant,
 }: {
   initialData: SettlementLiveData;
@@ -1113,6 +1253,7 @@ export function LiveSettlementWorkspace({
   countryId?: string;
   tripId?: string;
   allTrips?: boolean;
+  canManageFinancials?: boolean;
   variant: WorkspaceVariant;
 }) {
   const [data, setData] =
@@ -1331,6 +1472,7 @@ export function LiveSettlementWorkspace({
           <SmartSettlementPanel
             data={data}
             currentUserId={currentUserId}
+            canManageFinancials={canManageFinancials}
           />
         </>
       ) : null}

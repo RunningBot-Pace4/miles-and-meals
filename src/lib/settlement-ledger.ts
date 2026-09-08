@@ -5,11 +5,20 @@ import {
   expensePayers,
   expenseSplits,
   expenses,
+  settlementExpenseAllocations,
   settlements,
   trips,
   user,
 } from "@/db/schema";
 import { effectiveConvertedAmount, toNumber } from "@/lib/money";
+import {
+  getBillPaymentStatus,
+  getBillRemainingAmount,
+} from "@/lib/settlement-allocation";
+import {
+  isActiveSettlementStatus,
+  type SettlementStatus,
+} from "@/lib/settlement-status";
 import {
   calculateDirectOutstandingObligations,
   calculateOutstandingSettlements,
@@ -41,6 +50,9 @@ export type SmartSettlementExpenseLine = {
   participantUserId: string;
   participantName: string;
   shareAmount: number;
+  allocatedPaid: number;
+  remainingAmount: number;
+  paymentStatus: "UNPAID" | "PARTIAL" | "SETTLED";
   expenseTotal: number;
   currency: string;
 };
@@ -51,6 +63,11 @@ export type SmartSettlementOriginalBalance = {
   toUserId: string;
   toName: string;
   amount: number;
+  directPaid: number;
+  allocatedPaid: number;
+  unallocatedDirectPaid: number;
+  directRemaining: number;
+  billRemaining: number;
   expenseCount: number;
   expenses: SmartSettlementExpenseLine[];
 };
@@ -63,9 +80,18 @@ export type SmartSettlementPaymentLine = {
   toName: string;
   amount: number;
   currency: string;
-  status: "SENT" | "SETTLED";
+  status: SettlementStatus;
   sentAt: string;
   confirmedAt: string | null;
+  reversedAt: string | null;
+  reversedByUserId: string | null;
+  reversedByName: string | null;
+  reversalReason: string | null;
+  allocations: Array<{
+    expenseId: string;
+    description: string;
+    amount: number;
+  }>;
 };
 
 export type SmartSettlementNetPosition = {
@@ -111,6 +137,11 @@ export type SettlementRecordView = {
   status: "SENT" | "SETTLED";
   sentAt: Date;
   confirmedAt: Date | null;
+  allocations: Array<{
+    expenseId: string;
+    description: string;
+    amount: number;
+  }>;
 };
 
 export type CountryPersonLedger = {
@@ -139,6 +170,14 @@ function roundMoney(value: number): number {
 
 function directedKey(fromUserId: string, toUserId: string): string {
   return `${fromUserId}\u0000${toUserId}`;
+}
+
+function expensePairKey(
+  expenseId: string,
+  fromUserId: string,
+  toUserId: string,
+): string {
+  return `${expenseId}\u0000${fromUserId}\u0000${toUserId}`;
 }
 
 export async function buildCountrySettlementLedger(
@@ -210,15 +249,50 @@ export async function buildCountrySettlementLedger(
       status: settlements.status,
       sentAt: settlements.sentAt,
       confirmedAt: settlements.confirmedAt,
+      reversedAt: settlements.reversedAt,
+      reversedBy: settlements.reversedBy,
+      reversalReason: settlements.reversalReason,
     })
     .from(settlements)
     .where(eq(settlements.countryId, countryId))
     .orderBy(desc(settlements.sentAt));
 
+  const settlementIds = recordedRows.map((row) => row.id);
+  const allocationRows =
+    settlementIds.length === 0
+      ? []
+      : await db
+          .select({
+            settlementId: settlementExpenseAllocations.settlementId,
+            expenseId: settlementExpenseAllocations.expenseId,
+            amountBase: settlementExpenseAllocations.amountBase,
+          })
+          .from(settlementExpenseAllocations)
+          .where(
+            inArray(
+              settlementExpenseAllocations.settlementId,
+              settlementIds,
+            ),
+          );
+
   const paid = new Map<string, number>();
   const owed = new Map<string, number>();
 
-  const expensesWithPayerRows = new Set(payerRows.map((row) => row.expenseId));
+  const payersByExpenseId = new Map<
+    string,
+    Array<(typeof payerRows)[number]>
+  >();
+
+  for (const payer of payerRows) {
+    const current = payersByExpenseId.get(payer.expenseId);
+    if (current) {
+      current.push(payer);
+    } else {
+      payersByExpenseId.set(payer.expenseId, [payer]);
+    }
+  }
+
+  const expensesWithPayerRows = new Set(payersByExpenseId.keys());
 
   for (const payer of payerRows) {
     paid.set(
@@ -263,7 +337,29 @@ export async function buildCountrySettlementLedger(
           })
           .from(user)
           .where(inArray(user.id, [...participantIds]));
-  const names = new Map(namesRows.map((row) => [row.id, row.name]));
+  const reversalActorIds = [
+    ...new Set(
+      recordedRows
+        .map((row) => row.reversedBy)
+        .filter(
+          (userId): userId is string =>
+            Boolean(userId) && !participantIds.has(userId as string),
+        ),
+    ),
+  ];
+  const reversalActorRows =
+    reversalActorIds.length === 0
+      ? []
+      : await db
+          .select({
+            id: user.id,
+            name: user.name,
+          })
+          .from(user)
+          .where(inArray(user.id, reversalActorIds));
+  const names = new Map(
+    [...namesRows, ...reversalActorRows].map((row) => [row.id, row.name]),
+  );
 
   const input: SettlementInput[] = [...participantIds].map((userId) => ({
     userId,
@@ -272,14 +368,48 @@ export async function buildCountrySettlementLedger(
     owed: owed.get(userId) ?? 0,
   }));
 
-  const activeRecordedRows = recordedRows.filter(
-    (row) => row.status === "SENT" || row.status === "SETTLED",
+  const activeRecordedRows = recordedRows.filter((row) =>
+    isActiveSettlementStatus(row.status),
   );
   const activeRecorded = activeRecordedRows.map((row) => ({
     fromUserId: row.fromUserId,
     toUserId: row.toUserId,
     amount: toNumber(row.amount),
   }));
+  const activeRecordedById = new Map(
+    activeRecordedRows.map((row) => [row.id, row]),
+  );
+  const allocationsBySettlementId = new Map<
+    string,
+    Array<(typeof allocationRows)[number]>
+  >();
+  const allocatedPaidByExpensePair = new Map<string, number>();
+
+  for (const allocation of allocationRows) {
+    const current =
+      allocationsBySettlementId.get(allocation.settlementId) ?? [];
+    current.push(allocation);
+    allocationsBySettlementId.set(allocation.settlementId, current);
+
+    const payment = activeRecordedById.get(allocation.settlementId);
+
+    if (!payment) {
+      continue;
+    }
+
+    const key = expensePairKey(
+      allocation.expenseId,
+      payment.fromUserId,
+      payment.toUserId,
+    );
+    allocatedPaidByExpensePair.set(
+      key,
+      roundMoney(
+        (allocatedPaidByExpensePair.get(key) ?? 0) +
+          toNumber(allocation.amountBase),
+      ),
+    );
+  }
 
   const expenseById = new Map(expenseRows.map((expense) => [expense.id, expense]));
   const originalExpenseLines: SmartSettlementExpenseLine[] = splitRows
@@ -298,7 +428,7 @@ export async function buildCountrySettlementLedger(
         expense.convertedAmount,
         expense.actualConvertedAmount,
       );
-      const storedPayers = payerRows.filter((payer) => payer.expenseId === expense.id);
+      const storedPayers = payersByExpenseId.get(expense.id) ?? [];
       const payers = storedPayers.length
         ? storedPayers.map((payer) => ({
             userId: payer.userId,
@@ -311,6 +441,19 @@ export async function buildCountrySettlementLedger(
         const amount = roundMoney(participantShare * (payer.amount / expenseTotal));
         if (amount <= 0.005) return [];
 
+        const allocatedPaid =
+          allocatedPaidByExpensePair.get(
+            expensePairKey(
+              expense.id,
+              split.userId,
+              payer.userId,
+            ),
+          ) ?? 0;
+        const remainingAmount = getBillRemainingAmount(
+          amount,
+          allocatedPaid,
+        );
+
         return [{
           expenseId: expense.id,
           expenseDate: expense.expenseDate,
@@ -321,6 +464,9 @@ export async function buildCountrySettlementLedger(
           participantUserId: split.userId,
           participantName: names.get(split.userId) ?? "Traveler",
           shareAmount: amount,
+          allocatedPaid,
+          remainingAmount,
+          paymentStatus: getBillPaymentStatus(amount, allocatedPaid),
           expenseTotal,
           currency: country.currency,
         }];
@@ -354,18 +500,71 @@ export async function buildCountrySettlementLedger(
       toUserId: line.payerUserId,
       toName: line.payerName,
       amount: roundMoney(line.shareAmount),
+      directPaid: 0,
+      allocatedPaid: 0,
+      unallocatedDirectPaid: 0,
+      directRemaining: 0,
+      billRemaining: 0,
       expenseCount: 1,
       expenses: [line],
     });
   }
 
-  const originalExpenseBalances = [...originalBalanceMap.values()]
-    .map((balance) => ({
-      ...balance,
-      expenses: [...balance.expenses].sort((left, right) =>
-        right.expenseDate.localeCompare(left.expenseDate),
+  const directPaymentByPair = new Map<string, number>();
+
+  for (const payment of activeRecordedRows) {
+    const key = directedKey(payment.fromUserId, payment.toUserId);
+    directPaymentByPair.set(
+      key,
+      roundMoney(
+        (directPaymentByPair.get(key) ?? 0) +
+          toNumber(payment.amount),
       ),
-    }))
+    );
+  }
+
+  const directRemainingByPair = new Map(
+    calculateDirectOutstandingObligations(
+      originalObligations,
+      activeRecorded,
+    ).map((transfer) => [
+      directedKey(transfer.fromUserId, transfer.toUserId),
+      transfer.amount,
+    ]),
+  );
+
+  const originalExpenseBalances = [...originalBalanceMap.values()]
+    .map((balance) => {
+      const key = directedKey(balance.fromUserId, balance.toUserId);
+
+      const directPaid = directPaymentByPair.get(key) ?? 0;
+      const allocatedPaid = roundMoney(
+        balance.expenses.reduce(
+          (sum, expense) => sum + expense.allocatedPaid,
+          0,
+        ),
+      );
+      const billRemaining = roundMoney(
+        balance.expenses.reduce(
+          (sum, expense) => sum + expense.remainingAmount,
+          0,
+        ),
+      );
+
+      return {
+        ...balance,
+        directPaid,
+        allocatedPaid,
+        unallocatedDirectPaid: roundMoney(
+          Math.max(0, directPaid - allocatedPaid),
+        ),
+        directRemaining: directRemainingByPair.get(key) ?? 0,
+        billRemaining,
+        expenses: [...balance.expenses].sort((left, right) =>
+          right.expenseDate.localeCompare(left.expenseDate),
+        ),
+      };
+    })
     .sort((left, right) => {
       if (left.fromName !== right.fromName) {
         return left.fromName.localeCompare(right.fromName);
@@ -401,7 +600,7 @@ export async function buildCountrySettlementLedger(
     currentOutstanding.flatMap((row) => [row.fromUserId, row.toUserId]),
   ).size;
 
-  const recordedPayments: SmartSettlementPaymentLine[] = activeRecordedRows.map((row) => ({
+  const recordedPayments: SmartSettlementPaymentLine[] = recordedRows.map((row) => ({
     id: row.id,
     fromUserId: row.fromUserId,
     fromName: names.get(row.fromUserId) ?? "Traveler",
@@ -409,9 +608,29 @@ export async function buildCountrySettlementLedger(
     toName: names.get(row.toUserId) ?? "Traveler",
     amount: toNumber(row.amount),
     currency: row.currency || country.currency,
-    status: row.status === "SETTLED" ? "SETTLED" : "SENT",
+    status:
+      row.status === "SETTLED" ||
+      row.status === "CANCELLED" ||
+      row.status === "REVERSED"
+        ? row.status
+        : "SENT",
     sentAt: row.sentAt.toISOString(),
     confirmedAt: row.confirmedAt?.toISOString() ?? null,
+    reversedAt: row.reversedAt?.toISOString() ?? null,
+    reversedByUserId: row.reversedBy ?? null,
+    reversedByName: row.reversedBy
+      ? names.get(row.reversedBy) ?? "Traveler"
+      : null,
+    reversalReason: row.reversalReason ?? null,
+    allocations: (allocationsBySettlementId.get(row.id) ?? []).map(
+      (allocation) => ({
+        expenseId: allocation.expenseId,
+        description:
+          expenseById.get(allocation.expenseId)?.description ??
+          "Expense",
+        amount: toNumber(allocation.amountBase),
+      }),
+    ),
   }));
 
   const grossOwes = new Map<string, number>();
@@ -498,6 +717,15 @@ export async function buildCountrySettlementLedger(
       status: row.status === "SETTLED" ? "SETTLED" : "SENT",
       sentAt: row.sentAt,
       confirmedAt: row.confirmedAt,
+      allocations: (allocationsBySettlementId.get(row.id) ?? []).map(
+        (allocation) => ({
+          expenseId: allocation.expenseId,
+          description:
+            expenseById.get(allocation.expenseId)?.description ??
+            "Expense",
+          amount: toNumber(allocation.amountBase),
+        }),
+      ),
     }));
 
   return {

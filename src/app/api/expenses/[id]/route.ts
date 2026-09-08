@@ -7,6 +7,7 @@ import {
   expensePayers,
   expenseSplits,
   expenses,
+  settlementExpenseAllocations,
   trips,
 } from "@/db/schema";
 import {
@@ -60,6 +61,14 @@ function lockedExpenseError() {
     "Trip expenses are locked for final settlement. Ask the Trip Owner to reopen the financial ledger before adding, editing or deleting expenses.",
     423,
     "TRIP_FINANCIALS_CLOSED",
+  );
+}
+
+function allocatedExpenseError() {
+  return new ExpenseMutationError(
+    "This expense already has bill-specific settlement payments and is locked to preserve the payment trail. Create a correcting expense or settlement entry instead of editing or deleting this bill.",
+    409,
+    "EXPENSE_HAS_SETTLEMENT_ALLOCATIONS",
   );
 }
 
@@ -318,6 +327,26 @@ export async function PUT(
                 "Expense not found.",
                 404,
               );
+            }
+
+            const existingAllocation = (
+              await tx
+                .select({
+                  settlementId:
+                    settlementExpenseAllocations.settlementId,
+                })
+                .from(settlementExpenseAllocations)
+                .where(
+                  eq(
+                    settlementExpenseAllocations.expenseId,
+                    id,
+                  ),
+                )
+                .limit(1)
+            )[0];
+
+            if (existingAllocation) {
+              throw allocatedExpenseError();
             }
 
             if (input.expectedUpdatedAt) {
@@ -666,6 +695,26 @@ export async function DELETE(
                 "Expense not found.",
                 404,
               );
+            }
+
+            const existingAllocation = (
+              await tx
+                .select({
+                  settlementId:
+                    settlementExpenseAllocations.settlementId,
+                })
+                .from(settlementExpenseAllocations)
+                .where(
+                  eq(
+                    settlementExpenseAllocations.expenseId,
+                    id,
+                  ),
+                )
+                .limit(1)
+            )[0];
+
+            if (existingAllocation) {
+              throw allocatedExpenseError();
             }
 
             const removed = await tx

@@ -1,13 +1,42 @@
 import { z } from "zod";
 import { SUPPORTED_REGIONAL_LOCALES, SUPPORTED_REGIONAL_TIME_ZONES } from "@/lib/regional";
 
-const optionalIsoDate = z
+function isValidIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const [yearText, monthText, dayText] = value.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+const isoDateSchema = z
   .string()
   .trim()
-  .max(10)
-  .refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+  .length(10)
+  .refine(isValidIsoDate, {
     message: "Use a valid YYYY-MM-DD date.",
   });
+
+const optionalIsoDate = z.union([
+  isoDateSchema,
+  z.literal(""),
+]);
+
+const currencyCodeSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z]{3}$/, "Use a valid three-letter currency code.")
+  .transform((value) => value.toUpperCase());
 
 function validateTripDateOrder(
   value: { startDate: string; endDate: string },
@@ -117,7 +146,13 @@ export const profilePreferencesSchema = z.object({
 });
 
 const receiptReferenceSchema = z.union([
-  z.string().url().max(4096),
+  z
+    .string()
+    .url()
+    .max(4096)
+    .refine((value) => /^https?:\/\//i.test(value), {
+      message: "Receipt links must use http:// or https://.",
+    }),
   z
     .string()
     .max(900_000)
@@ -148,10 +183,10 @@ const optionalPositiveMoneySchema = z.preprocess((value) => {
 export const expenseSchema = z.object({
   clientRequestId: uuidSchema.optional(),
   countryId: uuidSchema,
-  expenseDate: z.string().min(10).max(10),
+  expenseDate: isoDateSchema,
   category: z.string().trim().min(1).max(80),
   description: z.string().trim().min(1).max(250),
-  transactionCurrency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
+  transactionCurrency: currencyCodeSchema,
   transactionAmount: z.coerce.number().positive().max(1_000_000_000),
   exchangeRate: z.coerce.number().positive().max(1_000_000),
   rateType: z.enum(["DEFAULT", "CASH_EXCHANGE", "CREDIT_CARD", "MANUAL"]),
@@ -186,7 +221,8 @@ export const expenseSchema = z.object({
         value: z.coerce.number().min(0).max(1_000_000_000),
       }),
     )
-    .min(1),
+    .min(1)
+    .max(30),
 });
 
 export const expenseUpdateSchema = expenseSchema.extend({
@@ -226,12 +262,49 @@ export const locationSchema = z.object({
 });
 
 
-export const settlementActionSchema = z.object({
-  requestId: uuidSchema.optional(),
-  countryId: uuidSchema,
-  counterpartyUserId: z.string().min(1),
-  action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),
-  amount: z.coerce.number().positive().max(1_000_000_000).optional(),
+export const settlementActionSchema = z
+  .object({
+    requestId: uuidSchema.optional(),
+    countryId: uuidSchema,
+    counterpartyUserId: z.string().min(1),
+    action: z.enum(["MARK_PAID", "MARK_RECEIVED"]),
+    amount: z.coerce
+      .number()
+      .positive()
+      .max(1_000_000_000)
+      .optional(),
+    allocations: z
+      .array(
+        z.object({
+          expenseId: uuidSchema,
+          amount: z.coerce
+            .number()
+            .positive()
+            .max(1_000_000_000),
+        }),
+      )
+      .max(50)
+      .optional()
+      .default([]),
+  })
+  .superRefine((value, context) => {
+    const seen = new Set<string>();
+
+    value.allocations.forEach((allocation, index) => {
+      if (seen.has(allocation.expenseId)) {
+        context.addIssue({
+          code: "custom",
+          path: ["allocations", index, "expenseId"],
+          message: "Each bill can only be allocated once per payment.",
+        });
+      }
+
+      seen.add(allocation.expenseId);
+    });
+  });
+
+export const settlementReversalSchema = z.object({
+  reason: z.string().trim().max(500).optional().default(""),
 });
 
 export const expenseCommentSchema = z.object({

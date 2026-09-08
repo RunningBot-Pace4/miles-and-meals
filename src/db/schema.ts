@@ -751,8 +751,13 @@ export const settlements = pgTable(
     confirmedBy: text("confirmed_by").references(() => user.id, {
       onDelete: "set null",
     }),
+    reversedBy: text("reversed_by").references(() => user.id, {
+      onDelete: "set null",
+    }),
     sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    reversedAt: timestamp("reversed_at", { withTimezone: true }),
+    reversalReason: text("reversal_reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -761,6 +766,31 @@ export const settlements = pgTable(
     index("settlement_trip_idx").on(table.tripId),
     index("settlement_from_user_idx").on(table.fromUserId),
     index("settlement_to_user_idx").on(table.toUserId),
+  ],
+);
+
+export const settlementExpenseAllocations = pgTable(
+  "settlement_expense_allocations",
+  {
+    settlementId: uuid("settlement_id")
+      .notNull()
+      .references(() => settlements.id, { onDelete: "cascade" }),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "restrict" }),
+    amountBase: numeric("amount_base", {
+      precision: 18,
+      scale: 2,
+    }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.settlementId, table.expenseId],
+    }),
+    index("settlement_allocation_expense_idx").on(table.expenseId),
   ],
 );
 
@@ -890,6 +920,7 @@ export const schema = {
   expenseItems,
   expenseItemAssignments,
   settlements,
+  settlementExpenseAllocations,
   travelItems,
   tripInboxItems,
   locationPings,

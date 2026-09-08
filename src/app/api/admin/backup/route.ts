@@ -11,6 +11,7 @@ import {
   expenseSplits,
   expenses,
   journeys,
+  settlementExpenseAllocations,
   settlements,
   travelItems,
   tripInboxItems,
@@ -38,13 +39,19 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 3;
+const BACKUP_VERSION = 5;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
 const backupSchema = z.object({
   format: z.literal(BACKUP_FORMAT),
-  version: z.union([z.literal(1), z.literal(2), z.literal(BACKUP_VERSION)]),
+  version: z.union([
+    z.literal(1),
+    z.literal(2),
+    z.literal(3),
+    z.literal(4),
+    z.literal(BACKUP_VERSION),
+  ]),
   exportedAt: z.string(),
   data: z.object({
     journeys: z.array(z.record(z.string(), z.unknown())).optional().default([]),
@@ -74,6 +81,10 @@ const backupSchema = z.object({
     expenseItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     expenseItemAssignments: z.array(z.record(z.string(), z.unknown())).optional().default([]),
     settlements: z.array(z.record(z.string(), z.unknown())),
+    settlementExpenseAllocations: z
+      .array(z.record(z.string(), z.unknown()))
+      .optional()
+      .default([]),
     travelItems: z.array(z.record(z.string(), z.unknown())),
     tripInboxItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   }),
@@ -255,6 +266,7 @@ function requiredUserIds(
     add(row, "toUserId");
     add(row, "initiatedBy");
     add(row, "confirmedBy");
+    add(row, "reversedBy");
   }
 
   for (
@@ -554,6 +566,17 @@ async function validateBackup(
     }
   }
 
+  const settlementIds = new Set(
+    backup.data.settlements.map((row, index) =>
+      requiredString(
+        row,
+        "id",
+        errors,
+        `settlements[${index}]`,
+      ),
+    ),
+  );
+
   for (
     const [index, row]
     of backup.data.settlements.entries()
@@ -602,6 +625,42 @@ async function validateBackup(
     ) {
       errors.push(
         `settlements[${index}] trip does not match its country.`,
+      );
+    }
+  }
+
+  for (
+    const [index, row]
+    of backup.data.settlementExpenseAllocations.entries()
+  ) {
+    const settlementId = requiredString(
+      row,
+      "settlementId",
+      errors,
+      `settlementExpenseAllocations[${index}]`,
+    );
+    const expenseId = requiredString(
+      row,
+      "expenseId",
+      errors,
+      `settlementExpenseAllocations[${index}]`,
+    );
+
+    if (
+      settlementId &&
+      !settlementIds.has(settlementId)
+    ) {
+      errors.push(
+        `settlementExpenseAllocations[${index}] references a missing settlement.`,
+      );
+    }
+
+    if (
+      expenseId &&
+      !expenseIds.has(expenseId)
+    ) {
+      errors.push(
+        `settlementExpenseAllocations[${index}] references a missing expense.`,
       );
     }
   }
@@ -731,6 +790,8 @@ async function validateBackup(
       settlements:
         backup.data.settlements
           .length,
+      settlementAllocations:
+        backup.data.settlementExpenseAllocations.length,
       plannerItems:
         backup.data.travelItems
           .length,
@@ -1115,8 +1176,11 @@ async function restoreBackup(
         status,
         initiated_by,
         confirmed_by,
+        reversed_by,
         sent_at,
         confirmed_at,
+        reversed_at,
+        reversal_reason,
         created_at,
         updated_at
       ) VALUES (
@@ -1130,10 +1194,32 @@ async function restoreBackup(
         ${value(row, "status")},
         ${value(row, "initiatedBy")},
         ${value(row, "confirmedBy")},
+        ${value(row, "reversedBy")},
         ${timestamp(row, "sentAt") ?? new Date()},
         ${timestamp(row, "confirmedAt")},
+        ${timestamp(row, "reversedAt")},
+        ${value(row, "reversalReason")},
         ${timestamp(row, "createdAt") ?? new Date()},
         ${timestamp(row, "updatedAt") ?? new Date()}
+      )
+    `);
+  }
+
+  for (
+    const row of
+      backup.data.settlementExpenseAllocations
+  ) {
+    queries.push(sql`
+      INSERT INTO settlement_expense_allocations (
+        settlement_id,
+        expense_id,
+        amount_base,
+        created_at
+      ) VALUES (
+        ${value(row, "settlementId")},
+        ${value(row, "expenseId")},
+        ${value(row, "amountBase")},
+        ${timestamp(row, "createdAt") ?? new Date()}
       )
     `);
   }
@@ -1256,6 +1342,7 @@ export async function GET() {
     commentRows,
     splitPresetRows,
     settlementRows,
+    settlementAllocationRows,
     plannerRows,
     expenseItemRows,
     expenseItemAssignmentRows,
@@ -1277,6 +1364,7 @@ export async function GET() {
     db.select().from(expenseComments),
     db.select().from(splitPresets),
     db.select().from(settlements),
+    db.select().from(settlementExpenseAllocations),
     db.select().from(travelItems),
     db.select().from(expenseItems),
     db.select().from(expenseItemAssignments),
@@ -1332,6 +1420,8 @@ export async function GET() {
       expenseItemAssignments: expenseItemAssignmentRows,
       settlements:
         settlementRows,
+      settlementExpenseAllocations:
+        settlementAllocationRows,
       travelItems:
         plannerRows,
     },

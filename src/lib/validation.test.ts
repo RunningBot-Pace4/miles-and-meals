@@ -38,3 +38,55 @@ describe("expenseSchema", () => {
     expect(parsed.actualConvertedAmount).toBe(46.9);
   });
 });
+
+describe("expenseSchema hardening", () => {
+  it("rejects impossible calendar dates", () => {
+    expect(() =>
+      expenseSchema.parse({
+        ...baseExpense,
+        expenseDate: "2026-02-30",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects non-web receipt URL schemes", () => {
+    expect(() =>
+      expenseSchema.parse({
+        ...baseExpense,
+        receiptUrl: "mailto:receipt@example.com",
+      }),
+    ).toThrow();
+  });
+
+  it("accepts secure web receipt URLs", () => {
+    const parsed = expenseSchema.parse({
+      ...baseExpense,
+      receiptUrl: "https://example.com/receipt.jpg",
+    });
+
+    expect(parsed.receiptUrl).toBe(
+      "https://example.com/receipt.jpg",
+    );
+  });
+
+  it("rejects non-letter currency codes", () => {
+    expect(() =>
+      expenseSchema.parse({
+        ...baseExpense,
+        transactionCurrency: "12$",
+      }),
+    ).toThrow();
+  });
+
+  it("caps split participants at thirty", () => {
+    expect(() =>
+      expenseSchema.parse({
+        ...baseExpense,
+        splits: Array.from({ length: 31 }, (_, index) => ({
+          userId: `user-${index}`,
+          value: 0,
+        })),
+      }),
+    ).toThrow();
+  });
+});

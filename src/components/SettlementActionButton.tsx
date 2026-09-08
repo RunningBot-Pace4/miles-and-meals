@@ -6,6 +6,11 @@ type SettlementAction =
   | "MARK_PAID"
   | "MARK_RECEIVED";
 
+type SettlementAllocation = {
+  expenseId: string;
+  amount: number;
+};
+
 export const SETTLEMENT_UPDATED_EVENT =
   "mnm:settlement-updated";
 
@@ -34,6 +39,8 @@ export function SettlementActionButton({
   label,
   maximumAmount,
   currency,
+  allocations = [],
+  fixedAmount = false,
 }: {
   countryId: string;
   counterpartyUserId: string;
@@ -41,6 +48,8 @@ export function SettlementActionButton({
   label: string;
   maximumAmount?: number;
   currency?: string;
+  allocations?: SettlementAllocation[];
+  fixedAmount?: boolean;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -112,8 +121,11 @@ export function SettlementActionButton({
             action,
             amount:
               maximumAmount !== undefined
-                ? Number(amount)
+                ? fixedAmount
+                  ? maximumAmount
+                  : Number(amount)
                 : undefined,
+            allocations,
           }),
         },
       );
@@ -145,7 +157,7 @@ export function SettlementActionButton({
       setAwaitingRefresh(true);
       setSuccessMessage(
         maximumAmount !== undefined &&
-          Number(amount) <
+          (fixedAmount ? maximumAmount : Number(amount)) <
             maximumAmount - 0.009
           ? `Partial ${action === "MARK_RECEIVED" ? "receipt" : "payment"} recorded. Refreshing the remaining balance…`
           : "Payment recorded. Refreshing the settlement…",
@@ -173,7 +185,7 @@ export function SettlementActionButton({
 
   return (
     <div className="settlement-action-wrap">
-      {maximumAmount !== undefined ? (
+      {maximumAmount !== undefined && !fixedAmount ? (
         <label className="settlement-partial-amount">
           <span>Amount</span>
           <span>
@@ -196,7 +208,15 @@ export function SettlementActionButton({
             ? "button primary settlement-action-button"
             : "button settlement-action-button settlement-action-secondary"
         }
-        disabled={busy || awaitingRefresh || (maximumAmount !== undefined && (!Number.isFinite(Number(amount)) || Number(amount) <= 0 || Number(amount) > maximumAmount + 0.009))}
+        disabled={
+          busy || awaitingRefresh ||
+          (maximumAmount !== undefined &&
+            (fixedAmount
+              ? maximumAmount <= 0
+              : !Number.isFinite(Number(amount)) ||
+                Number(amount) <= 0 ||
+                Number(amount) > maximumAmount + 0.009))
+        }
         data-requires-online="true"
         onClick={runAction}
         type="button"

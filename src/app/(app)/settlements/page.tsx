@@ -209,6 +209,7 @@ export default async function SettlementsPage({
         currentUserId={session.user.id}
         countryId={selectedCountries.length === 1 ? selectedCountryId : ""}
         tripId={selectedCountries.length === 1 ? "" : selectedTripId}
+        canManageFinancials={canManageFinancials}
         variant="settlements"
       />
     </div>
