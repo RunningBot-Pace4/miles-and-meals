@@ -14,6 +14,7 @@ import {
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
+import { BillPaymentProgress } from "@/components/BillPaymentProgress";
 import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
 import { SettlementReversalButton } from "@/components/SettlementReversalButton";
 import { trackProductEvent } from "@/lib/product-analytics-client";
@@ -309,8 +310,8 @@ function SmartSettlementPanel({
                       <strong>{formatMoney(expense.shareAmount, expense.currency)}</strong>
                       <small>of {formatMoney(expense.expenseTotal, expense.currency)}</small>
                     </span>
-                    <Link className="smart-proof-link" href={`/expenses/${expense.expenseId}/edit`}>
-                      View expense
+                    <Link className="smart-proof-link" href={`/expenses/${expense.expenseId}`}>
+                      View bill & payment history
                     </Link>
                   </div>
                 ))}
@@ -553,7 +554,7 @@ function SmartSettlementPanel({
                       <strong>{formatMoney(balance.amount, plan.currency)}</strong>
                     </span>
                     <span>
-                      <small>Bill-specific paid</small>
+                      <small>Bill payments recorded (including pending)</small>
                       <strong>{formatMoney(balance.allocatedPaid, plan.currency)}</strong>
                     </span>
                     <span>
@@ -585,23 +586,9 @@ function SmartSettlementPanel({
                             {formatSettlementDate(expense.expenseDate)} · {expense.category} · {expense.participantName}&apos;s share · paid by {expense.payerName}
                           </small>
                         </span>
-                        <span className="smart-proof-amount">
-                          <strong>{formatMoney(expense.remainingAmount, expense.currency)} remaining</strong>
-                          <small>
-                            {formatMoney(expense.allocatedPaid, expense.currency)} paid of {formatMoney(expense.shareAmount, expense.currency)}
-                          </small>
-                          <span
-                            className={`bill-payment-status ${expense.paymentStatus.toLowerCase()}`}
-                          >
-                            {expense.paymentStatus === "UNPAID"
-                              ? "Unpaid"
-                              : expense.paymentStatus === "PARTIAL"
-                                ? "Partial"
-                                : "Settled"}
-                          </span>
-                        </span>
-                        <Link className="smart-proof-link" href={`/expenses/${expense.expenseId}/edit`}>
-                          View expense
+                        <BillPaymentProgress bill={expense} payments={plan.recordedPayments} />
+                        <Link className="smart-proof-link" href={`/expenses/${expense.expenseId}`}>
+                          View bill & payment history
                         </Link>
                       </div>
                     ))}

@@ -131,9 +131,9 @@ export function BillSettlementAllocator({
   if (outstandingBills.length === 0) {
     return (
       <div className="bill-payment-allocator settled">
-        <strong>All allocated bills are settled</strong>
+        <strong>{hasPendingPayment ? "Payment awaiting confirmation" : "All allocated bills are settled"}</strong>
         <small>
-          No bill-specific payment remains for this relationship.
+          {hasPendingPayment ? "These amounts are reserved until the receiver confirms receipt." : "No bill-specific payment remains for this relationship."}
         </small>
       </div>
     );

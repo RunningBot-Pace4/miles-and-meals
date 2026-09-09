@@ -1,5 +1,11 @@
 # Miles & Meals — verified build fix
 
+## Payment history and navigation update
+
+This package also includes the changes in PAYMENT-HISTORY-UPDATE.md.
+Latest unit result: 246 passed, 4 database integration tests skipped.
+No SQL migration is required for this update; it uses existing allocations.
+
 ## What was fixed
 
 - `scripts/validate-v95.mjs` expected the retired `canAccessCountry` marker.

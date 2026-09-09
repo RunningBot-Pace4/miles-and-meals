@@ -28,7 +28,7 @@ must(live, "View details", "v70 recommended transfer drill-down missing");
 must(live, "Original Balances", "v70 Original Balances view missing");
 must(live, "Expenses behind these net positions", "v70 contributing-expense explanation missing");
 must(live, "Payments already recorded", "v70 settlement payment history view missing");
-must(live, "View expense", "v70 expense-level drill-through missing");
+must(live, "View bill & payment history", "v70 expense-level drill-through missing");
 must(live, "Nothing is rewritten", "v70 read-only ledger-safety explanation missing");
 
 must(scope, "originalExpenseBalances: plan.originalExpenseBalances.map", "v70 all-trip currency conversion misses original-balance audit data");

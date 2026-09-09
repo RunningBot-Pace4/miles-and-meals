@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@/app/globals.css";
 import "@/app/living-journey.css";
 import "@/app/v92-living-journey.css";
+import "@/app/bill-history.css";
 import { ClientErrorReporter } from "@/components/ClientErrorReporter";
 import { NetworkStatusBanner } from "@/components/NetworkStatusBanner";
 import { NumericInputGuard } from "@/components/NumericInputGuard";

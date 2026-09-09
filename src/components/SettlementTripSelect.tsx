@@ -75,7 +75,11 @@ export function SettlementTripSelect({
 
     try {
       await activateTrip(nextTripId);
-      window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
+      if (window.location.pathname === "/spend") {
+        window.location.replace(`/spend?tab=settlements&tripId=${encodeURIComponent(nextTripId)}`);
+      } else {
+        window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
+      }
     } catch (caught) {
       setValue(selectedId);
       setError(

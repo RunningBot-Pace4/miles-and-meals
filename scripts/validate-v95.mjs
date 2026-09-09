@@ -44,17 +44,19 @@ for (const marker of [
 
 for (const marker of [
   "Trip money",
-  'href="/expenses"',
-  'href="/settlements"',
-  'href="/settings/budgets"',
-  'href="/receipts"',
+  "<ExpensesPage",
+  "<SettlementsPage",
+  "<BudgetsPage",
+  "<ReceiptReviewPage",
+  "<SectionTabs",
 ]) must(spend, marker, `V95 Spend hub missing: ${marker}`);
 
 for (const marker of [
   "PERSON STATEMENT",
   "Original bills",
   "Active direct payments",
-  "Bill-specific paid",
+  "Bill payments recorded (including pending)",
+  "<BillPaymentProgress",
   "Payment history",
   "View payment proof",
   "<BillSettlementAllocator",

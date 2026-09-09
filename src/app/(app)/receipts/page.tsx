@@ -39,7 +39,7 @@ export default async function ReceiptReviewPage() {
       </section>
 
       <section className="receipt-review-list">
-        {receipts.length ? receipts.map((expense) => (
+        {needsReview.length ? needsReview.map((expense) => (
           <article className={expense.receiptReviewStatus === "REVIEWED" ? "receipt-review-row reviewed" : "receipt-review-row"} key={expense.id}>
             <div>
               <p className="eyebrow">{expense.expenseDate} · {expense.category}</p>
@@ -58,7 +58,7 @@ export default async function ReceiptReviewPage() {
             </div>
           </article>
         )) : (
-          <article className="empty-card"><h2>No receipts for this Trip</h2><p>Add a receipt when creating or editing an expense.</p></article>
+          <article className="empty-card"><h2>No receipts need review</h2><p>View all captured receipts from Expenses.</p></article>
         )}
       </section>
     </div>

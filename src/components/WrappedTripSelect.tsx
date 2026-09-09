@@ -47,7 +47,11 @@ export function WrappedTripSelect({
 
     try {
       await activateTrip(nextTripId);
-      window.location.assign(`/wrapped?tripId=${encodeURIComponent(nextTripId)}`);
+      if (window.location.pathname === "/trip-story") {
+        window.location.assign(`/trip-story?tab=highlights&tripId=${encodeURIComponent(nextTripId)}`);
+      } else {
+        window.location.assign(`/wrapped?tripId=${encodeURIComponent(nextTripId)}`);
+      }
     } catch (caught) {
       setError(
         caught instanceof Error

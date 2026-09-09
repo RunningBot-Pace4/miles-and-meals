@@ -361,6 +361,7 @@ export function LiveExpensesWorkspace({
                       <span className="muted">Locked for settlement</span>
                     )}
 
+                    <Link href={`/expenses/${expense.id}`}>Bill & payment history</Link>
                     {expense.hasReceipt ? (
                       <ReceiptViewerButton
                         expenseId={

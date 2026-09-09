@@ -1,37 +1,7 @@
-import { FullPageLink as Link } from "@/components/FullPageLink";
-
-export default function TripStoryPage() {
-  return (
-    <div className="stack gap-lg">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">TRIP STORY</p>
-          <h1>Memories & highlights</h1>
-          <p className="muted">
-            Capture moments during the trip, then revisit the finished story.
-          </p>
-        </div>
-      </div>
-
-      <section className="hub-choice-grid">
-        <Link className="panel hub-choice-card" href="/memories">
-          <span aria-hidden="true">✦</span>
-          <div>
-            <strong>Memories</strong>
-            <small>Photos, places and notes captured during the trip.</small>
-          </div>
-          <b>›</b>
-        </Link>
-
-        <Link className="panel hub-choice-card" href="/wrapped">
-          <span aria-hidden="true">◌</span>
-          <div>
-            <strong>Trip Wrapped</strong>
-            <small>Highlights and trip stats after the journey.</small>
-          </div>
-          <b>›</b>
-        </Link>
-      </section>
-    </div>
-  );
+import MemoriesPage from "../memories/page";
+import WrappedPage from "../wrapped/page";
+import { SectionTabs } from "@/components/SectionTabs";
+export default async function TripStoryPage({ searchParams }: { searchParams: Promise<{ tab?: string; tripId?: string }> }) {
+ const query = await searchParams;
+ return <div className="stack gap-lg"><SectionTabs label="Trip story" selected={query.tab === "highlights" ? "highlights" : "memories"} items={[{key:"memories",label:"Memories",href:"/trip-story"},{key:"highlights",label:"Highlights",href:"/trip-story?tab=highlights"}]}/>{query.tab === "highlights" ? <WrappedPage searchParams={Promise.resolve(query)} /> : <MemoriesPage />}</div>;
 }

@@ -470,6 +470,18 @@ export default async function DashboardPage({
       ) : null}
 
       {selectedTrip && commandCenter ? (
+        <details className="panel home-next-steps">
+          <summary><strong>Your next steps</strong> · {commandCenter.openTaskCount} open tasks</summary>
+          <div className="stack">
+            {commandCenter.nextItem ? <Link href="/planner">Next: {commandCenter.nextItem.title}</Link> : <Link href="/planner">Add your next activity</Link>}
+            {commandCenter.openTaskCount > 0 ? <Link href="/planner">Review {commandCenter.openTaskCount} unfinished tasks</Link> : null}
+            <Link href="/spend?tab=settlements">Check payments and pending confirmations</Link>
+            <Link href="/companion">All trip checks: packing, documents and budget</Link>
+          </div>
+        </details>
+      ) : null}
+
+      {selectedTrip && commandCenter ? (
         <LivingJourneyHalo
           tripName={heroDestination}
           tripDateLabel={tripDateLabel}

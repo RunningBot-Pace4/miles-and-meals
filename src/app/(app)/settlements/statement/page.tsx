@@ -1,4 +1,5 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
+import { BillPaymentProgress } from "@/components/BillPaymentProgress";
 import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
 import { canAccessCountry } from "@/lib/access";
 import { formatMoney } from "@/lib/money";
@@ -35,12 +36,6 @@ function paymentMethodLabel(value: string | null): string {
   if (value === "CARD") return "Card";
   if (value === "OTHER") return "Other";
   return "Method not specified";
-}
-
-function billStatusLabel(status: "UNPAID" | "PARTIAL" | "SETTLED"): string {
-  if (status === "PARTIAL") return "Partial";
-  if (status === "SETTLED") return "Settled";
-  return "Unpaid";
 }
 
 export default async function PersonStatementPage({
@@ -149,7 +144,7 @@ export default async function PersonStatementPage({
           <strong>{formatMoney(balance.directPaid, ledger.currency)}</strong>
         </div>
         <div>
-          <span>Bill-specific paid</span>
+          <span>Bill payments recorded (including pending)</span>
           <strong>{formatMoney(balance.allocatedPaid, ledger.currency)}</strong>
         </div>
         <div>
@@ -182,7 +177,7 @@ export default async function PersonStatementPage({
         <div className="person-statement-bills">
           {balance.expenses.map((expense) => (
             <article
-              className={`person-statement-bill ${expense.paymentStatus.toLowerCase()}`}
+              className="person-statement-bill"
               key={`${expense.expenseId}-${expense.participantUserId}-${expense.payerUserId}`}
             >
               <div>
@@ -194,28 +189,12 @@ export default async function PersonStatementPage({
                   {expense.participantName}&apos;s share · paid by {expense.payerName}
                 </small>
               </div>
-              <dl>
-                <div>
-                  <dt>Original</dt>
-                  <dd>{formatMoney(expense.shareAmount, expense.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Paid</dt>
-                  <dd>{formatMoney(expense.allocatedPaid, expense.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Outstanding</dt>
-                  <dd>{formatMoney(expense.remainingAmount, expense.currency)}</dd>
-                </div>
-              </dl>
-              <span className={`bill-payment-status ${expense.paymentStatus.toLowerCase()}`}>
-                {billStatusLabel(expense.paymentStatus)}
-              </span>
+              <BillPaymentProgress bill={expense} payments={payments} />
               <Link
                 className="smart-proof-link"
-                href={`/expenses/${expense.expenseId}/edit`}
+                href={`/expenses/${expense.expenseId}`}
               >
-                View expense
+                View bill & payment history
               </Link>
             </article>
           ))}
@@ -259,7 +238,7 @@ export default async function PersonStatementPage({
                   <div>
                     <strong>{formatMoney(payment.amount, payment.currency)}</strong>
                     <small>
-                      {formatDate(payment.sentAt)} · {payment.status}
+                      {formatDate(payment.sentAt)} · {payment.status === "SENT" ? "Awaiting confirmation" : payment.status}
                     </small>
                     <small>{paymentMethodLabel(payment.paymentMethod)}</small>
                     {payment.paymentReference ? (
