@@ -1,5 +1,8 @@
 # Miles & Meals — verified build fix
 
+Latest update: email verification removed. Use EMAIL-LOGIN-AND-RESET.md for
+login changes and database/RESET-APP-DATA-KEEP-ACCOUNTS.sql for optional cleanup.
+
 ## Payment history and navigation update
 
 This package also includes the changes in PAYMENT-HISTORY-UPDATE.md.
@@ -76,11 +79,9 @@ Keep DATABASE_URL and BETTER_AUTH_SECRET in Vercel environment settings. Set
 BETTER_AUTH_URL and NEXT_PUBLIC_APP_URL to your real HTTPS application origin.
 Use separate preview configuration and a test DB when testing preview deployments.
 
-Important: this source requires email verification in production. Configure
-RESEND_API_KEY and EMAIL_FROM with a verified sender before inviting users.
-Without email configuration public signup is disabled, and existing unverified
-users cannot complete verification. Check admin login and delivery in staging;
-do not disable verification or mass-mark accounts verified as a workaround.
+Email verification is disabled in this update. Existing users can sign in
+without verifying their email, and signup no longer requires RESEND_API_KEY or
+EMAIL_FROM. See EMAIL-LOGIN-AND-RESET.md for the optional account-preserving reset.
 
 This fix does NOT need a new SQL migration. If your database has never received
 the existing V93–V95 schema changes, review the scripts in database/ against a

@@ -49,7 +49,7 @@ export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string })
 
       if (!token) {
         setSuccess(
-          "Account created. Check your email and verify your address before signing in.",
+          "Account created. You can now sign in with your email and password.",
         );
         setBusy(false);
         return;
