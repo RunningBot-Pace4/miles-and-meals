@@ -14,7 +14,10 @@ const layout = read("src/app/layout.tsx");
 const livingCss = read("src/app/living-journey.css");
 const v92Css = read("src/app/v92-living-journey.css");
 const nextConfig = read("next.config.ts");
-const manifest = read("public/manifest-v92.webmanifest");
+const manifestPath = fs.existsSync("public/manifest.webmanifest")
+  ? "public/manifest.webmanifest"
+  : "public/manifest-v92.webmanifest";
+const manifest = read(manifestPath);
 const worker = read("public/sw.js");
 
 must(packageJson, '"version": "1.92.21"', "V91.1-or-newer package version missing");
@@ -69,12 +72,22 @@ for (const file of [
   "public/icons/v92/living-journey-loader.gif",
 ]) mustExist(file);
 
-must(layout, "/manifest-v92.webmanifest", "Layout does not use the V92 versioned manifest");
+if (
+  !layout.includes("/manifest.webmanifest") &&
+  !layout.includes("/manifest-v92.webmanifest")
+) {
+  throw new Error("Layout does not reference an available PWA manifest");
+}
 must(manifest, "/icons/v92/icon-192.png", "V92 manifest icon missing");
 must(worker, "miles-meals-static-v92-21", "V91.1-or-newer service-worker cache missing");
 must(worker, "/icons/v92/notification-icon-96.png", "V92 notification mark missing");
 must(nextConfig, 'source: "/sw.js"', "Service worker cache headers missing");
-must(nextConfig, 'source: "/manifest-v92.webmanifest"', "Manifest cache headers missing");
+if (
+  !nextConfig.includes('source: "/manifest.webmanifest"') &&
+  !nextConfig.includes('source: "/manifest-v92.webmanifest"')
+) {
+  throw new Error("Manifest cache headers missing");
+}
 must(nextConfig, "no-cache, no-store, must-revalidate", "PWA metadata is still cacheable");
 must(v92Css, "V92 · Living Journey", "V92 final cascade is missing");
 

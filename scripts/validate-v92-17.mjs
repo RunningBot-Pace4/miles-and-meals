@@ -16,8 +16,13 @@ must(packageJson, '"v92-17:check"', "V92.17 validation script missing");
 must(packageJson, "npm run v92-17:check", "V92.17 gate is not in prebuild");
 must(worker, "miles-meals-static-v92-21", "V92.17 service-worker cache missing");
 
-for (const marker of ["minimumScale: 1", "maximumScale: 1", "userScalable: false"]) {
-  must(layout, marker, `Fixed device viewport missing: ${marker}`);
+for (const marker of ['width: "device-width"', "initialScale: 1", 'viewportFit: "cover"']) {
+  must(layout, marker, `Accessible device viewport missing: ${marker}`);
+}
+for (const retired of ["maximumScale: 1", "userScalable: false"]) {
+  if (layout.includes(retired)) {
+    throw new Error(`V96 accessibility regression: ${retired}`);
+  }
 }
 for (const marker of [
   "/* V92.17 · stable phone viewport",
@@ -31,4 +36,4 @@ for (const marker of ["320, 360, 390, 430, 600, 719", "inputFontSize", "savePosi
   must(geometry, marker, `Viewport geometry coverage missing: ${marker}`);
 }
 
-console.log("V92.17 fixed viewport and keyboard-safe expense gate passed.");
+console.log("V92.17 keyboard-safe viewport compatibility gate passed.");

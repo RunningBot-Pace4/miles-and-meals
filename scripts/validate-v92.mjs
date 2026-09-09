@@ -17,7 +17,10 @@ const loading = read("src/components/BrandedLoadingScreen.tsx");
 const nav = read("src/components/MobileNav.tsx");
 const contextBack = read("src/components/MobileContextBack.tsx");
 const css = read("src/app/v92-living-journey.css");
-const manifest = JSON.parse(read("public/manifest-v92.webmanifest"));
+const manifestPath = fs.existsSync("public/manifest.webmanifest")
+  ? "public/manifest.webmanifest"
+  : "public/manifest-v92.webmanifest";
+const manifest = JSON.parse(read(manifestPath));
 const worker = read("public/sw.js");
 const offline = read("public/offline.html");
 const release = read("START-HERE-V92.md");
@@ -101,7 +104,12 @@ if (manifest.theme_color !== "#ffffff" || manifest.background_color !== "#f7f8fa
 for (const icon of manifest.icons) {
   if (!icon.src.startsWith("/icons/v92/")) throw new Error(`Unversioned V92 icon: ${icon.src}`);
 }
-must(layout, "/manifest-v92.webmanifest", "V92 layout manifest missing");
+if (
+  !layout.includes("/manifest.webmanifest") &&
+  !layout.includes("/manifest-v92.webmanifest")
+) {
+  throw new Error("PWA layout manifest missing");
+}
 must(layout, 'statusBarStyle: "default"', "V92 iOS status bar remains dark");
 must(worker, "miles-meals-static-v92-21", "V92.5 service-worker cache missing");
 must(worker, "/icons/v92/icon-192.png", "V92 notification icon path missing");
