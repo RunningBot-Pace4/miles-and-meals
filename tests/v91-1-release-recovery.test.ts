@@ -34,10 +34,10 @@ describe("V91.1 release recovery", () => {
 
   it("uses immutable V92 PWA icon paths", () => {
     const layout = read("src/app/layout.tsx");
-    const manifest = read("public/manifest-v92.webmanifest");
+    const manifest = read("public/manifest.webmanifest");
     const worker = read("public/sw.js");
 
-    expect(layout).toContain("/manifest-v92.webmanifest");
+    expect(layout).toContain('manifest: "/manifest.webmanifest"');
     expect(manifest).toContain("/icons/v92/icon-192.png");
     expect(worker).toContain("miles-meals-static-v92-21");
     expect(worker).toContain("/icons/v92/notification-icon-96.png");

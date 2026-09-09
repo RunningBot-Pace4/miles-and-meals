@@ -12,7 +12,7 @@ type Context = {
 
 function parseImageDataUrl(value: string): {
   contentType: string;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
 } | null {
   const match = value.match(
     /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/,
@@ -39,7 +39,6 @@ export async function GET(_request: Request, context: Context) {
   const row = (
     await db
       .select({
-        countryId: settlements.countryId,
         tripId: settlements.tripId,
         fromUserId: settlements.fromUserId,
         toUserId: settlements.toUserId,
@@ -87,7 +86,7 @@ export async function GET(_request: Request, context: Context) {
     headers: {
       "content-type": image.contentType,
       "cache-control": "private, no-store",
-      "content-disposition": `inline; filename="payment-proof-${id}.jpg"`,
+      "content-disposition": `inline; filename="payment-proof.${image.contentType === "image/jpeg" ? "jpg" : image.contentType.split("/")[1]}"`,
       "x-content-type-options": "nosniff",
     },
   });

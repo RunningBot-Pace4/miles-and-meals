@@ -92,7 +92,13 @@ for (const marker of [
 
 for (const marker of [
   "parseImageDataUrl",
-  "canAccessCountry",
+  // V96 replaced country-wide access with payment-party / trip-manager access.
+  "getTripCapabilities",
+  "row.fromUserId === session.user.id",
+  "row.toUserId === session.user.id",
+  "capabilities.canManage",
+  "if (!canView)",
+  '"cache-control": "private, no-store"',
   '"x-content-type-options": "nosniff"',
 ]) must(proofRoute, marker, `V95 proof route missing: ${marker}`);
 

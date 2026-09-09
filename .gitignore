@@ -2,6 +2,8 @@ node_modules
 .next
 .env
 .env.local
+.env.*
+!.env.example
 .vercel
 coverage
 drizzle
@@ -10,3 +12,9 @@ drizzle
 *.slnx
 *.user
 *.suo
+*.tsbuildinfo
+*.log
+playwright-report/
+test-results/
+# OCR runtime caches; browser language assets live under public/tesseract/lang.
+/*.traineddata

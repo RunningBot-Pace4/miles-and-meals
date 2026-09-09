@@ -6,12 +6,12 @@ const css = readFileSync("src/app/v92-living-journey.css", "utf8");
 const geometry = readFileSync("e2e/v92-17-viewport-keyboard.spec.ts", "utf8");
 
 describe("V92.17 fitted viewport and keyboard-safe expense editor", () => {
-  it("publishes a device-width fixed-scale viewport", () => {
+  it("publishes a device-width viewport without disabling accessibility zoom", () => {
     expect(layout).toContain('width: "device-width"');
     expect(layout).toContain("initialScale: 1");
-    expect(layout).toContain("minimumScale: 1");
-    expect(layout).toContain("maximumScale: 1");
-    expect(layout).toContain("userScalable: false");
+    expect(layout).not.toContain("minimumScale:");
+    expect(layout).not.toContain("maximumScale:");
+    expect(layout).not.toContain("userScalable: false");
   });
 
   it("prevents iOS input-focus zoom on every phone form", () => {

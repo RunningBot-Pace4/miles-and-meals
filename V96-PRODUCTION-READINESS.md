@@ -1,5 +1,11 @@
 # V96 — Production Readiness Hardening
 
+> Historical planning document, not a certification of this ZIP. See
+> DEPLOY-VERCEL.md for the verified build and current deployment instructions.
+> This source pins Next.js 16.2.12, not 16.3.4. The `v96:check` and
+> `v96:purge-sensitive-docs` commands below are not present in package.json;
+> do not run them. The release and purge procedures below remain unverified plans.
+
 V96 is a launch-hardening release on top of V95. It does not add a new product area.
 
 ## Security and privacy

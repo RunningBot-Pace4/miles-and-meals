@@ -48,13 +48,17 @@ describe("P2 finance hardening contract", () => {
     );
   });
 
-  it("shows direct person-to-person settlement progress without pretending payments are receipt-specific", () => {
+  it("distinguishes explicitly allocated bill payments from unassigned direct payments", () => {
     expect(ledger).toContain("directPaid");
     expect(ledger).toContain("directRemaining");
-    expect(settlementUi).toContain("Direct payments recorded");
+    expect(settlementUi).toContain("Bill-specific paid");
+    expect(settlementUi).toContain("balance.allocatedPaid");
+    expect(settlementUi).toContain("balance.unallocatedDirectPaid");
+    expect(settlementUi).toContain("expense.remainingAmount");
+    expect(settlementUi).toContain("<BillSettlementAllocator");
     expect(settlementUi).toContain("Direct remaining");
     expect(settlementUi).toContain(
-      "Individual payment records are not assigned to a specific receipt yet",
+      "Bill-specific payments are assigned only when a traveler explicitly selects the receipts they are paying",
     );
   });
 });
