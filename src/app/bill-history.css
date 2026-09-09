@@ -9,3 +9,16 @@
 .dashboard-page .home-greeting { margin:.4rem 0; font-size:.85rem; color:#475569; }
 .dashboard-page .dashboard-welcome-title { font-family:inherit; font-size:clamp(1.6rem,5vw,2.5rem); line-height:1.12; letter-spacing:-.04em; margin:.4rem 0; overflow-wrap:anywhere; }
 .dashboard-page .home-trip-caption { font-size:.85rem; color:#475569; margin:.7rem 0 0; }
+.dashboard-page .home-postcard { position:relative; overflow:hidden; background:linear-gradient(120deg,#fff7e8 0%,#fffaf3 60%,#ffe6ca 100%) !important; border:1px solid #eddcc6; box-shadow:0 12px 36px #49351b09; min-height:220px; }
+.home-postcard .dashboard-welcome-copy,.home-postcard .dashboard-add { position:relative; z-index:1; }
+.dashboard-page .home-postcard .dashboard-welcome-title { font-size:clamp(2rem,5vw,3.1rem) !important; letter-spacing:-.055em; line-height:1.05; }
+.home-postcard .dashboard-welcome-title em { color:#b85b28; font-family:Georgia,serif; font-weight:500; }
+.home-postcard-route { position:absolute; width:48%; height:100%; right:0; top:0; color:#cb8d51; opacity:.3; pointer-events:none; }
+.home-postcard .home-greeting { text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; }
+.home-postcard .home-trip-caption { line-height:1.8; }
+.home-money-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.home-money-grid>div { display:flex; flex-direction:column; gap:.35rem; padding:1rem; border-radius:16px; background:#f4f7fa; }
+.home-money-grid span { font-size:.78rem; color:#475569; }
+.home-money-grid strong { font-size:clamp(1rem,3vw,1.45rem); overflow-wrap:anywhere; }
+.home-money-actions { display:flex; gap:.7rem; flex-wrap:wrap; }
+@media(max-width:430px){.home-money-grid{gap:.5rem}.home-money-grid>div{padding:.75rem}.home-money-actions .button{width:100%}.home-postcard-route{width:65%;opacity:.18}}

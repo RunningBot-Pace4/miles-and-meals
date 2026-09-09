@@ -51,6 +51,7 @@ export function SettlementActionButton({
   currency,
   allocations = [],
   fixedAmount = false,
+  onRecorded,
 }: {
   countryId: string;
   counterpartyUserId: string;
@@ -60,6 +61,7 @@ export function SettlementActionButton({
   currency?: string;
   allocations?: SettlementAllocation[];
   fixedAmount?: boolean;
+  onRecorded?: () => void;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -227,15 +229,17 @@ export function SettlementActionButton({
           (fixedAmount ? maximumAmount : Number(amount)) <
             maximumAmount - 0.009
           ? `Partial ${action === "MARK_RECEIVED" ? "receipt" : "payment"} recorded. Refreshing the remaining balance…`
-          : "Payment recorded. Refreshing the settlement…",
+          : "Payment saved. The latest balance is being loaded.",
       );
       clearPaymentDetails();
       window.dispatchEvent(
         new CustomEvent(
           SETTLEMENT_UPDATED_EVENT,
+          { detail: { saved: true, countryId } },
         ),
       );
       setBusy(false);
+      onRecorded?.();
     } catch (caught) {
       if (responseReceived) {
         requestIdRef.current = null;
@@ -381,11 +385,7 @@ export function SettlementActionButton({
           </>
         ) : awaitingRefresh ? (
           <>
-            <span
-              className="button-spinner"
-              aria-hidden="true"
-            />
-            Refreshing balance…
+            Payment saved
           </>
         ) : (
           label

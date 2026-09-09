@@ -401,14 +401,15 @@ export default async function DashboardPage({
   return (
     <div className="stack gap-lg dashboard-page">
       <PageLiveRefresh />
-      <section className="dashboard-welcome">
+      <section className="dashboard-welcome home-postcard">
+        <svg className="home-postcard-route" viewBox="0 0 380 230" aria-hidden="true"><path d="M25 180C110 210 60 55 170 80S270 215 350 35" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5 8"/><circle cx="25" cy="180" r="8" fill="currentColor"/><circle cx="350" cy="35" r="12" fill="none" stroke="currentColor" strokeWidth="2"/><path d="m244 101 12-28 8 4-4 20 21 3 4 8-27-2-11 14-5-2 6-16Z" fill="currentColor"/></svg>
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">
             MILES &amp; MEALS
           </p>
-          <p className="home-greeting">Hi, {displayName}</p>
-          <h1 className="dashboard-welcome-title">{selectedTrip ? selectedTrip.name : "Where to next?"}</h1>
-          <p className="home-trip-caption">{selectedTrip ? `${heroDestination} · ${tripDateLabel}` : "Your plans, shared bills and next adventure."}</p>
+          <p className="home-greeting">{displayName}&apos;s travel journal</p>
+          <h1 className="dashboard-welcome-title">Good trips.<br /><em>Great company.</em></h1>
+          <p className="home-trip-caption"><strong>{selectedTrip ? selectedTrip.name : "Your next adventure starts here"}</strong><br />{selectedTrip ? `${heroDestination} · ${tripDateLabel}` : "Pick a place. Bring your people."}</p>
         </div>
 
         {selectedTrip ? (

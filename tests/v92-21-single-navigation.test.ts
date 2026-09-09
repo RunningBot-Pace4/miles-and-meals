@@ -49,7 +49,8 @@ describe("V92.21 single navigation and restored Halo", () => {
 
   it("keeps a truthful fallback for genuine non-navigation failures", () => {
     expect(globalError).toContain("This page couldn&apos;t open");
-    expect(globalError).toContain("interrupted request or app update");
+    expect(globalError).toContain("Something went wrong while loading this page");
+    expect(globalError).toContain("error.digest");
     expect(globalError).not.toContain("client-side");
     expect(globalError).not.toContain("page transition");
   });

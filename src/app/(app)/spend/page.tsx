@@ -7,6 +7,6 @@ export default async function SpendPage({ searchParams }: { searchParams: Promis
  const query = await searchParams;
  const tab = ["settlements", "budgets", "review"].includes(query.tab ?? "") ? query.tab! : "expenses";
  return <div className="stack gap-lg"><SectionTabs label="Trip money" selected={tab} items={[
- {key:"expenses",label:"Expenses",href:"/spend"}, {key:"settlements",label:"Settle Up",href:"/spend?tab=settlements"}, {key:"budgets",label:"Budgets",href:"/spend?tab=budgets"}, {key:"review",label:"Needs review",href:"/spend?tab=review"}
+ {key:"expenses",label:"Bills",href:"/spend"}, {key:"settlements",label:"Payments",href:"/spend?tab=settlements"}, {key:"budgets",label:"Budgets",href:"/spend?tab=budgets"}, {key:"review",label:"Needs review",href:"/spend?tab=review"}
  ]}/>{tab === "settlements" ? <SettlementsPage searchParams={Promise.resolve(query)} /> : tab === "budgets" ? <BudgetsPage /> : tab === "review" ? <ReceiptReviewPage /> : <ExpensesPage />}</div>;
 }

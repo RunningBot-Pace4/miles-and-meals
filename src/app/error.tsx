@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 export default function AppError({
   reset,
+  error,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -32,11 +33,11 @@ export default function AppError({
         <p className="eyebrow">MILES &amp; MEALS</p>
         <h1>That page didn’t finish loading</h1>
         <p>
-          Your connection may have changed while Miles &amp; Meals
-          was updating. Try the page again, or return to the
-          previous screen.
+          Something went wrong while loading this page. Try again, or return
+          to the previous screen.
         </p>
 
+        {error.digest && <p>Error reference: {error.digest}</p>}
         <div className="app-error-actions">
           <button
             className="button primary"

@@ -13,6 +13,7 @@ import {
   SettlementActionButton,
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
+import { HomeMoneySummary } from "@/components/HomeMoneySummary";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { BillPaymentProgress } from "@/components/BillPaymentProgress";
 import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
@@ -21,7 +22,7 @@ import { trackProductEvent } from "@/lib/product-analytics-client";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
 const POLL_INTERVAL_MS = 15_000;
-const REQUEST_TIMEOUT_MS = 3500;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 type WorkspaceVariant =
   | "dashboard"
@@ -905,10 +906,10 @@ function SettlementStatus({
       <div className="panel-title">
         <div>
           <p className="eyebrow">
-            CURRENT STATUS
+            PAYMENT REQUESTS
           </p>
           <h2>
-            Waiting &amp; payment sent
+            Payments to send or confirm
           </h2>
         </div>
       </div>
@@ -1520,6 +1521,7 @@ export function LiveSettlementWorkspace({
         </>
       ) : null}
 
+      {variant === "dashboard" ? <HomeMoneySummary data={data} currentUserId={currentUserId} /> : <>
       <PersonCards
         data={data}
         currentUserId={currentUserId}
@@ -1529,6 +1531,7 @@ export function LiveSettlementWorkspace({
         data={data}
         currentUserId={currentUserId}
       />
+      </>}
 
       {variant ===
       "settlements" ? (

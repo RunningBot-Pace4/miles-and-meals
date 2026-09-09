@@ -22,7 +22,8 @@ describe("V92.10 automatic partial-settlement refresh", () => {
 
   it("blocks duplicate taps until the refreshed balance arrives", () => {
     expect(action).toContain("busy || awaitingRefresh");
-    expect(action).toContain("Refreshing balance…");
+    expect(action).toContain("Payment saved");
+    expect(action).toContain("onRecorded?.()");
     expect(action).toContain("submittedActionRef");
   });
 

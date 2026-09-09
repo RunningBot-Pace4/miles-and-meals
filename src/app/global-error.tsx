@@ -2,6 +2,7 @@
 
 export default function GlobalError({
   reset,
+  error,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
@@ -95,11 +96,11 @@ export default function GlobalError({
               lineHeight: 1.6,
             }}
           >
-            An interrupted request or app update prevented this page
-            from opening. Reload once to reconnect to the current app
-            version.
+            Something went wrong while loading this page. Try reloading once.
+            If it happens again, share the page address and reference below.
           </p>
 
+          {error.digest && <p style={{ fontSize: 12 }}>Error reference: {error.digest}</p>}
           <div
             style={{
               display: "flex",

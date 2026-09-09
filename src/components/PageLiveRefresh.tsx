@@ -12,7 +12,7 @@ export function PageLiveRefresh() {
   pendingRef.current = pending;
   useEffect(() => {
     let lastRefresh = 0;
-    function refresh() {
+    function refresh(saved = false) {
       const editing = Boolean(document.querySelector('dialog[open], [role="dialog"], input:focus, textarea:focus, select:focus')) || Array.from(document.querySelectorAll("form input, form textarea, form select")).some(element => {
         if (element instanceof HTMLInputElement) {
           if (element.type === "hidden" || element.type === "submit") return false;
@@ -23,15 +23,21 @@ export function PageLiveRefresh() {
         if (element instanceof HTMLSelectElement) return Array.from(element.options).some(option => option.selected !== option.defaultSelected);
         return false;
       });
-      if (!canRefreshPage({ online: navigator.onLine, visible: document.visibilityState === "visible", busy: pendingRef.current || document.body.dataset.actionLoading === "true", editing }) || Date.now() - lastRefresh < 2000) return;
+      if (!canRefreshPage({ online: navigator.onLine, visible: document.visibilityState === "visible", busy: pendingRef.current || document.body.dataset.actionLoading === "true", editing: saved ? false : editing }) || (!saved && Date.now() - lastRefresh < 2000)) return;
       lastRefresh = Date.now();
       startTransition(() => router.refresh());
     }
-    const timer = window.setInterval(refresh, HOME_REFRESH_INTERVAL_MS);
+    const timer = window.setInterval(() => refresh(), HOME_REFRESH_INTERVAL_MS);
     const events = ["online", "focus", "mnm:expense-updated", "mnm:settlement-updated", "mnm:budget-updated", "mnm:data-synced"];
-    events.forEach(event => window.addEventListener(event, refresh));
-    document.addEventListener("visibilitychange", refresh);
-    return () => { window.clearInterval(timer); events.forEach(event => window.removeEventListener(event, refresh)); document.removeEventListener("visibilitychange", refresh); };
+    let savedTimer: ReturnType<typeof setTimeout> | undefined;
+    const handleEvent = (event: Event) => {
+      const saved = event instanceof CustomEvent && event.detail?.saved === true;
+      if (saved) savedTimer = setTimeout(() => refresh(true), 100);
+      else refresh();
+    };
+    events.forEach(event => window.addEventListener(event, handleEvent));
+    document.addEventListener("visibilitychange", handleEvent);
+    return () => { clearTimeout(savedTimer); window.clearInterval(timer); events.forEach(event => window.removeEventListener(event, handleEvent)); document.removeEventListener("visibilitychange", handleEvent); };
   }, [router]);
   return null;
 }

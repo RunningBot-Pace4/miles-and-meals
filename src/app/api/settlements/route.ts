@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { createTransactionalDatabase } from "@/db/transaction";
 import {
@@ -122,6 +123,11 @@ function validateBillAllocations(
       );
     }
   }
+}
+
+function queuePaymentPush(...args: Parameters<typeof sendPushToUsers>): Promise<void> {
+  after(async () => { await sendPushToUsers(...args); });
+  return Promise.resolve();
 }
 
 async function runBestEffortSideEffects(
@@ -632,7 +638,7 @@ export async function POST(request: Request) {
           countryId: result.countryId,
           summary: `${session.user.name} marked ${result.currency} ${result.amount.toFixed(2)} as paid.`,
         }),
-        sendPushToUsers(
+        queuePaymentPush(
           [input.counterpartyUserId],
           "PAYMENTS",
           {
@@ -663,7 +669,7 @@ export async function POST(request: Request) {
           countryId: result.countryId,
           summary: `${session.user.name} confirmed payment received.`,
         }),
-        sendPushToUsers(
+        queuePaymentPush(
           [input.counterpartyUserId],
           "PAYMENTS",
           {
@@ -694,7 +700,7 @@ export async function POST(request: Request) {
         countryId: result.countryId,
         summary: `${session.user.name} marked ${result.currency} ${result.amount.toFixed(2)} as received; the payer side was completed automatically.`,
       }),
-      sendPushToUsers(
+      queuePaymentPush(
         [input.counterpartyUserId],
         "PAYMENTS",
         {

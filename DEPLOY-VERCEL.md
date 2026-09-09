@@ -1,5 +1,8 @@
 # Miles & Meals — verified build fix
 
+Latest update: SIMPLER-HOME-AND-PAYMENT-FEEDBACK.md describes the personal Home
+summary, payment feedback fixes and the still-undiagnosed screenshot error.
+
 Latest Home/navigation update: see HOME-REFRESH-AND-NAVIGATION.md. Production
 build and 254 tests passed; no SQL changes are required.
 

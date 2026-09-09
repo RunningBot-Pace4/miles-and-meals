@@ -22,7 +22,7 @@ must(worker, "miles-meals-static-v92-21", "V92.10 service-worker cache missing")
   "setAmount(maximumAmount.toFixed(2))",
   "setAwaitingRefresh(false)",
   "busy || awaitingRefresh",
-  "Refreshing balance…",
+  "Payment saved",
   "Partial ${submitted.action",
   'className="settlement-action-success"',
 ].forEach((marker) => must(action, marker, `V92.10 action-state marker missing: ${marker}`));
