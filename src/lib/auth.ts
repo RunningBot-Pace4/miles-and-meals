@@ -4,6 +4,18 @@ import { admin } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import { loginAudits, schema, session } from "@/db/schema";
+import {
+  isTransactionalEmailConfigured,
+  sendVerificationEmail,
+} from "@/lib/transactional-email";
+
+
+
+const productionEmailVerification =
+  process.env.NODE_ENV === "production";
+const productionSignupEnabled =
+  !productionEmailVerification ||
+  isTransactionalEmailConfigured();
 
 function normalizeBaseUrl(value: string | undefined): string | null {
   const trimmed = value?.trim();
@@ -88,9 +100,23 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmail({
+        email: user.email,
+        name: user.name,
+        verificationUrl: url,
+      });
+    },
+    sendOnSignUp: productionEmailVerification,
+    sendOnSignIn: productionEmailVerification,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60,
+  },
   emailAndPassword: {
     enabled: true,
-    disableSignUp: false,
+    disableSignUp: !productionSignupEnabled,
+    requireEmailVerification: productionEmailVerification,
     minPasswordLength: 12,
     maxPasswordLength: 128,
   },

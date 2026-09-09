@@ -1,4 +1,4 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   countries,
@@ -258,7 +258,7 @@ export async function buildCountrySettlementLedger(
       paymentMethod: settlements.paymentMethod,
       paymentReference: settlements.paymentReference,
       paymentNote: settlements.paymentNote,
-      paymentProofData: settlements.paymentProofData,
+      paymentProofAvailable: sql<boolean>`${settlements.paymentProofData} is not null`,
       sentAt: settlements.sentAt,
       confirmedAt: settlements.confirmedAt,
       reversedAt: settlements.reversedAt,
@@ -623,7 +623,7 @@ export async function buildCountrySettlementLedger(
     paymentMethod: row.paymentMethod ?? null,
     paymentReference: row.paymentReference ?? null,
     paymentNote: row.paymentNote ?? null,
-    paymentProofAvailable: Boolean(row.paymentProofData),
+    paymentProofAvailable: Boolean(row.paymentProofAvailable),
     status:
       row.status === "SETTLED" ||
       row.status === "CANCELLED" ||
@@ -734,7 +734,7 @@ export async function buildCountrySettlementLedger(
       paymentMethod: row.paymentMethod ?? null,
       paymentReference: row.paymentReference ?? null,
       paymentNote: row.paymentNote ?? null,
-      paymentProofAvailable: Boolean(row.paymentProofData),
+      paymentProofAvailable: Boolean(row.paymentProofAvailable),
       sentAt: row.sentAt,
       confirmedAt: row.confirmedAt,
       allocations: (allocationsBySettlementId.get(row.id) ?? []).map(

@@ -5,6 +5,7 @@ import { closedTripReadOnlyResponse } from "@/lib/financial-close";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
 import { getSession } from "@/lib/session";
 import { getTripCapabilities } from "@/lib/trip-capabilities";
+import { isSensitiveDocumentType } from "@/lib/sensitive-documents";
 import { tripDocumentSchema, uuidSchema } from "@/lib/validation";
 
 export const runtime = "nodejs";
@@ -36,7 +37,20 @@ export async function GET(request: Request) {
       or(eq(tripDocuments.visibility, "TRIP"), eq(tripDocuments.createdBy, session.user.id)),
     ))
     .orderBy(desc(tripDocuments.createdAt));
-  return Response.json({ documents: rows, canManage: capabilities.canManage, currentUserId: session.user.id }, { headers: { "cache-control": "private, no-store" } });
+  const documents = rows.map((document) => ({
+    ...document,
+    documentData: isSensitiveDocumentType(document.documentType)
+      ? null
+      : document.documentData,
+  }));
+  return Response.json(
+    {
+      documents,
+      canManage: capabilities.canManage,
+      currentUserId: session.user.id,
+    },
+    { headers: { "cache-control": "private, no-store" } },
+  );
 }
 
 export async function POST(request: Request) {

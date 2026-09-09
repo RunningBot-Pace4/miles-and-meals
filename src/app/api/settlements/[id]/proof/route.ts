@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { settlements } from "@/db/schema";
-import { canAccessCountry } from "@/lib/access";
 import { getSession } from "@/lib/session";
+import { getTripCapabilities } from "@/lib/trip-capabilities";
 
 export const runtime = "nodejs";
 
@@ -40,6 +40,9 @@ export async function GET(_request: Request, context: Context) {
     await db
       .select({
         countryId: settlements.countryId,
+        tripId: settlements.tripId,
+        fromUserId: settlements.fromUserId,
+        toUserId: settlements.toUserId,
         paymentProofData: settlements.paymentProofData,
       })
       .from(settlements)
@@ -51,7 +54,16 @@ export async function GET(_request: Request, context: Context) {
     return Response.json({ error: "Payment not found." }, { status: 404 });
   }
 
-  if (!(await canAccessCountry(session.user, row.countryId))) {
+  const capabilities = await getTripCapabilities(
+    session.user,
+    row.tripId,
+  );
+  const canView =
+    row.fromUserId === session.user.id ||
+    row.toUserId === session.user.id ||
+    capabilities.canManage;
+
+  if (!canView) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -74,7 +86,7 @@ export async function GET(_request: Request, context: Context) {
   return new Response(image.bytes, {
     headers: {
       "content-type": image.contentType,
-      "cache-control": "private, max-age=300",
+      "cache-control": "private, no-store",
       "content-disposition": `inline; filename="payment-proof-${id}.jpg"`,
       "x-content-type-options": "nosniff",
     },

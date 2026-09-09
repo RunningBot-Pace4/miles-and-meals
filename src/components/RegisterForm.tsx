@@ -11,6 +11,7 @@ export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string })
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [success, setSuccess] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +39,18 @@ export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string })
 
       if (result.error) {
         setError(result.error.message ?? "Unable to create account.");
+        setBusy(false);
+        return;
+      }
+
+      const token = (
+        result.data as { token?: string | null } | null
+      )?.token;
+
+      if (!token) {
+        setSuccess(
+          "Account created. Check your email and verify your address before signing in.",
+        );
         setBusy(false);
         return;
       }
@@ -124,8 +137,11 @@ export function RegisterForm({ nextPath = "/dashboard" }: { nextPath?: string })
           {error}
         </p>
       ) : null}
+      {success ? (
+        <p role="status">{success}</p>
+      ) : null}
 
-      <button className="button primary full" disabled={busy} type="submit">
+      <button className="button primary full" disabled={busy || Boolean(success)} type="submit">
         {busy ? "Creating account…" : "Create account"}
       </button>
 

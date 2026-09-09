@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { isHttpUrl, isHttpsUrl } from "@/lib/url-security";
+import { isSensitiveDocumentType } from "@/lib/sensitive-documents";
 import { SUPPORTED_REGIONAL_LOCALES, SUPPORTED_REGIONAL_TIME_ZONES } from "@/lib/regional";
 
 function isValidIsoDate(value: string): boolean {
@@ -244,7 +246,13 @@ export const travelItemSchema = z.object({
   quantity: z.union([z.coerce.number().min(0), z.literal(""), z.null()]).optional(),
   provider: z.string().trim().max(160).optional().default(""),
   confirmationNo: z.string().trim().max(100).optional().default(""),
-  linkUrl: z.union([z.string().url(), z.literal("")]).optional().default(""),
+  linkUrl: z
+    .union([
+      z.string().max(1000).refine(isHttpUrl, "Use an HTTP or HTTPS link."),
+      z.literal(""),
+    ])
+    .optional()
+    .default(""),
   notes: z.string().trim().max(1000).optional().default(""),
   sortOrder: z.coerce.number().int().min(0).max(100_000).optional().default(0),
   durationMinutes: z.union([z.coerce.number().int().min(1).max(1440), z.literal(""), z.null()]).optional(),
@@ -382,12 +390,29 @@ export const tripDocumentSchema = z.object({
   title: z.string().trim().min(1).max(160),
   documentType: z.enum(["TICKET", "HOTEL", "INSURANCE", "PASSPORT", "VISA", "MEDICAL", "OTHER"]),
   documentData: privateTravelFileSchema.optional().default(""),
-  externalUrl: z.union([z.string().url().max(1000), z.literal("")]).optional().default(""),
+  externalUrl: z
+    .union([
+      z.string().max(1000).refine(isHttpsUrl, "Use a secure HTTPS link."),
+      z.literal(""),
+    ])
+    .optional()
+    .default(""),
   expiryDate: z.union([z.string().max(10), z.literal("")]).optional().default(""),
   visibility: z.enum(["TRIP", "PRIVATE"]),
-}).refine((value) => Boolean(value.documentData || value.externalUrl), {
-  message: "Upload a document or provide a secure link.",
-});
+})
+  .refine((value) => Boolean(value.documentData || value.externalUrl), {
+    message: "Upload a document or provide a secure link.",
+  })
+  .refine(
+    (value) =>
+      !isSensitiveDocumentType(value.documentType) ||
+      !Boolean(value.documentData),
+    {
+      message:
+        "Passport, visa and medical files cannot be stored directly. Use a secure HTTPS link instead.",
+      path: ["documentData"],
+    },
+  );
 
 export const emergencyContactSchema = z.object({
   tripId: uuidSchema,

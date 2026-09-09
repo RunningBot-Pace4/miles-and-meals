@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne, or } from "drizzle-orm";
 import { db } from "@/db";
 import {
   countryMembers,
@@ -16,6 +16,7 @@ import type { OfflineTripPack } from "@/lib/offline-pack";
 import { getSession } from "@/lib/session";
 import { getTripCapabilities } from "@/lib/trip-capabilities";
 import type { SessionUser } from "@/lib/access";
+import { isSensitiveDocumentType } from "@/lib/sensitive-documents";
 
 async function buildPack(
   active: Awaited<ReturnType<typeof getActiveTripContext>>,
@@ -60,7 +61,19 @@ async function buildPack(
       eq(tripBudgets.userId, currentUser.id),
     )).limit(1),
     capabilities.canViewDocuments
-      ? db.select().from(tripDocuments).where(eq(tripDocuments.tripId, targetTripId)).orderBy(desc(tripDocuments.createdAt))
+      ? db
+          .select()
+          .from(tripDocuments)
+          .where(
+            and(
+              eq(tripDocuments.tripId, targetTripId),
+              or(
+                eq(tripDocuments.visibility, "TRIP"),
+                eq(tripDocuments.createdBy, currentUser.id),
+              ),
+            ),
+          )
+          .orderBy(desc(tripDocuments.createdAt))
       : Promise.resolve([]),
     db.select().from(tripEmergencyContacts).where(eq(tripEmergencyContacts.tripId, targetTripId)).orderBy(asc(tripEmergencyContacts.label)),
     db.select().from(tripMemories).where(eq(tripMemories.tripId, targetTripId)).orderBy(desc(tripMemories.occurredOn), desc(tripMemories.createdAt)).limit(24),
@@ -128,9 +141,13 @@ async function buildPack(
       myShareSpent: [...myShareByExpense.values()].reduce((total, amount) => total + amount, 0),
     },
     documents: documentRows
-      .filter((document) => document.visibility === "TRIP" || document.createdBy === currentUser.id)
       .map((document) => {
-        const smallEnoughForDevice = Boolean(document.documentData && document.documentData.length <= 250_000);
+        const safeDocumentData = isSensitiveDocumentType(document.documentType)
+          ? null
+          : document.documentData;
+        const smallEnoughForDevice = Boolean(
+          safeDocumentData && safeDocumentData.length <= 250_000,
+        );
         return {
           id: document.id,
           title: document.title,
@@ -138,7 +155,7 @@ async function buildPack(
           expiryDate: document.expiryDate,
           visibility: document.visibility,
           externalUrl: document.externalUrl ?? "",
-          documentData: smallEnoughForDevice ? document.documentData ?? "" : "",
+          documentData: smallEnoughForDevice ? safeDocumentData ?? "" : "",
           offlineAvailable: smallEnoughForDevice,
         };
       }),

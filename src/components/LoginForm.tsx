@@ -49,7 +49,20 @@ export function LoginForm({ nextPath = "/dashboard" }: { nextPath?: string }) {
       });
 
       if (result.error) {
-        setError(result.error.message ?? "Unable to sign in.");
+        const code = (
+          result.error as { code?: string; status?: number }
+        ).code;
+        const status = (
+          result.error as { code?: string; status?: number }
+        ).status;
+
+        if (code === "EMAIL_NOT_VERIFIED" || status === 403) {
+          setError(
+            "Please verify your email address. A fresh verification link has been sent when possible.",
+          );
+        } else {
+          setError(result.error.message ?? "Unable to sign in.");
+        }
         setBusy(false);
         return;
       }
