@@ -8,7 +8,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 
-const BUDGET_POLL_INTERVAL_MS = 120_000;
+const BUDGET_POLL_INTERVAL_MS = 15_000;
 const PASSWORD_PATH = "/settings/password";
 
 type MissingBudgetPayload = {
@@ -46,12 +46,15 @@ export function BudgetAccessGate({
       }
 
       checkingRef.current = true;
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
 
       try {
         const response = await fetch(
           "/api/budgets",
           {
             cache: "no-store",
+            signal: controller.signal,
           },
         );
 
@@ -77,6 +80,7 @@ export function BudgetAccessGate({
       } catch {
         // The server-rendered value remains the safe fallback while offline.
       } finally {
+        window.clearTimeout(timeout);
         checkingRef.current = false;
       }
     },
@@ -84,6 +88,7 @@ export function BudgetAccessGate({
   );
 
   useEffect(() => {
+    void checkMissingBudgets();
     setMissingBudgetCount(
       initialMissingBudgetCount,
     );
@@ -106,6 +111,8 @@ export function BudgetAccessGate({
     const handleFocus = () => {
       void checkMissingBudgets();
     };
+    window.addEventListener("online", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
 
     window.addEventListener(
       "focus",
@@ -117,6 +124,8 @@ export function BudgetAccessGate({
     );
 
     return () => {
+      window.removeEventListener("online", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
       window.clearInterval(timer);
       window.removeEventListener(
         "focus",

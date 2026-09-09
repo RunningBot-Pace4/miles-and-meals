@@ -39,6 +39,18 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      { source: "/expenses", destination: "/spend", permanent: false },
+      { source: "/settlements", destination: "/spend?tab=settlements", permanent: false },
+      { source: "/settings/budgets", destination: "/spend?tab=budgets", permanent: false },
+      { source: "/receipts", destination: "/spend?tab=review", permanent: false },
+      { source: "/notifications", destination: "/updates", permanent: false },
+      { source: "/activity", destination: "/updates?tab=activity", permanent: false },
+      { source: "/memories", destination: "/trip-story", permanent: false },
+      { source: "/wrapped", destination: "/trip-story?tab=highlights", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

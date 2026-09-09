@@ -96,6 +96,7 @@ export function LiveDashboardFinance({
 }) {
   const [data, setData] =
     useState(initialData);
+  useEffect(() => { setData(initialData); }, [initialData]);
   const [syncError, setSyncError] =
     useState(false);
   const refreshingRef = useRef(false);

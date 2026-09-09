@@ -55,7 +55,8 @@ for (const file of [
   "src/app/(app)/settings/permissions/page.tsx",
   "src/components/SmartDayRoute.tsx",
 ]) mustExist(file);
-for (const route of ["/companion", "/documents", "/memories", "/settings/permissions"]) must(more, route, `More menu is missing ${route}`);
+for (const route of ["/documents", "/trip-story", "/settings/permissions"]) must(more, route, `More menu is missing ${route}`);
+must(fs.readFileSync("src/app/(app)/dashboard/page.tsx", "utf8"), 'href="/companion"', "Home must retain detailed companion checks");
 
 for (const marker of ["suggestedDayOrder", "overlaps", "travelmode", "defaultBuffer"]) must(routeLogic, marker, `smart route behavior missing: ${marker}`);
 for (const marker of ["emergency", "expiring", "receipts", "forecastOver", "settlement", "memory"]) must(companion, marker, `companion suggestion missing: ${marker}`);

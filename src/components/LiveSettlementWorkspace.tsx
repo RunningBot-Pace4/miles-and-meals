@@ -1300,6 +1300,7 @@ export function LiveSettlementWorkspace({
 }) {
   const [data, setData] =
     useState(initialData);
+  useEffect(() => { setData(initialData); }, [initialData]);
   const [syncing, setSyncing] =
     useState(false);
   const [syncError, setSyncError] =

@@ -44,6 +44,10 @@ function visit(directory) {
     );
 
     for (const pattern of forbidden) {
+      // Server-data refresh is intentionally allowed only in this dedicated
+      // component. Document link navigation and push/replace rules stay intact.
+      if (relativePath === "src/components/PageLiveRefresh.tsx" &&
+          (pattern === "useRouter" || pattern === "router.refresh(")) continue;
       if (source.includes(pattern)) {
         failures.push(
           `${relativePath}: ${pattern}`,

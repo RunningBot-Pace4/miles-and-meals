@@ -1,5 +1,8 @@
 # Miles & Meals — verified build fix
 
+Latest Home/navigation update: see HOME-REFRESH-AND-NAVIGATION.md. Production
+build and 254 tests passed; no SQL changes are required.
+
 Latest update: email verification removed. Use EMAIL-LOGIN-AND-RESET.md for
 login changes and database/RESET-APP-DATA-KEEP-ACCOUNTS.sql for optional cleanup.
 

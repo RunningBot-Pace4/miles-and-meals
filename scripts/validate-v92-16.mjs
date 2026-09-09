@@ -58,7 +58,7 @@ for (const marker of ["if (initialItems.length > 0)", "if (readOfflineQueue().le
 must(bell, "60_000", "Notification bell fallback polling is too aggressive");
 must(center, "30_000", "Notification inbox fallback polling is too aggressive");
 must(collaboration, "60_000", "Collaboration fallback polling is too aggressive");
-must(budgetGate, "120_000", "Budget fallback polling is too aggressive");
+must(budgetGate, "15_000", "Budget assignment polling must run every 15 seconds");
 must(budgetGate, '"mnm:budget-updated"', "Budget refresh event is missing");
 
 console.log("V92.16 PWA layout and performance gate passed.");

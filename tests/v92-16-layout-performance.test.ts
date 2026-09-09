@@ -61,7 +61,7 @@ describe("V92.16 PWA layout and performance repair", () => {
     expect(bell).toContain("NOTIFICATION_POLL_INTERVAL_MS = 60_000");
     expect(center).toContain("NOTIFICATION_POLL_INTERVAL_MS = 30_000");
     expect(collaboration).toContain("POLL_MS = 60_000");
-    expect(budgetGate).toContain("BUDGET_POLL_INTERVAL_MS = 120_000");
+    expect(budgetGate).toContain("BUDGET_POLL_INTERVAL_MS = 15_000");
     expect(budgetGate).not.toContain("void checkMissingBudgets();\n\n    const timer");
     expect(expenses).toContain("POLL_INTERVAL_MS = 20_000");
     expect(settlements).toContain("POLL_INTERVAL_MS = 15_000");

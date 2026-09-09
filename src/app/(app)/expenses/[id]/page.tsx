@@ -1,3 +1,6 @@
+import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
+import { PageLiveRefresh } from "@/components/PageLiveRefresh";
+import { getTripFinancialState } from "@/lib/financial-close";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
@@ -23,13 +26,16 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
     db.select({ name: user.name, amount: expenseSplits.shareAmountBase }).from(expenseSplits).innerJoin(user, eq(user.id, expenseSplits.userId)).where(eq(expenseSplits.expenseId, id)),
   ]);
   if (!ledger) notFound();
+  const financialState = await getTripFinancialState(expense.tripId);
   const bills = ledger.smartPlan.originalExpenseBalances.flatMap(balance => balance.expenses).filter(bill => bill.expenseId === id);
   const payments = ledger.smartPlan.recordedPayments.filter(payment => payment.allocations.some(a => a.expenseId === id));
-  return <div className="stack gap-lg">
+  return <div className="stack gap-lg"><PageLiveRefresh />
     <div className="page-heading"><div><p className="eyebrow">BILL DETAILS</p><h1>{expense.description}</h1><p>{expense.expenseDate} · {ledger.tripName}</p></div><Link href="/spend">Back to Spend</Link></div>
     <section className="panel"><ReceiptViewerButton expenseId={id} /><h2>Each traveler's share</h2>{shares.map((share, index) => <p key={index}>{share.name} · {formatMoney(Number(share.amount), expense.baseCurrency)}</p>)}</section>
     <section className="panel stack"><h2>Bill payment progress</h2><p>Pending transfers are reserved to prevent paying twice. They become confirmed only after receipt is acknowledged. Unassigned transfers and group offsets are not attributed to this bill. Check the person statement before paying: the amount still uncovered on this bill can differ from the actual balance due.</p>
-      {bills.map(bill => <article key={`${bill.participantUserId}-${bill.payerUserId}`}><h3>{bill.participantName} → {bill.payerName}</h3><BillPaymentProgress bill={bill} payments={ledger.smartPlan.recordedPayments} /><Link href={`/settlements/statement?countryId=${encodeURIComponent(expense.countryId)}&fromUserId=${encodeURIComponent(bill.participantUserId)}&toUserId=${encodeURIComponent(bill.payerUserId)}`}>View statement & pay selected bills</Link></article>)}
+      {bills.map(bill => <article key={`${bill.participantUserId}-${bill.payerUserId}`}><h3>{bill.participantName} → {bill.payerName}</h3><BillPaymentProgress bill={bill} payments={ledger.smartPlan.recordedPayments} /><Link href={`/settlements/statement?countryId=${encodeURIComponent(expense.countryId)}&fromUserId=${encodeURIComponent(bill.participantUserId)}&toUserId=${encodeURIComponent(bill.payerUserId)}`}>View person statement</Link>
+        {financialState?.status !== "CLOSED" && <BillSettlementAllocator countryId={expense.countryId} currentUserId={session.user.id} fromUserId={bill.participantUserId} fromName={bill.participantName} toUserId={bill.payerUserId} toName={bill.payerName} currency={bill.currency} directRemaining={ledger.smartPlan.originalExpenseBalances.find(balance => balance.fromUserId === bill.participantUserId && balance.toUserId === bill.payerUserId)?.directRemaining ?? 0} hasPendingPayment={ledger.smartPlan.recordedPayments.some(payment => payment.status === "SENT" && payment.fromUserId === bill.participantUserId && payment.toUserId === bill.payerUserId)} expenses={[bill]} />}
+      </article>)}
       {!bills.length && <p>No reimbursement is due between different travellers for this bill.</p>}
     </section>
     <section className="panel stack"><h2>Payment history for this bill</h2>{payments.map(payment => <article className="panel" key={payment.id}>

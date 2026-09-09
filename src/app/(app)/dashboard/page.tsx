@@ -1,4 +1,5 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
+import { PageLiveRefresh } from "@/components/PageLiveRefresh";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
@@ -399,37 +400,15 @@ export default async function DashboardPage({
 
   return (
     <div className="stack gap-lg dashboard-page">
+      <PageLiveRefresh />
       <section className="dashboard-welcome">
         <div className="dashboard-welcome-copy">
           <p className="eyebrow">
             MILES &amp; MEALS
           </p>
-          <h1 className="dashboard-welcome-title">
-            <span className="welcome-editorial">
-              <span className="welcome-prefix">
-                Welcome back,
-              </span>{" "}
-              <span className="welcome-name">
-                {displayName}.
-              </span>
-            </span>
-
-            <span className="welcome-tagline">
-              Make every{" "}
-              <strong className="tagline-mile">
-                mile
-              </strong>
-              ,{" "}
-              <strong className="tagline-meal">
-                meal
-              </strong>{" "}
-              &amp;{" "}
-              <strong className="tagline-memory">
-                memory
-              </strong>{" "}
-              count.
-            </span>
-          </h1>
+          <p className="home-greeting">Hi, {displayName}</p>
+          <h1 className="dashboard-welcome-title">{selectedTrip ? selectedTrip.name : "Where to next?"}</h1>
+          <p className="home-trip-caption">{selectedTrip ? `${heroDestination} · ${tripDateLabel}` : "Your plans, shared bills and next adventure."}</p>
         </div>
 
         {selectedTrip ? (

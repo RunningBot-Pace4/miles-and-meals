@@ -75,10 +75,6 @@ export default async function MorePage() {
           <span>Documents & emergency info</span>
           <span>›</span>
         </Link>
-        <Link className="menu-row link-row" href="/companion">
-          <span>Smart Trip companion</span>
-          <span>›</span>
-        </Link>
       </section>
 
       <section className="panel menu-list">

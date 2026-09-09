@@ -65,7 +65,7 @@ for (const marker of [
 must(notificationBell, "60_000", "Notification bell still polls too aggressively");
 must(notificationCenter, "30_000", "Notification page still polls too aggressively");
 must(collaboration, "60_000", "Collaboration polling was not tuned");
-must(budgetGate, "120_000", "Budget polling was not tuned");
+must(budgetGate, "15_000", "Budget polling was not tuned");
 for (const text of [notificationBell, notificationCenter, collaboration, budgetGate]) {
   must(text, "Ref", "A tuned poller is missing in-flight protection");
 }
