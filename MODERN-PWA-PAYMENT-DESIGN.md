@@ -49,6 +49,20 @@ before they become cramped. Selected receipts use a teal border and background;
 optional payment evidence remains available without competing with the main
 task.
 
+## Colour and clarity follow-up
+
+- Fixed the expanded optional-payment form so it uses the available desktop
+  width and becomes one clean column on phones.
+- Rebuilt the bill-sharing area as participant cards plus an explicit receipt
+  status. A missing receipt is now informative and cannot open an error dialog.
+- Removed the receipt-item assignment interface. Expense sharing continues to
+  use the standard equal, percentage, shares or exact-person controls.
+- Restyled Smart Settlement details as a visual calculation story: payer and
+  receiver cards, a direct-balance card, and a blue expense trail. The figures
+  and audit behaviour are unchanged.
+- Added teal, gold, coral and blue accents to money screens while preserving
+  high-contrast text and responsive layouts.
+
 ## Idle page error follow-up
 
 A second recording showed the same global error while Bill Details was idle.

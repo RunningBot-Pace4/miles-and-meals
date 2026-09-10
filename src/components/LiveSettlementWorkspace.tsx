@@ -227,14 +227,16 @@ function SmartSettlementPanel({
         <summary>View details</summary>
         <div className="smart-transfer-details-body">
           <div className="smart-transfer-detail-heading">
-            <span>See how this was calculated</span>
-            <strong>
-              {transfer.fromName} pays {transfer.toName} {formatMoney(transfer.amount, transfer.currency)}
-            </strong>
-            <small>
-              This recommendation allocates the payer&apos;s remaining net payable to the receiver&apos;s
-              remaining net receivable. Whole-group netting can combine several original expenses.
-            </small>
+            <span className="smart-calculation-icon" aria-hidden="true">✦</span>
+            <div>
+              <span>See how this was calculated</span>
+              <strong>
+                {transfer.fromName} pays {transfer.toName} {formatMoney(transfer.amount, transfer.currency)}
+              </strong>
+              <small>
+                We offset what each person paid and owed, then show the simplest remaining transfer.
+              </small>
+            </div>
           </div>
 
           <div className="smart-transfer-net-grid">
@@ -244,9 +246,10 @@ function SmartSettlementPanel({
               }
 
               return (
-                <article key={position.userId}>
+                <article className={position.userId === transfer.fromUserId ? "payer-position" : "receiver-position"} key={position.userId}>
                   <div className="smart-transfer-net-head">
-                    <strong>{position.name}</strong>
+                    <span className="smart-person-avatar" aria-hidden="true">{position.name.trim().charAt(0).toUpperCase()}</span>
+                    <span><strong>{position.name}</strong><small>{position.userId === transfer.fromUserId ? "Payer" : "Receiver"}</small></span>
                     <span className={position.remainingNet >= 0 ? "receive" : "pay"}>
                       {netPositionLabel(position.remainingNet, plan.currency)}
                     </span>
@@ -276,7 +279,8 @@ function SmartSettlementPanel({
 
           {pairBalances.length > 0 ? (
             <div className="smart-transfer-pair-proof">
-              <strong>Original balances between these two travelers</strong>
+              <span className="smart-proof-icon" aria-hidden="true">↔</span>
+              <div><small>DIRECT EXPENSE LINK</small><strong>Original balance between these travellers</strong></div>
               {pairBalances.map((balance) => (
                 <span key={`${balance.fromUserId}-${balance.toUserId}`}>
                   {balance.fromName} → {balance.toName} · {formatMoney(balance.amount, plan.currency)} · {balance.expenseCount} expense{balance.expenseCount === 1 ? "" : "s"}
@@ -292,8 +296,8 @@ function SmartSettlementPanel({
           {relatedExpenseLines.length > 0 ? (
             <div className="smart-transfer-expense-proof">
               <div>
-                <strong>Expenses behind these net positions</strong>
-                <small>Expense shares are shown in the trip&apos;s base currency.</small>
+                <span className="smart-proof-icon" aria-hidden="true">▤</span>
+                <span><strong>Expenses behind these net positions</strong><small>Shares shown in the trip&apos;s base currency.</small></span>
               </div>
               <div className="smart-proof-list">
                 {relatedExpenseLines.map((expense) => (

@@ -18,7 +18,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
   const session = await requirePageSession();
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
-  const [expense] = await db.select({ id: expenses.id, description: expenses.description, countryId: expenses.countryId, tripId: expenses.tripId, expenseDate: expenses.expenseDate, baseCurrency: expenses.baseCurrency }).from(expenses).where(eq(expenses.id, id)).limit(1);
+  const [expense] = await db.select({ id: expenses.id, description: expenses.description, countryId: expenses.countryId, tripId: expenses.tripId, expenseDate: expenses.expenseDate, baseCurrency: expenses.baseCurrency, receiptUrl: expenses.receiptUrl }).from(expenses).where(eq(expenses.id, id)).limit(1);
   if (!expense || !(await canAccessCountry(session.user, expense.countryId))) notFound();
   const [ledger, capabilities, shares] = await Promise.all([
     buildCountrySettlementLedger(expense.countryId),
@@ -31,7 +31,31 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
   const payments = ledger.smartPlan.recordedPayments.filter(payment => payment.allocations.some(a => a.expenseId === id));
   return <div className="stack gap-lg bill-detail-page"><PageLiveRefresh />
     <div className="page-heading"><div><p className="eyebrow">BILL &amp; PAYMENTS</p><h1>{expense.description}</h1><p>{expense.expenseDate} · {ledger.tripName}</p></div><Link className="button secondary" href="/spend">Back to Spend</Link></div>
-    <section className="panel bill-detail-overview"><div><p className="eyebrow">SHARED BY</p><h2>Who this bill includes</h2><div className="bill-share-chips">{shares.map((share, index) => <span key={index}>{share.name}<strong>{formatMoney(Number(share.amount), expense.baseCurrency)}</strong></span>)}</div></div><ReceiptViewerButton expenseId={id} /></section>
+    <section className="panel bill-detail-overview">
+      <div className="bill-detail-sharing">
+        <div className="bill-detail-section-title">
+          <span className="bill-detail-section-icon" aria-hidden="true">👥</span>
+          <div><p className="eyebrow">SPLIT BETWEEN</p><h2>Who shares this bill</h2><small>Each person&apos;s original share before payments.</small></div>
+        </div>
+        <div className="bill-share-chips">
+          {shares.map((share, index) => (
+            <span key={index}>
+              <b aria-hidden="true">{share.name.trim().charAt(0).toUpperCase()}</b>
+              <span>{share.name}<small>Share</small></span>
+              <strong>{formatMoney(Number(share.amount), expense.baseCurrency)}</strong>
+            </span>
+          ))}
+        </div>
+      </div>
+      <aside className={expense.receiptUrl ? "bill-receipt-status attached" : "bill-receipt-status empty"}>
+        <span aria-hidden="true">{expense.receiptUrl ? "✓" : "◇"}</span>
+        <div>
+          <small>RECEIPT</small>
+          <strong>{expense.receiptUrl ? "Receipt attached" : "No receipt added"}</strong>
+        </div>
+        {expense.receiptUrl ? <ReceiptViewerButton expenseId={id} /> : <small>This expense was saved without a receipt.</small>}
+      </aside>
+    </section>
     <section className="panel stack bill-detail-progress"><div className="panel-title"><div><p className="eyebrow">BALANCE</p><h2>Payment progress</h2></div></div><p className="bill-detail-note">Pending money is reserved until the receiver confirms it. Receipt balances and person-level offsets are kept separate for accuracy.</p>
       {bills.map(bill => <article className="bill-detail-obligation" key={`${bill.participantUserId}-${bill.payerUserId}`}><div className="bill-detail-obligation-head"><div><span className="bill-route-icon" aria-hidden="true">↗</span><h3>{bill.participantName} → {bill.payerName}</h3></div><Link className="button secondary" href={`/settlements/statement?countryId=${encodeURIComponent(expense.countryId)}&fromUserId=${encodeURIComponent(bill.participantUserId)}&toUserId=${encodeURIComponent(bill.payerUserId)}`}>Person statement</Link></div><BillPaymentProgress bill={bill} payments={ledger.smartPlan.recordedPayments} />
         {financialState?.status !== "CLOSED" && <details className="bill-payment-disclosure"><summary><span>Record payment</span><small>Full or partial</small></summary><BillSettlementAllocator countryId={expense.countryId} currentUserId={session.user.id} fromUserId={bill.participantUserId} fromName={bill.participantName} toUserId={bill.payerUserId} toName={bill.payerName} currency={bill.currency} directRemaining={ledger.smartPlan.originalExpenseBalances.find(balance => balance.fromUserId === bill.participantUserId && balance.toUserId === bill.payerUserId)?.directRemaining ?? 0} hasPendingPayment={ledger.smartPlan.recordedPayments.some(payment => payment.status === "SENT" && payment.fromUserId === bill.participantUserId && payment.toUserId === bill.payerUserId)} expenses={[bill]} /></details>}

@@ -7,6 +7,8 @@ const expenses = readFileSync("src/components/LiveExpensesWorkspace.tsx", "utf8"
 const bill = readFileSync("src/app/(app)/expenses/[id]/page.tsx", "utf8");
 const statement = readFileSync("src/app/(app)/settlements/statement/page.tsx", "utf8");
 const allocator = readFileSync("src/components/BillSettlementAllocator.tsx", "utf8");
+const expenseForm = readFileSync("src/components/ExpenseForm.tsx", "utf8");
+const settlement = readFileSync("src/components/LiveSettlementWorkspace.tsx", "utf8");
 
 describe("modern payment PWA layout", () => {
   it("stacks payment cards before their text or controls can be squeezed", () => {
@@ -47,5 +49,28 @@ describe("modern payment PWA layout", () => {
     expect(css).toContain("/* Focused bill-payment card");
     expect(css).toContain("background:linear-gradient(135deg,#16877c,#0f6f67)");
     expect(css).toContain("@media(max-width:720px)");
+  });
+
+  it("fixes the expanded payment form width on desktop and mobile", () => {
+    expect(css).toContain("grid-column:2!important");
+    expect(css).toContain("grid-area:auto!important");
+    expect(css).toContain(".bill-payment-allocator .settlement-payment-details-grid");
+    expect(css).toContain(".bill-payment-allocator-footer>.settlement-action-wrap { grid-column:1!important; }");
+  });
+
+  it("removes receipt-item splitting while keeping ordinary expense sharing", () => {
+    expect(expenseForm).not.toContain("Split by receipt items");
+    expect(expenseForm).not.toContain("Apply itemized split");
+    expect(expenseForm).toContain("itemization: []");
+  });
+
+  it("presents bill sharing, receipt availability and settlement calculations as cards", () => {
+    expect(bill).toContain("Who shares this bill");
+    expect(bill).toContain("No receipt added");
+    expect(bill).toContain("bill-receipt-status");
+    expect(settlement).toContain("We offset what each person paid and owed");
+    expect(settlement).toContain("payer-position");
+    expect(settlement).toContain("receiver-position");
+    expect(css).toContain("/* Colourful money screens and screenshot follow-up");
   });
 });

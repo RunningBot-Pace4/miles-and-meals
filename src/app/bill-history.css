@@ -423,3 +423,231 @@
   .bill-payment-select-state { display:none; }
   .bill-payment-amount-input { grid-column:1/-1!important; }
 }
+
+/* Colourful money screens and screenshot follow-up --------------------- */
+.bill-detail-page,
+.person-statement-page,
+.live-settlement-workspace {
+  --money-teal:#087f73;
+  --money-blue:#3478e5;
+  --money-coral:#e86f51;
+  --money-gold:#e6a21a;
+}
+
+/* Keep the action form in its intended grid column. A legacy global rule
+   assigns every settlement action to a named grid area. */
+.bill-payment-allocator-footer>.settlement-action-wrap {
+  grid-area:auto!important;
+  grid-column:2!important;
+  width:100%!important;
+  max-width:none!important;
+  align-self:stretch;
+}
+.bill-payment-allocator-footer>.settlement-action-wrap>.settlement-payment-details,
+.bill-payment-allocator-footer>.settlement-action-wrap>.settlement-action-button {
+  width:100%!important;
+  max-width:none!important;
+}
+.bill-payment-allocator .settlement-payment-details-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.75rem;
+  padding:0 .85rem .85rem;
+}
+.bill-payment-allocator .settlement-payment-details-grid label {
+  padding:.65rem;
+  border-radius:12px;
+  background:#f7faf9;
+}
+.bill-payment-allocator .settlement-payment-note-field,
+.bill-payment-allocator .settlement-payment-proof-field { grid-column:1/-1; }
+
+/* Bill participants and receipt availability */
+.bill-detail-overview {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(230px,300px);
+  align-items:stretch;
+  gap:1rem;
+  padding:1rem;
+  border-color:#d9e7e4;
+  background:
+    radial-gradient(circle at 8% 0%,rgb(239 183 73 / 15%),transparent 28%),
+    linear-gradient(135deg,#fffdf8,#f2faf8 58%,#eef5ff);
+}
+.bill-detail-sharing { min-width:0; display:grid; gap:.85rem; }
+.bill-detail-section-title { display:flex; align-items:center; gap:.72rem; }
+.bill-detail-section-title>div { display:grid; gap:.1rem; }
+.bill-detail-section-title :where(p,h2,small) { margin:0; }
+.bill-detail-section-title>div>small { color:#687874; font-size:.75rem; }
+.bill-detail-section-icon {
+  width:46px;
+  height:46px;
+  flex:0 0 46px;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  background:linear-gradient(145deg,#fff0c9,#ffe0aa);
+  box-shadow:0 8px 20px rgb(181 119 22 / 12%);
+  font-size:1.15rem;
+}
+.bill-share-chips { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:.65rem; }
+.bill-share-chips>span {
+  min-width:0;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) auto;
+  align-items:center;
+  gap:.6rem;
+  padding:.68rem;
+  border:1px solid #d9e7e4;
+  border-radius:15px;
+  background:rgb(255 255 255 / 88%);
+  box-shadow:0 6px 18px rgb(25 67 59 / 5%);
+}
+.bill-share-chips>span>b {
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  color:#fff;
+  background:linear-gradient(145deg,#22998e,#08776d);
+}
+.bill-share-chips>span>span { min-width:0; display:grid; }
+.bill-share-chips>span>span>small { color:#71807d; font-size:.65rem; }
+.bill-share-chips>span>strong { color:#087a70; white-space:nowrap; }
+.bill-receipt-status {
+  min-width:0;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  align-content:center;
+  gap:.25rem .65rem;
+  padding:.9rem;
+  border:1px solid #d7e3f5;
+  border-radius:18px;
+  background:linear-gradient(145deg,#f5f9ff,#fff);
+}
+.bill-receipt-status>span {
+  width:42px;
+  height:42px;
+  grid-row:1/span 2;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  color:#356cb9;
+  background:#e3eeff;
+  font-size:1.1rem;
+  font-weight:900;
+}
+.bill-receipt-status>div { display:grid; gap:.05rem; }
+.bill-receipt-status>div>small { color:#3471cb; font-size:.62rem; font-weight:850; letter-spacing:.1em; }
+.bill-receipt-status>small { grid-column:2; color:#71807d; font-size:.7rem; line-height:1.4; }
+.bill-receipt-status>.receipt-view-button { grid-column:2; width:fit-content; margin-top:.35rem; }
+.bill-receipt-status.attached { border-color:#c8e4dc; background:linear-gradient(145deg,#effbf7,#fff); }
+.bill-receipt-status.attached>span { color:#08796f; background:#d9f3ec; }
+
+/* Settlement calculation story */
+.smart-transfer-details-body {
+  gap:1rem;
+  padding:clamp(.9rem,2.4vw,1.25rem);
+  background:
+    radial-gradient(circle at 100% 0%,rgb(67 123 229 / 10%),transparent 30%),
+    linear-gradient(145deg,#fbfefd,#fffaf3);
+}
+.smart-transfer-detail-heading {
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr);
+  align-items:center;
+  gap:.75rem;
+  padding:.85rem;
+  border:1px solid #d7e6e2;
+  border-radius:17px;
+  background:rgb(255 255 255 / 82%);
+}
+.smart-calculation-icon {
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border-radius:16px;
+  color:#8b5b00!important;
+  background:linear-gradient(145deg,#ffe9ad,#ffd575);
+  font-size:1.2rem!important;
+}
+.smart-transfer-detail-heading>div { min-width:0; display:grid; gap:.15rem; }
+.smart-transfer-detail-heading>div>span { color:#087f73; font-size:.62rem; font-weight:900; letter-spacing:.11em; text-transform:uppercase; }
+.smart-transfer-detail-heading>div>strong { font-size:clamp(1rem,2.5vw,1.28rem); letter-spacing:-.025em; }
+.smart-transfer-detail-heading>div>small { max-width:720px; color:#687874; font-size:.75rem; line-height:1.45; }
+.smart-transfer-net-grid { gap:.8rem; }
+.smart-transfer-net-grid article {
+  padding:.9rem;
+  border-radius:17px;
+  box-shadow:0 8px 24px rgb(22 57 51 / 5%);
+}
+.smart-transfer-net-grid article.payer-position { border-color:#f1d3cc; background:linear-gradient(145deg,#fff8f5,#fff); }
+.smart-transfer-net-grid article.receiver-position { border-color:#cbe6de; background:linear-gradient(145deg,#f1fbf7,#fff); }
+.smart-transfer-net-head { display:grid; grid-template-columns:40px minmax(0,1fr) auto; }
+.smart-person-avatar {
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:#fff;
+  background:linear-gradient(145deg,#ea8065,#ca5239);
+  font-weight:900;
+}
+.receiver-position .smart-person-avatar { background:linear-gradient(145deg,#239b90,#08796f); }
+.smart-transfer-net-head>span:nth-child(2) { min-width:0; display:grid; }
+.smart-transfer-net-head>span:nth-child(2)>small { color:#71807d; font-size:.62rem; }
+.smart-transfer-pair-proof {
+  grid-template-columns:40px minmax(0,1fr);
+  align-items:center;
+  gap:.25rem .7rem;
+  padding:.85rem;
+  border-color:#cfe6e2;
+  background:linear-gradient(135deg,#edf9f7,#f6fbff);
+}
+.smart-proof-icon {
+  width:40px;
+  height:40px;
+  display:grid;
+  place-items:center;
+  border-radius:13px;
+  color:#087a70;
+  background:#fff;
+  box-shadow:0 5px 15px rgb(25 67 59 / 7%);
+}
+.smart-transfer-pair-proof>div { display:grid; gap:.08rem; }
+.smart-transfer-pair-proof>div>small { color:#168177; font-size:.58rem; font-weight:900; letter-spacing:.1em; }
+.smart-transfer-pair-proof>span:not(.smart-proof-icon) { grid-column:2; color:#365650; }
+.smart-transfer-expense-proof { border-color:#d9e4f4; border-radius:17px; box-shadow:0 8px 24px rgb(36 76 130 / 5%); }
+.smart-transfer-expense-proof>div:first-child { grid-template-columns:40px minmax(0,1fr); align-items:center; gap:.7rem; padding:.85rem; background:#f4f8ff; }
+.smart-transfer-expense-proof>div:first-child>span:last-child { display:grid; gap:.08rem; }
+.smart-proof-row { transition:background .15s ease; }
+.smart-proof-row:hover { background:#f8fbff; }
+.smart-proof-link { border-color:#bcd3f2; color:#2866bd; background:#f4f8ff; }
+
+@media(max-width:720px) {
+  .bill-payment-allocator-footer>.settlement-action-wrap { grid-column:1!important; }
+  .bill-payment-allocator .settlement-payment-details-grid { grid-template-columns:minmax(0,1fr); }
+  .bill-payment-allocator .settlement-payment-details-grid label { grid-column:1; }
+  .bill-detail-overview { grid-template-columns:minmax(0,1fr); }
+  .bill-share-chips { grid-template-columns:minmax(0,1fr); }
+  .bill-receipt-status { grid-template-columns:42px minmax(0,1fr); }
+  .smart-transfer-net-grid { grid-template-columns:minmax(0,1fr); }
+  .smart-proof-row { grid-template-columns:minmax(0,1fr) auto; }
+  .smart-proof-link { grid-column:1/-1; width:100%; }
+}
+
+@media(max-width:420px) {
+  .bill-detail-section-title { align-items:flex-start; }
+  .bill-share-chips>span { grid-template-columns:36px minmax(0,1fr); }
+  .bill-share-chips>span>strong { grid-column:2; }
+  .bill-receipt-status { grid-template-columns:38px minmax(0,1fr); }
+  .bill-receipt-status>span { width:38px; height:38px; }
+  .smart-transfer-detail-heading { grid-template-columns:40px minmax(0,1fr); padding:.7rem; }
+  .smart-calculation-icon { width:40px; height:40px; border-radius:13px; }
+  .smart-transfer-net-head { grid-template-columns:36px minmax(0,1fr); }
+  .smart-person-avatar { width:36px; height:36px; }
+  .smart-transfer-net-head>span:last-child { grid-column:2; justify-self:start; }
+  .smart-transfer-pair-proof { grid-template-columns:36px minmax(0,1fr); }
+}
