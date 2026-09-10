@@ -33,16 +33,17 @@ duplicate payment.
 
 ## Idle Home error fixed
 
-The Home page previously refreshed its entire server-rendered route every 15
-seconds while its finance and settlement sections were also polling their own API
-endpoints. A failed background route refresh could therefore replace the whole
-Home page with the global error screen while the user was idle. The duplicate
-full-page refresh has been removed from Home. Finance and payment sections still
-refresh automatically and handle a temporary request failure locally.
+The app previously refreshed some entire server-rendered routes every 15 seconds
+while finance and settlement sections were also polling their own API endpoints.
+A failed background route refresh could therefore replace Home or Bill Details
+with the global error screen while the user was idle. Timer, focus, online and
+visibility events can no longer refresh a whole server page. Finance and payment
+sections still refresh automatically and handle temporary request failures
+locally; a full server-page refresh is reserved for a confirmed save.
 
 ## Verification
 
-The production build completed successfully. The automated suite passed 273 tests;
+The production build completed successfully. The automated suite passed 278 tests;
 four database concurrency tests were skipped because no isolated test database was
 provided. A live two-user payment flow and installed-PWA browser flow should still
 be checked after deployment using test accounts.

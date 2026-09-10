@@ -28,9 +28,31 @@
 
 ## Verification
 
-The production build completed successfully. The automated suite passed 277
+The production build completed successfully. The automated suite passed 278
 tests; four database concurrency tests were skipped because no isolated test
 database was provided. Static regression tests cover the reported squeezed Home
 card, tap-target visibility, viewport containment and collapsed payment forms.
 Authenticated live-data visual testing should still be performed after Vercel
 deployment with test accounts.
+
+## Focused bill-payment card
+
+The expanded **Record payment** area now has one visual hierarchy instead of a
+second repeated action heading. It leads with **Confirm money received** or
+**Send a payment**, shows the amount still due, presents each receipt as a
+clear selectable card, and keeps the calculated payment total visible beside
+the action. The final action is a teal button that includes the exact amount,
+for example **Confirm RM 5.00 received**.
+
+On phones the heading, amount due, receipt amount and confirmation action stack
+before they become cramped. Selected receipts use a teal border and background;
+optional payment evidence remains available without competing with the main
+task.
+
+## Idle page error follow-up
+
+A second recording showed the same global error while Bill Details was idle.
+The shared server-page refresher no longer listens to timers, focus, online or
+visibility events. It can refresh a server page only after this tab dispatches a
+confirmed-save event. Live client sections continue to use their own API polling
+and local retry states.

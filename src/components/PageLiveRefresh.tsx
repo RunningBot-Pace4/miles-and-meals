@@ -2,42 +2,31 @@
 
 import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { canRefreshPage, HOME_REFRESH_INTERVAL_MS } from "@/lib/live-refresh-policy";
+import { canRefreshPage, SAVED_PAGE_REFRESH_DELAY_MS } from "@/lib/live-refresh-policy";
 
-// This refreshes server data only; link navigation remains document-based.
+// Server pages refresh only after this tab confirms a successful save. Idle,
+// focus and online events must never replace a healthy page with a transient
+// server-rendering error; live sections use their fault-tolerant API polling.
 export function PageLiveRefresh() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const pendingRef = useRef(pending);
   pendingRef.current = pending;
   useEffect(() => {
-    let lastRefresh = 0;
-    function refresh(saved = false) {
-      const editing = Boolean(document.querySelector('dialog[open], [role="dialog"], input:focus, textarea:focus, select:focus')) || Array.from(document.querySelectorAll("form input, form textarea, form select")).some(element => {
-        if (element instanceof HTMLInputElement) {
-          if (element.type === "hidden" || element.type === "submit") return false;
-          if (element.type === "checkbox" || element.type === "radio") return element.checked !== element.defaultChecked;
-          return element.value !== element.defaultValue;
-        }
-        if (element instanceof HTMLTextAreaElement) return element.value !== element.defaultValue;
-        if (element instanceof HTMLSelectElement) return Array.from(element.options).some(option => option.selected !== option.defaultSelected);
-        return false;
-      });
-      if (!canRefreshPage({ online: navigator.onLine, visible: document.visibilityState === "visible", busy: pendingRef.current || document.body.dataset.actionLoading === "true", editing: saved ? false : editing }) || (!saved && Date.now() - lastRefresh < 2000)) return;
-      lastRefresh = Date.now();
+    function refreshAfterSave() {
+      if (!canRefreshPage({ online: navigator.onLine, visible: document.visibilityState === "visible", busy: pendingRef.current || document.body.dataset.actionLoading === "true", editing: false })) return;
       startTransition(() => router.refresh());
     }
-    const timer = window.setInterval(() => refresh(), HOME_REFRESH_INTERVAL_MS);
-    const events = ["online", "focus", "mnm:expense-updated", "mnm:settlement-updated", "mnm:budget-updated", "mnm:data-synced"];
+    const events = ["mnm:expense-updated", "mnm:settlement-updated", "mnm:budget-updated"];
     let savedTimer: ReturnType<typeof setTimeout> | undefined;
     const handleEvent = (event: Event) => {
       const saved = event instanceof CustomEvent && event.detail?.saved === true;
-      if (saved) savedTimer = setTimeout(() => refresh(true), 100);
-      else refresh();
+      if (!saved) return;
+      clearTimeout(savedTimer);
+      savedTimer = setTimeout(refreshAfterSave, SAVED_PAGE_REFRESH_DELAY_MS);
     };
     events.forEach(event => window.addEventListener(event, handleEvent));
-    document.addEventListener("visibilitychange", handleEvent);
-    return () => { clearTimeout(savedTimer); window.clearInterval(timer); events.forEach(event => window.removeEventListener(event, handleEvent)); document.removeEventListener("visibilitychange", handleEvent); };
+    return () => { clearTimeout(savedTimer); events.forEach(event => window.removeEventListener(event, handleEvent)); };
   }, [router]);
   return null;
 }

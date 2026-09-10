@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { canRefreshPage, HOME_REFRESH_INTERVAL_MS } from "@/lib/live-refresh-policy";
+import { canRefreshPage, SAVED_PAGE_REFRESH_DELAY_MS } from "@/lib/live-refresh-policy";
 import config from "../next.config";
 import { readFileSync } from "node:fs";
 
-describe("live Home updates", () => {
+describe("safe live page updates", () => {
   const ready = { online: true, visible: true, busy: false, editing: false };
-  it("updates visible idle pages on a 15-second interval", () => {
-    expect(HOME_REFRESH_INTERVAL_MS).toBe(15_000);
+  it("refreshes server pages shortly after a confirmed save", () => {
+    expect(SAVED_PAGE_REFRESH_DELAY_MS).toBe(150);
     expect(canRefreshPage(ready)).toBe(true);
+  });
+  it("never refreshes the whole server page from an idle timer, focus or online event", () => {
+    const refresher = readFileSync("src/components/PageLiveRefresh.tsx", "utf8");
+    expect(refresher).not.toContain("setInterval");
+    expect(refresher).not.toContain('"focus"');
+    expect(refresher).not.toContain('"online"');
+    expect(refresher).not.toContain("visibilitychange");
+    expect(refresher).toContain("event.detail?.saved === true");
   });
   it("does not refresh the entire Home server page in the background", () => {
     const dashboard = readFileSync("src/app/(app)/dashboard/page.tsx", "utf8");

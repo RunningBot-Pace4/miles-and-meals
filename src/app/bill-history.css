@@ -151,3 +151,275 @@
 @media(max-width:350px) {
   .expense-card .card-actions,.bill-progress dl,.person-statement-summary,.person-statement-bill dl { grid-template-columns:minmax(0,1fr)!important; }
 }
+
+/* Focused bill-payment card -------------------------------------------- */
+.bill-payment-disclosure .bill-payment-allocator {
+  gap:1rem;
+  padding:clamp(1rem,2.5vw,1.35rem);
+  background:linear-gradient(180deg,#fbfefd 0%,#f4faf8 100%);
+}
+.bill-payment-saved {
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  margin:0;
+  padding:.7rem .8rem;
+  border:1px solid #bce1d7;
+  border-radius:12px;
+  color:#0e665d;
+  background:#ebf9f5;
+  font-size:.82rem;
+  font-weight:750;
+}
+.bill-payment-saved>span {
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  color:#fff;
+  background:#17877c;
+}
+.bill-payment-allocator-head {
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr) auto;
+  align-items:center;
+  gap:.8rem;
+}
+.bill-payment-allocator-icon {
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  border-radius:15px;
+  color:#147a70;
+  background:#e4f4f0;
+}
+.bill-payment-allocator-icon svg {
+  width:24px;
+  height:24px;
+  fill:none;
+  stroke:currentColor;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-width:1.8;
+}
+.bill-payment-allocator-copy {
+  min-width:0;
+  display:grid;
+  gap:.18rem;
+}
+.bill-payment-allocator-copy>strong {
+  color:#173f39;
+  font-size:clamp(1rem,2vw,1.18rem);
+  letter-spacing:-.015em;
+}
+.bill-payment-allocator-copy>small:not(.bill-payment-eyebrow) {
+  color:#667773;
+  font-size:.77rem;
+}
+.bill-payment-allocator-copy>.bill-payment-eyebrow {
+  color:#168177;
+  font-size:.62rem;
+  font-weight:850;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+}
+.bill-payment-allocator-head>.bill-payment-balance {
+  min-width:112px;
+  display:grid;
+  gap:.08rem;
+  padding:.58rem .72rem;
+  border:1px solid #cfe4df;
+  border-radius:13px;
+  color:#173f39;
+  background:#fff;
+  text-align:right;
+}
+.bill-payment-balance small {
+  color:#6a7976;
+  font-size:.64rem;
+  font-weight:700;
+}
+.bill-payment-balance strong { font-size:1rem; }
+.bill-payment-select-list { gap:.6rem; }
+.bill-payment-select-row {
+  position:relative;
+  grid-template-columns:26px minmax(0,1fr) auto minmax(132px,168px);
+  gap:.7rem;
+  min-height:76px;
+  padding:.72rem .78rem;
+  border:1px solid #dce7e4;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 5px 18px rgb(19 63 56 / 4%);
+  cursor:pointer;
+  transition:border-color .16s ease,background .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.bill-payment-select-row:hover {
+  border-color:#9dcbc3;
+  box-shadow:0 8px 24px rgb(19 63 56 / 8%);
+  transform:translateY(-1px);
+}
+.bill-payment-select-row.selected {
+  border-color:#2d968b;
+  background:#f1fbf8;
+  box-shadow:0 0 0 2px rgb(34 145 134 / 10%),0 8px 24px rgb(19 63 56 / 7%);
+}
+.bill-payment-select-row>input[type="checkbox"] {
+  width:23px;
+  height:23px;
+  accent-color:#16877c;
+}
+.bill-payment-select-row>span:nth-child(2) { gap:.18rem; }
+.bill-payment-select-row>span:nth-child(2)>strong {
+  color:#173f39;
+  font-size:.9rem;
+}
+.bill-payment-select-row>span:nth-child(2)>small {
+  color:#6a7976;
+  font-size:.69rem;
+}
+.bill-payment-select-state {
+  padding:.28rem .48rem;
+  border-radius:999px;
+  color:#6b7c78;
+  background:#f0f4f3;
+  font-size:.62rem;
+  font-weight:800;
+  white-space:nowrap;
+}
+.bill-payment-select-row.selected .bill-payment-select-state {
+  color:#0e6d63;
+  background:#d9f2ec;
+}
+.bill-payment-amount-input {
+  min-height:48px;
+  overflow:hidden;
+  border:1px solid #d6e1df;
+  border-radius:12px;
+  background:#f9fbfb;
+}
+.bill-payment-select-row.selected .bill-payment-amount-input {
+  border-color:#abd2cb;
+  background:#fff;
+}
+.bill-payment-amount-input b {
+  padding-left:.7rem;
+  color:#647672;
+  font-size:.65rem;
+}
+.bill-payment-amount-input input {
+  min-height:46px;
+  padding:.5rem .65rem;
+  border:0!important;
+  background:transparent!important;
+  font-size:1rem;
+  font-weight:850;
+}
+.bill-payment-allocator-footer {
+  display:grid;
+  grid-template-columns:minmax(130px,.32fr) minmax(0,1fr);
+  align-items:stretch;
+  gap:.75rem;
+  padding-top:.15rem;
+}
+.bill-payment-total {
+  display:grid;
+  align-content:center;
+  gap:.08rem;
+  padding:.72rem .85rem;
+  border:1px solid #dbe6e3;
+  border-radius:14px;
+  background:#fff;
+}
+.bill-payment-total>strong {
+  color:#173f39;
+  font-size:1.2rem;
+}
+.bill-payment-total>small:first-child {
+  color:#657672;
+  font-size:.65rem;
+  font-weight:750;
+}
+.bill-payment-total>small:last-child {
+  color:#168177;
+  font-size:.62rem;
+  font-weight:750;
+}
+.bill-payment-allocator-footer>.settlement-action-wrap {
+  min-width:0;
+  display:grid;
+  gap:.55rem;
+}
+.bill-payment-allocator .settlement-payment-details {
+  overflow:hidden;
+  border:1px solid #d8e5e2;
+  border-radius:14px;
+  background:#fff;
+}
+.bill-payment-allocator .settlement-payment-details>summary {
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  padding:.65rem .78rem;
+  color:#244b45;
+  font-weight:800;
+  cursor:pointer;
+}
+.bill-payment-allocator .settlement-action-button {
+  width:100%;
+  min-height:52px;
+  border:0;
+  border-radius:14px;
+  color:#fff;
+  background:linear-gradient(135deg,#16877c,#0f6f67);
+  box-shadow:0 9px 20px rgb(18 119 109 / 20%);
+  font-size:.9rem;
+  font-weight:850;
+}
+.bill-payment-allocator .settlement-action-button:hover {
+  background:linear-gradient(135deg,#12796f,#0b615a);
+  transform:translateY(-1px);
+}
+.bill-payment-hint {
+  min-height:100%;
+  display:grid;
+  place-items:center;
+  padding:.9rem;
+  border:1px dashed #c9d8d5;
+  border-radius:14px;
+  color:#657672;
+  background:rgb(255 255 255 / 65%);
+  text-align:center;
+}
+.bill-payment-error { grid-column:1/-1; }
+
+@media(max-width:720px) {
+  .bill-payment-allocator-head { grid-template-columns:42px minmax(0,1fr); }
+  .bill-payment-allocator-icon { width:42px; height:42px; border-radius:13px; }
+  .bill-payment-allocator-head>.bill-payment-balance {
+    grid-column:1/-1;
+    grid-template-columns:1fr auto;
+    align-items:center;
+    width:100%;
+    text-align:left;
+  }
+  .bill-payment-select-row {
+    grid-template-columns:26px minmax(0,1fr) auto!important;
+  }
+  .bill-payment-amount-input {
+    grid-column:1/-1!important;
+    width:100%;
+  }
+  .bill-payment-allocator-footer { grid-template-columns:minmax(0,1fr); }
+  .bill-payment-total { grid-template-columns:1fr auto; align-items:center; }
+  .bill-payment-total>strong { grid-column:2; grid-row:1/span 2; }
+}
+
+@media(max-width:420px) {
+  .bill-payment-disclosure .bill-payment-allocator { padding:.85rem; }
+  .bill-payment-select-row { grid-template-columns:24px minmax(0,1fr)!important; }
+  .bill-payment-select-state { display:none; }
+  .bill-payment-amount-input { grid-column:1/-1!important; }
+}

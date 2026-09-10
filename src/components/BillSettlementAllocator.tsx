@@ -168,19 +168,33 @@ export function BillSettlementAllocator({
 
   return (
     <div className="bill-payment-allocator">
-      {saved && <p role="status">{isPayer ? "Payment saved. Waiting for the receiver to confirm." : "Payment receipt saved."}</p>}
+      {saved && (
+        <p className="bill-payment-saved" role="status">
+          <span aria-hidden="true">✓</span>
+          {isPayer
+            ? "Payment saved. Waiting for the receiver to confirm."
+            : "Payment received and saved."}
+        </p>
+      )}
       <div className="bill-payment-allocator-head">
-        <div>
+        <span className="bill-payment-allocator-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 7.5h10M7 12h7M7 16.5h5" />
+            <path d="M5 3.5h14a1 1 0 0 1 1 1v15l-3-1.7-2.5 1.7-2.5-1.7-2.5 1.7L7 17.8 4 19.5v-15a1 1 0 0 1 1-1Z" />
+          </svg>
+        </span>
+        <div className="bill-payment-allocator-copy">
+          <small className="bill-payment-eyebrow">Payment allocation</small>
           <strong>
-            {isPayer ? "Pay selected bills" : "Mark selected bills received"}
+            {isPayer ? "Send a payment" : "Confirm money received"}
           </strong>
           <small>
-            Choose the exact receipts this payment covers. Partial amounts are
-            supported.
+            Select the bill this payment covers. You can enter a partial amount.
           </small>
         </div>
-        <span>
-          Direct remaining {formatMoney(directRemaining, currency)}
+        <span className="bill-payment-balance">
+          <small>Still due</small>
+          <strong>{formatMoney(directRemaining, currency)}</strong>
         </span>
       </div>
 
@@ -221,6 +235,9 @@ export function BillSettlementAllocator({
                   )}
                 </small>
               </span>
+              <span className="bill-payment-select-state">
+                {selected ? "Selected" : "Select bill"}
+              </span>
               <span className="bill-payment-amount-input">
                 <b>{currency}</b>
                 <input
@@ -251,9 +268,14 @@ export function BillSettlementAllocator({
       </div>
 
       <div className="bill-payment-allocator-footer">
-        <span>
-          <small>Selected payment</small>
+        <span className="bill-payment-total">
+          <small>Payment total</small>
           <strong>{formatMoney(selectedTotal, currency)}</strong>
+          <small>
+            {allocations.length === 0
+              ? "No bill selected"
+              : `${allocations.length} ${allocations.length === 1 ? "bill" : "bills"} selected`}
+          </small>
         </span>
 
         {invalidBill ? (
@@ -287,14 +309,14 @@ export function BillSettlementAllocator({
             fixedAmount
             label={
               isPayer
-                ? "Mark selected bills paid"
-                : "Mark selected bills received"
+                ? `Confirm ${formatMoney(selectedTotal, currency)} sent`
+                : `Confirm ${formatMoney(selectedTotal, currency)} received`
             }
             maximumAmount={selectedTotal}
           />
         ) : (
           <small className="bill-payment-hint">
-            Select at least one bill to record a bill-specific payment.
+            Select a bill above to continue.
           </small>
         )}
       </div>

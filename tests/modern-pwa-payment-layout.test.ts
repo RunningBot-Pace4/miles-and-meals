@@ -6,6 +6,7 @@ const home = readFileSync("src/components/HomePaymentPanel.tsx", "utf8");
 const expenses = readFileSync("src/components/LiveExpensesWorkspace.tsx", "utf8");
 const bill = readFileSync("src/app/(app)/expenses/[id]/page.tsx", "utf8");
 const statement = readFileSync("src/app/(app)/settlements/statement/page.tsx", "utf8");
+const allocator = readFileSync("src/components/BillSettlementAllocator.tsx", "utf8");
 
 describe("modern payment PWA layout", () => {
   it("stacks payment cards before their text or controls can be squeezed", () => {
@@ -35,5 +36,16 @@ describe("modern payment PWA layout", () => {
     expect(bill).toContain("Payments for this bill");
     expect(statement).toContain('className="bill-payment-disclosure person-statement-payment-action"');
     expect(statement).toContain("Outstanding now");
+  });
+
+  it("uses one clear, responsive bill-payment card", () => {
+    expect(allocator).toContain("Confirm money received");
+    expect(allocator).toContain("Payment total");
+    expect(allocator).toContain("Select a bill above to continue.");
+    expect(allocator).toContain("Confirm ${formatMoney(selectedTotal, currency)} received");
+    expect(allocator).not.toContain("Mark selected bills received");
+    expect(css).toContain("/* Focused bill-payment card");
+    expect(css).toContain("background:linear-gradient(135deg,#16877c,#0f6f67)");
+    expect(css).toContain("@media(max-width:720px)");
   });
 });
