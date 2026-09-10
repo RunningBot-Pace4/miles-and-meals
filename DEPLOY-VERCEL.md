@@ -1,5 +1,8 @@
 # Miles & Meals — verified build fix
 
+Latest Home payment update: see `HOME-PAYMENT-PANEL.md`. The Home page now supports
+trip-required, receipt-optional partial payments with an allocation preview.
+
 Latest update: SIMPLER-HOME-AND-PAYMENT-FEEDBACK.md describes the personal Home
 summary, payment feedback fixes and the still-undiagnosed screenshot error.
 

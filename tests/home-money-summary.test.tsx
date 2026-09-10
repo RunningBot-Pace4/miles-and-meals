@@ -14,7 +14,7 @@ describe("personal Home money summary", () => {
     expect(html).toContain("50.00");
     expect(html).not.toContain("120.00");
     expect(html).not.toContain("9,999");
-    expect(html).toContain('href="/spend"');
+    expect(html).toContain('href="#home-payment"');
     expect(html).not.toContain("Mark paid");
   });
 });

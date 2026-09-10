@@ -52,6 +52,7 @@ export function SettlementActionButton({
   allocations = [],
   fixedAmount = false,
   onRecorded,
+  onBusyChange,
 }: {
   countryId: string;
   counterpartyUserId: string;
@@ -62,6 +63,7 @@ export function SettlementActionButton({
   allocations?: SettlementAllocation[];
   fixedAmount?: boolean;
   onRecorded?: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -160,6 +162,7 @@ export function SettlementActionButton({
   }
 
   async function runAction() {
+    onBusyChange?.(true);
     setBusy(true);
     setError("");
     setSuccessMessage("");
@@ -240,6 +243,7 @@ export function SettlementActionButton({
       );
       setBusy(false);
       onRecorded?.();
+      onBusyChange?.(false);
     } catch (caught) {
       if (responseReceived) {
         requestIdRef.current = null;
@@ -252,6 +256,7 @@ export function SettlementActionButton({
       );
       setAwaitingRefresh(false);
       setBusy(false);
+      onBusyChange?.(false);
     }
   }
 

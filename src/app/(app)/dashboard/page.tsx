@@ -1,5 +1,6 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { PageLiveRefresh } from "@/components/PageLiveRefresh";
+import { HomePaymentPanel } from "@/components/HomePaymentPanel";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
@@ -545,6 +546,8 @@ export default async function DashboardPage({
             allTrips={viewAll}
             variant="dashboard"
           />
+
+          <HomePaymentPanel trips={tripOptions} currentUserId={session.user.id} />
 
           {recentActivity.length > 0 ? (
             <section className="dashboard-recent-activity" aria-labelledby="recent-activity-title">

@@ -12,7 +12,7 @@ export function HomeMoneySummary({ data, currentUserId }: { data: SettlementLive
       <div><span>You sent · awaiting confirmation</span><strong>{formatMoney(me?.paymentSent ?? 0, data.baseCurrency)}</strong></div>
       <div><span>Received? Confirm it</span><strong>{formatMoney(me?.awaitingConfirmation ?? 0, data.baseCurrency)}</strong></div>
     </div>
-    <p className="muted">Totals include group offsets. Open a bill to choose exactly what a full or partial payment covers.</p>
-    <div className="home-money-actions"><Link className="button primary" href="/spend">View bills & pay</Link><Link className="button secondary" href="/spend?tab=settlements">Confirm received / payment history</Link></div>
+    <p className="muted">Totals include group offsets. Use the panel below to record payment for a specific trip.</p>
+    <div className="home-money-actions"><a className="button primary" href="#home-payment">Pay / receive here</a><Link className="button secondary" href="/spend?tab=settlements">Payment history</Link></div>
   </section>;
 }
