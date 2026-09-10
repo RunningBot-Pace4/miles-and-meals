@@ -1,13 +1,15 @@
 # Home payment panel
 
-The Home page now provides one focused place to record a payment or confirm money
-received.
+The Home page now provides one focused request list to record a payment or confirm
+money received. It replaces both the old four-box money summary and the separate
+generic payment form.
 
 ## User flow
 
-1. Choose a trip. A trip is always required and is never chosen silently.
-2. Choose whether you are paying someone or receiving from someone.
-3. Choose the person and enter the amount.
+1. Open the request for the person who should pay or receive. The person and
+   direction are already known, so there is no extra person or direction screen.
+2. Enter the full or partial amount.
+3. Open **Payment details** and choose the required trip.
 4. Optionally select one or more receipts.
 5. Review the allocation and remaining amount for every affected receipt before
    confirming.
@@ -29,9 +31,18 @@ duplicate payment.
 - Existing historic payments without receipt allocations are not rewritten.
 - No database migration or cleanup script is required for this update.
 
+## Idle Home error fixed
+
+The Home page previously refreshed its entire server-rendered route every 15
+seconds while its finance and settlement sections were also polling their own API
+endpoints. A failed background route refresh could therefore replace the whole
+Home page with the global error screen while the user was idle. The duplicate
+full-page refresh has been removed from Home. Finance and payment sections still
+refresh automatically and handle a temporary request failure locally.
+
 ## Verification
 
-The production build completed successfully. The automated suite passed 272 tests;
+The production build completed successfully. The automated suite passed 273 tests;
 four database concurrency tests were skipped because no isolated test database was
 provided. A live two-user payment flow and installed-PWA browser flow should still
 be checked after deployment using test accounts.

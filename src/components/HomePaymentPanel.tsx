@@ -1,92 +1,106 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FullPageLink as Link } from "@/components/FullPageLink";
 import { SettlementActionButton } from "@/components/SettlementActionButton";
 import { allocateHomePayment } from "@/lib/home-payment-allocation";
 import { formatMoney } from "@/lib/money";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
-export type PaymentTrip = { id: string; name: string; financialStatus: string };
+type SmartPlan = SettlementLiveData["smartPlans"][number];
+type DirectBalance = SmartPlan["originalExpenseBalances"][number];
+type PaymentChoice = { plan: SmartPlan; balance: DirectBalance };
 
-export function HomePaymentPanel({ trips, currentUserId }: { trips: PaymentTrip[]; currentUserId: string }) {
-  const [tripId, setTripId] = useState("");
-  const [direction, setDirection] = useState("pay");
-  const [pairKey, setPairKey] = useState("");
-  const [amount, setAmount] = useState("");
+function HomePaymentRequestCard({ choices, currentUserId }: { choices: PaymentChoice[]; currentUserId: string }) {
+  const [choiceKey, setChoiceKey] = useState(`${choices[0].plan.tripId}:${choices[0].plan.countryId}`);
+  const choice = choices.find(({ plan }) => `${plan.tripId}:${plan.countryId}` === choiceKey) ?? choices[0];
+  const { plan, balance } = choice;
+  const paying = balance.fromUserId === currentUserId;
+  const maximum = balance.directRemaining;
+  const [amount, setAmount] = useState(maximum.toFixed(2));
   const [selected, setSelected] = useState<string[]>([]);
-  const [data, setData] = useState<SettlementLiveData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [revision, setRevision] = useState(0);
-  const requestRef = useRef(0);
-
-  useEffect(() => {
-    if (!tripId) return;
-    const refresh = () => {
-      if (!submitting && !loading && !amount && !selected.length && navigator.onLine && document.visibilityState === "visible") setRevision(value => value + 1);
-    };
-    const timer = window.setInterval(refresh, 15_000);
-    window.addEventListener("focus", refresh);
-    window.addEventListener("online", refresh);
-    return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); window.removeEventListener("online", refresh); };
-  }, [tripId, submitting, loading, amount, selected.length]);
-
-  useEffect(() => {
-    const requestId = ++requestRef.current;
-    setData(null); setError("");
-    if (!tripId) { setLoading(false); return; }
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
-    setLoading(true);
-    void fetch(`/api/settlements/summary?trip=${encodeURIComponent(tripId)}`, { cache: "no-store", signal: controller.signal })
-      .then(async response => { if (!response.ok) throw new Error("Unable to load this trip's balances. Please retry."); return response.json() as Promise<SettlementLiveData>; })
-      .then(next => { if (requestId === requestRef.current) setData(next); })
-      .catch(() => { if (requestId === requestRef.current && !controller.signal.aborted) setError("Unable to load balances. Please retry."); else if (requestId === requestRef.current) setError("Balance request timed out. Please retry."); })
-      .finally(() => { clearTimeout(timer); if (requestId === requestRef.current) setLoading(false); });
-    return () => { ++requestRef.current; controller.abort(); clearTimeout(timer); };
-  }, [tripId, revision]);
-
-  const relationships = (data?.smartPlans ?? []).filter(plan => plan.tripId === tripId).flatMap(plan => plan.originalExpenseBalances
-    .filter(balance => direction === "pay" ? balance.fromUserId === currentUserId : balance.toUserId === currentUserId)
-    .map(balance => ({ plan, balance, key: `${plan.countryId}:${balance.fromUserId}:${balance.toUserId}` })));
-  const relationship = relationships.find(item => item.key === pairKey);
-  const balance = relationship?.balance;
-  const plan = relationship?.plan;
-  const pending = plan?.recordedPayments.find(payment => payment.status === "SENT" && payment.fromUserId === balance?.fromUserId && payment.toUserId === balance?.toUserId);
-  const bills = balance?.expenses.filter(bill => bill.remainingAmount > 0.009) ?? [];
+  const previousMaximum = useRef(maximum);
+  const bills = balance.expenses.filter((bill) => bill.remainingAmount > 0.009);
+  const billSignature = bills.map((bill) => `${bill.expenseId}:${bill.remainingAmount}`).join("|");
   const preview = allocateHomePayment(bills, amount, selected);
-  const exceedsDirect = Number(amount) > (balance?.directRemaining ?? 0) + 0.009;
-  const closed = trips.find(trip => trip.id === tripId)?.financialStatus === "CLOSED";
-  const valid = Boolean(plan && balance && !pending && !closed && !preview.error && !exceedsDirect && !loading && !error);
-  function resetSelection() { setPairKey(""); setAmount(""); setSelected([]); setNotice(""); }
+  const numericAmount = Number(amount);
+  const exceedsBalance = numericAmount > maximum + 0.009;
+  const valid = !preview.error && !exceedsBalance && numericAmount > 0;
+
+  useEffect(() => {
+    setSelected((ids) => ids.filter((id) => bills.some((bill) => bill.expenseId === id)));
+    setAmount((current) => current === "" || Math.abs(Number(current) - previousMaximum.current) < 0.005 ? maximum.toFixed(2) : current);
+    previousMaximum.current = maximum;
+    // billSignature represents the stable receipt IDs and balances, avoiding an effect on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [maximum, billSignature]);
+
   function recorded() {
-    setNotice(direction === "pay" ? "Payment saved. Allocated amounts are reserved until the receiver confirms." : "Receipt confirmed and bill balances updated.");
-    setAmount(""); setSelected([]); setSubmitting(false); setRevision(value => value + 1);
+    setNotice(paying ? "Payment sent. The receiver will confirm it." : "Money received. The bill balance is updated.");
+    setSelected([]);
   }
 
-  return <section className="panel home-payment-panel stack gap-lg" id="home-payment">
-    <div><p className="eyebrow">PAY OR RECEIVE</p><h2>Settle a bill, right here</h2></div>
-    {notice && <p role="status">{notice}</p>}
-    <fieldset disabled={submitting} className="stack">
-      <label>Trip · required<select value={tripId} onChange={event => { setTripId(event.target.value); resetSelection(); }}><option value="">Choose a trip</option>{trips.map(trip => <option value={trip.id} key={trip.id} disabled={trip.financialStatus === "CLOSED"}>{trip.name}{trip.financialStatus === "CLOSED" ? " · closed" : ""}</option>)}</select></label>
-      {tripId && <label>I want to<select value={direction} onChange={event => { setDirection(event.target.value); resetSelection(); }}><option value="pay">Record a payment I sent</option><option value="receive">Record money I received</option></select></label>}
-      {loading && <p role="status">Loading this trip's bills…</p>}
-      {error && <p role="alert">{error} <button type="button" onClick={() => setRevision(value => value + 1)}>Retry</button></p>}
-      {data && tripId && !closed && <label>{direction === "pay" ? "Pay to" : "Receive from"} · required<select value={pairKey} onChange={event => { setPairKey(event.target.value); setAmount(""); setSelected([]); setNotice(""); }}><option value="">Choose a person</option>{relationships.map(item => <option key={item.key} value={item.key}>{direction === "pay" ? item.balance.toName : item.balance.fromName} · {formatMoney(item.balance.directRemaining, item.plan.currency)} outstanding</option>)}</select></label>}
-      {data && !relationships.length && <p>No direct receipt balances for this selection. Group offsets remain available under Payments.</p>}
-      {balance && plan && !pending && !closed && <>
-        <label>Amount · {plan.currency}<input type="text" inputMode="decimal" data-numeric-input="decimal" value={amount} placeholder="0.00" onChange={event => setAmount(event.target.value)} /></label>
-        <details><summary>Choose receipts · optional {selected.length ? `(${selected.length} selected)` : ""}</summary><p>Leave all unchecked for automatic allocation: oldest bill first. Same-date bills use a stable receipt-ID order.</p>
-          {bills.map(bill => <label className="home-receipt-option" key={bill.expenseId}><input type="checkbox" checked={selected.includes(bill.expenseId)} onChange={event => setSelected(ids => event.target.checked ? [...ids, bill.expenseId] : ids.filter(id => id !== bill.expenseId))} /><span>{bill.description}<small>{bill.expenseDate} · {formatMoney(bill.remainingAmount, plan.currency)} remaining</small></span></label>)}
-        </details>
-        <p>{selected.length ? "Selected receipts only" : "Automatic allocation: oldest bill first"}</p>
-        {amount && (preview.error || exceedsDirect) && <p role="alert">{exceedsDirect ? `Cannot exceed the direct balance of ${formatMoney(balance.directRemaining, plan.currency)}. Previous unassigned payments may already cover part of these bills.` : preview.error}</p>}
-        {valid && <div className="home-allocation-preview"><h3>Review before confirming</h3>{preview.allocations.map(item => <div key={item.expenseId}><strong>{item.description}</strong><span>Apply {formatMoney(item.amount, plan.currency)}</span><span>Remaining after this payment: {formatMoney(item.remainingAfter, plan.currency)}</span></div>)}<p>{direction === "pay" ? "Recorded payments remain pending until the receiver confirms." : "Confirm only money you have actually received."}</p></div>}
-      </>}
-    </fieldset>
-    {pending && plan && <div className="stack"><p>{formatMoney(pending.amount, plan.currency)} already sent · awaiting receiver confirmation. Do not record it again.</p>{pending.allocations.map(item => <p key={item.expenseId}>{item.description} · {formatMoney(item.amount, plan.currency)}</p>)}{direction === "receive" && <SettlementActionButton key={pending.id} action="MARK_RECEIVED" countryId={plan.countryId} counterpartyUserId={pending.fromUserId} label="Confirm this payment received" onRecorded={recorded} onBusyChange={setSubmitting} />}</div>}
-    {valid && plan && balance && <SettlementActionButton key={`${tripId}:${pairKey}:${direction}:${revision}`} action={direction === "pay" ? "MARK_PAID" : "MARK_RECEIVED"} countryId={plan.countryId} counterpartyUserId={direction === "pay" ? balance.toUserId : balance.fromUserId} label={direction === "pay" ? "Confirm payment sent" : "Confirm money received"} currency={plan.currency} maximumAmount={Number(amount)} fixedAmount allocations={preview.allocations.map(item => ({ expenseId: item.expenseId, amount: item.amount }))} onRecorded={recorded} onBusyChange={setSubmitting} />}
+  const detailContent = <>
+    <label className="home-payment-trip-detail"><span>Trip · required</span><select value={choiceKey} onChange={(event) => {
+      const next = choices.find(({ plan: item }) => `${item.tripId}:${item.countryId}` === event.target.value) ?? choices[0];
+      setChoiceKey(event.target.value);
+      setAmount(next.balance.directRemaining.toFixed(2));
+      setSelected([]);
+      setNotice("");
+    }}>{choices.map(({ plan: item, balance: itemBalance }) => <option key={`${item.tripId}:${item.countryId}`} value={`${item.tripId}:${item.countryId}`}>{item.tripName} · {formatMoney(itemBalance.directRemaining, item.currency)}</option>)}</select></label>
+    <div className="home-payment-bill-picker">
+      <strong>Bill / receipt · optional</strong>
+      <small>Select receipt(s), or leave all unchecked to apply the payment to the oldest unpaid bill first.</small>
+      <div className="home-payment-bill-list">
+        {bills.map((bill) => <label className="home-receipt-option" key={bill.expenseId}>
+          <input checked={selected.includes(bill.expenseId)} onChange={(event) => setSelected((ids) => event.target.checked ? [...ids, bill.expenseId] : ids.filter((id) => id !== bill.expenseId))} type="checkbox" />
+          <span>{bill.description}<small>{bill.expenseDate} · {formatMoney(bill.remainingAmount, plan.currency)} remaining</small></span>
+        </label>)}
+      </div>
+      {amount && (preview.error || exceedsBalance) ? <small className="settlement-action-error" role="alert">{exceedsBalance ? `Cannot exceed ${formatMoney(maximum, plan.currency)}.` : preview.error}</small> : null}
+      {valid ? <div className="home-allocation-preview">
+        <strong>{selected.length ? "Selected receipt allocation" : "Automatic allocation"}</strong>
+        {preview.allocations.map((item) => <span key={item.expenseId}>{item.description}: {formatMoney(item.amount, plan.currency)} · {formatMoney(item.remainingAfter, plan.currency)} remains</span>)}
+      </div> : null}
+    </div>
+  </>;
+
+  return <article className="settlement-status-row waiting home-payment-request">
+    <div className="settlement-status-icon">○</div>
+    <div className="settlement-status-copy"><strong>{paying ? `You → ${balance.toName}` : `${balance.fromName} → You`}</strong><span className="settlement-state-pill waiting">Payment due</span><small>{plan.tripName}</small></div>
+    <strong className="settlement-amount">{formatMoney(maximum, plan.currency)}</strong>
+    <div className="home-payment-request-action">
+      <label className="settlement-partial-amount"><span>Amount</span><span><b>{plan.currency}</b><input aria-label={`${paying ? "Payment" : "Receipt"} amount for ${plan.tripName}`} data-numeric-input="decimal" inputMode="decimal" onChange={(event) => { setAmount(event.target.value); setNotice(""); }} value={amount} /></span><small>Full or partial amount.</small></label>
+      {valid ? <SettlementActionButton action={paying ? "MARK_PAID" : "MARK_RECEIVED"} allocations={preview.allocations.map((item) => ({ expenseId: item.expenseId, amount: item.amount }))} countryId={plan.countryId} counterpartyUserId={paying ? balance.toUserId : balance.fromUserId} currency={plan.currency} detailsContent={detailContent} fixedAmount label={paying ? "Confirm payment sent" : "Mark received"} maximumAmount={numericAmount} onRecorded={recorded} /> : <div className="settlement-action-wrap"><details className="settlement-payment-details"><summary>Payment details · optional</summary><div className="settlement-payment-details-grid">{detailContent}</div></details><button className="button settlement-action-button" disabled type="button">Check amount or selected bills</button></div>}
+      {notice ? <small className="settlement-action-success" role="status">{notice}</small> : null}
+    </div>
+  </article>;
+}
+
+export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLiveData; currentUserId: string }) {
+  const pending = data.pendingSettlements.filter((payment) => payment.fromUserId === currentUserId || payment.toUserId === currentUserId);
+  const pendingKeys = new Set(pending.map((payment) => `${payment.countryId}:${payment.fromUserId}:${payment.toUserId}`));
+  const requests = data.smartPlans.flatMap((plan) => plan.originalExpenseBalances
+    .filter((balance) => balance.directRemaining > 0.009 && (balance.fromUserId === currentUserId || balance.toUserId === currentUserId) && !pendingKeys.has(`${plan.countryId}:${balance.fromUserId}:${balance.toUserId}`))
+    .map((balance) => ({ plan, balance })));
+  const requestGroups = Array.from(requests.reduce((groups, request) => {
+    const key = `${request.balance.fromUserId}:${request.balance.toUserId}`;
+    groups.set(key, [...(groups.get(key) ?? []), request]);
+    return groups;
+  }, new Map<string, PaymentChoice[]>()).entries());
+
+  return <section className="panel settlement-panel home-payment-panel" id="home-payment">
+    <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">The person and trip are already matched. Open payment details only when you want to choose specific receipts.</p></div><Link className="button secondary" href="/spend?tab=settlements">Payment history</Link></div>
+    <div className="settlement-status-list">
+      {pending.map((payment) => <article className="settlement-status-row sent" key={payment.id}>
+        <div className="settlement-status-icon">↗</div>
+        <div className="settlement-status-copy"><strong>{payment.fromUserId === currentUserId ? `You → ${payment.toName}` : `${payment.fromName} → You`}</strong><span className="settlement-state-pill sent">Sent · awaiting receipt</span><small>{payment.tripName}</small>{payment.allocations.length ? <small>Bills: {payment.allocations.map((item) => `${item.description} ${formatMoney(item.amount, payment.currency)}`).join(" · ")}</small> : null}</div>
+        <strong className="settlement-amount">{formatMoney(payment.amount, payment.currency)}</strong>
+        {payment.toUserId === currentUserId ? <SettlementActionButton action="MARK_RECEIVED" countryId={payment.countryId} counterpartyUserId={payment.fromUserId} label="Confirm received" /> : <div className="home-payment-awaiting">Waiting for confirmation</div>}
+      </article>)}
+      {requestGroups.map(([key, choices]) => <HomePaymentRequestCard choices={choices} currentUserId={currentUserId} key={key} />)}
+      {!pending.length && !requests.length ? <div className="settled-state"><span aria-hidden="true">✓</span><div><strong>Nothing outstanding</strong><small>You are settled for the selected trip.</small></div></div> : null}
+    </div>
   </section>;
 }

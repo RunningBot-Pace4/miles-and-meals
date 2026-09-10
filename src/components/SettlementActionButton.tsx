@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { compressPaymentProofForDatabase } from "@/lib/payment-proof-storage";
 
 type SettlementAction =
@@ -53,6 +53,7 @@ export function SettlementActionButton({
   fixedAmount = false,
   onRecorded,
   onBusyChange,
+  detailsContent,
 }: {
   countryId: string;
   counterpartyUserId: string;
@@ -64,6 +65,7 @@ export function SettlementActionButton({
   fixedAmount?: boolean;
   onRecorded?: () => void;
   onBusyChange?: (busy: boolean) => void;
+  detailsContent?: ReactNode;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -96,7 +98,7 @@ export function SettlementActionButton({
   } | null>(null);
   const requestIdRef = useRef<string | null>(null);
 
-  const showPaymentDetails = maximumAmount !== undefined;
+  const showPaymentDetails = maximumAmount !== undefined || Boolean(detailsContent);
 
   useEffect(() => {
     if (maximumAmount === undefined) {
@@ -283,6 +285,7 @@ export function SettlementActionButton({
         <details className="settlement-payment-details">
           <summary>Payment details · optional</summary>
           <div className="settlement-payment-details-grid">
+            {detailsContent}
             <label>
               <span>Method</span>
               <select

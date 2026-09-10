@@ -1,6 +1,4 @@
 import { FullPageLink as Link } from "@/components/FullPageLink";
-import { PageLiveRefresh } from "@/components/PageLiveRefresh";
-import { HomePaymentPanel } from "@/components/HomePaymentPanel";
 import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
@@ -401,7 +399,6 @@ export default async function DashboardPage({
 
   return (
     <div className="stack gap-lg dashboard-page">
-      <PageLiveRefresh />
       <section className="dashboard-welcome home-postcard">
         <svg className="home-postcard-route" viewBox="0 0 380 230" aria-hidden="true"><path d="M25 180C110 210 60 55 170 80S270 215 350 35" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5 8"/><circle cx="25" cy="180" r="8" fill="currentColor"/><circle cx="350" cy="35" r="12" fill="none" stroke="currentColor" strokeWidth="2"/><path d="m244 101 12-28 8 4-4 20 21 3 4 8-27-2-11 14-5-2 6-16Z" fill="currentColor"/></svg>
         <div className="dashboard-welcome-copy">
@@ -546,8 +543,6 @@ export default async function DashboardPage({
             allTrips={viewAll}
             variant="dashboard"
           />
-
-          <HomePaymentPanel trips={tripOptions} currentUserId={session.user.id} />
 
           {recentActivity.length > 0 ? (
             <section className="dashboard-recent-activity" aria-labelledby="recent-activity-title">

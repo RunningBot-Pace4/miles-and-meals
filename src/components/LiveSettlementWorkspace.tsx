@@ -13,7 +13,7 @@ import {
   SettlementActionButton,
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
-import { HomeMoneySummary } from "@/components/HomeMoneySummary";
+import { HomePaymentPanel } from "@/components/HomePaymentPanel";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { BillPaymentProgress } from "@/components/BillPaymentProgress";
 import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
@@ -1521,7 +1521,7 @@ export function LiveSettlementWorkspace({
         </>
       ) : null}
 
-      {variant === "dashboard" ? <HomeMoneySummary data={data} currentUserId={currentUserId} /> : <>
+      {variant === "dashboard" ? <HomePaymentPanel data={data} currentUserId={currentUserId} /> : <>
       <PersonCards
         data={data}
         currentUserId={currentUserId}
