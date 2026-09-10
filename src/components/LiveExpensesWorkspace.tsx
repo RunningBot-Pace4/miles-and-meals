@@ -353,6 +353,7 @@ export function LiveExpensesWorkspace({
                   <div className="card-actions">
                     {!locked ? (
                       <Link
+                        className="button secondary expense-card-action"
                         href={`/expenses/${expense.id}/edit`}
                       >
                         Edit
@@ -361,7 +362,7 @@ export function LiveExpensesWorkspace({
                       <span className="muted">Locked for settlement</span>
                     )}
 
-                    <Link href={`/expenses/${expense.id}`}>Bill & payment history</Link>
+                    <Link className="button primary expense-card-action" href={`/expenses/${expense.id}`}>View bill &amp; payments</Link>
                     {expense.hasReceipt ? (
                       <ReceiptViewerButton
                         expenseId={

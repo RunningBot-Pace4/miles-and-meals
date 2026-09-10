@@ -135,6 +135,11 @@ export default async function PersonStatementPage({
       </div>
 
       <section className="panel person-statement-summary">
+        <div className="person-statement-outstanding">
+          <span>Outstanding now</span>
+          <strong>{formatMoney(balance.directRemaining, ledger.currency)}</strong>
+          <small>Amount still due between these travellers</small>
+        </div>
         <div>
           <span>Original bills</span>
           <strong>{formatMoney(balance.amount, ledger.currency)}</strong>
@@ -146,10 +151,6 @@ export default async function PersonStatementPage({
         <div>
           <span>Bill payments recorded (including pending)</span>
           <strong>{formatMoney(balance.allocatedPaid, ledger.currency)}</strong>
-        </div>
-        <div>
-          <span>Outstanding</span>
-          <strong>{formatMoney(balance.directRemaining, ledger.currency)}</strong>
         </div>
       </section>
 
@@ -169,7 +170,7 @@ export default async function PersonStatementPage({
         <div className="panel-title">
           <div>
             <p className="eyebrow">BILLS</p>
-            <h2>What makes up this balance</h2>
+            <h2>Bills in this balance</h2>
           </div>
           <span>{balance.expenseCount} bill{balance.expenseCount === 1 ? "" : "s"}</span>
         </div>
@@ -200,7 +201,9 @@ export default async function PersonStatementPage({
           ))}
         </div>
 
-        <BillSettlementAllocator
+        <details className="bill-payment-disclosure person-statement-payment-action">
+          <summary><span>Record a payment</span><small>Choose bills and enter a full or partial amount</small></summary>
+          <BillSettlementAllocator
           countryId={ledger.countryId}
           currentUserId={session.user.id}
           directRemaining={balance.directRemaining}
@@ -211,7 +214,8 @@ export default async function PersonStatementPage({
           currency={ledger.currency}
           toName={balance.toName}
           toUserId={balance.toUserId}
-        />
+          />
+        </details>
       </section>
 
       <section className="panel person-statement-section">

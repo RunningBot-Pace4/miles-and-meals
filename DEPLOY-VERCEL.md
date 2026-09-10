@@ -1,5 +1,9 @@
 # Miles & Meals — verified build fix
 
+Latest responsive redesign: see `MODERN-PWA-PAYMENT-DESIGN.md`. It fixes the
+mobile payment-card squeeze, visible expense actions, and simplified bill and
+person-statement screens.
+
 Latest Home payment update: see `HOME-PAYMENT-PANEL.md`. The Home page now supports
 trip-required, receipt-optional partial payments with an allocation preview.
 
