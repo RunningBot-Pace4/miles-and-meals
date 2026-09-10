@@ -3,6 +3,7 @@ import { LiveDashboardFinance } from "@/components/LiveDashboardFinance";
 import { LiveSettlementWorkspace } from "@/components/LiveSettlementWorkspace";
 import { LivingJourneyHalo } from "@/components/LivingJourneyHalo";
 import { LivingJourneyStarter } from "@/components/LivingJourneyStarter";
+import { TripQuickSelect } from "@/components/TripQuickSelect";
 import {
   getActiveTripContext,
 } from "@/lib/active-trip";
@@ -443,13 +444,15 @@ export default async function DashboardPage({
         )}
       </section>
 
+      {selectedTrip && <div className="home-trip-selector"><TripQuickSelect trips={tripOptions.map(trip => ({ id: trip.id, name: trip.name }))} selectedId={requestedTripId} viewAll={viewAll} /></div>}
+
       {!selectedTrip ? (
         <LivingJourneyStarter isAdmin={admin} />
       ) : null}
 
       {selectedTrip && commandCenter ? (
         <details className="panel home-next-steps">
-          <summary><strong>Your next steps</strong> · {commandCenter.openTaskCount} open tasks</summary>
+          <summary><strong>{commandCenter.nextItem ? `Next: ${commandCenter.nextItem.title}` : "Plan your next stop"}</strong><span aria-hidden="true">＋</span></summary>
           <div className="stack">
             {commandCenter.nextItem ? <Link href="/planner">Next: {commandCenter.nextItem.title}</Link> : <Link href="/planner">Add your next activity</Link>}
             {commandCenter.openTaskCount > 0 ? <Link href="/planner">Review {commandCenter.openTaskCount} unfinished tasks</Link> : null}
@@ -460,7 +463,10 @@ export default async function DashboardPage({
       ) : null}
 
       {selectedTrip && commandCenter ? (
+        <details className="home-trip-overview">
+          <summary><span><strong>Trip overview</strong><small>{selectedTrip.name} · Plan, budget and people</small></span><span aria-hidden="true">⌄</span></summary>
         <LivingJourneyHalo
+          showTripSelector={false}
           tripName={heroDestination}
           tripDateLabel={tripDateLabel}
           tripSummary={heroSecondary}
@@ -491,6 +497,7 @@ export default async function DashboardPage({
           waitingForMe={waitingForMe}
           closed={selectedTrip.financialStatus === "CLOSED"}
         />
+        </details>
       ) : null}
 
       {selectedTrip && actionItems.length > 0 ? (
@@ -520,7 +527,7 @@ export default async function DashboardPage({
 
       {selectedTrip ? (
         <>
-          <LiveDashboardFinance
+          <details className="home-finance-overview"><summary><span><strong>Budget & spending breakdown</strong><small>Your share, budget and categories</small></span><span aria-hidden="true">⌄</span></summary><LiveDashboardFinance
             initialData={
               financeLiveData
             }
@@ -528,7 +535,7 @@ export default async function DashboardPage({
               requestedTripId
             }
             allTrips={viewAll}
-          />
+          /></details>
 
           <LiveSettlementWorkspace
             initialData={

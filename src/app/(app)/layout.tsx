@@ -65,7 +65,7 @@ export default async function AppLayout({
           missingBudgets[0]?.tripId ?? ""
         }
       >
-        <div className="app-shell" data-locale={preferences.locale} data-time-zone={preferences.timeZone}>
+        <div className="app-shell pwa-polished" data-locale={preferences.locale} data-time-zone={preferences.timeZone}>
           <a className="skip-link" href="#main-content">
             Skip to main content
           </a>

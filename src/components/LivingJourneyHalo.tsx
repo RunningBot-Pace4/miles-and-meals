@@ -14,6 +14,7 @@ type LivingJourneyHaloProps = {
   tripOptions: { id: string; name: string }[];
   selectedTripId: string;
   viewAll: boolean;
+  showTripSelector?: boolean;
   initialMode: JourneyMode;
   stage: "BEFORE" | "DURING" | "AFTER" | "CLOSED";
   nextTitle: string;
@@ -149,11 +150,11 @@ export function LivingJourneyHalo(props: LivingJourneyHaloProps) {
       </div>
 
       <div className="journey-context-strip">
-        <TripQuickSelect
+        {props.showTripSelector !== false && <TripQuickSelect
           trips={props.tripOptions}
           selectedId={props.selectedTripId}
           viewAll={props.viewAll}
-        />
+        />}
 
         <div className="journey-wallet-summary">
           <span>

@@ -424,6 +424,117 @@
   .bill-payment-amount-input { grid-column:1/-1!important; }
 }
 
+/* Shared PWA design system. Scoped to the authenticated shell; payment
+   components below retain their detailed allocation layouts. */
+.pwa-polished {
+  --ui-ink:#193f3a;
+  --ui-muted:#60736f;
+  --ui-line:#dae7e3;
+  --ui-radius:18px;
+  color:var(--ui-ink);
+  background:radial-gradient(ellipse at 0 0,#fff0d8 0,transparent 38%),radial-gradient(ellipse at 100% 12%,#e4f4f0 0,transparent 42%),#f7faf9;
+  min-height:100dvh;
+}
+.pwa-polished .page-container { padding-bottom:calc(100px + env(safe-area-inset-bottom)); }
+.pwa-polished :is(.panel,.expense-card,.travel-card,.person-ledger-card,.settings-card) {
+  border-radius:var(--ui-radius);
+  border-color:var(--ui-line);
+  box-shadow:0 5px 22px rgb(22 65 56 / 5%);
+}
+.pwa-polished .page-heading h1 { color:var(--ui-ink); letter-spacing:-.035em; line-height:1.15; }
+.pwa-polished .page-heading p { max-width:60ch; line-height:1.5; }
+.pwa-polished .eyebrow { color:#087c72; letter-spacing:.11em; }
+.pwa-polished :is(.button,button:not(.password-toggle),summary,a.menu-row) { touch-action:manipulation; }
+.pwa-polished .button.primary,
+.pwa-polished .bill-payment-allocator .settlement-action-button {
+  background:linear-gradient(135deg,#12877c,#09695f)!important;
+  color:#fff!important;
+  border:1px solid #087367!important;
+  box-shadow:0 5px 14px rgb(9 105 95 / 16%)!important;
+}
+.pwa-polished .button { min-height:44px; border-radius:12px; font-weight:750; }
+.pwa-polished :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+  border-radius:12px;
+  border-color:#ceded9;
+  color:#203d38;
+}
+.pwa-polished :is(button,a,input,select,textarea,summary):focus-visible {
+  outline:3px solid #397de6!important;
+  outline-offset:3px;
+}
+.pwa-polished :is(input,select,textarea,summary,button) { scroll-margin-block:100px; }
+.pwa-polished .dashboard-page .home-postcard { min-height:150px; padding:22px; border-radius:22px; }
+.pwa-polished .dashboard-page .home-postcard .dashboard-welcome-title { font-size:clamp(1.6rem,3vw,2.2rem)!important; }
+.pwa-polished .home-postcard .home-trip-caption { line-height:1.5; }
+.home-trip-selector .destination-switcher { width:100%; max-width:none; }
+.home-trip-selector select { min-height:48px; width:100%; }
+.home-trip-overview,.home-finance-overview {
+  min-width:0;
+  border:1px solid #d7e5e0;
+  border-radius:18px;
+  background:#fff;
+  overflow:hidden;
+}
+.home-trip-overview>summary,.home-finance-overview>summary,
+.pwa-polished .home-next-steps>summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:16px;
+  min-height:56px;
+  list-style:none;
+  cursor:pointer;
+}
+.home-trip-overview>summary::-webkit-details-marker,.home-finance-overview>summary::-webkit-details-marker { display:none; }
+.home-trip-overview>summary>span:first-child,.home-finance-overview>summary>span:first-child { display:grid; gap:4px; }
+.home-trip-overview small,.home-finance-overview>summary small { font-size:.8rem; color:#60736f; }
+.home-trip-overview[open]>summary,.home-finance-overview[open]>summary { border-bottom:1px solid #d7e5e0; background:#eef8f5; }
+.home-finance-overview>*:not(summary) { margin:16px; }
+.pwa-polished .home-next-steps { padding:0; background:linear-gradient(120deg,#fff8e8,#fff); }
+.pwa-polished .home-next-steps>.stack { padding:0 16px 16px; }
+.pwa-polished .home-next-steps a { display:block; padding:10px 0; }
+.pwa-polished .section-tabs { gap:6px; padding:6px; background:#eef3f2; border-radius:15px; }
+.pwa-polished .section-tabs a { min-height:44px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; }
+.pwa-polished .section-tabs a[aria-current=page] { background:#fff; border-color:#397de6; color:#245daa; box-shadow:0 2px 6px #173c3510; }
+.pwa-polished .more-hub-page .menu-list { overflow:hidden; }
+.pwa-polished .more-hub-page .menu-section-title { background:linear-gradient(100deg,#eef8f5,#fff); padding:16px; }
+.pwa-polished .more-hub-page .menu-list:nth-of-type(3) .menu-section-title { background:linear-gradient(100deg,#fff1e6,#fff); }
+.pwa-polished .more-hub-page .menu-list:nth-of-type(4) .menu-section-title { background:linear-gradient(100deg,#edf3ff,#fff); }
+.pwa-polished .more-hub-page a.menu-row { min-height:52px; padding:14px 16px; }
+.pwa-polished .more-hub-page a.menu-row:hover { background:#f1f8f5; }
+.pwa-polished .travel-card-icon { background:#fff1d5; color:#936319; border-radius:14px; }
+.pwa-polished .planner-detail-button,.pwa-polished .planner-edit-button { min-height:44px; border-radius:12px; padding:10px 14px; }
+.pwa-polished .expense-card .card-actions { gap:8px; }
+
+@media(max-width:900px) {
+  body:has(.pwa-polished)>.mobile-nav[data-app-mobile-nav="true"] { border-color:#d6e5e0!important; box-shadow:0 6px 24px rgb(24 64 54 / 12%)!important; }
+  body:has(.pwa-polished)>.mobile-nav[data-app-mobile-nav="true"] .nav-item { min-height:52px!important; }
+  body:has(.pwa-polished)>.mobile-nav[data-app-mobile-nav="true"] .nav-item.nav-action { background:#087a70!important; color:#fff!important; }
+  .pwa-polished .topbar { min-height:64px!important; padding:10px 16px!important; gap:12px; }
+  .pwa-polished .brand-logo-mark,.pwa-polished .brand-logo-mark img { width:38px!important; height:38px!important; }
+  .pwa-polished .brand-logo-name { font-size:19px!important; }
+  .pwa-polished .brand-logo-tagline { display:none; }
+  .pwa-polished .topbar-actions { gap:8px; }
+  .pwa-polished .page-container { padding-inline:14px!important; }
+  .pwa-polished .page-heading h1 { font-size:1.65rem!important; }
+  .pwa-polished .page-heading { gap:12px; }
+  .pwa-polished :is(.panel,.expense-card,.travel-card) { border-radius:18px; }
+  .pwa-polished :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { font-size:16px!important; }
+  .pwa-polished .dashboard-page .home-postcard { min-height:0!important; padding:18px!important; }
+  .pwa-polished .home-postcard .dashboard-welcome-title { margin-block:8px!important; }
+  .pwa-polished .home-postcard .dashboard-add { min-height:44px!important; }
+  .pwa-polished .dashboard-action-grid { grid-template-columns:minmax(0,1fr); }
+  .pwa-polished .planner-card-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+  .pwa-polished .smart-transfer-net-grid dt,.pwa-polished .smart-transfer-net-grid dd { font-size:.8rem; }
+  .pwa-polished .bill-payment-select-row small { font-size:.78rem; }
+  .pwa-polished .bill-payment-allocator-footer>.settlement-action-wrap { grid-area:auto!important; grid-column:1/-1!important; grid-row:auto!important; border-top:0; padding-top:0; margin-top:0; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .pwa-polished * { scroll-behavior:auto!important; }
+  .pwa-polished :is(.button,.bill-payment-select-row,.travel-card) { transition:none!important; transform:none!important; }
+}
+
 /* Colourful money screens and screenshot follow-up --------------------- */
 .bill-detail-page,
 .person-statement-page,

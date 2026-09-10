@@ -36,9 +36,9 @@ export default async function MorePage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">MORE</p>
-          <h1>Trip & account tools</h1>
+          <h1>Your travel essentials</h1>
           <p className="muted">
-            Less-used tools stay here. Planning and money now have their own main tabs.
+            Your trips, saved memories and personal settings.
           </p>
         </div>
       </div>
@@ -101,7 +101,7 @@ export default async function MorePage() {
       <section className="panel menu-list">
         <div className="menu-section-title">
           <p className="eyebrow">APP & ACCOUNT</p>
-          <h2>Preferences & reliability</h2>
+          <h2>App & settings</h2>
         </div>
         <Link className="menu-row link-row" href="/offline">
           <span>Offline packs & Sync Centre</span>

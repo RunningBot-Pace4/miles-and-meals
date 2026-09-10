@@ -27,7 +27,7 @@ for (const marker of [
 ]) must(nav, marker, `V95 navigation marker missing: ${marker}`);
 
 for (const marker of [
-  "Trip & account tools",
+  "Your travel essentials",
   "Trip Story · memories & Wrapped",
   "Updates",
   "Search, export & Journey tools",
