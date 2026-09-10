@@ -110,7 +110,16 @@ export function MobileNav() {
 
   useEffect(() => {
     setPortalHost(document.body);
+    const reset = () => setPendingHref(null);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
   }, []);
+
+  useEffect(() => {
+    if (!pendingHref) return;
+    const timer = window.setTimeout(() => setPendingHref(null), 12_000);
+    return () => window.clearTimeout(timer);
+  }, [pendingHref]);
 
   const navigation = (
     <nav
@@ -149,7 +158,7 @@ export function MobileNav() {
             aria-current={active ? "page" : undefined}
             onPointerCancel={() => setPendingHref(null)}
             onPointerDown={(event) => {
-              if (event.button === 0) setPendingHref(link.href);
+              if (event.button === 0 && pathname !== link.href) setPendingHref(link.href);
             }}
           >
             <span className="nav-icon">

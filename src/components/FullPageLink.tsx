@@ -1,6 +1,7 @@
 "use client";
 
 import { BrandedLoadingScreen } from "@/components/BrandedLoadingScreen";
+import { needsDocumentIndicator } from "@/lib/navigation-feedback";
 import type {
   AnchorHTMLAttributes,
   MouseEvent,
@@ -31,14 +32,22 @@ export function FullPageLink({
   ...props
 }: FullPageLinkProps) {
   const [navigationPending, setNavigationPending] = useState(false);
+  const [showIndicator, setShowIndicator] = useState(false);
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     setPortalHost(document.body);
+    // Back/Forward may restore this component from the browser page cache.
+    const reset = () => { setNavigationPending(false); setShowIndicator(false); };
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
   }, []);
 
   useEffect(() => {
-    if (!navigationPending) return;
+    if (!navigationPending) { setShowIndicator(false); return; }
+
+    // Fast document loads should not flash a full-screen loading overlay.
+    const indicatorTimer = window.setTimeout(() => setShowIndicator(true), 250);
 
     // A browser extension or a native beforeunload prompt can cancel a normal
     // document navigation. Clear only the indicator; never start a second
@@ -48,7 +57,7 @@ export function FullPageLink({
       NAVIGATION_INDICATOR_TIMEOUT_MS,
     );
 
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); window.clearTimeout(indicatorTimer); };
   }, [navigationPending]);
 
   function isPrimaryNavigation(
@@ -83,12 +92,7 @@ export function FullPageLink({
     }
 
     const sourceUrl = window.location.href;
-    const targetUrl = new URL(href, sourceUrl);
-
-    if (
-      targetUrl.href === sourceUrl ||
-      targetUrl.origin !== window.location.origin
-    ) {
+    if (!needsDocumentIndicator(href, sourceUrl)) {
       setNavigationPending(false);
       return;
     }
@@ -114,7 +118,7 @@ export function FullPageLink({
         {children}
       </a>
 
-      {navigationPending && portalHost
+      {navigationPending && showIndicator && portalHost
         ? createPortal(<BrandedLoadingScreen />, portalHost)
         : null}
     </>

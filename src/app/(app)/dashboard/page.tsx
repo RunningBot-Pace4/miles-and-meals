@@ -463,8 +463,7 @@ export default async function DashboardPage({
       ) : null}
 
       {selectedTrip && commandCenter ? (
-        <details className="home-trip-overview">
-          <summary><span><strong>Trip overview</strong><small>{selectedTrip.name} · Plan, budget and people</small></span><span aria-hidden="true">⌄</span></summary>
+        <section className="home-trip-overview" aria-label="Trip overview">
         <LivingJourneyHalo
           showTripSelector={false}
           tripName={heroDestination}
@@ -497,7 +496,7 @@ export default async function DashboardPage({
           waitingForMe={waitingForMe}
           closed={selectedTrip.financialStatus === "CLOSED"}
         />
-        </details>
+        </section>
       ) : null}
 
       {selectedTrip && actionItems.length > 0 ? (

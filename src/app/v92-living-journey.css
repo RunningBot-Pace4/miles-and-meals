@@ -842,7 +842,6 @@ button.button {
 .advanced-money-card,
 .conversion-hero,
 .receipt-inline-panel,
-.receipt-itemization-panel,
 .people-ledger-panel,
 .smart-settlement-panel,
 .settled-state,
@@ -2024,7 +2023,7 @@ button[role="tab"][aria-selected="true"] {
 .settlement-status-copy { grid-area: copy !important; }
 .settlement-amount { grid-area: amount !important; }
 
-.settlement-action-wrap {
+.settlement-status-row > .settlement-action-wrap {
   grid-area: action !important;
   grid-column: auto !important;
   width: 100%;
@@ -2443,7 +2442,7 @@ button[role="tab"][aria-selected="true"] {
     justify-self: start !important;
   }
 
-  .settlement-action-wrap {
+  .settlement-status-row > .settlement-action-wrap {
     grid-area: auto !important;
     grid-column: 1 / -1 !important;
     grid-row: 3 !important;

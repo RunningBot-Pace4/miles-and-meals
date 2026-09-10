@@ -1210,21 +1210,6 @@
 }
 
 /* v85 final cascade: keep every new workspace inside the phone viewport. */
-:where(
-  .trip-command-center,
-  .planner-operations-bar,
-  .plan-import-card,
-  .split-preset-bar,
-  .multi-payer-list,
-  .category-budget-grid,
-  .receipt-review-list,
-  .offline-sync-health,
-  .expense-comments-card
-) {
-  min-width: 0;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
 
 :where(
   .split-preset-bar,
@@ -1427,10 +1412,6 @@ body {
   box-shadow:
     0 0 0 2.8rem rgb(155 114 255 / 2.5%),
     0 0 0 5.6rem rgb(255 182 46 / 2%);
-}
-
-.dashboard-welcome {
-  align-items: center;
 }
 
 .dashboard-welcome-title {
@@ -2322,10 +2303,6 @@ body {
 }
 
 /* v90 final cascade guard — keep every authenticated PWA screen inside 320px. */
-:root {
-  --surface-soft: var(--surface-2, #f4f7f5);
-  --shadow-soft: 0 14px 38px rgb(32 57 52 / 8%);
-}
 
 @media (max-width: 430px) {
   html,
@@ -2497,10 +2474,6 @@ small {
 
 .gap-lg {
   gap: 1.4rem;
-}
-
-.muted {
-  color: var(--muted);
 }
 
 .muted-on-dark {
@@ -2984,11 +2957,6 @@ small {
   color: var(--muted);
   font-size: 0.68rem;
   font-weight: 700;
-}
-
-.nav-item.active {
-  color: var(--primary);
-  background: var(--primary-soft);
 }
 
 .nav-icon {
@@ -6479,11 +6447,12 @@ body {
 }
 
 .settlement-action-wrap {
-  grid-column: 2 / -1;
   display: grid;
   justify-items: stretch;
   gap: 0.35rem;
 }
+
+.settlement-status-row > .settlement-action-wrap { grid-column: 2 / -1; }
 
 .settlement-action-button {
   width: 100%;
@@ -6684,7 +6653,7 @@ body {
     grid-template-columns: 38px minmax(0, 1fr) auto auto;
   }
 
-  .settlement-action-wrap {
+  .settlement-status-row > .settlement-action-wrap {
     grid-column: auto;
     min-width: 132px;
   }
@@ -8194,12 +8163,6 @@ select,
 textarea {
   min-width: 0;
   max-width: 100%;
-}
-
-select {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 img,
@@ -18648,7 +18611,6 @@ body {
 }
 
 .journey-card-head,
-.receipt-itemization-head,
 .offline-pack-meta,
 .offline-plan-row,
 .settlement-payment-tools {
@@ -18695,8 +18657,7 @@ body {
   color: var(--muted, #746f67);
 }
 
-.offline-plan-list,
-.receipt-item-list {
+.offline-plan-list {
   display: grid;
   gap: .7rem;
 }
@@ -18707,31 +18668,6 @@ body {
   border: 1px solid #ebe3d8;
   border-radius: 16px;
   background: #fffdf9;
-}
-
-.receipt-itemization-panel {
-  display: grid;
-  gap: .8rem;
-  margin-top: .8rem;
-  padding: .9rem;
-  border: 1px solid #d8e9e5;
-  border-radius: 18px;
-  background: linear-gradient(145deg, #f4fbf9, #fffdf8);
-}
-
-.receipt-item-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(130px, .7fr);
-  gap: .65rem;
-  align-items: center;
-  padding: .65rem .7rem;
-  border: 1px solid #e8e3da;
-  border-radius: 14px;
-  background: #fff;
-}
-
-.receipt-item-row select {
-  min-width: 0;
 }
 
 .offline-pack-meta {
@@ -18800,8 +18736,7 @@ body {
 }
 
 @media (max-width: 640px) {
-  .trip-invite-result,
-  .receipt-item-row {
+  .trip-invite-result {
     grid-template-columns: 1fr;
   }
 
