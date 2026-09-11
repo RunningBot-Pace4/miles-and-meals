@@ -994,6 +994,7 @@ function SettlementStatus({
               {payment.toUserId ===
               currentUserId ? (
                 <SettlementActionButton
+                  settlementId={payment.id}
                   action="MARK_RECEIVED"
                   countryId={
                     payment.countryId
@@ -1058,7 +1059,7 @@ function SettlementStatus({
                   currency={transfer.currency}
                 />
               ) : transfer.toUserId ===
-                currentUserId ? (
+              currentUserId ? (
                 <SettlementActionButton
                   action="MARK_RECEIVED"
                   countryId={

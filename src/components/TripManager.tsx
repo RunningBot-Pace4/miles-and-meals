@@ -99,6 +99,7 @@ function ManagedTripCard({
   users: TripUser[];
   currentUserId: string;
 }) {
+  const [memberSearch, setMemberSearch] = useState("");
   const [name, setName] = useState(trip.name);
   const [startDate, setStartDate] = useState(
     trip.startDate ?? "",
@@ -302,9 +303,9 @@ function ManagedTripCard({
         </p>
       ) : null}
 
-      <TripInvitePanel tripId={trip.id} tripName={trip.name} readOnly={closed} />
+      <details className="owner-invite-disclosure"><summary>Invite someone by link or QR</summary><TripInvitePanel tripId={trip.id} tripName={trip.name} readOnly={closed} /></details>
 
-      <details className="owner-trip-section">
+      <details className="owner-trip-section" open>
         <summary>Edit trip details</summary>
 
         <fieldset className="owner-trip-section-body owner-readonly-fieldset" disabled={closed}>
@@ -384,7 +385,7 @@ function ManagedTripCard({
             );
 
             return (
-              <details className="owner-country-card">
+              <details className="owner-country-card" open>
                 <summary>
                   <span>
                     <strong>{destination.name}</strong>
@@ -449,7 +450,8 @@ function ManagedTripCard({
                     visible only to System Admin.
                   </p>
 
-                  {users.map((member) => {
+                  <label className="traveler-search">Find a traveler<input type="search" placeholder="Search by name" value={memberSearch} onChange={event => setMemberSearch(event.target.value)} /></label>
+                  {users.filter(member => member.name.toLowerCase().includes(memberSearch.toLowerCase())).map((member) => {
                     const checked = assigned.has(member.id);
                     const isOwner = member.id === trip.createdBy;
                     const key = `${destination.id}:${member.id}`;
@@ -536,6 +538,8 @@ export function TripManager({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  const [createTravelers, setCreateTravelers] = useState<string[]>([]);
+  const [createTravelerSearch, setCreateTravelerSearch] = useState("");
   const [createBaseCurrency, setCreateBaseCurrency] =
     useState("MYR");
   const [createStartDate, setCreateStartDate] = useState("");
@@ -702,6 +706,7 @@ export function TripManager({
       const created = await mutation("/api/trips", "POST", {
         name: String(form.get("name") ?? ""),
         baseCurrency: createBaseCurrency,
+        travelerIds: createTravelers,
         startDate: createStartDate,
         endDate: createEndDate,
         firstCountry: {
@@ -880,6 +885,14 @@ export function TripManager({
             endName="endDate"
             label="Trip dates"
           />
+
+          <fieldset className="create-trip-travelers" disabled={busy}>
+            <legend>Who’s joining?</legend>
+            <p>You are included automatically. Add existing travelers now or invite them later.</p>
+            <label>Find travelers<input type="search" placeholder="Search by name" value={createTravelerSearch} onChange={event => setCreateTravelerSearch(event.target.value)} /></label>
+            <div className="create-traveler-options">{users.filter(person => person.id !== currentUserId && person.name.toLowerCase().includes(createTravelerSearch.toLowerCase())).map(person => <label key={person.id}><input type="checkbox" checked={createTravelers.includes(person.id)} onChange={event => setCreateTravelers(ids => event.target.checked ? [...ids, person.id] : ids.filter(id => id !== person.id))} /><span>{person.name}</span></label>)}</div>
+            <small>{createTravelers.length + 1} travelers including you</small>
+          </fieldset>
 
           {error ? (
             <p className="form-error" role="alert">

@@ -142,18 +142,6 @@ export function BillSettlementAllocator({
     );
   }
 
-  if (hasPendingPayment) {
-    return (
-      <div className="bill-payment-allocator pending">
-        <strong>Payment awaiting confirmation</strong>
-        <small>
-          Confirm the existing payment first. Its bill allocations are
-          preserved and cannot be changed while confirmation is pending.
-        </small>
-      </div>
-    );
-  }
-
   if (directRemaining <= 0.009) {
     return (
       <div className="bill-payment-allocator legacy-covered">

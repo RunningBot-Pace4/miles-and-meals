@@ -272,6 +272,7 @@ export const locationSchema = z.object({
 
 export const settlementActionSchema = z
   .object({
+    settlementId: uuidSchema.optional(),
     requestId: uuidSchema.optional(),
     countryId: uuidSchema,
     counterpartyUserId: z.string().min(1),
@@ -323,6 +324,9 @@ export const settlementActionSchema = z
       .default(""),
   })
   .superRefine((value, context) => {
+    if ("settlementId" in value && value.settlementId && (value.action !== "MARK_RECEIVED" || value.amount !== undefined || value.allocations.length > 0)) {
+      context.addIssue({ code: "custom", path: ["settlementId"], message: "Confirm an existing payment as recorded, without changing its amount or bills." });
+    }
     const seen = new Set<string>();
 
     value.allocations.forEach((allocation, index) => {
@@ -436,6 +440,7 @@ export const tripMemorySchema = z.object({
 
 
 export const selfServiceTripSchema = z.object({
+  travelerIds: z.array(z.string().min(1).max(128)).max(100).default([]),
   name: z.string().trim().min(2).max(120),
   baseCurrency: z
     .string()

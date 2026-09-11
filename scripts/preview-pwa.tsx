@@ -7,12 +7,14 @@ import { SettlementActionButton } from "../src/components/SettlementActionButton
 import { BillSettlementAllocator } from "../src/components/BillSettlementAllocator";
 import { SectionTabs } from "../src/components/SectionTabs";
 import { LivingJourneyHalo } from "../src/components/LivingJourneyHalo";
+import { HomePaymentAmount } from "../src/components/HomePaymentAmount";
 
 const css = ["globals", "living-journey", "v92-living-journey", "bill-history"].map(name => readFileSync(`src/app/${name}.css`, "utf8")).join("\n");
 const markup = renderToStaticMarkup(<div className="app-shell pwa-polished">
   <header className="topbar"><strong>Miles &amp; Meals</strong><span>JY</span></header>
   <main className="page-container">
     <div className="stack gap-lg dashboard-page">
+      <section className="panel"><h2>Parent → You</h2><p>Fun Trip · Payment due</p><HomePaymentAmount amount="15.00" currency="MYR" paying={false} maximum={15} remaining={0} error="" busy={false} onChange={() => {}} /></section>
       <section className="dashboard-welcome home-postcard"><div className="dashboard-welcome-copy"><p className="eyebrow">YOUR TRIP</p><h1 className="dashboard-welcome-title">Good trips.<br/><em>Great company.</em></h1><p>Penang weekend · 12–14 September</p></div><button className="button primary">Add expense</button></section>
       <section className="home-trip-overview" aria-label="Trip overview"><LivingJourneyHalo
         tripName="Penang weekend" tripDateLabel="12–14 September" tripSummary="Three days together"

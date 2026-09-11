@@ -43,6 +43,7 @@ function createSettlementRequestId(): string {
 }
 
 export function SettlementActionButton({
+  settlementId,
   countryId,
   counterpartyUserId,
   action,
@@ -55,6 +56,7 @@ export function SettlementActionButton({
   onBusyChange,
   detailsContent,
 }: {
+  settlementId?: string;
   countryId: string;
   counterpartyUserId: string;
   action: SettlementAction;
@@ -186,6 +188,7 @@ export function SettlementActionButton({
           },
           body: JSON.stringify({
             requestId,
+            settlementId,
             countryId,
             counterpartyUserId,
             action,

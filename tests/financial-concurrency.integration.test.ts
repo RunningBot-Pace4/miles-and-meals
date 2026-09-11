@@ -137,7 +137,7 @@ integrationDescribe("financial transaction concurrency", () => {
     expect(surviving).toHaveLength(0);
   });
 
-  it("serializes duplicate payment attempts so only one pending payment is created", async () => {
+  it("serializes retries with the same request id so only one pending payment is created", async () => {
     const amount = "25.00";
 
     async function markPaid(requestId: string) {
@@ -154,7 +154,7 @@ integrationDescribe("financial transaction concurrency", () => {
             .from(settlements)
             .where(
               and(
-                eq(settlements.countryId, countryId),
+                eq(settlements.id, requestId),
                 eq(settlements.fromUserId, ownerId),
                 eq(settlements.toUserId, travelerId),
                 eq(settlements.status, "SENT"),
@@ -186,9 +186,10 @@ integrationDescribe("financial transaction concurrency", () => {
       );
     }
 
+    const sameRequestId = randomUUID();
     const [firstId, secondId] = await Promise.all([
-      markPaid(randomUUID()),
-      markPaid(randomUUID()),
+      markPaid(sameRequestId),
+      markPaid(sameRequestId),
     ]);
 
     expect(firstId).toBe(secondId);

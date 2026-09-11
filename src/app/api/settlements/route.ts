@@ -328,23 +328,10 @@ export async function POST(request: Request) {
                   row.toUserId === input.counterpartyUserId,
               );
 
-            if (existingPending) {
-              if (
-                input.requestId &&
-                input.requestId !== existingPending.id
-              ) {
-                throw new SettlementMutationError(
-                  "A payment to this traveler is already awaiting confirmation. Confirm or resolve it before recording another payment.",
-                  409,
-                  "PAYMENT_AWAITING_CONFIRMATION",
-                );
-              }
-
-              return {
-                kind: "idempotent" as const,
-                settlementId: existingPending.id,
-                status: "SENT" as const,
-              };
+            // Legacy clients without an idempotency key can only retry their pending payment.
+            // New keyed requests are bounded by the ledger after all SENT reservations.
+            if (existingPending && !input.requestId) {
+              return { kind: "idempotent" as const, settlementId: existingPending.id, status: "SENT" as const };
             }
 
             const transfer = ledger.waitingTransfers.find(
@@ -453,11 +440,11 @@ export async function POST(request: Request) {
             };
           }
 
-          const pending = ledger.pendingSettlements.find(
-            (row) =>
-              row.fromUserId === input.counterpartyUserId &&
-              row.toUserId === session.user.id,
-          );
+          const isConfirmation = Boolean(input.settlementId) || (requestedAmount === undefined && !input.allocations.length);
+          const confirmation = isConfirmation ? resolvePaymentConfirmation(ledger.pendingSettlements, ledger.settledSettlements, input.counterpartyUserId, session.user.id, input.settlementId) : undefined;
+          if (confirmation?.error) throw new SettlementMutationError(confirmation.error, 409, "PAYMENT_SELECTION_REQUIRED");
+          if (confirmation?.confirmed) return { kind: "idempotent" as const, settlementId: confirmation.confirmed.id, status: "SETTLED" as const };
+          const pending = confirmation?.pending;
 
           if (pending) {
             if (input.allocations.length) {
@@ -741,3 +728,4 @@ export async function POST(request: Request) {
     );
   }
 }
+import { resolvePaymentConfirmation } from "@/lib/payment-confirmation";

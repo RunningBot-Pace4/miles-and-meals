@@ -1,5 +1,13 @@
 # Miles & Meals — verified build fix
 
+Latest update: `TRIP-AND-PAYMENT-UPDATE.md` covers traveler selection during trip
+creation, easier editing, responsive history and multiple pending payments.
+No SQL migration or data reset is needed. Deploy the frontend and API together.
+
+Latest payment field update: `PWA-AMOUNT-REDESIGN.md`. Larger amount controls,
+visible validation and remaining balance, plus less nested mobile spacing.
+No SQL changes are required.
+
 Latest update: see `SIMPLIFICATION-UPDATE.md` for the consolidated Home reminders,
 compact Add menu, unified payment history and trip-aware navigation. No SQL or
 database reset is needed for this update. Device verification remains required.

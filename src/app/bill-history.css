@@ -790,3 +790,82 @@
   .quick-add-option { padding:14px; gap:10px; }
   .expense-optional-details .two-col { grid-template-columns:minmax(0,1fr); }
 }
+.home-amount-editor { min-width:0; padding:18px; border:1px solid #c6e3dd; border-radius:20px; background:linear-gradient(140deg,#f0faf7,#fff); }
+.home-amount-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 12px; margin-bottom:12px; }
+.home-amount-heading label { margin:0; color:#204d46; font-size:.9rem; font-weight:750; }
+.home-amount-heading>span { color:#59706b; font-size:.8rem; font-variant-numeric:tabular-nums; }
+.home-amount-control { display:flex; align-items:center; gap:14px; padding:8px 14px; min-height:76px; border:1.5px solid #a5cec4; border-radius:16px; background:#fff; transition:border-color .15s,box-shadow .15s; }
+.home-amount-control:focus-within { border-color:#167f72; box-shadow:0 0 0 4px #13867518; }
+.home-amount-currency { flex:none; padding:7px 9px; border-radius:9px; color:#1d6d61; background:#e8f5ef; font-size:.85rem; font-weight:750; }
+.pwa-polished .home-amount-control input { flex:1; width:100%; min-width:0; min-height:56px; height:auto; padding:6px 0!important; border:0!important; outline:0!important; box-shadow:none!important; border-radius:0; background:transparent!important; color:#163e36; font-size:clamp(26px,7vw,34px)!important; font-weight:750; line-height:1.2; font-variant-numeric:tabular-nums; scroll-margin-block:120px; }
+.home-amount-shortcut { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; margin-top:6px; }
+.home-amount-shortcut>span { color:#627771; font-size:.78rem; }
+.pwa-polished .home-amount-shortcut button { min-height:44px; padding:8px 0; border:0; border-radius:8px; background:transparent; box-shadow:none; color:#146d60; font-size:.85rem; font-weight:750; text-decoration:underline; text-underline-offset:4px; white-space:normal; text-align:left; }
+.home-amount-shortcut button:focus-visible { outline:3px solid #327ddd; outline-offset:3px; }
+.home-amount-shortcut button:disabled { opacity:.5; cursor:default; }
+.home-amount-hint,.home-amount-error { margin:5px 0 0; font-size:.85rem; line-height:1.5; overflow-wrap:anywhere; }
+.home-amount-hint { color:#236c59; }
+.home-amount-error { color:#aa352a; }
+.home-amount-control.invalid { border-color:#c05748; }
+.home-payment-request .settlement-payment-details { background:#fff; border-color:#d6e3df; border-radius:16px; }
+.home-payment-request .settlement-payment-details>summary { min-height:48px; font-size:.95rem; }
+@media(max-width:600px) {
+  .home-amount-editor { padding:14px; }
+  .home-payment-request .home-payment-trip-detail { padding:0; background:transparent; border:0; }
+  .home-payment-request .settlement-payment-details-grid { padding:12px; }
+  .home-payment-request .home-payment-trip-detail select { min-height:48px; }
+  .home-payment-request .home-receipt-option { min-height:48px; }
+}
+.pwa-polished .settlement-partial-amount>span:nth-child(2) { gap:12px; min-height:60px; border-color:#b7d4ca; border-radius:14px; }
+.pwa-polished .settlement-partial-amount>span:nth-child(2):focus-within { outline:3px solid #177d7026; border-color:#177d70; }
+.pwa-polished .settlement-partial-amount input { padding-inline:0 12px!important; font-size:22px!important; font-variant-numeric:tabular-nums; }
+.pwa-polished .owner-trip-card { padding:20px; }
+.owner-invite-disclosure { order:5; border:1px solid #cfdfdf; border-radius:16px; background:#f1f7ff; padding:0 16px; }
+.owner-invite-disclosure>summary,.owner-trip-section>summary { cursor:pointer; min-height:52px; padding:16px 0; font-weight:750; }
+.pwa-polished .owner-trip-section { background:#fff; padding:0 18px; border:1px solid #d5e4dd; border-radius:16px; }
+.pwa-polished .owner-trip-section-body { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:16px 0; }
+.pwa-polished .owner-country-card { border:1px solid #ccdfdd; border-radius:16px; background:#fff; overflow:hidden; }
+.pwa-polished .owner-country-card>summary { padding:16px; background:#edf7f2; }
+.pwa-polished .owner-country-members { padding:16px; }
+.pwa-polished .owner-country-members>label { min-height:64px; padding:12px; border-radius:12px; margin-block:8px; }
+.pwa-polished .owner-country-members>.traveler-search { display:grid; gap:8px; border:0; padding:0; background:transparent; }
+.traveler-search input { width:100%; }
+.create-trip-travelers { margin-block:18px; padding:18px; border:1px solid #cce0d9; border-radius:16px; background:#f2faf6; min-width:0; }
+.create-trip-travelers legend { font-weight:800; padding:0 8px; color:#176659; }
+.create-trip-travelers>p { color:#516c65; font-size:.9rem; margin:0 0 14px; }
+.create-traveler-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; max-height:260px; overflow:auto; margin-block:14px; }
+.create-traveler-options>label { display:flex!important; align-items:center; gap:12px; padding:12px; min-height:50px; border:1px solid #d6e5df; border-radius:12px; background:#fff; }
+.create-traveler-options input { width:22px; height:22px; flex:none; }
+.create-traveler-options span { overflow-wrap:anywhere; }
+.pwa-polished .settlement-status-row { align-items:start; }
+.pwa-polished .settlement-status-row>.settlement-action-wrap { max-width:none; }
+.pwa-polished .settlement-status-row .settlement-payment-details-grid { grid-template-columns:minmax(0,1fr); }
+.pwa-polished .settlement-status-row .settlement-payment-details-grid>label { grid-column:1/-1; }
+.pwa-polished .smart-payment-audit-row { min-width:0; align-items:start; }
+.smart-payment-audit-row .smart-payment-allocation-audit { min-width:0; }
+.smart-payment-allocation-audit>span { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; }
+.smart-payment-allocation-audit>span>span { min-width:0; white-space:normal; overflow-wrap:anywhere; }
+@media(max-width:760px) {
+  .pwa-polished .owner-trip-section-body,.create-traveler-options { grid-template-columns:minmax(0,1fr); }
+  .pwa-polished .owner-country-card>summary { display:grid; gap:8px; }
+  .pwa-polished .smart-payment-audit-row { display:grid!important; grid-template-columns:36px minmax(0,1fr)!important; gap:12px!important; padding:16px!important; }
+  .pwa-polished .smart-payment-audit-row>span:first-child { grid-column:1; grid-row:1; }
+  .pwa-polished .smart-payment-audit-row>span:nth-child(2) { grid-column:2; grid-row:1; min-width:0; }
+  .pwa-polished .smart-payment-audit-row>strong { grid-column:2; grid-row:2; justify-self:start; }
+  .pwa-polished .smart-payment-audit-row>.settlement-payment-metadata,
+  .pwa-polished .smart-payment-audit-row>.smart-payment-allocation-audit,
+  .pwa-polished .smart-payment-audit-row>button,
+  .pwa-polished .smart-payment-audit-row>div:last-child { grid-column:1/-1!important; grid-row:auto!important; min-width:0; width:100%; }
+  .smart-payment-audit-row :is(strong,small) { white-space:normal; overflow-wrap:anywhere; }
+}
+@media(min-width:761px) {
+  .pwa-polished .settlement-status-row { grid-template-columns:44px minmax(0,1fr) auto!important; grid-template-areas:none!important; gap:14px!important; }
+  .pwa-polished .settlement-status-row>.settlement-status-icon { grid-area:auto!important; grid-column:1; grid-row:1; }
+  .pwa-polished .settlement-status-row>.settlement-status-copy { grid-area:auto!important; grid-column:2; grid-row:1; }
+  .pwa-polished .settlement-status-row>.settlement-amount { grid-area:auto!important; grid-column:3; grid-row:1; }
+  .pwa-polished .settlement-status-row>.settlement-action-wrap,
+  .pwa-polished .settlement-status-row>.home-payment-request-action,
+  .pwa-polished .settlement-status-row>.home-payment-awaiting { grid-area:auto!important; grid-column:1/-1!important; grid-row:2!important; width:100%; max-width:none; padding-top:12px; border-top:1px solid #d9e5df; }
+  .pwa-polished .settlement-status-row .settlement-payment-details-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .pwa-polished .settlement-status-row .settlement-payment-details-grid>label:nth-child(-n+2) { grid-column:auto; }
+}

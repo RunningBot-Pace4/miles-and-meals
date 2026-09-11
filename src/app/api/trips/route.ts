@@ -1,15 +1,18 @@
 import {
   and,
   eq,
+  inArray,
   sql,
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
   countries,
+  countryMembers,
+  user,
   trips,
 } from "@/db/schema";
 import { recordActivity } from "@/lib/activity";
-import { ensureTripOwnerAccess } from "@/lib/access";
+import { ensureTripOwnerAccess, ensureTripMember } from "@/lib/access";
 import {
   getCountryCatalogItem,
 } from "@/lib/country-catalog";
@@ -45,6 +48,11 @@ export async function POST(
     const normalizedName = input.name
       .trim()
       .toLocaleLowerCase();
+    const travelerIds = [...new Set(input.travelerIds)].filter(id => id !== session.user.id);
+    const selectedTravelers = travelerIds.length ? await db.select({ id: user.id, banned: user.banned }).from(user).where(inArray(user.id, travelerIds)) : [];
+    if (selectedTravelers.length !== travelerIds.length || selectedTravelers.some(person => person.banned)) {
+      return Response.json({ error: "One or more selected travelers are unavailable. Refresh the list and try again." }, { status: 400 });
+    }
     const destinationCountry = getCountryCatalogItem(
       input.firstCountry.code,
     );
@@ -138,6 +146,12 @@ export async function POST(
       summary:
         `${session.user.name} created trip ${input.name} with ${destinationCountry.name}.`,
     });
+
+    for (const userId of travelerIds) {
+      await ensureTripMember(tripId, userId);
+      await db.insert(countryMembers).values({ countryId, userId }).onConflictDoNothing();
+      await recordActivity({ actorUserId: session.user.id, action: "ASSIGNED", entityType: "COUNTRY_MEMBER", entityId: `${countryId}:${userId}`, tripId, countryId, summary: `${session.user.name} assigned a traveler to ${input.name}.` });
+    }
 
     return Response.json(
       {
