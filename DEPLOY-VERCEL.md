@@ -1,5 +1,16 @@
 # Miles & Meals — verified build fix
 
+Latest payment fix: `PAYMENT-REMAINDER-FIX.md`. Home resets the amount textbox
+to the remaining balance after a successful payment. No SQL changes needed.
+
+Current update: `PWA-APP-AUDIT.md` covers wallet amounts, category overflow,
+phone statement layouts and first-install reload protection. No database
+changes are required. It also records the remaining device verification.
+
+Latest fix: `OFFLINE-TRAVELER-FIX.md` covers the empty traveler list and offline
+trip picker. After deploying, accept the PWA Update while online to install
+the new offline page. No database changes are required.
+
 Latest update: `TRIP-AND-PAYMENT-UPDATE.md` covers traveler selection during trip
 creation, easier editing, responsive history and multiple pending payments.
 No SQL migration or data reset is needed. Deploy the frontend and API together.

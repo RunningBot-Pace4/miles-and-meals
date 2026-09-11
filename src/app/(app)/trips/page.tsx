@@ -27,13 +27,11 @@ export default async function TripsPage() {
     listJoinedTrips(session.user.id),
   ]);
 
-  // Only Trip Owners need the assignment directory. Regular travelers should
-  // not receive a global user directory in the page payload.
-  const users = managedTrips.length
-    ? await listActiveUsersForTripManagement(
+  // Every signed-in traveler can create a trip and choose its participants.
+  // The non-admin directory returns names only, never email addresses.
+  const users = await listActiveUsersForTripManagement(
         isSystemAdmin(session.user.role),
-      )
-    : [];
+      );
 
   return (
     <div className="stack gap-lg">

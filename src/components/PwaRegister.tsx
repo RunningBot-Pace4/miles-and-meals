@@ -77,6 +77,7 @@ export function PwaRegister() {
 
     let disposed = false;
     let refreshing = false;
+    let hadController = Boolean(navigator.serviceWorker.controller);
 
     function showUpdateIfAppropriate() {
       setUpdateAvailable(
@@ -146,6 +147,12 @@ export function PwaRegister() {
     }
 
     function controllerChanged() {
+      // clients.claim() also fires on the first install. That page already
+      // loaded from the network: reloading it would discard unsaved input.
+      if (!hadController && activationTimerRef.current === null) {
+        hadController = true;
+        return;
+      }
       if (refreshing) {
         return;
       }

@@ -2898,7 +2898,7 @@ button[role="tab"][aria-selected="true"] {
 
   .dashboard-budget-section .travel-stat-grid {
     display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 0.65rem !important;
   }
 
@@ -2933,7 +2933,7 @@ button[role="tab"][aria-selected="true"] {
 
 @media (min-width: 641px) and (max-width: 819px) {
   .dashboard-budget-section .travel-stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)) !important;
   }
 
   .dashboard-budget-section .travel-stat {

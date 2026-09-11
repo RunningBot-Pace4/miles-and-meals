@@ -10313,7 +10313,10 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 .travel-stat > div > strong {
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   color: var(--travel-ink);
   font-size: clamp(1rem, 4vw, 1.28rem);
 }

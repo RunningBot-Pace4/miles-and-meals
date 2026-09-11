@@ -12,7 +12,7 @@ type SmartPlan = SettlementLiveData["smartPlans"][number];
 type DirectBalance = SmartPlan["originalExpenseBalances"][number];
 type PaymentChoice = { plan: SmartPlan; balance: DirectBalance };
 
-function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { choices: PaymentChoice[]; currentUserId: string; onRecord: (message: string) => void }) {
+export function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { choices: PaymentChoice[]; currentUserId: string; onRecord: (message: string) => void }) {
   const [choiceKey, setChoiceKey] = useState(`${choices[0].plan.tripId}:${choices[0].plan.countryId}`);
   const choice = choices.find(({ plan }) => `${plan.tripId}:${plan.countryId}` === choiceKey) ?? choices[0];
   const { plan, balance } = choice;
@@ -22,6 +22,7 @@ function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { choices:
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const previousMaximum = useRef(maximum);
+  const resetAfterPayment = useRef(false);
   const bills = balance.expenses.filter((bill) => bill.remainingAmount > 0.009);
   const billSignature = bills.map((bill) => `${bill.expenseId}:${bill.remainingAmount}`).join("|");
   const preview = allocateHomePayment(bills, amount, selected);
@@ -31,15 +32,22 @@ function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { choices:
 
   useEffect(() => {
     setSelected((ids) => ids.filter((id) => bills.some((bill) => bill.expenseId === id)));
-    setAmount((current) => current === "" || Math.abs(Number(current) - previousMaximum.current) < 0.005 ? maximum.toFixed(2) : current);
+    const shouldReset = resetAfterPayment.current;
+    const oldMaximum = previousMaximum.current;
+    setAmount((current) => shouldReset || current === "" || Number(current) > maximum + 0.009 || Math.abs(Number(current) - oldMaximum) < 0.005 ? maximum.toFixed(2) : current);
+    resetAfterPayment.current = false;
     previousMaximum.current = maximum;
     // billSignature represents the stable receipt IDs and balances, avoiding an effect on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maximum, billSignature]);
+  }, [maximum, billSignature, plan.countryId]);
 
   function recorded() {
     onRecord(`${plan.tripName} · ${formatMoney(numericAmount, plan.currency)} ${paying ? "sent · awaiting confirmation" : "received · confirmed"}. ${preview.allocations.map(item => `${item.description}: ${formatMoney(item.amount, plan.currency)} applied, ${formatMoney(item.remainingAfter, plan.currency)} remaining${paying ? " after confirmation" : ""}`).join("; ")}.`);
     setSelected([]);
+    // This callback runs only after a successful save. Show the remainder now;
+    // the next ledger update supplies the authoritative remaining balance.
+    resetAfterPayment.current = true;
+    setAmount(Math.max(0, maximum - numericAmount).toFixed(2));
   }
 
   const detailContent = <>

@@ -148,8 +148,40 @@
   .person-statement-bill dl { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
 }
 
-@media(max-width:350px) {
+@media(max-width:480px) {
   .expense-card .card-actions,.bill-progress dl,.person-statement-summary,.person-statement-bill dl { grid-template-columns:minmax(0,1fr)!important; }
+}
+
+/* Keep finance values readable inside nested phone panels. */
+.dashboard-live-categories .panel-title {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  text-align:left;
+}
+.dashboard-live-categories .panel-title::before { content:none; }
+.dashboard-live-categories .panel-link {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height:44px; padding:8px 12px; border:1px solid #bdddd7;
+  border-radius:12px; background:#f0faf7; text-decoration:none;
+}
+.dashboard-live-categories .category-row { display:grid; grid-template-columns:34px minmax(0,1fr); }
+.dashboard-live-categories .category-copy>div { flex-wrap:wrap; gap:4px 12px; }
+.dashboard-live-categories .category-copy strong { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.dashboard-live-categories .category-track { width:100%; min-width:0; overflow:hidden; border-radius:999px; }
+.dashboard-budget-section .travel-stat { overflow:visible; }
+.dashboard-budget-section .travel-stat>div>strong { overflow-wrap:normal; word-break:normal; white-space:nowrap; }
+.bill-progress dd { overflow-wrap:normal; word-break:normal; font-variant-numeric:tabular-nums; }
+@media(max-width:640px) {
+  .dashboard-budget-section .travel-stat { padding:14px; gap:12px; }
+  .dashboard-budget-section .travel-stat:not(:first-child) { min-height:94px!important; }
+}
+@media(max-width:400px) {
+  .dashboard-budget-section .travel-stat { grid-template-columns:minmax(0,1fr); }
+  .dashboard-budget-section .travel-stat-icon { display:none; }
+  .dashboard-live-categories .panel-title { grid-template-columns:minmax(0,1fr); }
+  .dashboard-live-categories .panel-link { justify-self:start; }
 }
 
 /* Focused bill-payment card -------------------------------------------- */
@@ -489,7 +521,7 @@
 .home-trip-overview>summary>span:first-child,.home-finance-overview>summary>span:first-child { display:grid; gap:4px; }
 .home-trip-overview small,.home-finance-overview>summary small { font-size:.8rem; color:#60736f; }
 .home-trip-overview[open]>summary,.home-finance-overview[open]>summary { border-bottom:1px solid #d7e5e0; background:#eef8f5; }
-.home-finance-overview>*:not(summary) { margin:16px; }
+.home-finance-overview>*:not(summary) { margin:16px; width:auto; min-width:0; max-width:calc(100% - 32px); box-sizing:border-box; }
 .pwa-polished .section-tabs { gap:6px; padding:6px; background:#eef3f2; border-radius:15px; }
 .pwa-polished .section-tabs a { min-height:44px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; }
 .pwa-polished .section-tabs a[aria-current=page] { background:#fff; border-color:#397de6; color:#245daa; box-shadow:0 2px 6px #173c3510; }

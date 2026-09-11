@@ -55,7 +55,7 @@ if (
 
 if (
   !tripsPage.includes("listActiveUsersForTripManagement") ||
-  !tripsPage.includes("managedTrips.length") ||
+  !tripsPage.includes("const users = await listActiveUsersForTripManagement") ||
   !tripsPage.includes("isSystemAdmin(session.user.role)") ||
   !tripManagement.includes("if (includeEmail)") ||
   !tripManagement.includes("email: user.email")

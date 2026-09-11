@@ -891,7 +891,8 @@ export function TripManager({
             <p>You are included automatically. Add existing travelers now or invite them later.</p>
             <label>Find travelers<input type="search" placeholder="Search by name" value={createTravelerSearch} onChange={event => setCreateTravelerSearch(event.target.value)} /></label>
             <div className="create-traveler-options">{users.filter(person => person.id !== currentUserId && person.name.toLowerCase().includes(createTravelerSearch.toLowerCase())).map(person => <label key={person.id}><input type="checkbox" checked={createTravelers.includes(person.id)} onChange={event => setCreateTravelers(ids => event.target.checked ? [...ids, person.id] : ids.filter(id => id !== person.id))} /><span>{person.name}</span></label>)}</div>
-            <small>{createTravelers.length + 1} travelers including you</small>
+            {!users.some(person => person.id !== currentUserId && person.name.toLowerCase().includes(createTravelerSearch.toLowerCase())) ? <p role="status">{createTravelerSearch.trim() ? "No travelers match this name." : "No other active traveler accounts are available. You can invite someone after creating the trip."}</p> : null}
+            <small>{createTravelers.length + 1} {createTravelers.length === 0 ? "traveler" : "travelers"} including you</small>
           </fieldset>
 
           {error ? (

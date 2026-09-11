@@ -8,12 +8,14 @@ import { BillSettlementAllocator } from "../src/components/BillSettlementAllocat
 import { SectionTabs } from "../src/components/SectionTabs";
 import { LivingJourneyHalo } from "../src/components/LivingJourneyHalo";
 import { HomePaymentAmount } from "../src/components/HomePaymentAmount";
+import { LiveDashboardFinance } from "../src/components/LiveDashboardFinance";
 
 const css = ["globals", "living-journey", "v92-living-journey", "bill-history"].map(name => readFileSync(`src/app/${name}.css`, "utf8")).join("\n");
 const markup = renderToStaticMarkup(<div className="app-shell pwa-polished">
   <header className="topbar"><strong>Miles &amp; Meals</strong><span>JY</span></header>
   <main className="page-container">
     <div className="stack gap-lg dashboard-page">
+      <details className="home-finance-overview" open><summary>Budget &amp; spending</summary><LiveDashboardFinance tripId="preview" initialData={{total:145.51,categories:[{category:"Food",amount:145.51},{category:"Long category name for narrow screens",amount:0}],baseCurrency:"MYR",myBudget:600,myShareSpent:56.71,myRemaining:543.29,combinedBudget:1500,groupRemaining:1354.49,budgetsSubmitted:4,travelerCount:5}} /></details>
       <section className="panel"><h2>Parent → You</h2><p>Fun Trip · Payment due</p><HomePaymentAmount amount="15.00" currency="MYR" paying={false} maximum={15} remaining={0} error="" busy={false} onChange={() => {}} /></section>
       <section className="dashboard-welcome home-postcard"><div className="dashboard-welcome-copy"><p className="eyebrow">YOUR TRIP</p><h1 className="dashboard-welcome-title">Good trips.<br/><em>Great company.</em></h1><p>Penang weekend · 12–14 September</p></div><button className="button primary">Add expense</button></section>
       <section className="home-trip-overview" aria-label="Trip overview"><LivingJourneyHalo

@@ -19,6 +19,7 @@
   <section class="card" id="trip-card" hidden>
     <p class="eyebrow">SAVED TRIPS</p><h2 id="trip-name"></h2><p class="muted" id="trip-destination"></p>
     <label>Trip<select id="saved-trip" aria-label="Choose saved offline trip"></select></label>
+    <div id="trip-buttons" class="list" aria-label="Saved trip shortcuts"></div>
     <div class="pill-row"><span class="pill" id="saved-at"></span><span class="pill" id="queue-count"></span></div>
   </section>
 
@@ -55,16 +56,17 @@
   const SELECTED_KEY="mnm:offline-selected-trip:v1";
   const QUEUE_KEY="mnm:offline-mutation-queue:v1";
   const $=id=>document.getElementById(id);
+  const readStored=key=>{try{return localStorage.getItem(key)}catch{return null}};
   const isOpen=x=>x&&(x.version===2||x.version===3)&&x.trip&&x.trip.id&&x.trip.financialStatus!=="CLOSED";
   let packs=[];
-  try{const parsed=JSON.parse(localStorage.getItem(PACKS_KEY)||"[]");if(Array.isArray(parsed))packs=parsed.filter(isOpen)}catch{}
-  if(!packs.length){try{const legacy=JSON.parse(localStorage.getItem(PACK_KEY)||"null");if(isOpen(legacy))packs=[legacy]}catch{}}
-  localStorage.setItem(PACKS_KEY,JSON.stringify(packs));
-  let selectedId=localStorage.getItem(SELECTED_KEY)||packs[0]?.trip?.id||"";
+  try{const parsed=JSON.parse(readStored(PACKS_KEY)||"[]");if(Array.isArray(parsed))packs=parsed.filter(isOpen)}catch{}
+  if(!packs.length){try{const legacy=JSON.parse(readStored(PACK_KEY)||"null");if(isOpen(legacy))packs=[legacy]}catch{}}
+  try{localStorage.setItem(PACKS_KEY,JSON.stringify(packs))}catch{}
+  let selectedId=readStored(SELECTED_KEY)||packs[0]?.trip?.id||"";
   let pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
   let selectedMembers=[];
   let queue=[];
-  try{queue=JSON.parse(localStorage.getItem(QUEUE_KEY)||"[]");if(!Array.isArray(queue))queue=[]}catch{queue=[]}
+  try{queue=JSON.parse(readStored(QUEUE_KEY)||"[]");if(!Array.isArray(queue))queue=[]}catch{queue=[]}
   const today=()=>{const d=new Date(),o=d.getTimezoneOffset()*60000;return new Date(d.getTime()-o).toISOString().slice(0,10)};
   $("expense-date").value=today();
 
@@ -84,8 +86,10 @@
     pack=packs.find(x=>x.trip.id===selectedId)||packs[0]||null;
     const has=Boolean(pack&&pack.currentUserId);
     $("no-pack").hidden=has;$("trip-card").hidden=!has;$("quick-card").hidden=!has;$("plan-card").hidden=!has;$("finance-card").hidden=!has;$("expenses-card").hidden=!has;$("safety-card").hidden=!has;
-    if(!has){localStorage.removeItem(PACK_KEY);localStorage.removeItem(SELECTED_KEY);return}
-    selectedId=pack.trip.id;localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack));
+    if(!has){try{localStorage.removeItem(PACK_KEY);localStorage.removeItem(SELECTED_KEY)}catch{}return}
+    selectedId=pack.trip.id;$("saved-trip").value=selectedId;
+    try{localStorage.setItem(SELECTED_KEY,selectedId);localStorage.setItem(PACK_KEY,JSON.stringify(pack))}catch{$("status").textContent="Trip selected for this session. Device storage is full or unavailable."}
+    $("trip-buttons").replaceChildren(...packs.map(saved=>{const button=document.createElement("button");button.type="button";button.className="secondary";button.textContent=saved.trip.name;button.setAttribute("aria-pressed",String(saved.trip.id===selectedId));button.style.borderColor=saved.trip.id===selectedId?"#127f7a":"#d9dbdf";button.addEventListener("click",()=>switchTrip(saved.trip.id));return button}));
     $("trip-name").textContent=pack.trip.name;$("trip-destination").textContent=`${pack.trip.destination} · trip ${pack.trip.currencyCode} · base ${pack.trip.baseCurrency}`;$("saved-at").textContent=`Saved ${new Date(pack.savedAt).toLocaleString()}`;queueLabel();
     selectedMembers=(pack.members||[]).map(member=>member.id);renderSharing();
     const currencyCodes=[...new Set([String(pack.trip.currencyCode).toUpperCase(),String(pack.trip.baseCurrency).toUpperCase()])];$("currency").replaceChildren(...currencyCodes.map(code=>{const option=document.createElement("option");option.value=code;option.textContent=`${code}${code===String(pack.trip.currencyCode).toUpperCase()?" · destination":" · base"}`;return option}));
@@ -95,12 +99,21 @@
     $("expenses-list").replaceChildren();const expenses=(pack.expenses||[]).slice(0,20);if(!expenses.length)$("expenses-list").innerHTML='<div class="empty">No saved expenses.</div>';else expenses.forEach(x=>$("expenses-list").append(row(x.description,`${x.date} · ${x.category} · my share ${amount(x.myShare)}`,`${x.currency} ${Number(x.amount||0).toFixed(2)}`)));
     $("safety-list").replaceChildren();const contacts=pack.emergencyContacts||[],documents=pack.documents||[];if(!contacts.length&&!documents.length)$("safety-list").innerHTML='<div class="empty">No safety contacts or accessible documents saved.</div>';contacts.forEach(x=>$("safety-list").append(row(`${x.label} · ${x.contactName}`,x.notes||"Emergency contact",x.phone)));documents.forEach(x=>$("safety-list").append(row(x.title,`${x.documentType}${x.expiryDate?` · expires ${x.expiryDate}`:""}`,x.offlineAvailable?"Saved":"Reconnect to open")));
   }
-  $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>{selectedId=event.target.value;renderPack()});renderPack();
+  const drafts=new Map();
+  function switchTrip(id){
+    if(id===selectedId||!packs.some(saved=>saved.trip.id===id))return;
+    drafts.set(selectedId,{description:$("description").value,amount:$("amount").value,date:$("expense-date").value,category:$("category").value,currency:$("currency").value,members:[...selectedMembers]});
+    selectedId=id;renderPack();
+    const draft=drafts.get(id);$("description").value=draft?.description||"";$("amount").value=draft?.amount||"";$("expense-date").value=draft?.date||today();$("category").value=draft?.category||"Food";
+    if(draft){$("currency").value=draft.currency;selectedMembers=draft.members.filter(id=>(pack.members||[]).some(member=>member.id===id));renderSharing()}
+    $("status").textContent=`Selected ${pack.trip.name}. New expenses will use this trip and its currency.`;
+  }
+  $("saved-trip").replaceChildren(...packs.map(saved=>{const option=document.createElement("option");option.value=saved.trip.id;option.textContent=`${saved.trip.name} · ${saved.trip.destination}`;return option}));$("saved-trip").value=pack?.trip?.id||"";$("saved-trip").addEventListener("change",event=>switchTrip(event.target.value));$("saved-trip").addEventListener("input",event=>switchTrip(event.target.value));renderPack();
 
   $("share-everyone").addEventListener("click",()=>{selectedMembers=(pack?.members||[]).map(member=>member.id);renderSharing()});
   $("share-me").addEventListener("click",()=>{const mine=(pack?.members||[]).find(member=>member.id===pack.currentUserId)?.id||(pack?.members||[])[0]?.id;selectedMembers=mine?[mine]:[];renderSharing()});
 
-  $("quick-form").addEventListener("submit",event=>{event.preventDefault();if(!pack)return;const description=$("description").value.trim();const amount=Number($("amount").value);const members=selectedMembers.filter(id=>(pack.members||[]).some(member=>member.id===id));const currency=$("currency").value;if(!description||!Number.isFinite(amount)||amount<=0){$("status").textContent="Enter a valid description and amount.";return}if(!members.length){$("status").textContent="Choose at least one traveler to share this expense.";return}if(queue.length>=60){$("status").textContent="This device already has 60 unsynced changes. Reconnect and sync them before adding more so no offline data is lost.";return}const rate=currency===String(pack.trip.baseCurrency).toUpperCase()?1:Number(pack.trip.defaultExchangeRate)||1;const id=createId();queue.push({id,url:"/api/expenses",method:"POST",label:`${pack.trip.name} · ${currency} · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:currency,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:`Saved offline for ${pack.trip.name}`,allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});localStorage.setItem(QUEUE_KEY,JSON.stringify(queue));queueLabel();$("description").value="";$("amount").value="";$("status").textContent=`Expense saved for ${pack.trip.name} in ${currency}. It will sync automatically after reconnection.`});
+  $("quick-form").addEventListener("submit",event=>{event.preventDefault();if(!pack)return;const description=$("description").value.trim();const amount=Number($("amount").value);const members=selectedMembers.filter(id=>(pack.members||[]).some(member=>member.id===id));const currency=$("currency").value;if(!description||!Number.isFinite(amount)||amount<=0){$("status").textContent="Enter a valid description and amount.";return}if(!members.length){$("status").textContent="Choose at least one traveler to share this expense.";return}if(queue.length>=60){$("status").textContent="This device already has 60 unsynced changes. Reconnect and sync them before adding more so no offline data is lost.";return}const rate=currency===String(pack.trip.baseCurrency).toUpperCase()?1:Number(pack.trip.defaultExchangeRate)||1;const id=createId();queue.push({id,url:"/api/expenses",method:"POST",label:`${pack.trip.name} · ${currency} · ${description}`,createdAt:new Date().toISOString(),attempts:0,blocked:false,body:{clientRequestId:id,countryId:pack.trip.countryId,expenseDate:$("expense-date").value,category:$("category").value,description,transactionCurrency:currency,transactionAmount:amount,exchangeRate:rate,rateType:"DEFAULT",actualConvertedAmount:"",paidByUserId:pack.currentUserId,paymentMethod:"",receiptUrl:"",notes:`Saved offline for ${pack.trip.name}`,allowDuplicate:true,itemization:[],splitMode:"EQUAL",splits:members.map(userId=>({userId,value:0}))}});try{localStorage.setItem(QUEUE_KEY,JSON.stringify(queue))}catch{queue.pop();$("status").textContent="Expense was not saved. Device storage is full or unavailable. Keep this form open and reconnect before retrying.";return}queueLabel();$("description").value="";$("amount").value="";$("status").textContent=`Expense saved for ${pack.trip.name} in ${currency}. It will sync automatically after reconnection.`});
 
   function updateStatus(){if(navigator.onLine){$("status").textContent="Connection restored. Returning to Miles & Meals…";$("status").classList.add("online");location.href="/dashboard";return}$("status").textContent="Still offline. Saved trip essentials remain available here.";$("status").classList.remove("online")}
   $("retry").addEventListener("click",()=>{location.href="/dashboard"});window.addEventListener("online",updateStatus);window.addEventListener("offline",updateStatus);
