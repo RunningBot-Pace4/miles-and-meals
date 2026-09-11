@@ -126,6 +126,12 @@ function SmartSettlementPanel({
   const [activeView, setActiveView] = useState<
     "SMART" | "ORIGINAL" | "HISTORY"
   >("SMART");
+  useEffect(() => {
+    const openHistory = () => { if (window.location.hash === "#payment-history") setActiveView("HISTORY"); };
+    openHistory();
+    window.addEventListener("hashchange", openHistory);
+    return () => window.removeEventListener("hashchange", openHistory);
+  }, []);
   const plans = data.smartPlans.filter(
     (plan) =>
       plan.optimizedTransferCount > 0 ||
@@ -163,6 +169,7 @@ function SmartSettlementPanel({
       transfer.fromUserId === currentUserId ||
       transfer.toUserId === currentUserId,
   );
+  const otherTransfers = allOptimized.filter(transfer => transfer.fromUserId !== currentUserId && transfer.toUserId !== currentUserId);
   const originalBalances = plans.flatMap((plan) =>
     plan.originalExpenseBalances.map((balance) => ({ plan, balance })),
   );
@@ -453,6 +460,7 @@ function SmartSettlementPanel({
         </button>
         <button
           aria-selected={activeView === "HISTORY"}
+          id="payment-history"
           className={activeView === "HISTORY" ? "active" : ""}
           onClick={() => setActiveView("HISTORY")}
           role="tab"
@@ -496,18 +504,18 @@ function SmartSettlementPanel({
             </div>
           ) : null}
 
-          <div className="smart-settlement-all-moves">
+          {otherTransfers.length > 0 || allOptimized.length === 0 ? <div className="smart-settlement-all-moves">
             <div className="smart-settlement-section-title">
               <span className="smart-settlement-spark" aria-hidden="true">◎</span>
               <div>
-                <strong>Recommended group plan</strong>
-                <small>{optimizedCount} transfer{optimizedCount === 1 ? "" : "s"} clears the remaining balances</small>
+                <strong>Other group payments</strong>
+                <small>{otherTransfers.length} payment{otherTransfers.length === 1 ? "" : "s"} between other travelers</small>
               </div>
             </div>
 
             <div className="smart-settlement-transfer-list">
               {allOptimized.length > 0 ? (
-                allOptimized.map((transfer, index) => transferCard(transfer, index, "all"))
+                otherTransfers.map((transfer, index) => transferCard(transfer, index, "all"))
               ) : (
                 <div className="settled-state compact">
                   <span aria-hidden="true">✓</span>
@@ -518,7 +526,7 @@ function SmartSettlementPanel({
                 </div>
               )}
             </div>
-          </div>
+          </div> : null}
 
           <div className="smart-settlement-audit-note">
             <span aria-hidden="true">ⓘ</span>
@@ -1220,72 +1228,6 @@ function PersonalSummary({
   );
 }
 
-function SettlementHistory({
-  data,
-}: {
-  data: SettlementLiveData;
-}) {
-  return (
-    <section className="panel">
-      <div className="panel-title">
-        <div>
-          <p className="eyebrow">
-            HISTORY
-          </p>
-          <h2>
-            Completed payments
-          </h2>
-        </div>
-      </div>
-
-      <div className="settlement-history">
-        {data.settledSettlements.length ? (
-          data.settledSettlements
-            .slice(0, 30)
-            .map((payment) => (
-              <div
-                className="settlement-history-row"
-                key={payment.id}
-              >
-                <span className="settlement-history-check">
-                  ✓
-                </span>
-                <span>
-                  <strong>
-                    {payment.fromName} →{" "}
-                    {payment.toName}
-                  </strong>
-                  <small>
-                    {payment.tripName} ·
-                    Completed · View only ·{" "}
-                    {payment.confirmedAt
-                      ? new Date(
-                          payment.confirmedAt,
-                        ).toLocaleDateString(
-                          "en-MY",
-                        )
-                      : ""}
-                  </small>
-                </span>
-                <strong>
-                  {formatMoney(
-                    payment.amount,
-                    payment.currency,
-                  )}
-                </strong>
-              </div>
-            ))
-        ) : (
-          <p className="muted">
-            No completed settlement
-            payments yet.
-          </p>
-        )}
-      </div>
-    </section>
-  );
-}
-
 export function LiveSettlementWorkspace({
   initialData,
   currentUserId,
@@ -1537,12 +1479,6 @@ export function LiveSettlementWorkspace({
       />
       </>}
 
-      {variant ===
-      "settlements" ? (
-        <SettlementHistory
-          data={data}
-        />
-      ) : null}
     </div>
   );
 }

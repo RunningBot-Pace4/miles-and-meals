@@ -5,13 +5,16 @@ import {
   listUserTripBudgets,
 } from "@/lib/trip-budget";
 
-export default async function BudgetSettingsPage() {
+export default async function BudgetSettingsPage({ searchParams }: { searchParams?: Promise<{ tripId?: string }> } = {}) {
+  const query = await searchParams;
   const session =
     await requirePageSession();
   const trips =
     await listUserTripBudgets(
       session.user.id,
     );
+
+  const displayTrips = [...trips].sort((a, b) => Number(b.tripId === query?.tripId) - Number(a.tripId === query?.tripId));
 
   return (
     <div className="stack gap-lg">
@@ -33,11 +36,11 @@ export default async function BudgetSettingsPage() {
         <>
           <section className="panel">
             <TripBudgetForm
-              trips={trips}
+              trips={displayTrips}
             />
           </section>
           <section className="panel">
-            <CategoryBudgetManager trips={trips} />
+            <CategoryBudgetManager trips={displayTrips} />
           </section>
         </>
       ) : (

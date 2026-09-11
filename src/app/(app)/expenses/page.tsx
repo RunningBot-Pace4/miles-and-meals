@@ -7,12 +7,13 @@ import { loadExpenseLiveData } from "@/lib/expense-live";
 import { getTripFinancialState } from "@/lib/financial-close";
 import { requirePageSession } from "@/lib/session";
 
-export default async function ExpensesPage() {
+export default async function ExpensesPage({ searchParams }: { searchParams?: Promise<{ tripId?: string }> } = {}) {
+  const { tripId } = await searchParams ?? {};
   const session =
     await requirePageSession();
   const activeTrip =
     await getActiveTripContext(
-      session.user,
+      session.user, tripId,
     );
   const [initialData, financialState] =
     await Promise.all([
@@ -68,6 +69,7 @@ export default async function ExpensesPage() {
       ) : null}
 
       <LiveExpensesWorkspace
+        tripId={activeTrip.tripId}
         initialData={initialData}
         locked={expensesLocked}
       />

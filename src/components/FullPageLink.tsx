@@ -2,6 +2,7 @@
 
 import { BrandedLoadingScreen } from "@/components/BrandedLoadingScreen";
 import { needsDocumentIndicator } from "@/lib/navigation-feedback";
+import { appDestination } from "@/lib/app-destinations";
 import type {
   AnchorHTMLAttributes,
   MouseEvent,
@@ -31,6 +32,7 @@ export function FullPageLink({
   prefetch = false,
   ...props
 }: FullPageLinkProps) {
+  href = appDestination(href);
   const [navigationPending, setNavigationPending] = useState(false);
   const [showIndicator, setShowIndicator] = useState(false);
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);

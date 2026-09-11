@@ -96,6 +96,7 @@ function uniqueTrips(
 
 export async function getActiveTripContext(
   currentUser: SessionUser,
+  requestedTripId?: string,
 ): Promise<ActiveTripContext> {
   const allCountries =
     await listAccessibleCountries(
@@ -131,7 +132,7 @@ export async function getActiveTripContext(
       ),
     );
   const tripId =
-    accessibleTripIds.has(
+    requestedTripId && accessibleTripIds.has(requestedTripId) ? requestedTripId : accessibleTripIds.has(
       cookieTripId,
     )
       ? cookieTripId

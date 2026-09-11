@@ -4,6 +4,7 @@ import { FullPageLink as Link } from "@/components/FullPageLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { QuickAddMenu } from "@/components/QuickAddMenu";
 
 type IconName = "home" | "plan" | "plus" | "spend" | "more";
 
@@ -129,6 +130,7 @@ export function MobileNav() {
       data-navigation-pending={pendingHref ? "true" : undefined}
     >
       {links.map((link) => {
+        if (link.action) return <QuickAddMenu key={link.href} />;
         const sectionActive =
           link.href === "/spend"
             ? routeMatches(pathname, spendPrefixes)

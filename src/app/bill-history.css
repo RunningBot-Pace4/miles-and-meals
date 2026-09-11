@@ -475,8 +475,7 @@
   background:#fff;
   overflow:hidden;
 }
-.home-trip-overview>summary,.home-finance-overview>summary,
-.pwa-polished .home-next-steps>summary {
+.home-trip-overview>summary,.home-finance-overview>summary {
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -491,9 +490,6 @@
 .home-trip-overview small,.home-finance-overview>summary small { font-size:.8rem; color:#60736f; }
 .home-trip-overview[open]>summary,.home-finance-overview[open]>summary { border-bottom:1px solid #d7e5e0; background:#eef8f5; }
 .home-finance-overview>*:not(summary) { margin:16px; }
-.pwa-polished .home-next-steps { padding:0; background:linear-gradient(120deg,#fff8e8,#fff); }
-.pwa-polished .home-next-steps>.stack { padding:0 16px 16px; }
-.pwa-polished .home-next-steps a { display:block; padding:10px 0; }
 .pwa-polished .section-tabs { gap:6px; padding:6px; background:#eef3f2; border-radius:15px; }
 .pwa-polished .section-tabs a { min-height:44px; display:flex; align-items:center; justify-content:center; border:1px solid transparent; }
 .pwa-polished .section-tabs a[aria-current=page] { background:#fff; border-color:#397de6; color:#245daa; box-shadow:0 2px 6px #173c3510; }
@@ -761,4 +757,36 @@
   .smart-person-avatar { width:36px; height:36px; }
   .smart-transfer-net-head>span:last-child { grid-column:2; justify-self:start; }
   .smart-transfer-pair-proof { grid-template-columns:36px minmax(0,1fr); }
+}
+.quick-add-dialog { width:min(560px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid #cbdedc; border-radius:26px; background:#f8fbfc; color:#173d3b; box-shadow:0 24px 80px #102d3940; overflow:auto; }
+.quick-add-dialog::backdrop { background:#112b3e80; backdrop-filter:blur(5px); }
+.quick-add-content { padding:24px; }
+.quick-add-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.quick-add-heading h2 { margin:4px 0; font-size:1.5rem; letter-spacing:-.04em; }
+.quick-add-heading .eyebrow { color:#117f77; font-size:.72rem; letter-spacing:.14em; }
+.quick-add-heading button { min-width:44px; min-height:44px; }
+.quick-add-options { display:grid; gap:12px; }
+.quick-add-option { display:grid; grid-template-columns:48px minmax(0,1fr) 16px; align-items:center; gap:14px; padding:16px; border:1px solid #cbe5e1; background:#edf9f5; border-radius:18px; color:#154b42; text-decoration:none; }
+.quick-add-option:nth-child(2) { background:#eef4ff; border-color:#d2dff5; color:#234f91; }
+.quick-add-option:nth-child(3) { background:#fff0f4; border-color:#f2d5e0; color:#8a3359; }
+.quick-add-option:nth-child(4) { background:#fff7e6; border-color:#eddcba; color:#785615; }
+.quick-add-option>span:first-child { display:grid; place-items:center; width:48px; height:48px; border-radius:15px; background:#ffffffb3; font-size:1.7rem; }
+.quick-add-option strong,.quick-add-option small { display:block; }
+.quick-add-option strong { font-size:1.05rem; }
+.quick-add-option small { margin-top:4px; font-size:.85rem; line-height:1.45; }
+.quick-add-option:hover { border-color:currentColor; }
+.quick-add-option:focus-visible,.quick-add-heading button:focus-visible { outline:3px solid #3479e8; outline-offset:3px; }
+.expense-optional-details>summary,.expense-scan-details>summary { padding:14px 0; min-height:48px; cursor:pointer; font-weight:700; color:#176d65; }
+.expense-optional-details[open]>.compact-fields { margin-top:16px; }
+.expense-optional-details>label { margin-top:16px; }
+.receipt-review-callout { justify-content:space-between; background:#fff8e8!important; border-color:#eed29a!important; color:#76531d!important; }
+.dashboard-action-centre { scroll-margin-top:100px; }
+.dashboard-action-card:nth-child(3n+2) { background:#eff5ff; border-color:#d6e2f6; }
+.dashboard-action-card:nth-child(3n+3) { background:#fff6e7; border-color:#edddbb; }
+.home-payment-panel>.bill-payment-saved { display:block; padding:16px; line-height:1.6; overflow-wrap:anywhere; }
+@media(max-width:600px) {
+  .quick-add-dialog { margin:auto auto max(12px,env(safe-area-inset-bottom)); max-height:calc(100dvh - env(safe-area-inset-top) - 24px); }
+  .quick-add-content { padding:20px 16px; }
+  .quick-add-option { padding:14px; gap:10px; }
+  .expense-optional-details .two-col { grid-template-columns:minmax(0,1fr); }
 }

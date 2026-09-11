@@ -49,6 +49,7 @@ export type ExpenseLiveRow = {
   paidByName: string;
   payers: ExpenseLivePayer[];
   hasReceipt: boolean;
+  needsReceiptReview?: boolean;
   splits: ExpenseLiveSplit[];
 };
 
@@ -135,6 +136,7 @@ export async function loadExpenseLiveData(
         countries.name,
       paidByName:
         user.name,
+      receiptReviewStatus: expenses.receiptReviewStatus,
       hasReceipt: sql<boolean>`
         coalesce(${expenses.receiptUrl}, '') <> ''
       `,
@@ -283,6 +285,7 @@ export async function loadExpenseLiveData(
       payers: payersByExpense.get(row.id) ?? [],
       hasReceipt:
         Boolean(row.hasReceipt),
+      needsReceiptReview: Boolean(row.hasReceipt) && row.receiptReviewStatus !== "REVIEWED",
       splits:
         splitsByExpense.get(
           row.id,

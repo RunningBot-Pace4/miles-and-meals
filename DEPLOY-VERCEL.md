@@ -1,5 +1,9 @@
 # Miles & Meals — verified build fix
 
+Latest update: see `SIMPLIFICATION-UPDATE.md` for the consolidated Home reminders,
+compact Add menu, unified payment history and trip-aware navigation. No SQL or
+database reset is needed for this update. Device verification remains required.
+
 Latest responsive redesign: see `MODERN-PWA-PAYMENT-DESIGN.md`. It fixes the
 mobile payment-card squeeze, visible expense actions, and simplified bill and
 person-statement screens.

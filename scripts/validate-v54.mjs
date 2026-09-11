@@ -15,10 +15,11 @@ const memberRoute = read("src/app/api/trips/[id]/countries/[countryId]/members/r
 const access = read("src/lib/access.ts");
 
 if (
-  !settlementWorkspace.includes("Completed · View only") ||
-  !settlementWorkspace.includes("Completed payments")
+  !settlementWorkspace.includes("recordedPayments.map") ||
+  !settlementWorkspace.includes('payment.status === "SETTLED"') ||
+  !settlementWorkspace.includes("smart-payment-allocation-audit")
 ) {
-  fail("Completed settlements must render as view-only history.");
+  fail("Completed settlements and receipt allocations must remain in the unified payment history.");
 }
 
 if (

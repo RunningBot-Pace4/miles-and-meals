@@ -23,10 +23,12 @@ const REQUEST_TIMEOUT_MS = 4000;
 
 export function LiveExpensesWorkspace({
   initialData,
+  tripId = "",
   locked = false,
 }: {
   initialData: ExpenseLiveData;
   locked?: boolean;
+  tripId?: string;
 }) {
   const [data, setData] =
     useState(initialData);
@@ -75,7 +77,7 @@ export function LiveExpensesWorkspace({
         try {
           const response =
             await fetch(
-              `/api/expenses/live?t=${Date.now()}`,
+              `/api/expenses/live?trip=${encodeURIComponent(tripId)}&t=${Date.now()}`,
               {
                 cache: "no-store",
                 signal:
@@ -119,7 +121,7 @@ export function LiveExpensesWorkspace({
           }
         }
       },
-      [],
+      [tripId],
     );
 
   useEffect(() => {
@@ -246,6 +248,7 @@ export function LiveExpensesWorkspace({
         </Link>
       </section>
 
+      {data.rows.some(row => row.needsReceiptReview) ? <Link className="receipt-review-callout button secondary" href={`/spend?tab=review&tripId=${encodeURIComponent(tripId)}`}>{data.rows.filter(row => row.needsReceiptReview).length} receipts need review →</Link> : null}
       <section className="card-list">
         {data.rows.length ? (
           data.rows.map(

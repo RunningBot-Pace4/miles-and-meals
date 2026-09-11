@@ -35,7 +35,7 @@ export async function GET(
 
   const activeTrip =
     await getActiveTripContext(
-      session.user,
+      session.user, new URL(request.url).searchParams.get("trip") ?? undefined,
     );
   const data =
     await loadExpenseLiveData(

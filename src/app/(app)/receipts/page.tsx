@@ -8,9 +8,10 @@ import { getActiveTripContext } from "@/lib/active-trip";
 import { effectiveConvertedAmount, formatMoney } from "@/lib/money";
 import { requirePageSession } from "@/lib/session";
 
-export default async function ReceiptReviewPage() {
+export default async function ReceiptReviewPage({ searchParams }: { searchParams?: Promise<{ tripId?: string }> } = {}) {
+  const { tripId } = await searchParams ?? {};
   const session = await requirePageSession();
-  const active = await getActiveTripContext(session.user);
+  const active = await getActiveTripContext(session.user, tripId);
   const countryIds = active.countries.map((country) => country.id);
   const rows = countryIds.length ? await db
     .select()

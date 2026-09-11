@@ -2480,7 +2480,7 @@ export function ExpenseForm({
           ) : null}
 
           {receiptResult ? (
-            <div className="receipt-detected-grid">
+            <details className="expense-scan-details"><summary>Scan details</summary><div className="receipt-detected-grid">
               <div>
                 <small>Shop</small>
                 <strong>
@@ -2542,7 +2542,7 @@ export function ExpenseForm({
                   }
                 </strong>
               </div>
-            </div>
+            </div></details>
           ) : null}
 
           {receiptResult?.merchantCandidates &&
@@ -2611,14 +2611,8 @@ export function ExpenseForm({
         </section>
       ) : null}
 
-      <section className="expense-section details-section">
-        <div className="section-heading">
-          <span className="section-number">4</span>
-          <div>
-            <h2>Payment details</h2>
-            <p>Optional information that helps you reconcile later.</p>
-          </div>
-        </div>
+      <details className="expense-section details-section expense-optional-details">
+        <summary>Payment details · optional</summary>
 
         <div className="two-col compact-fields">
           <label>
@@ -2671,7 +2665,7 @@ export function ExpenseForm({
             placeholder="Optional note"
           />
         </label>
-      </section>
+      </details>
 
       {offlineQueued ? (
         <section className="offline-saved-card" role="status">

@@ -39,6 +39,7 @@ export function BillSettlementAllocator({
   >({});
 
   const [saved, setSaved] = useState(false);
+  const [savedSummary, setSavedSummary] = useState("");
 
   const isPayer = currentUserId === fromUserId;
   const isReceiver = currentUserId === toUserId;
@@ -174,6 +175,7 @@ export function BillSettlementAllocator({
           {isPayer
             ? "Payment saved. Waiting for the receiver to confirm."
             : "Payment received and saved."}
+          {" "}{savedSummary}
         </p>
       )}
       <div className="bill-payment-allocator-head">
@@ -297,7 +299,7 @@ export function BillSettlementAllocator({
         !invalidBill &&
         !exceedsDirectBalance ? (
           <SettlementActionButton
-            onRecorded={() => { setSelectedAmounts({}); setSaved(true); }}
+            onRecorded={() => { setSavedSummary(`${formatMoney(selectedTotal, currency)} · ${allocations.map(({ expense, amount }) => `${expense.description}: ${formatMoney(amount, currency)} applied, ${formatMoney(Math.max(0, expense.remainingAmount - amount), currency)} remaining${isPayer ? " after confirmation" : ""}`).join("; ")}`); setSelectedAmounts({}); setSaved(true); }}
             action={isPayer ? "MARK_PAID" : "MARK_RECEIVED"}
             allocations={allocations.map(({ expense, amount }) => ({
               expenseId: expense.expenseId,
