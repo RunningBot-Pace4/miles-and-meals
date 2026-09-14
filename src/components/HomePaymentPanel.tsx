@@ -12,7 +12,7 @@ type SmartPlan = SettlementLiveData["smartPlans"][number];
 type DirectBalance = SmartPlan["originalExpenseBalances"][number];
 type PaymentChoice = { plan: SmartPlan; balance: DirectBalance };
 
-export function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { choices: PaymentChoice[]; currentUserId: string; onRecord: (message: string) => void }) {
+export function HomePaymentRequestCard({ choices, currentUserId }: { choices: PaymentChoice[]; currentUserId: string }) {
   const [choiceKey, setChoiceKey] = useState(`${choices[0].plan.tripId}:${choices[0].plan.countryId}`);
   const choice = choices.find(({ plan }) => `${plan.tripId}:${plan.countryId}` === choiceKey) ?? choices[0];
   const { plan, balance } = choice;
@@ -42,7 +42,6 @@ export function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { c
   }, [maximum, billSignature, plan.countryId]);
 
   function recorded() {
-    onRecord(`${plan.tripName} · ${formatMoney(numericAmount, plan.currency)} ${paying ? "sent · awaiting confirmation" : "received · confirmed"}. ${preview.allocations.map(item => `${item.description}: ${formatMoney(item.amount, plan.currency)} applied, ${formatMoney(item.remainingAfter, plan.currency)} remaining${paying ? " after confirmation" : ""}`).join("; ")}.`);
     setSelected([]);
     // This callback runs only after a successful save. Show the remainder now;
     // the next ledger update supplies the authoritative remaining balance.
@@ -82,13 +81,12 @@ export function HomePaymentRequestCard({ choices, currentUserId, onRecord }: { c
         selectedMaximum={selected.length ? bills.filter(bill => selected.includes(bill.expenseId)).reduce((sum, bill) => sum + bill.remainingAmount, 0) : undefined}
         remaining={valid ? Math.max(0, maximum - numericAmount) : null}
         error={amount ? exceedsBalance ? `Cannot exceed ${formatMoney(maximum, plan.currency)}.` : preview.error ?? "" : ""} />
-      {valid ? <SettlementActionButton key={`${choiceKey}:${maximum}`} action={paying ? "MARK_PAID" : "MARK_RECEIVED"} allocations={preview.allocations.map((item) => ({ expenseId: item.expenseId, amount: item.amount }))} countryId={plan.countryId} counterpartyUserId={paying ? balance.toUserId : balance.fromUserId} currency={plan.currency} detailsContent={detailContent} fixedAmount label={paying ? "Confirm payment sent" : "Mark received"} maximumAmount={numericAmount} onBusyChange={setBusy} onRecorded={recorded} /> : <div className="settlement-action-wrap"><details className="settlement-payment-details"><summary>Payment details · optional</summary><div className="settlement-payment-details-grid">{detailContent}</div></details><button className="button settlement-action-button" disabled type="button">Check amount or selected bills</button></div>}
+      {<SettlementActionButton key={`${choiceKey}:${maximum}`} action={paying ? "MARK_PAID" : "MARK_RECEIVED"} allocations={preview.allocations.map((item) => ({ expenseId: item.expenseId, amount: item.amount }))} countryId={plan.countryId} counterpartyUserId={paying ? balance.toUserId : balance.fromUserId} currency={plan.currency} detailsContent={detailContent} disabled={!valid} fixedAmount label={!valid ? "Check amount or selected bills" : paying ? "Confirm payment sent" : "Mark received"} maximumAmount={numericAmount} onBusyChange={setBusy} onRecorded={recorded} />}
     </div>
   </article>;
 }
 
 export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLiveData; currentUserId: string }) {
-  const [lastPayment, setLastPayment] = useState("");
   const pending = data.pendingSettlements.filter((payment) => payment.fromUserId === currentUserId || payment.toUserId === currentUserId);
   const requests = data.smartPlans.flatMap((plan) => plan.originalExpenseBalances
     .filter((balance) => balance.directRemaining > 0.009 && (balance.fromUserId === currentUserId || balance.toUserId === currentUserId))
@@ -101,15 +99,14 @@ export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLive
 
   return <section className="panel settlement-panel home-payment-panel" id="home-payment">
     <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">The person and trip are already matched. Open payment details only when you want to choose specific receipts.</p></div><Link className="button secondary" href="/spend?tab=settlements#payment-history">Payment history</Link></div>
-    {lastPayment ? <p className="bill-payment-saved" role="status">✓ {lastPayment}</p> : null}
     <div className="settlement-status-list">
       {pending.map((payment) => <article className="settlement-status-row sent" key={payment.id}>
         <div className="settlement-status-icon">↗</div>
         <div className="settlement-status-copy"><strong>{payment.fromUserId === currentUserId ? `You → ${payment.toName}` : `${payment.fromName} → You`}</strong><span className="settlement-state-pill sent">Sent · awaiting receipt</span><small>{payment.tripName}</small>{payment.allocations.length ? <small>Bills: {payment.allocations.map((item) => `${item.description} ${formatMoney(item.amount, payment.currency)}`).join(" · ")}</small> : null}</div>
         <strong className="settlement-amount">{formatMoney(payment.amount, payment.currency)}</strong>
-        {payment.toUserId === currentUserId ? <SettlementActionButton action="MARK_RECEIVED" settlementId={payment.id} countryId={payment.countryId} counterpartyUserId={payment.fromUserId} label="Confirm received" onRecorded={() => setLastPayment(`${payment.tripName} · ${formatMoney(payment.amount, payment.currency)} received · confirmed.`)} /> : <div className="home-payment-awaiting">Waiting for confirmation</div>}
+        {payment.toUserId === currentUserId ? <SettlementActionButton action="MARK_RECEIVED" settlementId={payment.id} countryId={payment.countryId} counterpartyUserId={payment.fromUserId} label="Confirm received" /> : <div className="home-payment-awaiting">Waiting for confirmation</div>}
       </article>)}
-      {requestGroups.map(([key, choices]) => <HomePaymentRequestCard onRecord={setLastPayment} choices={choices} currentUserId={currentUserId} key={key} />)}
+      {requestGroups.map(([key, choices]) => <HomePaymentRequestCard choices={choices} currentUserId={currentUserId} key={key} />)}
       {!pending.length && !requests.length ? <div className="settled-state"><span aria-hidden="true">✓</span><div><strong>Nothing outstanding</strong><small>You are settled for the selected trip.</small></div></div> : null}
     </div>
   </section>;

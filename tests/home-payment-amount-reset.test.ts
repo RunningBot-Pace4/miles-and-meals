@@ -95,9 +95,23 @@ describe("Home payment remainder", () => {
     expect(card.field().amount).toBe("45.00");
     expect(card.field().maximum).toBe(60);
   });
-  it("leaves zero and no further payment action after a full successful payment", () => {
+  it("leaves zero and disables further payment after a full successful payment", () => {
     const card = setup(); card.action().onRecorded(); card.render();
     expect(card.field().amount).toBe("0.00");
-    expect(card.action()).toBeUndefined();
+    expect(card.action().disabled).toBe(true);
+  });
+  it("keeps the same action and receipt picker available as ticks change validity", () => {
+    const card = setup(); card.enter("45.00");
+    function inputs(node: any): any[] {
+      if (!node || typeof node !== "object") return [];
+      if (node.type === "input") return [node.props];
+      return [node.props?.children].flat(Infinity).flatMap(inputs);
+    }
+    inputs(card.action().detailsContent)[0].onChange({ target: { checked: true } }); card.render();
+    expect(card.action().disabled).toBe(true);
+    expect(inputs(card.action().detailsContent)[0].checked).toBe(true);
+    inputs(card.action().detailsContent)[1].onChange({ target: { checked: true } }); card.render();
+    expect(card.action().disabled).toBe(false);
+    expect(inputs(card.action().detailsContent).every(input => input.checked)).toBe(true);
   });
 });

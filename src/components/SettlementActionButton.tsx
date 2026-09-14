@@ -55,6 +55,7 @@ export function SettlementActionButton({
   onRecorded,
   onBusyChange,
   detailsContent,
+  disabled = false,
 }: {
   settlementId?: string;
   countryId: string;
@@ -68,6 +69,7 @@ export function SettlementActionButton({
   onRecorded?: () => void;
   onBusyChange?: (busy: boolean) => void;
   detailsContent?: ReactNode;
+  disabled?: boolean;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -166,6 +168,7 @@ export function SettlementActionButton({
   }
 
   async function runAction() {
+    if (disabled) return;
     onBusyChange?.(true);
     setBusy(true);
     setError("");
@@ -374,7 +377,7 @@ export function SettlementActionButton({
             : "button settlement-action-button settlement-action-secondary"
         }
         disabled={
-          busy || awaitingRefresh || paymentProofBusy ||
+          disabled || busy || awaitingRefresh || paymentProofBusy ||
           (maximumAmount !== undefined &&
             (fixedAmount
               ? maximumAmount <= 0

@@ -75,7 +75,9 @@ export function SettlementReversalButton({
       }
 
       window.dispatchEvent(
-        new CustomEvent(SETTLEMENT_UPDATED_EVENT),
+        new CustomEvent(SETTLEMENT_UPDATED_EVENT, {
+          detail: { saved: true, settlementId, action: isConfirmed ? "REVERSED" : "CANCELLED" },
+        }),
       );
       setOpen(false);
     } catch (caught) {

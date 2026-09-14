@@ -1,5 +1,12 @@
 # Miles & Meals — verified build fix
 
+Current update: `PAYMENT-FORM-STABILITY.md` keeps receipt details open when
+ticking bills and removes the duplicate green Home payment acknowledgement.
+Deploy the full package; accept the PWA Update online. No SQL changes needed.
+
+Latest update: `PAYMENT-CANCELLATION-REFRESH.md` fixes stale Home messages after
+cancellation and sends the successful-save refresh signal. No SQL changes.
+
 Latest payment fix: `PAYMENT-REMAINDER-FIX.md`. Home resets the amount textbox
 to the remaining balance after a successful payment. No SQL changes needed.
 
