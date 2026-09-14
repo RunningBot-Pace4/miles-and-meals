@@ -1,5 +1,8 @@
 # Miles & Meals — verified build fix
 
+Latest design: `PAYMENT-CARD-DESIGN.md` introduces a clear payment total and
+individual receipt rows on Home. Deploy the full package; no SQL changes.
+
 Current update: `PAYMENT-FORM-STABILITY.md` keeps receipt details open when
 ticking bills and removes the duplicate green Home payment acknowledgement.
 Deploy the full package; accept the PWA Update online. No SQL changes needed.

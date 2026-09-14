@@ -1,3 +1,32 @@
+/* Home pending payments: a compact receipt with an explicit total. */
+.home-pending-payment { min-width:0; padding:18px; border:1px solid #c8dce8; border-radius:22px; background:linear-gradient(155deg,#f1f8ff 0%,#fff 48%); box-shadow:0 6px 20px #1d477008; }
+.home-pending-heading { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.home-pending-avatar { display:grid; place-items:center; flex:0 0 40px; height:40px; border-radius:14px; background:#dcecff; color:#2265a8; font-size:22px; }
+.home-pending-heading>div { min-width:0; display:grid; gap:4px; }
+.home-pending-heading strong { font-size:1rem; color:#1b363e; overflow-wrap:anywhere; }
+.home-pending-heading small { color:#667b83; font-size:.8rem; }
+.home-pending-total { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:14px; border-radius:15px; background:#eaf3fc; }
+.home-pending-total>div { display:grid; gap:4px; min-width:0; }
+.home-pending-total>div>span { color:#516e85; font-size:.75rem; font-weight:650; }
+.home-pending-total strong { font-size:1.55rem; line-height:1.2; color:#183f61; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.home-pending-status { border:1px solid #c5dbee; border-radius:999px; padding:6px 9px; color:#335f85; background:#ffffffb3; font-size:.68rem; font-weight:700; }
+.home-pending-receipts { min-width:0; margin-top:18px; }
+.home-pending-receipts-heading { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; color:#61757b; font-size:.75rem; font-weight:650; }
+.home-pending-receipts-heading small { font-size:inherit; font-weight:400; }
+.home-pending-receipts ul { list-style:none; margin:8px 0 0; padding:0; }
+.home-pending-receipts li { display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:start; gap:8px; padding:12px 0; border-bottom:1px solid #e5edf0; }
+.home-pending-receipt-number { display:grid; place-items:center; width:24px; height:24px; border-radius:8px; background:#f0f5f7; color:#72848a; font-size:.7rem; }
+.home-pending-receipt-name { color:#314e56; font-size:.82rem; line-height:1.5; overflow-wrap:anywhere; }
+.home-pending-receipts li>strong { padding-top:2px; color:#203e48; font-size:.82rem; line-height:1.5; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.home-pending-footer { margin-top:14px; }
+.home-pending-footer .settlement-action-wrap { width:100%; max-width:none; }
+.home-pending-footer .settlement-action-button { width:100%; min-height:48px; border-radius:14px; }
+.home-pending-waiting { padding:10px; color:#5a7483; text-align:center; font-size:.8rem; }
+@media(max-width:360px) {
+  .home-pending-payment { padding:14px; }
+  .home-pending-receipts li { grid-template-columns:24px minmax(0,1fr); }
+  .home-pending-receipts li>strong { grid-column:2; padding-top:0; }
+}
 .section-tabs { display:flex; gap:.5rem; overflow-x:auto; padding:.5rem 0; }
 .section-tabs a { flex:0 0 auto; padding:.65rem .9rem; border:1px solid #cbd5e1; border-radius:999px; color:inherit; text-decoration:none; }
 .section-tabs a[aria-current="page"] { border-color:#2563eb; color:#1d4ed8; }

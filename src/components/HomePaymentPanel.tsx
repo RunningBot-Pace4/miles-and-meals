@@ -98,13 +98,19 @@ export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLive
   }, new Map<string, PaymentChoice[]>()).entries());
 
   return <section className="panel settlement-panel home-payment-panel" id="home-payment">
-    <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">The person and trip are already matched. Open payment details only when you want to choose specific receipts.</p></div><Link className="button secondary" href="/spend?tab=settlements#payment-history">Payment history</Link></div>
+    <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">Send a payment or confirm money received, right here.</p></div><Link className="button secondary" href="/spend?tab=settlements#payment-history">Payment history</Link></div>
     <div className="settlement-status-list">
-      {pending.map((payment) => <article className="settlement-status-row sent" key={payment.id}>
-        <div className="settlement-status-icon">↗</div>
-        <div className="settlement-status-copy"><strong>{payment.fromUserId === currentUserId ? `You → ${payment.toName}` : `${payment.fromName} → You`}</strong><span className="settlement-state-pill sent">Sent · awaiting receipt</span><small>{payment.tripName}</small>{payment.allocations.length ? <small>Bills: {payment.allocations.map((item) => `${item.description} ${formatMoney(item.amount, payment.currency)}`).join(" · ")}</small> : null}</div>
-        <strong className="settlement-amount">{formatMoney(payment.amount, payment.currency)}</strong>
-        {payment.toUserId === currentUserId ? <SettlementActionButton action="MARK_RECEIVED" settlementId={payment.id} countryId={payment.countryId} counterpartyUserId={payment.fromUserId} label="Confirm received" /> : <div className="home-payment-awaiting">Waiting for confirmation</div>}
+      {pending.map((payment) => <article className="home-pending-payment" key={payment.id}>
+        <header className="home-pending-heading">
+          <span className="home-pending-avatar" aria-hidden="true">↗</span>
+          <div><strong>{payment.fromUserId === currentUserId ? `You → ${payment.toName}` : `${payment.fromName} → You`}</strong><small>{payment.tripName}</small></div>
+        </header>
+        <div className="home-pending-total"><div><span>{payment.toUserId === currentUserId ? "To confirm received" : "Payment sent"}</span><strong>{formatMoney(payment.amount, payment.currency)}</strong></div><span className="home-pending-status">Awaiting confirmation</span></div>
+        {payment.allocations.length ? <section className="home-pending-receipts" aria-label="Receipt breakdown">
+          <div className="home-pending-receipts-heading"><span>Applied to receipts</span><small>{payment.allocations.length} {payment.allocations.length === 1 ? "receipt" : "receipts"}</small></div>
+          <ul>{payment.allocations.map((item, index) => <li key={`${item.expenseId}:${index}`}><span className="home-pending-receipt-number" aria-hidden="true">{index + 1}</span><span className="home-pending-receipt-name">{item.description}</span><strong>{formatMoney(item.amount, payment.currency)}</strong></li>)}</ul>
+        </section> : null}
+        <footer className="home-pending-footer">{payment.toUserId === currentUserId ? <SettlementActionButton action="MARK_RECEIVED" settlementId={payment.id} countryId={payment.countryId} counterpartyUserId={payment.fromUserId} label="Confirm received" /> : <div className="home-pending-waiting">Waiting for confirmation</div>}</footer>
       </article>)}
       {requestGroups.map(([key, choices]) => <HomePaymentRequestCard choices={choices} currentUserId={currentUserId} key={key} />)}
       {!pending.length && !requests.length ? <div className="settled-state"><span aria-hidden="true">✓</span><div><strong>Nothing outstanding</strong><small>You are settled for the selected trip.</small></div></div> : null}
