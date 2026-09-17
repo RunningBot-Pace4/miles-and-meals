@@ -45,10 +45,12 @@ describe("financial concurrency hardening contract", () => {
     );
   });
 
-  it("uses compare-and-swap for expense edits", () => {
+  it("locks the expense row and checks its expected version without a lossy timestamp predicate", () => {
     expect(expenseEdit).toContain(
-      "eq(\n                    expenses.updatedAt,\n                    current.updatedAt,",
+      '.where(eq(expenses.id, id))\n                .limit(1)\n                .for("update")',
     );
+    expect(expenseEdit).toContain("input.expectedUpdatedAt");
+    expect(expenseEdit).not.toContain("eq(\n                    expenses.updatedAt,\n                    current.updatedAt,");
     expect(expenseEdit).toContain(
       'code: "STALE_EDIT"',
     );

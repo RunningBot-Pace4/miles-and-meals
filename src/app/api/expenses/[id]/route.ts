@@ -76,7 +76,7 @@ function staleExpenseError(updatedAt: Date) {
   const staleEdit = { code: "STALE_EDIT" as const };
 
   return new ExpenseMutationError(
-    "This expense was changed by another traveler after you opened it. Reload the latest version before saving.",
+    "A newer version of this expense is available. Your changes were not saved. Reload the latest version before editing again.",
     409,
     staleEdit.code,
     { currentUpdatedAt: updatedAt.toISOString() },
@@ -320,6 +320,7 @@ export async function PUT(
                 .from(expenses)
                 .where(eq(expenses.id, id))
                 .limit(1)
+                .for("update")
             )[0];
 
             if (!current) {
@@ -413,15 +414,10 @@ export async function PUT(
                 notes: input.notes || null,
                 updatedAt: nextUpdatedAt,
               })
-              .where(
-                and(
-                  eq(expenses.id, id),
-                  eq(
-                    expenses.updatedAt,
-                    current.updatedAt,
-                  ),
-                ),
-              )
+              // The expense row is locked above. Comparing the database's
+              // microsecond timestamp to a JS Date would falsely reject fresh
+              // rows created with now(). Keep the expected-version check above.
+              .where(eq(expenses.id, id))
               .returning({
                 updatedAt: expenses.updatedAt,
               });

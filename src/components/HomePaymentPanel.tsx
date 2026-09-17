@@ -21,6 +21,7 @@ export function HomePaymentRequestCard({ choices, currentUserId }: { choices: Pa
   const [amount, setAmount] = useState(maximum.toFixed(2));
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const previousMaximum = useRef(maximum);
   const resetAfterPayment = useRef(false);
   const bills = balance.expenses.filter((bill) => bill.remainingAmount > 0.009);
@@ -81,7 +82,7 @@ export function HomePaymentRequestCard({ choices, currentUserId }: { choices: Pa
         selectedMaximum={selected.length ? bills.filter(bill => selected.includes(bill.expenseId)).reduce((sum, bill) => sum + bill.remainingAmount, 0) : undefined}
         remaining={valid ? Math.max(0, maximum - numericAmount) : null}
         error={amount ? exceedsBalance ? `Cannot exceed ${formatMoney(maximum, plan.currency)}.` : preview.error ?? "" : ""} />
-      {<SettlementActionButton key={`${choiceKey}:${maximum}`} action={paying ? "MARK_PAID" : "MARK_RECEIVED"} allocations={preview.allocations.map((item) => ({ expenseId: item.expenseId, amount: item.amount }))} countryId={plan.countryId} counterpartyUserId={paying ? balance.toUserId : balance.fromUserId} currency={plan.currency} detailsContent={detailContent} disabled={!valid} fixedAmount label={!valid ? "Check amount or selected bills" : paying ? "Confirm payment sent" : "Mark received"} maximumAmount={numericAmount} onBusyChange={setBusy} onRecorded={recorded} />}
+      {<SettlementActionButton key={`${choiceKey}:${maximum}`} detailsOpen={detailsOpen} onDetailsToggle={setDetailsOpen} action={paying ? "MARK_PAID" : "MARK_RECEIVED"} allocations={preview.allocations.map((item) => ({ expenseId: item.expenseId, amount: item.amount }))} countryId={plan.countryId} counterpartyUserId={paying ? balance.toUserId : balance.fromUserId} currency={plan.currency} detailsContent={detailContent} disabled={!valid} fixedAmount label={!valid ? "Check amount or selected bills" : paying ? "Confirm payment sent" : "Mark received"} maximumAmount={numericAmount} onBusyChange={setBusy} onRecorded={recorded} />}
     </div>
   </article>;
 }

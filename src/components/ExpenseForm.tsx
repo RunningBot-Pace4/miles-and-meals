@@ -20,6 +20,7 @@ import { parseTravelNumber } from "@/lib/numbers";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { trackProductEvent } from "@/lib/product-analytics-client";
 import { compactOptionText } from "@/lib/display-text";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 type CountryOption = {
   id: string;
@@ -29,6 +30,8 @@ type CountryOption = {
   currencyCode: string;
   defaultExchangeRate: string;
   baseCurrency: string;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 type Member = {
@@ -293,6 +296,8 @@ export function ExpenseForm({
     normalizeOptionalActualCharge(initial?.actualConvertedAmount),
   );
   const [members, setMembers] = useState<Member[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [membersCountryId, setMembersCountryId] = useState("");
   const [splitMode, setSplitMode] = useState<SplitMode>(
     initial?.splitMode ?? "EQUAL",
   );
@@ -585,6 +590,8 @@ export function ExpenseForm({
 
     let active = true;
     const controller = new AbortController();
+    setMembersLoading(true);
+    setMembers([]);
     setSplitPresets([]);
     setSplitPresetsLoading(true);
     fetch(`/api/split-presets?tripId=${encodeURIComponent(tripId)}`, {
@@ -814,11 +821,13 @@ export function ExpenseForm({
 
       if (!response.ok) {
         setMembers([]);
-        return;
+        throw new Error("Unable to load trip travelers.");
       }
 
       const payload = (await response.json()) as { members: Member[] };
+      if (controller.signal.aborted) return;
       setMembers(payload.members);
+      setMembersCountryId(countryId);
 
       if (preserveMembersRef.current) {
         preserveMembersRef.current =
@@ -852,7 +861,9 @@ export function ExpenseForm({
       }
     }
 
-    loadMembers().catch(() => undefined);
+    loadMembers().catch(() => {
+      if (!controller.signal.aborted) setError("Unable to load this trip's travelers. Select the trip again or reload before saving.");
+    }).finally(() => { if (!controller.signal.aborted) setMembersLoading(false); });
     return () => controller.abort();
   }, [countryId, initial]);
 
@@ -1031,12 +1042,12 @@ export function ExpenseForm({
       return false;
     }
 
-    const previousId = countryId;
     setError("");
     setTripSwitching(true);
+    applyTripCountry(nextId);
 
     try {
-      const response = await fetch("/api/active-trip", {
+      const response = await fetchWithTimeout("/api/active-trip", {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -1057,14 +1068,12 @@ export function ExpenseForm({
         );
       }
 
-      applyTripCountry(nextId);
       return true;
     } catch (caught) {
-      setCountryId(previousId);
       setError(
         caught instanceof Error
-          ? caught.message
-          : "Unable to switch trip.",
+          ? `Trip selected for this expense, but the app default could not be updated: ${caught.message}`
+          : "Trip selected for this expense. Unable to update the app's default trip.",
       );
       return false;
     } finally {
@@ -1430,7 +1439,7 @@ export function ExpenseForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (submitInFlightRef.current) {
+    if (submitInFlightRef.current || tripSwitching || membersLoading || membersCountryId !== countryId) {
       return;
     }
 
@@ -1752,12 +1761,7 @@ export function ExpenseForm({
 
   return (
     <>
-      {tripSwitching ? (
-        <SavingOverlay
-          title="Switching trip"
-          message="Updating this expense to the selected trip."
-        />
-      ) : receiptScanning ? (
+      {receiptScanning ? (
         <SavingOverlay
           title="Reading your receipt"
           message="Finding the shop name and final amount on this device."
@@ -1908,10 +1912,12 @@ export function ExpenseForm({
                 </option>
               ))}
             </select>
+            {tripSwitching || membersLoading ? <small role="status">Updating trip travelers…</small> : null}
+            <span className="expense-trip-dates"><span>Trip dates</span><strong>{currentCountry?.startDate ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentCountry.startDate}T00:00:00Z`)) : "Not set"}{currentCountry?.endDate && currentCountry.endDate !== currentCountry.startDate ? ` – ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentCountry.endDate}T00:00:00Z`))}` : ""}</strong></span>
           </label>
 
           <label className="expense-date-field">
-            Date
+            Expense date
             <input
               name="expenseDate"
               type="date"
@@ -2734,7 +2740,7 @@ export function ExpenseForm({
             {currentCountry?.baseCurrency ?? "MYR"} {settlementTotal.toFixed(2)}
           </strong>
         </div>
-        <button className="button primary save-expense-button" disabled={busy || offlineQueued} type="submit">
+        <button className="button primary save-expense-button" disabled={busy || offlineQueued || tripSwitching || membersLoading || membersCountryId !== countryId} type="submit">
           {busy ? "Saving…" : offlineQueued ? "Waiting to sync" : initial ? "Save changes" : "Save expense"}
         </button>
       </div>

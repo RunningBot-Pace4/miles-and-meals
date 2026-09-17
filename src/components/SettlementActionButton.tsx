@@ -56,6 +56,8 @@ export function SettlementActionButton({
   onBusyChange,
   detailsContent,
   disabled = false,
+  detailsOpen,
+  onDetailsToggle,
 }: {
   settlementId?: string;
   countryId: string;
@@ -70,6 +72,8 @@ export function SettlementActionButton({
   onBusyChange?: (busy: boolean) => void;
   detailsContent?: ReactNode;
   disabled?: boolean;
+  detailsOpen?: boolean;
+  onDetailsToggle?: (open: boolean) => void;
 }) {
   const [busy, setBusy] =
     useState(false);
@@ -288,7 +292,7 @@ export function SettlementActionButton({
       ) : null}
 
       {showPaymentDetails ? (
-        <details className="settlement-payment-details">
+        <details className="settlement-payment-details" open={detailsOpen} onToggle={(event) => onDetailsToggle?.(event.currentTarget.open)}>
           <summary>Payment details · optional</summary>
           <div className="settlement-payment-details-grid">
             {detailsContent}

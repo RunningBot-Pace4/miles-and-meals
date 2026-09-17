@@ -62,10 +62,26 @@ function setup() {
     return [node.props?.children].flat(Infinity).filter(Boolean).map(child => find(type, child)).find(Boolean);
   }
   render();
-  return { balance, render, field: () => find("Amount"), action: () => find("Action"), enter(value: string) { find("Amount").onChange(value); render(); } };
+  return { props, balance, render, field: () => find("Amount"), action: () => find("Action"), enter(value: string) { find("Amount").onChange(value); render(); } };
 }
 
 describe("Home payment remainder", () => {
+  it("keeps payment details expanded when the chosen trip changes", () => {
+    const card = setup();
+    card.props.choices.push({ plan: { tripId: "second", countryId: "second-country", tripName: "Second", currency: "MYR" }, balance: { ...card.balance, directRemaining: 30 } });
+    card.action().onDetailsToggle(true); card.render();
+    function select(node: any): any {
+      if (!node || typeof node !== "object") return;
+      if (node.type === "select") return node.props;
+      return [node.props?.children].flat(Infinity).map(select).find(Boolean);
+    }
+    select(card.action().detailsContent).onChange({ target: { value: "second:second-country" } }); card.render();
+    expect(card.action().detailsOpen).toBe(true);
+    expect(card.action().countryId).toBe("second-country");
+    expect(card.field().amount).toBe("30.00");
+    card.action().onDetailsToggle(false); card.render();
+    expect(card.action().detailsOpen).toBe(false);
+  });
   it("allocates 45 across 20 and 40, then displays 15 immediately and after refresh", () => {
     const card = setup(); card.enter("45.00");
     expect(card.action().allocations).toEqual([{ expenseId: "0", amount: 20 }, { expenseId: "1", amount: 25 }]);
