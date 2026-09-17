@@ -1790,7 +1790,9 @@ export function ExpenseForm({
         className="expense-editor"
         onSubmit={submit}
         noValidate
-        onInput={markFormEdited}
+        // React batches the control's value update and this bubbling change.
+        // An earlier native input event can rerender a controlled select with
+        // its old value before the select's change event reads the new value.
         onChange={markFormEdited}
       >
         {draftState === "PENDING" ? (
