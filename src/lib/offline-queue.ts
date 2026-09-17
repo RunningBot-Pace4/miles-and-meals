@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+
 export type OfflineMutation = {
   id: string;
   url: string;
@@ -441,7 +443,7 @@ async function performFlush(options: {
     }
 
     try {
-      const response = await fetch(item.url, {
+      const response = await fetchWithTimeout(item.url, {
         method: item.method,
         headers:
           item.body === undefined

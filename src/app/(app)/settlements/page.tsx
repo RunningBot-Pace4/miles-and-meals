@@ -150,7 +150,7 @@ export default async function SettlementsPage({
           <h1>Settle Up</h1>
           <p className="muted">
             Choose a trip and it opens instantly. Balances come directly from expenses,
-            personal shares and confirmed payment history.
+            personal shares and recorded payments. Sent payments are reserved while awaiting confirmation.
           </p>
         </div>
 

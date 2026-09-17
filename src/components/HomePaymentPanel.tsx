@@ -96,9 +96,12 @@ export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLive
     groups.set(key, [...(groups.get(key) ?? []), request]);
     return groups;
   }, new Map<string, PaymentChoice[]>()).entries());
+  const paymentTripIds = [...new Set([...requests.map(({ plan }) => plan.tripId), ...pending.map((payment) => payment.tripId)])];
+  const historyTripId = paymentTripIds.length === 1 ? paymentTripIds[0] : data.smartPlans.length === 1 ? data.smartPlans[0].tripId : undefined;
+  const historyHref = `/spend?tab=settlements${historyTripId ? `&tripId=${encodeURIComponent(historyTripId)}` : ""}#payment-history`;
 
   return <section className="panel settlement-panel home-payment-panel" id="home-payment">
-    <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">Send a payment or confirm money received, right here.</p></div><Link className="button secondary" href="/spend?tab=settlements#payment-history">Payment history</Link></div>
+    <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">Send a payment or confirm money received, right here.</p></div><Link className="button secondary" href={historyHref}>Payment history</Link></div>
     <div className="settlement-status-list">
       {pending.map((payment) => <article className="home-pending-payment" key={payment.id}>
         <header className="home-pending-heading">

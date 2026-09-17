@@ -35,6 +35,7 @@ describe("simple Home payment requests", () => {
     expect(html).toContain("Breakfast");
     expect(html).toContain("Payment details · optional");
     expect(html).toContain("Bill / receipt · optional");
+    expect(html).toContain("/spend?tab=settlements&amp;tripId=trip-1#payment-history");
     expect(html).not.toContain("Choose a trip");
     expect(html).not.toContain("Choose a person");
     expect(html).not.toContain("I want to");

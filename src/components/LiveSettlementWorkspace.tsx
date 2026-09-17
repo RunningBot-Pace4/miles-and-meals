@@ -126,6 +126,12 @@ function SmartSettlementPanel({
   const [activeView, setActiveView] = useState<
     "SMART" | "ORIGINAL" | "HISTORY"
   >("SMART");
+  function selectView(view: "SMART" | "ORIGINAL" | "HISTORY") {
+    setActiveView(view);
+    const url = new URL(window.location.href);
+    url.hash = view === "HISTORY" ? "payment-history" : "";
+    window.history.replaceState(window.history.state, "", url.toString());
+  }
   useEffect(() => {
     const openHistory = () => { if (window.location.hash === "#payment-history") setActiveView("HISTORY"); };
     openHistory();
@@ -441,7 +447,7 @@ function SmartSettlementPanel({
         <button
           aria-selected={activeView === "SMART"}
           className={activeView === "SMART" ? "active" : ""}
-          onClick={() => setActiveView("SMART")}
+          onClick={() => selectView("SMART")}
           role="tab"
           type="button"
         >
@@ -451,7 +457,7 @@ function SmartSettlementPanel({
         <button
           aria-selected={activeView === "ORIGINAL"}
           className={activeView === "ORIGINAL" ? "active" : ""}
-          onClick={() => setActiveView("ORIGINAL")}
+          onClick={() => selectView("ORIGINAL")}
           role="tab"
           type="button"
         >
@@ -462,7 +468,7 @@ function SmartSettlementPanel({
           aria-selected={activeView === "HISTORY"}
           id="payment-history"
           className={activeView === "HISTORY" ? "active" : ""}
-          onClick={() => setActiveView("HISTORY")}
+          onClick={() => selectView("HISTORY")}
           role="tab"
           type="button"
         >

@@ -75,10 +75,11 @@ export function SettlementTripSelect({
 
     try {
       await activateTrip(nextTripId);
+      const historyAnchor = window.location.hash === "#payment-history" ? "#payment-history" : "";
       if (window.location.pathname === "/spend") {
-        window.location.replace(`/spend?tab=settlements&tripId=${encodeURIComponent(nextTripId)}`);
+        window.location.replace(`/spend?tab=settlements&tripId=${encodeURIComponent(nextTripId)}${historyAnchor}`);
       } else {
-        window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}`);
+        window.location.replace(`/settlements?tripId=${encodeURIComponent(nextTripId)}${historyAnchor}`);
       }
     } catch (caught) {
       setValue(selectedId);

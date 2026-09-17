@@ -50,6 +50,25 @@ function queueOne() {
 }
 
 describe("offline mutation resync", () => {
+  it("releases a stalled sync and retries with the same mutation ID", async () => {
+    vi.useFakeTimers();
+    try {
+      const item = queueOne();
+      const request = vi.fn((_url: string, init: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener("abort", () => reject(new Error("Timed out")), { once: true });
+      }));
+      vi.stubGlobal("fetch", request);
+      const first = flushOfflineQueue();
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(await first).toMatchObject({ synced: 0, remaining: 1 });
+      expect(readOfflineQueue()[0].id).toBe(item.id);
+      request.mockImplementation(async () => new Response("{}", { status: 200 }));
+      expect(await flushOfflineQueue({ forceRetry: true })).toMatchObject({ synced: 1, remaining: 0 });
+      expect(request.mock.calls[1][1].headers).toMatchObject({ "x-mnm-offline-mutation-id": item.id });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("removes a mutation only after the server accepts it", async () => {
     const item = queueOne();
     const fetchMock = vi.fn().mockResolvedValue(

@@ -9,6 +9,7 @@ import {
 } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { formatMoney } from "@/lib/money";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 type FinanceData = {
   total: number;
@@ -100,6 +101,7 @@ export function LiveDashboardFinance({
   const [syncError, setSyncError] =
     useState(false);
   const refreshingRef = useRef(false);
+  const queuedRefreshRef = useRef(false);
 
   const endpoint = useMemo(
     () =>
@@ -112,9 +114,8 @@ export function LiveDashboardFinance({
   );
 
   const refresh =
-    useCallback(async () => {
+    useCallback(async (): Promise<void> => {
       if (
-        refreshingRef.current ||
         !navigator.onLine ||
         document.visibilityState !==
           "visible"
@@ -122,11 +123,16 @@ export function LiveDashboardFinance({
         return;
       }
 
+      if (refreshingRef.current) {
+        queuedRefreshRef.current = true;
+        return;
+      }
+
       refreshingRef.current = true;
 
       try {
         const response =
-          await fetch(
+          await fetchWithTimeout(
             `${endpoint}&t=${Date.now()}`,
             {
               cache: "no-store",
@@ -146,6 +152,10 @@ export function LiveDashboardFinance({
         setSyncError(true);
       } finally {
         refreshingRef.current = false;
+        if (queuedRefreshRef.current) {
+          queuedRefreshRef.current = false;
+          void refresh();
+        }
       }
     }, [endpoint]);
 

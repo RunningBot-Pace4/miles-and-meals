@@ -1,5 +1,9 @@
 # Miles & Meals — verified build fix
 
+Current stability update: `STABILITY-REVIEW.md` covers bounded offline sync
+requests and reliable Home wallet refresh, with remaining live acceptance checks.
+No SQL migration is needed. The design is unchanged.
+
 Latest design: `PAYMENT-CARD-DESIGN.md` introduces a clear payment total and
 individual receipt rows on Home. Deploy the full package; no SQL changes.
 
