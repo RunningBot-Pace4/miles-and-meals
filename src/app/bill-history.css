@@ -952,9 +952,18 @@
   line-height: 1.4;
 }
 .expense-trip-dates > span { font-size: .75rem; font-weight: 500; }
+.expense-trip-status { display: flex; align-items: center; gap: .45rem; min-height: 1.6rem; font-size: .8rem; font-weight: 500; color: #23695f; }
+.expense-trip-status .mini-spinner { width: 14px; height: 14px; flex-shrink: 0; }
 .expense-editor .compact-fields { align-items: start; }
 @media (max-width: 640px) {
   .expense-editor .expense-editor-hero { flex-direction: column; align-items: stretch; }
   .expense-editor .expense-scan-action { width: 100%; min-width: 0; }
   .expense-editor .compact-fields { grid-template-columns: minmax(0, 1fr); }
+}
+/* Must outrank the older compact-fields !important font declarations. */
+@media (max-width: 719px) {
+  .expense-editor .amount-section .compact-fields :is(select, input[type="date"]),
+  .expense-editor .amount-section .description-field input {
+    font-size: 16px !important;
+  }
 }

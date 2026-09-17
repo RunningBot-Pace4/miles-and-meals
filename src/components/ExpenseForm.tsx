@@ -298,6 +298,8 @@ export function ExpenseForm({
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersCountryId, setMembersCountryId] = useState("");
+  const [membersError, setMembersError] = useState("");
+  const [membersRetry, setMembersRetry] = useState(0);
   const [splitMode, setSplitMode] = useState<SplitMode>(
     initial?.splitMode ?? "EQUAL",
   );
@@ -590,8 +592,6 @@ export function ExpenseForm({
 
     let active = true;
     const controller = new AbortController();
-    setMembersLoading(true);
-    setMembers([]);
     setSplitPresets([]);
     setSplitPresetsLoading(true);
     fetch(`/api/split-presets?tripId=${encodeURIComponent(tripId)}`, {
@@ -813,6 +813,15 @@ export function ExpenseForm({
     }
 
     const controller = new AbortController();
+    setMembersLoading(true);
+    setMembersError("");
+    setMembersCountryId("");
+    setMembers([]);
+    const timeout = window.setTimeout(() => {
+      controller.abort();
+      setMembersLoading(false);
+      setMembersError("Travelers took too long to load. Try again.");
+    }, 15000);
 
     async function loadMembers() {
       const response = await fetch(`/api/countries/${countryId}/members`, {
@@ -862,10 +871,10 @@ export function ExpenseForm({
     }
 
     loadMembers().catch(() => {
-      if (!controller.signal.aborted) setError("Unable to load this trip's travelers. Select the trip again or reload before saving.");
-    }).finally(() => { if (!controller.signal.aborted) setMembersLoading(false); });
-    return () => controller.abort();
-  }, [countryId, initial]);
+      if (!controller.signal.aborted) setMembersError("Unable to load travelers. Check your connection and try again.");
+    }).finally(() => { window.clearTimeout(timeout); if (!controller.signal.aborted) setMembersLoading(false); });
+    return () => { window.clearTimeout(timeout); controller.abort(); };
+  }, [countryId, initial, membersRetry]);
 
   async function handleCurrencyChange(
     nextCurrency: string,
@@ -1912,7 +1921,10 @@ export function ExpenseForm({
                 </option>
               ))}
             </select>
-            {tripSwitching || membersLoading ? <small role="status">Updating trip travelers…</small> : null}
+            <span className="expense-trip-status" role="status" aria-live="polite" aria-busy={tripSwitching || membersLoading}>
+              {tripSwitching || membersLoading ? <><span className="mini-spinner" aria-hidden="true" /> Loading trip details…</> : membersError ? membersError : "✓ Trip ready"}
+            </span>
+            {membersError && !membersLoading ? <button type="button" className="button secondary" onClick={() => setMembersRetry(value => value + 1)}>Retry loading travelers</button> : null}
             <span className="expense-trip-dates"><span>Trip dates</span><strong>{currentCountry?.startDate ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentCountry.startDate}T00:00:00Z`)) : "Not set"}{currentCountry?.endDate && currentCountry.endDate !== currentCountry.startDate ? ` – ${new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentCountry.endDate}T00:00:00Z`))}` : ""}</strong></span>
           </label>
 
