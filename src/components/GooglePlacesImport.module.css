@@ -1,0 +1,54 @@
+.card {
+  min-width: 0;
+  border: 1px solid #baded8;
+  border-radius: 22px;
+  background: linear-gradient(120deg, #ecf8f3, #f4f8ff);
+  color: #183f3b;
+  overflow: hidden;
+}
+.intro { display: flex; align-items: center; gap: 14px; padding: 20px; flex-wrap: wrap; }
+.icon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 14px; background: #d0ece2; color: #136653; font-size: 25px; }
+.introText { flex: 1 1 180px; min-width: 0; }
+.introText h3, .reviewHeader h4 { margin: 0; font-size: 18px; }
+.introText p, .reviewHeader p { margin: 4px 0 0; color: #536b68; font-size: 14px; overflow-wrap: anywhere; }
+.panel { display: grid; gap: 18px; padding: 0 20px 20px; min-width: 0; }
+.destination { display: grid; gap: 4px; border-top: 1px solid #cde3de; padding-top: 18px; min-width: 0; }
+.destination > span { font-size: 13px; color: #536b68; }
+.destination strong { font-size: 20px; overflow-wrap: anywhere; }
+.destination small { color: #536b68; font-size: 13px; }
+.file { display: grid; gap: 8px; background: #fff; border: 1px dashed #82b7ac; padding: 18px; border-radius: 16px; min-width: 0; }
+.file > span { color: #536b68; font-size: 13px; }
+.card .file input { display: block; width: 100%; min-width: 0; max-width: 100%; padding: 0; border: 0; background: transparent; font-size: 16px; }
+.file input::file-selector-button { border: 0; border-radius: 9px; padding: 12px; background: #e4f2ee; color: #175e50; font-weight: 700; margin-right: 10px; cursor: pointer; }
+.hint { margin: 0; font-size: 14px; line-height: 1.5; color: #536b68; }
+.reviewHeader { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.reviewHeader > div { min-width: 0; flex: 1 1 140px; }
+.list { list-style: none; margin: 0; padding: 0; background: #fff; border: 1px solid #d2e5df; border-radius: 16px; overflow: hidden; }
+.list > li { display: flex; align-items: center; gap: 10px; padding: 14px; min-width: 0; }
+.list > li + li { border-top: 1px solid #e3ede9; }
+.place { display: flex; align-items: flex-start; flex: 1; gap: 12px; min-width: 0; cursor: pointer; }
+.card .place input { width: 22px; height: 22px; inline-size: 22px; block-size: 22px; min-width: 22px; flex: 0 0 22px; margin: 3px 0 0; padding: 0; accent-color: #087e74; }
+.place > span { display: grid; gap: 4px; min-width: 0; }
+.place strong { font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.place small { font-size: 13px; color: #536b68; white-space: pre-wrap; overflow-wrap: anywhere; }
+.list a { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-height: 44px; padding: 8px; color: #096b62; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.saved { background: #f4f7f6; }
+.place .savedLabel { color: #11684e; font-weight: 700; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.footer p { display: grid; gap: 4px; margin: 0; min-width: 0; flex: 1; }
+.footer p span { font-size: 13px; color: #536b68; overflow-wrap: anywhere; }
+.footer button { min-height: 48px; }
+.warnings { border-radius: 12px; background: #fff6dc; color: #725215; padding: 14px; font-size: 14px; overflow-wrap: anywhere; }
+.warnings ul { padding-left: 20px; }
+.success { margin: 0; padding: 16px; border: 1px solid #99cdb8; border-radius: 14px; background: #e8f6ed; color: #195b43; line-height: 1.5; }
+.card :is(button, a, input):focus-visible { outline: 3px solid #337fea; outline-offset: 3px; }
+@media (max-width: 560px) {
+  .intro { padding: 16px; gap: 10px; }
+  .intro > button { width: 100%; }
+  .panel { padding: 0 14px 16px; gap: 14px; }
+  .file { padding: 14px; }
+  .list > li { padding: 12px; gap: 4px; }
+  .place { gap: 10px; }
+  .footer { flex-direction: column; align-items: stretch; }
+  .footer button { width: 100%; }
+}

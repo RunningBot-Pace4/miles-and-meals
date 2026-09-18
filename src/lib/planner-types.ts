@@ -1,0 +1,24 @@
+export type PlannerItem = {
+  id: string;
+  countryId: string;
+  itemType: string;
+  title: string;
+  itemDate: string | null;
+  itemTime: string | null;
+  area: string | null;
+  subtype: string | null;
+  priority: string | null;
+  status: string | null;
+  ownerUserId: string | null;
+  estimatedCost: string | null;
+  quantity: string | null;
+  provider: string | null;
+  confirmationNo: string | null;
+  linkUrl: string | null;
+  notes: string | null;
+  sortOrder: number;
+  durationMinutes: number | null;
+  createdBy: string;
+  updatedAt: string;
+  proposedByName: string | null;
+};
