@@ -414,7 +414,7 @@ export default async function DashboardPage({
           </p>
           <p className="home-greeting">{displayName}&apos;s travel journal</p>
           <h1 className="dashboard-welcome-title">Good trips.<br /><em>Great company.</em></h1>
-          <p className="home-trip-caption"><strong>{selectedTrip ? selectedTrip.name : "Your next adventure starts here"}</strong><br />{selectedTrip ? `${heroDestination} · ${tripDateLabel}` : "Pick a place. Bring your people."}</p>
+          <p className="home-trip-caption"><strong>{viewAll ? `All trips · ${tripOptions.length} ${tripOptions.length === 1 ? "trip" : "trips"}` : selectedTrip ? selectedTrip.name : "Your next adventure starts here"}</strong><br />{selectedTrip ? tripDateLabel : "Pick a place. Bring your people."}</p>
         </div>
 
         {selectedTrip ? (

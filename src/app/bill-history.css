@@ -940,6 +940,16 @@
   font-size: clamp(1.65rem, 3.5vw, 2.5rem);
   line-height: 1.15;
 }
+.smart-offset-explanation { padding: clamp(16px, 3vw, 24px); border: 1px solid #b8ddd5; border-radius: 20px; background: linear-gradient(120deg, #edf9f5, #f7faff); color: #21483e; }
+.smart-offset-explanation h3 { margin: 0 0 12px; }
+.smart-offset-explanation p { line-height: 1.6; margin: 10px 0; }
+.smart-offset-result { padding: 12px; border-radius: 12px; background: #fff; font-variant-numeric: tabular-nums; }
+.smart-offset-ledger { margin-top: 16px; }
+.smart-offset-ledger summary { padding: 12px 0; cursor: pointer; font-weight: 700; }
+.smart-offset-ledger ul { list-style: none; padding: 0; margin: 0; }
+.smart-offset-ledger li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 10px 0; border-bottom: 1px solid #dce9e4; }
+.smart-offset-ledger li strong { white-space: nowrap; }
+.smart-proof-scope { display: block; color: #0d7167; font-weight: 700; margin-bottom: 5px; }
 .expense-editor .expense-scan-action { position: relative; flex-shrink: 0; max-width: 100%; }
 /* Keep global form sizing from stretching the visually hidden upload input.
    It remains focusable and associated with its visible scan-receipt label. */

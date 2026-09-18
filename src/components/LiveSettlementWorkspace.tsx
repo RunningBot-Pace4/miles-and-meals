@@ -13,6 +13,7 @@ import {
   SettlementActionButton,
 } from "@/components/SettlementActionButton";
 import { formatMoney } from "@/lib/money";
+import { simpleSettlementRedirects } from "@/lib/smart-settlement-explanation";
 import { HomePaymentPanel } from "@/components/HomePaymentPanel";
 import { SettlementPaymentTools } from "@/components/SettlementPaymentTools";
 import { BillPaymentProgress } from "@/components/BillPaymentProgress";
@@ -213,6 +214,7 @@ function SmartSettlementPanel({
         (balance.fromUserId === transfer.toUserId &&
           balance.toUserId === transfer.fromUserId),
     );
+    const redirects = simpleSettlementRedirects(plan, transfer);
     const relatedExpenseLines = plan.originalExpenseBalances
       .filter(
         (balance) =>
@@ -252,6 +254,25 @@ function SmartSettlementPanel({
             </div>
           </div>
 
+          <section className="smart-offset-explanation" aria-label="Group offset explanation">
+            <h3>Why this payment amount?</h3>
+            {redirects.length > 0 ? redirects.map((row, i) => (
+              <p key={i}><strong>{row.fromName} owes {transfer.fromName} {formatMoney(row.amount, plan.currency)}.</strong>{" "}
+                In this plan, {row.fromName} pays that portion to {transfer.toName} on {transfer.fromName}&apos;s behalf, reducing {transfer.fromName}&apos;s payment by {formatMoney(row.amount, plan.currency)}.
+              </p>
+            )) : <p>Smart Settlement combines everyone&apos;s debts and recorded payments within {plan.tripName}. A suggested transfer can differ from the original bills between two people.</p>}
+            {redirects.length > 0 ? <p><strong>{formatMoney(pairBalances.find(b => b.fromUserId === transfer.fromUserId)?.amount ?? 0, plan.currency)}</strong> original debt − <strong>{formatMoney(redirects.reduce((sum, row) => sum + row.amount, 0), plan.currency)}</strong> redirected through the group = <strong>{formatMoney(transfer.amount, plan.currency)}</strong> to pay.</p> : null}
+            <p className="smart-offset-result"><strong>This transfer: {transfer.fromName} → {transfer.toName} · {formatMoney(transfer.amount, plan.currency)}</strong></p>
+            <p>This is a suggested payment plan, not money already paid. Group offsets do not mark individual receipts as paid.</p>
+            <details className="smart-offset-ledger"><summary>Original debts and final group payments</summary>
+              <h4>Original bill balances · before payments and offsets</h4>
+              <ul>{plan.originalExpenseBalances.map(b => <li key={`${b.fromUserId}:${b.toUserId}`}><span>{b.fromName} owes {b.toName}</span><strong>{formatMoney(b.amount, plan.currency)}</strong></li>)}</ul>
+              <h4>Remaining payments · after recorded payments and group offsets</h4>
+              <ul>{plan.optimizedTransfers.map(t => <li key={`${t.fromUserId}:${t.toUserId}`}><span>{t.fromName} pays {t.toName}</span><strong>{formatMoney(t.amount, plan.currency)}</strong></li>)}</ul>
+              <p>Sent payments are reserved while awaiting confirmation. Cancelled or reversed payments do not reduce the remaining balance.</p>
+            </details>
+          </section>
+
           <div className="smart-transfer-net-grid">
             {[payer, receiver].filter(Boolean).map((position) => {
               if (!position) {
@@ -262,7 +283,7 @@ function SmartSettlementPanel({
                 <article className={position.userId === transfer.fromUserId ? "payer-position" : "receiver-position"} key={position.userId}>
                   <div className="smart-transfer-net-head">
                     <span className="smart-person-avatar" aria-hidden="true">{position.name.trim().charAt(0).toUpperCase()}</span>
-                    <span><strong>{position.name}</strong><small>{position.userId === transfer.fromUserId ? "Payer" : "Receiver"}</small></span>
+                    <span><strong>{position.name}</strong><small>Whole-trip net balance · all travelers</small></span>
                     <span className={position.remainingNet >= 0 ? "receive" : "pay"}>
                       {netPositionLabel(position.remainingNet, plan.currency)}
                     </span>
@@ -293,7 +314,7 @@ function SmartSettlementPanel({
           {pairBalances.length > 0 ? (
             <div className="smart-transfer-pair-proof">
               <span className="smart-proof-icon" aria-hidden="true">↔</span>
-              <div><small>DIRECT EXPENSE LINK</small><strong>Original balance between these travellers</strong></div>
+              <div><small>DIRECT EXPENSE LINK</small><strong>Original bill balance · before payments and group offsets</strong></div>
               {pairBalances.map((balance) => (
                 <span key={`${balance.fromUserId}-${balance.toUserId}`}>
                   {balance.fromName} → {balance.toName} · {formatMoney(balance.amount, plan.currency)} · {balance.expenseCount} expense{balance.expenseCount === 1 ? "" : "s"}
@@ -310,7 +331,7 @@ function SmartSettlementPanel({
             <div className="smart-transfer-expense-proof">
               <div>
                 <span className="smart-proof-icon" aria-hidden="true">▤</span>
-                <span><strong>Expenses behind these net positions</strong><small>Shares shown in the trip&apos;s base currency.</small></span>
+                <span><strong>Expenses behind these net positions</strong><small>Direct bills and other travelers&apos; shares are labelled separately. These are original shares, not amounts paid by this transfer.</small></span>
               </div>
               <div className="smart-proof-list">
                 {relatedExpenseLines.map((expense) => (
@@ -319,6 +340,7 @@ function SmartSettlementPanel({
                     key={`${expense.expenseId}-${expense.participantUserId}`}
                   >
                     <span>
+                      <small className="smart-proof-scope">{((expense.participantUserId === transfer.fromUserId && expense.payerUserId === transfer.toUserId) || (expense.participantUserId === transfer.toUserId && expense.payerUserId === transfer.fromUserId)) ? "Direct bill between these two travelers" : "Group offset context · another traveler’s share"}</small>
                       <strong>{expense.description}</strong>
                       <small>
                         {formatSettlementDate(expense.expenseDate)} · {expense.category} · {expense.participantName}&apos;s share · paid by {expense.payerName}
@@ -547,7 +569,7 @@ function SmartSettlementPanel({
         <div className="smart-settlement-tab-panel smart-original-balances-panel" role="tabpanel">
           <div className="smart-audit-heading">
             <div>
-              <strong>Who originally owes whom</strong>
+              <strong>Original bill balances · before group offsets</strong>
               <small>Before whole-group netting. Expand a relationship to see every contributing expense.</small>
             </div>
             <span>{originalBalances.length} relationship{originalBalances.length === 1 ? "" : "s"}</span>
@@ -929,6 +951,7 @@ function SettlementStatus({
           <h2>
             Payments to send or confirm
           </h2>
+          <p className="muted">Amounts to send use the group&apos;s net balance after offsets. Original bill balances above can be higher. Open Smart Settlement details to see why.</p>
         </div>
       </div>
 
@@ -1036,7 +1059,7 @@ function SettlementStatus({
                       : `${transfer.fromName} → ${transfer.toName}`}
                 </strong>
                 <span className="settlement-state-pill waiting">
-                  Payment due
+                  Payment due · after group offsets
                 </span>
                 <small>
                   {transfer.tripName}
