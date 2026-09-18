@@ -345,7 +345,7 @@ export default async function DashboardPage({
     ? await loadHomeReminders(session.user, selectedTrip.id, countryIds, commandCenter.stage, commandCenter.forecastOver)
     : [];
   const actionItems = [
-    ...reminders.map(item => ({ icon: item.priority === "NOW" ? "!" : "✦", title: item.title, copy: `${selectedTrip?.name} · ${item.detail}`, href: item.href })),
+    ...reminders.filter(item => item.priority !== "IDEA").map(item => ({ icon: item.priority === "NOW" ? "!" : "✦", title: item.title, copy: `${selectedTrip?.name} · ${item.detail}`, href: item.href })),
     finishedOpenTrips.length > 0
       ? {
           icon: "◎",
@@ -392,6 +392,7 @@ export default async function DashboardPage({
         }
       : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const optionalIdeas = reminders.filter(item => item.priority === "IDEA");
 
   function activityTime(value: Date): string {
     return new Intl.DateTimeFormat("en-MY", {
@@ -542,6 +543,22 @@ export default async function DashboardPage({
             allTrips={viewAll}
             variant="dashboard"
           />
+
+          {optionalIdeas.length > 0 ? (
+            <section className="home-optional-ideas" aria-labelledby="home-ideas-title">
+              <div>
+                <p className="eyebrow">A LITTLE INSPIRATION</p>
+                <h2 id="home-ideas-title">Make the trip yours</h2>
+                <p className="muted">Optional ideas — nothing you need to complete.</p>
+              </div>
+              {optionalIdeas.map(item => (
+                <Link className="home-idea-link" href={item.href} key={item.id}>
+                  <span><strong>{item.title}</strong><small>{item.detail}</small></span>
+                  <span className="home-idea-action">{item.action} <span aria-hidden="true">↗</span></span>
+                </Link>
+              ))}
+            </section>
+          ) : null}
 
           {recentActivity.length > 0 ? (
             <section className="dashboard-recent-activity" aria-labelledby="recent-activity-title">
