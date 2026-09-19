@@ -20182,3 +20182,20 @@ select {
 .place-pin-picker > * { min-width:0; max-width:100%; }
 .place-pin-picker input { width:100%; min-width:0; box-sizing:border-box; font-size:16px; }
 @media(max-width:760px) { .compact-place-list { grid-template-columns:minmax(0,1fr); } .compact-place-list .travel-card { gap:10px; padding:12px; } }
+
+/* Keep content inset when the itinerary changes from a rail to stacked cards. */
+.timeline-list .timeline-card { min-width:0; max-width:100%; }
+.timeline-list .timeline-card .travel-card-body { padding:16px; min-width:0; }
+.timeline-list .travel-card-topline { flex-wrap:wrap; }
+.timeline-list .travel-notes { overflow-wrap:anywhere; }
+.timeline-list .planner-card-buttons { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
+.timeline-list .planner-card-buttons > :is(a,button) { min-height:44px; flex:1 1 100px; text-align:center; }
+.timeline-list .timeline-unscheduled { background:#e6f5ef; color:#126653; }
+.timeline-list .timeline-unscheduled span { display:none; }
+@media(max-width:760px) {
+ .timeline-list .timeline-card { grid-template-columns:minmax(0,1fr); gap:0; }
+ .timeline-list .timeline-time { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; box-sizing:border-box; }
+ .timeline-list .timeline-time strong { font-size:14px; }
+ .timeline-list .timeline-time span { font-size:12px; }
+ .timeline-list .timeline-unscheduled { justify-content:flex-start; }
+}

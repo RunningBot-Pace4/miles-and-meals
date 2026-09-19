@@ -1,5 +1,5 @@
 "use client";
-import { comparePlaceDistances, distanceKm, placeCoordinates } from "@/lib/place-distance";
+import { comparePlaceDistances, placeCoordinates } from "@/lib/place-distance";
 import { PlacePinPicker } from "@/components/PlacePinPicker";
 import type { GooglePlaceMatch } from "@/lib/google-places";
 
@@ -702,6 +702,9 @@ export function PlannerClient({
   const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
 
   const [pinItem, setPinItem] = useState<PlannerItem | null>(null);
+  const [routeMode, setRouteMode] = useState<"walk" | "drive">("walk");
+  const [routeMinutes, setRouteMinutes] = useState<Record<string, number>>({});
+  const routeCache = useRef(new Map<string, { km: number; minutes: number } | null>());
   const [distanceSort, setDistanceSort] = useState("nearest");
   const [distances, setDistances] = useState<Record<string, number>>({});
   const [distanceStatus, setDistanceStatus] = useState("");
@@ -844,6 +847,7 @@ export function PlannerClient({
     const rows = JSON.parse(distanceInput) as Array<{ id: string; title: string; point?: { latitude: number; longitude: number } | null; stay: boolean }>;
     const stayRow = rows.find(row => row.stay);
     setDistances({});
+    setRouteMinutes({});
     if (!stayRow) { setDistanceStatus("Add your stay to calculate distances."); return; }
     let cancelled = false;
     const controller = new AbortController();
@@ -865,17 +869,32 @@ export function PlannerClient({
         const start = await lookup(stayRow);
         if (!start) throw new Error("Stay location needs checking. Edit stay and enter the full hotel name and address.");
         const values: Record<string, number> = {};
+        const minutes: Record<string, number> = {};
         for (const row of rows.filter(row => !row.stay)) {
           if (cancelled) return;
           const match = await lookup(row);
-          if (match) values[row.id] = distanceKm(start, match);
+          if (match) {
+            const key = JSON.stringify([defaultCountryId, start.latitude, start.longitude, match.latitude, match.longitude, routeMode]);
+            let route = routeCache.current.get(key);
+            if (route === undefined) {
+              const response = await fetch("/api/travel-items/route-distance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, start, end: match, mode: routeMode }), signal: controller.signal });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || "Route unavailable.");
+              route = data.route;
+              if (routeCache.current.size > 500) routeCache.current.clear();
+              routeCache.current.set(key, route ?? null);
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            if (route) { values[row.id] = route.km; minutes[row.id] = route.minutes; }
+          }
+          if (!cancelled) setRouteMinutes({ ...minutes });
           if (!cancelled) setDistances({ ...values });
         }
-        if (!cancelled) { setDistances(values); setDistanceStatus(`Straight-line km from ${stayRow.title}. Unmatched places appear last.`); }
+        if (!cancelled) { setDistances(values); setDistanceStatus(`${routeMode === "walk" ? "Walking" : "Driving"} routes from ${stayRow.title}. Estimated times, not live traffic. Unavailable routes appear last.`); }
       } catch (error) { if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Unable to calculate distances."); }
     })();
     return () => { cancelled = true; controller.abort(); };
-  }, [distanceInput, defaultCountryId, isSpots]);
+  }, [distanceInput, defaultCountryId, isSpots, routeMode]);
 
   useEffect(() => {
     if (!detailItem) {
@@ -1515,6 +1534,7 @@ export function PlannerClient({
         } catch (e) { setError(e instanceof Error ? e.message : "Could not save pin."); } finally { setBusy(false); }
       }} /></div> : null}
       {isSpots ? <div className="place-distance-toolbar">
+        <label>Travel by <select value={routeMode} onChange={event => { setDistances({}); setRouteMinutes({}); setRouteMode(event.target.value as "walk" | "drive"); }}><option value="walk">Walking</option><option value="drive">Driving</option></select></label>
         <label>Sort places <select value={distanceSort} onChange={event => setDistanceSort(event.target.value)}><option value="nearest">Nearest first · ascending</option><option value="farthest">Farthest first · descending</option><option value="plan">Plan order</option></select></label>
         <p role="status">{visible.filter(item => distances[item.id] !== undefined).length} / {visible.length} places located in this tab · {distanceStatus}</p>
 
@@ -1543,8 +1563,8 @@ export function PlannerClient({
               key={item.id}
             >
               {tab === "ITINERARY" ? (
-                <div className="timeline-time">
-                  <strong>{item.itemTime || "—"}</strong>
+                <div className={`timeline-time ${!item.itemDate && !item.itemTime ? "timeline-unscheduled" : ""}`}>
+                  <strong>{item.itemTime || (item.subtype === "Accommodation" ? "Your stay" : "Flexible")}</strong>
                   <span>{formatDate(item.itemDate)}</span>
                 </div>
               ) : (
@@ -1569,7 +1589,7 @@ export function PlannerClient({
                 </div>
 
                 <h2>{item.title}</h2>
-                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km straight-line` : "Distance unavailable"}</strong> : null}
+                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km · ${routeMode === "walk" ? "walk" : "drive"} · ${routeMinutes[item.id] ?? "—"} min` : "Distance unavailable"}</strong> : null}
 
 
                 <p className="travel-card-meta" hidden={isSpots && !item.area && !item.subtype}>
@@ -1603,8 +1623,8 @@ export function PlannerClient({
                   </div>
                 ) : null}
 
-                {item.notes ? (
-                  <p className="travel-notes">{item.notes}</p>
+                {item.notes?.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim() ? (
+                  <p className="travel-notes">{item.notes.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim()}</p>
                 ) : null}
 
                 {!isSpots && item.linkUrl ? (
