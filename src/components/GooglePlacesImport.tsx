@@ -5,7 +5,7 @@ import { googleMapsPlaceKey, MAX_PLACES_FILE_BYTES, parseGoogleSavedPlaces, type
 import type { PlannerItem } from "@/lib/planner-types";
 import styles from "./GooglePlacesImport.module.css";
 import { distanceKm } from "@/lib/place-distance";
-import { googlePlaceId, type GooglePlaceMatch } from "@/lib/google-places";
+import { type GooglePlaceMatch } from "@/lib/google-places";
 import { TripStay } from "@/components/TripStay";
 
 export function GooglePlacesImport({ countryId, tripName, existingLinks, disabled, onImported, stay, onStaySaved }: {
@@ -33,31 +33,31 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   const submitting = useRef(false);
   const readVersion = useRef(0);
   const existing = new Set(existingLinks.map((link) => link ? googleMapsPlaceKey(link) : null).filter(Boolean));
-  const available = places.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)));
+  const available = places.filter((place) => !!place.match && !existing.has(googleMapsPlaceKey(place.linkUrl)));
   const stayPoint = stayMatch ? { latitude: stayMatch.latitude, longitude: stayMatch.longitude } : null;
   const ordered = nearestFirst && stayPoint ? [...places].sort((a, b) => {
     if (!a.match) return b.match ? 1 : 0;
     if (!b.match) return -1;
     return distanceKm(stayPoint, a.match) - distanceKm(stayPoint, b.match);
   }) : places;
-  const chosen = ordered.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)) && selected.has(place.linkUrl));
-  const unavailable = places.length - available.length;
+  const chosen = ordered.filter((place) => !!place.match && !existing.has(googleMapsPlaceKey(place.linkUrl)) && selected.has(place.linkUrl));
+  const unavailable = places.filter((place) => existing.has(googleMapsPlaceKey(place.linkUrl))).length;
 
   function addGoogleLocation(place: SavedPlaceDraft, match: GooglePlaceMatch): SavedPlaceDraft {
-    const cleanNotes = place.notes.replace(/(?:^|\n)Google Place ID: [^\n]*/g, "").trim();
-    const placeIdNote = `Google Place ID: ${match.placeId}`;
+    const cleanNotes = place.notes.replace(/(?:^|\n)Geoapify Place ID: [^\n]*/g, "").trim();
+    const placeIdNote = `Geoapify Place ID: ${match.placeId}`;
     const notes = [cleanNotes, placeIdNote].filter(Boolean).join("\n");
     return { ...place, notes: notes.length <= 1000 ? notes : placeIdNote, match: { ...match } };
   }
 
   useEffect(() => {
     if (!open) return;
-    const placeId = googlePlaceId(stay?.notes);
-    if (!placeId) { setStayMatch(null); return; }
+    if (!stay) { setStayMatch(null); return; }
+    setStayMatch(null);
     const controller = new AbortController();
     void fetch("/api/travel-items/resolve-places", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ countryId, places: [{ clientKey: "stay", title: stay?.title ?? "Accommodation", placeId }] }),
+      body: JSON.stringify({ countryId, places: [{ clientKey: "stay", title: stay?.title ?? "Accommodation" }] }),
       signal: controller.signal,
     }).then(async (response) => {
       const payload = await response.json() as { matches?: GooglePlaceMatch[] };
@@ -68,15 +68,15 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
 
   async function resolveFromGoogle(input: SavedPlaceDraft[], version: number): Promise<SavedPlaceDraft[]> {
     const matches = new Map<string, GooglePlaceMatch>();
-    for (let start = 0; start < input.length; start += 25) {
-      const chunk = input.slice(start, start + 25);
+    for (let start = 0; start < input.length; start += 2) {
+      const chunk = input.slice(start, start + 2);
       const response = await fetch("/api/travel-items/resolve-places", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ countryId, places: chunk.map((place) => ({ clientKey: place.linkUrl, title: place.title })) }),
         signal: AbortSignal.timeout(30_000),
       });
       const payload = await response.json() as { error?: string; matches?: GooglePlaceMatch[] };
-      if (!response.ok) throw new Error(payload.error ?? "Unable to check locations on Google Maps.");
+      if (!response.ok) throw new Error(payload.error ?? "Unable to check locations using open map data.");
       for (const match of payload.matches ?? []) matches.set(match.clientKey, match);
       if (readVersion.current !== version) return [];
     }
@@ -154,10 +154,10 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
       <div className={styles.destination}><span>Save places to</span><strong>{tripName}</strong><small>Use the Trip selector above to choose a different trip before uploading.</small></div>
       <label className={styles.file}>
         <strong>{reading ? "Reading your list…" : "Choose your saved-list CSV"}</strong>
-        <span>{reading ? "Finding each location on Google Maps…" : "Google Takeout → Saved · up to 250 places · 1 MB"}</span>
+        <span>{reading ? "Finding each location using open map data…" : "Google Takeout → Saved · up to 250 places · 1 MB"}</span>
         <input aria-label="Google saved places CSV" type="file" accept=".csv,text/csv" disabled={busy || reading || disabled} onChange={(event) => void loadFile(event)} />
       </label>
-      <p className={styles.hint}>Add a Category column to your CSV: Place, Meals or Shop. Blank categories go to Places. The app automatically checks every name with Google Maps, then sorts from your accommodation. This is a one-time import.</p>
+      <p className={styles.hint}>Add a Category column to your CSV: Place, Meals or Shop. Blank categories go to Places. The app automatically checks every name using open map data, then sorts from your accommodation. This is a one-time import.</p>
       {places.length ? <>
         <div className={styles.reviewHeader}>
           <div><h4>{places.length} places found</h4><p>{fileName}</p></div>
@@ -179,7 +179,7 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
                   const checked = event.target.checked;
                   setSelected((current) => { const next = new Set(current); if (checked) next.add(place.linkUrl); else next.delete(place.linkUrl); return next; });
                 }} />
-                <span><strong>{place.title}</strong>{place.match ? <><small>{place.match.matchedName} · {place.match.formattedAddress}</small><small><span className={styles.attribution} translate="no">Google Maps</span><span className={place.match.confidence === "MATCHED" ? styles.match : styles.check}>{place.match.confidence === "MATCHED" ? " · Matched" : " · Check this match"}</span></small></> : <small className={styles.missing}>Not found on Google Maps · edit the CSV name and upload again</small>}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
+                <span><strong>{place.title}</strong>{place.match ? <><small>{place.match.matchedName} · {place.match.formattedAddress}</small><small><span className={styles.attribution}>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></span><span className={place.match.confidence === "MATCHED" ? styles.match : styles.check}>{place.match.confidence === "MATCHED" ? " · Matched" : " · Check this match"}</span></small></> : <small className={styles.missing}>Not found using open map data · edit the CSV name and upload again</small>}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
               </label>
               <div className={styles.rowFields}>
                 <label>Category<select aria-label={`Category for ${place.title}`} value={place.itemType ?? "PLACE"} disabled={saved || busy} onChange={(event) => setPlaces((current) => current.map((p) => p.linkUrl === place.linkUrl ? { ...p, itemType: event.target.value as SavedPlaceDraft["itemType"] } : p))}><option value="PLACE">Places</option><option value="FOOD">Meals</option><option value="SHOPPING">Shop</option></select></label>
