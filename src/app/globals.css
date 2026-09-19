@@ -20139,3 +20139,16 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Compact saved places: distance and sort remain easy to scan on phones. */
+.place-distance-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:16px; background:#eef9f7; border:1px solid #b9ded8; border-radius:16px; margin:12px 0; }
+.place-distance-toolbar label { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-weight:700; }
+.place-distance-toolbar select { width:auto; max-width:100%; min-height:44px; }
+.place-distance-toolbar p { flex:1 1 240px; margin:0; font-size:14px; }
+.compact-place-list .travel-card { padding:14px; gap:10px; min-height:0; }
+.compact-place-list .travel-card h2 { font-size:17px; margin:6px 0; }
+.compact-place-list .provider-strip, .compact-place-list .travel-notes, .compact-place-list .planner-proposer { display:none; }
+.compact-place-list .planner-card-footer { margin-top:10px; padding-top:10px; gap:8px; }
+.compact-place-list .travel-card-icon { width:32px; height:32px; font-size:18px; }
+.place-distance-badge { display:inline-block; color:#086e65; background:#e0f5ed; border-radius:8px; padding:5px 9px; font-size:14px; }
+@media(max-width:600px) { .compact-place-list { grid-template-columns:minmax(0,1fr); } .place-distance-toolbar { align-items:stretch; } .place-distance-toolbar label, .place-distance-toolbar select { width:100%; } }

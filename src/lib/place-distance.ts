@@ -30,3 +30,10 @@ export function sortFromStay<T extends { linkUrl: string; notes: string }>(place
     return distanceKm(stay, aPoint) - distanceKm(stay, bPoint);
   });
 }
+
+export function comparePlaceDistances(a: number | undefined, b: number | undefined, direction: string): number {
+  if (direction === "plan") return 0;
+  if (a === undefined) return b === undefined ? 0 : 1;
+  if (b === undefined) return -1;
+  return direction === "farthest" ? b - a : a - b;
+}

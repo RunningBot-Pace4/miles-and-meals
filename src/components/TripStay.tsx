@@ -28,6 +28,8 @@ export function TripStay({ countryId, stay, disabled, onSaved, onMatched }: { co
         if (!lookupResponse.ok) throw new Error(lookupPayload.error ?? "Unable to find this accommodation using open map data.");
         const match = lookupPayload.matches?.[0];
         if (!match) throw new Error("Accommodation not found using open map data. Check the full hotel name and try again.");
+        if (match.confidence !== "MATCHED") throw new Error(`Please enter the full hotel name and address. The result “${match.matchedName}” does not closely match your stay.`);
+        if (!window.confirm(`Is this your accommodation?\n${match.matchedName}\n${match.formattedAddress}\nDistances will start here.`)) return;
         const preserved = stay ? Object.fromEntries(Object.entries(stay).map(([key, value]) => [key, value ?? ""])) : {};
         const key = JSON.stringify([countryId, stayName, match.placeId]);
         if (requestKey.current?.value !== key) requestKey.current = { value: key, id: crypto.randomUUID() };

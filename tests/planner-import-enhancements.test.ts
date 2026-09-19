@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { plannerTab, plannerTabUrl, plannerTabs } from "@/lib/planner-tab";
 import { parseGoogleSavedPlaces } from "@/lib/google-saved-places";
-import { coordinates, distanceKm, placeCoordinates, sortFromStay } from "@/lib/place-distance";
+import { comparePlaceDistances, coordinates, distanceKm, placeCoordinates, sortFromStay } from "@/lib/place-distance";
 
 it("preserves every planner tab in a validated trip-switch destination", () => {
   for (const tab of plannerTabs) expect(plannerTab(new URL(plannerTabUrl(tab), "https://app.test").searchParams.get("tab")!)).toBe(tab);
@@ -37,4 +37,13 @@ it("never treats a map camera center or place identifier as a location", () => {
   expect(coordinates("91,180")).toBeNull();
   expect(coordinates("0,0")).toEqual({ latitude: 0, longitude: 0 });
   expect(coordinates("Hotel Hong Kong")).toBeNull();
+});
+
+it("supports both distance directions with unknowns last and zero km valid", () => {
+  const rows = [undefined, 5, 0, 2];
+  expect([...rows].sort((a, b) => comparePlaceDistances(a, b, "nearest"))).toEqual([0, 2, 5, undefined]);
+  expect([...rows].sort((a, b) => comparePlaceDistances(a, b, "farthest"))).toEqual([5, 2, 0, undefined]);
+  expect(comparePlaceDistances(undefined, 5, "farthest")).toBe(1);
+  expect(comparePlaceDistances(5, undefined, "nearest")).toBe(-1);
+  expect(comparePlaceDistances(5, 2, "plan")).toBe(0);
 });

@@ -36,3 +36,6 @@ Existing imported rows are skipped rather than moved. Changing the stay does not
 Run npm test and npm run build. API tests use mocked provider responses, not live Geoapify or Neon.
 Four financial integration tests require TEST_DATABASE_URL. A real-device PWA import should be checked after setup.
 The source archive is not a live deployment. Keep your existing Neon and Vercel configuration.
+
+## Saved place distance display
+Saved Places, Meals and Shop now resolve distances automatically when a stay exists. Each located item shows km from stay. Use Nearest first, Farthest first, or Plan order. Unmatched items remain last; distances are straight-line estimates. Results are reused in memory during the current planner session to reduce calls. Existing stays with weak matches require editing. New stays show a name/address confirmation before saving. Compact cards keep all actions available; full metadata is in View details.

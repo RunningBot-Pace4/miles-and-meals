@@ -1,4 +1,6 @@
 "use client";
+import { comparePlaceDistances, distanceKm } from "@/lib/place-distance";
+import type { GooglePlaceMatch } from "@/lib/google-places";
 
 import {
   FormEvent,
@@ -698,6 +700,11 @@ export function PlannerClient({
   const [busy, setBusy] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
 
+  const [distanceSort, setDistanceSort] = useState("nearest");
+  const [distances, setDistances] = useState<Record<string, number>>({});
+  const [distanceStatus, setDistanceStatus] = useState("");
+  const locationCache = useRef(new Map<string, GooglePlaceMatch | null>());
+  const isSpots = ["PLACE", "FOOD", "SHOPPING"].includes(tab);
   const meta = tabMeta[tab];
   const activeTrip = trips.find((trip) => trip.id === activeTripId);
   const activeClosed = activeTrip?.financialStatus === "CLOSED";
@@ -709,6 +716,10 @@ export function PlannerClient({
           item.itemType === tab,
       )
       .sort((a, b) => {
+        if (isSpots && distanceSort !== "plan") {
+          const compared = comparePlaceDistances(distances[a.id], distances[b.id], distanceSort);
+          if (compared) return compared;
+        }
         const dateA = a.itemDate ?? "9999-12-31";
         const dateB = b.itemDate ?? "9999-12-31";
 
@@ -724,7 +735,7 @@ export function PlannerClient({
           b.itemTime ?? "99:99",
         );
       });
-  }, [itemsState, tab]);
+  }, [itemsState, tab, distances, distanceSort, isSpots]);
 
   const countryById = useMemo(
     () =>
@@ -824,6 +835,44 @@ export function PlannerClient({
 
   const defaultCountryId =
     countries[0]?.id ?? "";
+
+  const distanceInput = JSON.stringify(itemsState.filter(item => item.countryId === defaultCountryId && (["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) || (item.subtype === "Accommodation" && item.provider === "Miles & Meals stay"))).map(item => ({ id: item.id, title: item.title, stay: item.subtype === "Accommodation" && item.provider === "Miles & Meals stay" })));
+  useEffect(() => {
+    if (!isSpots) return;
+    const rows = JSON.parse(distanceInput) as Array<{ id: string; title: string; stay: boolean }>;
+    const stayRow = rows.find(row => row.stay);
+    setDistances({});
+    if (!stayRow) { setDistanceStatus("Add your stay to calculate distances."); return; }
+    let cancelled = false;
+    const controller = new AbortController();
+    const lookup = async (row: typeof rows[number]) => {
+      const key = `${defaultCountryId}:${row.id}:${row.title}`;
+      if (locationCache.current.has(key)) return locationCache.current.get(key);
+      const response = await fetch("/api/travel-items/resolve-places", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, places: [{ clientKey: row.id, title: row.title }] }), signal: controller.signal });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not calculate distances.");
+      const match = data.matches?.[0] as GooglePlaceMatch | undefined;
+      const located = match?.confidence === "MATCHED" ? match : null;
+      locationCache.current.set(key, located);
+      return located;
+    };
+    void (async () => {
+      setDistanceStatus("Calculating distances from your stay…");
+      try {
+        const start = await lookup(stayRow);
+        if (!start) throw new Error("Stay location needs checking. Edit stay and enter the full hotel name and address.");
+        const values: Record<string, number> = {};
+        for (const row of rows.filter(row => !row.stay)) {
+          if (cancelled) return;
+          const match = await lookup(row);
+          if (match) values[row.id] = distanceKm(start, match);
+          if (!cancelled) setDistances({ ...values });
+        }
+        if (!cancelled) { setDistances(values); setDistanceStatus(`${Object.keys(values).length} distances calculated · Straight-line km from ${stayRow.title}. Unmatched places appear last.`); }
+      } catch (error) { if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Unable to calculate distances."); }
+    })();
+    return () => { cancelled = true; controller.abort(); };
+  }, [distanceInput, defaultCountryId, isSpots]);
 
   useEffect(() => {
     if (!detailItem) {
@@ -1452,11 +1501,16 @@ export function PlannerClient({
         </p>
       ) : null}
 
+      {isSpots ? <div className="place-distance-toolbar">
+        <label>Sort places <select value={distanceSort} onChange={event => setDistanceSort(event.target.value)}><option value="nearest">Nearest first · ascending</option><option value="farthest">Farthest first · descending</option><option value="plan">Plan order</option></select></label>
+        <p role="status">{distanceStatus}</p>
+        <small>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></small>
+      </div> : null}
       <section
         className={
           tab === "ITINERARY"
             ? "timeline-list"
-            : "travel-card-grid"
+            : isSpots ? "travel-card-grid compact-place-list" : "travel-card-grid"
         }
       >
         {visible.map((item) => {
@@ -1502,6 +1556,7 @@ export function PlannerClient({
                 </div>
 
                 <h2>{item.title}</h2>
+                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${distances[item.id].toFixed(2)} km from stay` : "Distance unavailable"}</strong> : null}
 
                 <p className="travel-card-meta">
                   {[item.area, item.subtype]
