@@ -71,3 +71,14 @@
 .stayPreview { display:grid; gap:10px; padding:16px; background:white; border:1px solid #8bc8bf; border-radius:14px; min-width:0; }
 .stayPreview p { margin:0; overflow-wrap:anywhere; }
 .stayPreview a { color:#086e65; font-weight:700; text-decoration:underline; }
+
+/* The map is an independent row; it must never shrink the place summary. */
+.list > li { display:grid; grid-template-columns:minmax(0,1fr) minmax(140px,200px) auto auto; gap:12px; align-items:center; }
+.list > li > * { min-width:0; max-width:100%; }
+.list > li > section { grid-column:1 / -1; }
+@media(max-width:760px) {
+ .list > li { grid-template-columns:minmax(0,1fr) auto; padding:14px; }
+ .place { grid-column:1 / -1; }
+ .rowFields { grid-column:1 / -1; order:0; margin:0; }
+ .list > li > section { grid-column:1 / -1; }
+}

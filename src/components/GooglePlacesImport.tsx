@@ -195,11 +195,11 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
                 <small>{stayPoint && point ? `${distanceKm(stayPoint, point).toFixed(2)} km from stay` : "Distance unavailable"}</small>
               </div>
               <button type="button" className="button secondary" disabled={busy || saved} onClick={() => setPinning(place.linkUrl)}>Set exact pin</button>
+              <a href={place.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${place.title} in Google Maps`}>Map ↗</a>
               {pinning === place.linkUrl ? <PlacePinPicker initial={place.match ?? stayPoint} onCancel={() => setPinning(null)} onChoose={point => {
                 setPlaces(current => current.map(p => p.linkUrl === place.linkUrl ? { ...p, notes: `Coordinates: ${point.latitude}, ${point.longitude}\n${p.notes.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim()}`.slice(0, 1000), match: { ...point, matchedName: p.title, formattedAddress: "Pin selected by you", googleMapsUri: "", placeId: "", confidence: "MATCHED" } } : p));
                 setPinning(null);
               }} /> : null}
-              <a href={place.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${place.title} in Google Maps`}>Map ↗</a>
             </li>;
           })}
         </ul>

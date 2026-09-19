@@ -20157,3 +20157,28 @@ select {
 .place-pin-picker p { margin:0; font-size:14px; }
 .place-pin-actions { display:flex; gap:10px; flex-wrap:wrap; }
 .planner-pin-editor { padding:16px; margin:12px 0; background:#eef9f7; border-radius:16px; }
+
+/* Compact destination cards: readable summaries with secondary actions on demand. */
+.compact-place-list { align-items:start; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.compact-place-list .travel-card { border:1px solid #c7e2dc; border-top:3px solid #169b88; border-radius:18px; background:linear-gradient(120deg,#effbf7,white 65%); box-shadow:0 3px 12px #174b3e08; padding:14px; min-width:0; }
+.compact-place-list .travel-card:nth-child(3n+2) { border-top-color:#6889d6; background:linear-gradient(120deg,#f0f4ff,white 65%); }
+.compact-place-list .travel-card:nth-child(3n) { border-top-color:#dd9e35; background:linear-gradient(120deg,#fff8e9,white 65%); }
+.compact-place-list .travel-card-topline { font-size:10px; gap:8px; flex-wrap:wrap; margin:0; }
+.compact-place-list .travel-card h2 { font-size:17px; line-height:1.35; margin:5px 0 8px; overflow-wrap:anywhere; }
+.compact-place-list .travel-card-meta { margin:6px 0; font-size:13px; }
+.compact-place-list .travel-card-meta[hidden] { display:none; }
+.compact-place-list .place-distance-badge { font-size:12px; padding:4px 8px; }
+.place-card-actions { display:flex; flex-wrap:wrap; align-items:start; gap:8px; margin-top:10px; }
+.place-card-actions > :is(a,button), .place-more-actions > summary { display:flex; align-items:center; justify-content:center; min-height:44px; padding:8px 12px; border:1px solid #c5ddd8; border-radius:10px; color:#145e53; background:#fff; font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
+.place-card-actions > a { background:#087f73; color:white; border-color:#087f73; }
+.place-more-actions { min-width:0; flex:1 1 110px; }
+.place-more-actions > summary { list-style:none; }
+.place-more-actions > summary::-webkit-details-marker { display:none; }
+.place-more-actions > summary::after { content:'＋'; margin-left:8px; }
+.place-more-actions[open] > summary::after { content:'−'; }
+.place-more-actions > div { display:grid; gap:6px; padding-top:8px; }
+.place-more-actions > div > :is(a,button) { min-width:0; min-height:44px; padding:8px; border:1px solid #d4e4e0; border-radius:8px; background:white; font-size:13px; text-align:center; overflow-wrap:anywhere; }
+.place-pin-picker, .planner-pin-editor { box-sizing:border-box; max-width:100%; min-width:0; }
+.place-pin-picker > * { min-width:0; max-width:100%; }
+.place-pin-picker input { width:100%; min-width:0; box-sizing:border-box; font-size:16px; }
+@media(max-width:760px) { .compact-place-list { grid-template-columns:minmax(0,1fr); } .compact-place-list .travel-card { gap:10px; padding:12px; } }

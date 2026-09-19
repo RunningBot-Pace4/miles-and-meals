@@ -1571,8 +1571,8 @@ export function PlannerClient({
                 <h2>{item.title}</h2>
                 {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km straight-line` : "Distance unavailable"}</strong> : null}
 
-                {isSpots && !activeClosed ? <button className="button secondary" type="button" disabled={busy} onClick={() => { setPinItem(item); window.setTimeout(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0); }}>Set / correct pin</button> : null}
-                <p className="travel-card-meta">
+
+                <p className="travel-card-meta" hidden={isSpots && !item.area && !item.subtype}>
                   {[item.area, item.subtype]
                     .filter(Boolean)
                     .join(" · ") ||
@@ -1607,7 +1607,7 @@ export function PlannerClient({
                   <p className="travel-notes">{item.notes}</p>
                 ) : null}
 
-                {item.linkUrl ? (
+                {!isSpots && item.linkUrl ? (
                   <div className="planner-card-link">
                     <a
                       href={item.linkUrl}
@@ -1619,7 +1619,18 @@ export function PlannerClient({
                   </div>
                 ) : null}
 
-                <div className="planner-card-footer">
+                {isSpots ? <div className="place-card-actions">
+                  {item.linkUrl ? <a href={item.linkUrl} target="_blank" rel="noreferrer">Map ↗</a> : null}
+                  <button type="button" onClick={() => setDetailItem(item)}>Details</button>
+                  {!activeClosed ? <details className="place-more-actions"><summary>More actions</summary><div>
+                    <button type="button" disabled={busy} onClick={() => { setPinItem(item); window.setTimeout(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0); }}>Set / correct pin</button>
+                    <button type="button" onClick={() => startEdit(item)}>Edit place</button>
+                    <a href={expenseHrefForItem(item)}>Add expense</a>
+                    {distanceSort === "plan" && visible.length > 1 ? <><button type="button" disabled={busy} onClick={() => void moveItem(item, -1)}>Move earlier ↑</button><button type="button" disabled={busy} onClick={() => void moveItem(item, 1)}>Move later ↓</button></> : null}
+                    <button className="text-danger" type="button" onClick={() => remove(item.id)}>Delete place</button>
+                  </div></details> : null}
+                </div> : null}
+                {!isSpots ? <div className="planner-card-footer">
                   <div className="planner-proposer">
                     <span className="planner-proposer-icon">✦</span>
                     <span>
@@ -1685,7 +1696,7 @@ export function PlannerClient({
                       </>
                     ) : null}
                   </div>
-                </div>
+                </div> : null}
               </div>
             </article>
           );
