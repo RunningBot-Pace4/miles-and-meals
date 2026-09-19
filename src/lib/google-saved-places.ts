@@ -1,3 +1,4 @@
+import { coordinates } from "@/lib/place-distance";
 export const MAX_PLACES_FILE_BYTES = 1_000_000;
 export const MAX_PLACES_PER_IMPORT = 250;
 
@@ -5,7 +6,25 @@ export type SavedPlaceDraft = {
   title: string;
   linkUrl: string;
   notes: string;
+  itemType?: "PLACE" | "FOOD" | "SHOPPING";
+  match?: {
+    matchedName: string;
+    formattedAddress: string;
+    googleMapsUri: string;
+    placeId: string;
+    latitude: number;
+    longitude: number;
+    confidence: "MATCHED" | "CHECK";
+  };
 };
+
+export function savedPlaceCategory(value: string): SavedPlaceDraft["itemType"] | null {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized || ["place", "places"].includes(normalized)) return "PLACE";
+  if (["meal", "meals", "food"].includes(normalized)) return "FOOD";
+  if (["shop", "shops", "shopping"].includes(normalized)) return "SHOPPING";
+  return null;
+}
 
 /** Accept navigation links only. These URLs are stored, never fetched by our server. */
 export function googleMapsPlaceKey(value: string): string | null {
@@ -90,7 +109,14 @@ export function parseGoogleSavedPlaces(source: string): {
     const get = (name: string) => (row[header.indexOf(name)] ?? "").trim();
     const title = get("title");
     const linkUrl = get("url");
-    const notes = [get("note"), get("tags") ? `Tags: ${get("tags")}` : "", get("comment") ? `Comment: ${get("comment")}` : ""].filter(Boolean).join("\n\n");
+    const itemType = savedPlaceCategory(get("category"));
+    const latitude = get("latitude"), longitude = get("longitude");
+    const point = latitude || longitude ? coordinates(`${latitude},${longitude}`) : null;
+    if (!itemType || ((latitude || longitude) && !point)) {
+      warnings.push(`Record ${index + 1} (${title}) was skipped. Use Place, Meals or Shop for Category and valid Latitude/Longitude values.`);
+      return;
+    }
+    const notes = [get("note"), get("tags") ? `Tags: ${get("tags")}` : "", get("comment") ? `Comment: ${get("comment")}` : "", point ? `Coordinates: ${point.latitude}, ${point.longitude}` : ""].filter(Boolean).join("\n\n");
     const key = googleMapsPlaceKey(linkUrl);
     if (row.length !== header.length || !title || title.length > 250 || !key || linkUrl.length > 1000 || notes.length > 1000) {
       warnings.push(`Record ${index + 1}${title ? ` (${title.slice(0, 60)})` : ""} was skipped. Check its title, Google Maps link and field lengths.`);
@@ -98,7 +124,7 @@ export function parseGoogleSavedPlaces(source: string): {
     }
     if (seen.has(key)) { duplicateCount++; return; }
     seen.add(key);
-    places.push({ title, linkUrl, notes });
+    places.push({ title, linkUrl, notes, ...(header.includes("category") ? { itemType } : {}) });
   });
   if (!places.length) throw new Error("No valid places found. Each place needs a title and an HTTPS Google Maps link.");
   return { places, warnings, duplicateCount };

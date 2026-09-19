@@ -75,6 +75,12 @@ v81 is the requested whole-function and whole-layout reliability pass on top of 
 
 For live flight retrieval, set the server-only `AVIATIONSTACK_API_KEY`. The provider plan must support the dates/features you use; without a key or an exact match, the UI keeps manual/uploaded details and explains the limitation.
 
+Google Saved-list place matching and nearest-to-stay ordering use the official
+Places API (New). Enable billing and Places API (New), then set the server-only
+`GOOGLE_MAPS_PLATFORM_API_KEY`. Restrict the key to Places API (New), configure
+Google Cloud quotas/budgets, and never expose it with a `NEXT_PUBLIC_` prefix.
+See `GOOGLE-PLACES-IMPORT.md` for the import workflow and policy notes.
+
 See `V81-FLIGHT-CLOSED-OFFLINE-MOBILE.md`.
 
 ---

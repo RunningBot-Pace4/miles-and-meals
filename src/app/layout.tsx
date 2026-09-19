@@ -134,6 +134,12 @@ export default function RootLayout({
 
         {children}
 
+        <footer className="legal-footer">
+          <a href="/privacy">Privacy</a>
+          <span aria-hidden="true">·</span>
+          <a href="/terms">Terms</a>
+        </footer>
+
         <NetworkStatusBanner />
         <NumericInputGuard />
         <PullToRefresh />

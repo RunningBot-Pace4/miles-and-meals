@@ -61,6 +61,16 @@ describe("places batch import API", () => {
     expect(state.records[0].notes).toBe("Edited later");
     expect(state.activityCount).toBe(1);
   });
+  it("stores the requested categories from one mixed upload", async () => {
+    const response = await POST(new Request("https://app.test/api/travel-items/import-places", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ countryId, places: [
+        { ...place(1), itemType: "PLACE" }, { ...place(2), itemType: "FOOD" }, { ...place(3), itemType: "SHOPPING" },
+      ] }),
+    }));
+    expect(response.status).toBe(201);
+    expect(state.records.map((record) => record.itemType)).toEqual(["PLACE", "FOOD", "SHOPPING"]);
+  });
   it("skips duplicates within a batch and appends new places in list order", async () => {
     state.records = [{ linkUrl: place(1).linkUrl, sortOrder: 7 }];
     const result = await (await call([place(1), place(2), place(2), place(3)])).json();

@@ -8,7 +8,7 @@ import {
 import { requirePageSession } from "@/lib/session";
 
 type PlannerPageProps = {
-  searchParams: Promise<{ add?: string }>;
+  searchParams: Promise<{ add?: string; tab?: string }>;
 };
 
 export default async function PlannerPage({
@@ -83,6 +83,7 @@ export default async function PlannerPage({
         trips={activeTrip.trips}
         activeTripId={activeTrip.tripId}
         initialShowForm={query.add === "1"}
+        initialTab={query.tab}
       />
     </div>
   );

@@ -1,16 +1,21 @@
 "use client";
 
-import { useId, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { googleMapsPlaceKey, MAX_PLACES_FILE_BYTES, parseGoogleSavedPlaces, type SavedPlaceDraft } from "@/lib/google-saved-places";
 import type { PlannerItem } from "@/lib/planner-types";
 import styles from "./GooglePlacesImport.module.css";
+import { distanceKm } from "@/lib/place-distance";
+import { googlePlaceId, type GooglePlaceMatch } from "@/lib/google-places";
+import { TripStay } from "@/components/TripStay";
 
-export function GooglePlacesImport({ countryId, tripName, existingLinks, disabled, onImported }: {
+export function GooglePlacesImport({ countryId, tripName, existingLinks, disabled, onImported, stay, onStaySaved }: {
   countryId: string;
   tripName: string;
   existingLinks: Array<string | null>;
   disabled?: boolean;
   onImported: (items: PlannerItem[]) => void;
+  stay?: PlannerItem;
+  onStaySaved: () => Promise<void>;
 }) {
   const panelId = useId();
   const [open, setOpen] = useState(false);
@@ -23,12 +28,63 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   const [reading, setReading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [nearestFirst, setNearestFirst] = useState(true);
+  const [stayMatch, setStayMatch] = useState<GooglePlaceMatch | null>(null);
   const submitting = useRef(false);
   const readVersion = useRef(0);
   const existing = new Set(existingLinks.map((link) => link ? googleMapsPlaceKey(link) : null).filter(Boolean));
   const available = places.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)));
-  const chosen = available.filter((place) => selected.has(place.linkUrl));
+  const stayPoint = stayMatch ? { latitude: stayMatch.latitude, longitude: stayMatch.longitude } : null;
+  const ordered = nearestFirst && stayPoint ? [...places].sort((a, b) => {
+    if (!a.match) return b.match ? 1 : 0;
+    if (!b.match) return -1;
+    return distanceKm(stayPoint, a.match) - distanceKm(stayPoint, b.match);
+  }) : places;
+  const chosen = ordered.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)) && selected.has(place.linkUrl));
   const unavailable = places.length - available.length;
+
+  function addGoogleLocation(place: SavedPlaceDraft, match: GooglePlaceMatch): SavedPlaceDraft {
+    const cleanNotes = place.notes.replace(/(?:^|\n)Google Place ID: [^\n]*/g, "").trim();
+    const placeIdNote = `Google Place ID: ${match.placeId}`;
+    const notes = [cleanNotes, placeIdNote].filter(Boolean).join("\n");
+    return { ...place, notes: notes.length <= 1000 ? notes : placeIdNote, match: { ...match } };
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const placeId = googlePlaceId(stay?.notes);
+    if (!placeId) { setStayMatch(null); return; }
+    const controller = new AbortController();
+    void fetch("/api/travel-items/resolve-places", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ countryId, places: [{ clientKey: "stay", title: stay?.title ?? "Accommodation", placeId }] }),
+      signal: controller.signal,
+    }).then(async (response) => {
+      const payload = await response.json() as { matches?: GooglePlaceMatch[] };
+      if (response.ok) setStayMatch(payload.matches?.[0] ?? null);
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, [countryId, open, stay?.notes, stay?.title]);
+
+  async function resolveFromGoogle(input: SavedPlaceDraft[], version: number): Promise<SavedPlaceDraft[]> {
+    const matches = new Map<string, GooglePlaceMatch>();
+    for (let start = 0; start < input.length; start += 25) {
+      const chunk = input.slice(start, start + 25);
+      const response = await fetch("/api/travel-items/resolve-places", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ countryId, places: chunk.map((place) => ({ clientKey: place.linkUrl, title: place.title })) }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      const payload = await response.json() as { error?: string; matches?: GooglePlaceMatch[] };
+      if (!response.ok) throw new Error(payload.error ?? "Unable to check locations on Google Maps.");
+      for (const match of payload.matches ?? []) matches.set(match.clientKey, match);
+      if (readVersion.current !== version) return [];
+    }
+    return input.map((place) => {
+      const match = matches.get(place.linkUrl);
+      return match ? addGoogleLocation(place, match) : place;
+    });
+  }
 
   async function loadFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -44,11 +100,13 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
     try {
       const result = parseGoogleSavedPlaces(await file.text());
       if (readVersion.current !== version) return;
+      const resolved = await resolveFromGoogle(result.places, version);
+      if (readVersion.current !== version) return;
       setFileName(file.name);
-      setPlaces(result.places);
+      setPlaces(resolved);
       setWarnings(result.warnings);
       setDuplicates(result.duplicateCount);
-      setSelected(new Set(result.places.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl))).map((place) => place.linkUrl)));
+      setSelected(new Set(resolved.filter((place) => place.match && !existing.has(googleMapsPlaceKey(place.linkUrl))).map((place) => place.linkUrl)));
     } catch (caught) {
       if (readVersion.current === version) setError(caught instanceof Error ? caught.message : "Unable to read this CSV.");
     } finally {
@@ -71,7 +129,7 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
       const payload = await response.json() as { error?: string; items: PlannerItem[]; imported: number; skipped: number };
       if (!response.ok) throw new Error(payload.error ?? "Unable to import places.");
       onImported(payload.items);
-      setMessage(`${payload.imported} ${payload.imported === 1 ? "place" : "places"} added to ${tripName}.${payload.skipped ? ` ${payload.skipped} already saved and skipped.` : ""} You can add visit dates from each place's Edit button.`);
+      setMessage(`${payload.imported} ${payload.imported === 1 ? "item" : "items"} added to ${tripName}, split into Places, Meals and Shop by category.${payload.skipped ? ` ${payload.skipped} already saved and skipped.` : ""} You can add visit dates using Edit.`);
       setPlaces([]); setSelected(new Set()); setFileName(""); setWarnings([]); setDuplicates(0);
     } catch (caught) {
       setError(caught instanceof Error && caught.name !== "TimeoutError" && caught.name !== "TypeError"
@@ -84,9 +142,10 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   }
 
   return <section className={styles.card} aria-label="Import saved places">
+    <TripStay countryId={countryId} stay={stay} disabled={disabled || busy} onSaved={onStaySaved} onMatched={setStayMatch} />
     <div className={styles.intro}>
       <span className={styles.icon} aria-hidden="true">↗</span>
-      <div className={styles.introText}><h3>Your saved spots, together</h3><p>Bring a Google Maps list into your trip.</p></div>
+      <div className={styles.introText}><h3>Your saved spots, together</h3><p>One list for Places, Meals and Shop.</p></div>
       <button className="button secondary" type="button" aria-expanded={open} aria-controls={panelId} disabled={disabled || busy || reading} onClick={() => setOpen((value) => !value)}>
         {open ? "Close import" : "Import Google list"}
       </button>
@@ -95,10 +154,10 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
       <div className={styles.destination}><span>Save places to</span><strong>{tripName}</strong><small>Use the Trip selector above to choose a different trip before uploading.</small></div>
       <label className={styles.file}>
         <strong>{reading ? "Reading your list…" : "Choose your saved-list CSV"}</strong>
-        <span>Google Takeout → Saved · up to 250 places · 1 MB</span>
+        <span>{reading ? "Finding each location on Google Maps…" : "Google Takeout → Saved · up to 250 places · 1 MB"}</span>
         <input aria-label="Google saved places CSV" type="file" accept=".csv,text/csv" disabled={busy || reading || disabled} onChange={(event) => void loadFile(event)} />
       </label>
-      {!places.length && !message ? <p className={styles.hint}>Preview first, then save. Names, notes and Google Maps links are copied; visit dates stay empty. This is a one-time import, not a live sync.</p> : null}
+      <p className={styles.hint}>Add a Category column to your CSV: Place, Meals or Shop. Blank categories go to Places. The app automatically checks every name with Google Maps, then sorts from your accommodation. This is a one-time import.</p>
       {places.length ? <>
         <div className={styles.reviewHeader}>
           <div><h4>{places.length} places found</h4><p>{fileName}</p></div>
@@ -107,17 +166,25 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
           </button>
         </div>
         {unavailable || duplicates ? <p className={styles.hint}>{unavailable ? `${unavailable} already in this trip. ` : ""}{duplicates ? `${duplicates} repeated entries removed from the file. ` : ""}Existing places are kept unchanged.</p> : null}
+        <p className={styles.hint}>{chosen.filter((p) => !p.itemType || p.itemType === "PLACE").length} Places · {chosen.filter((p) => p.itemType === "FOOD").length} Meals · {chosen.filter((p) => p.itemType === "SHOPPING").length} Shop</p>
+        <label className={styles.sort}><input type="checkbox" disabled={!stayPoint || busy} checked={nearestFirst && !!stayPoint} onChange={(event) => setNearestFirst(event.target.checked)} /> Nearest to accommodation first</label>
+        <p className={styles.hint}>{stayPoint ? `${places.filter((p) => p.match).length} of ${places.length} locations matched. Straight-line distance; unmatched locations stay last and are not selected. Order is saved within each tab.` : "Save your accommodation above to enable automatic nearest-to-farthest sorting."}</p>
         <ul className={styles.list} aria-label="Places to import">
-          {places.map((place) => {
+          {ordered.map((place) => {
             const saved = existing.has(googleMapsPlaceKey(place.linkUrl));
+            const point = place.match ? { latitude: place.match.latitude, longitude: place.match.longitude } : null;
             return <li key={place.linkUrl} className={saved ? styles.saved : undefined}>
               <label className={styles.place}>
-                <input type="checkbox" checked={!saved && selected.has(place.linkUrl)} disabled={saved || busy || disabled} onChange={(event) => {
+                <input type="checkbox" checked={!saved && selected.has(place.linkUrl)} disabled={saved || busy || disabled || !place.match} onChange={(event) => {
                   const checked = event.target.checked;
                   setSelected((current) => { const next = new Set(current); if (checked) next.add(place.linkUrl); else next.delete(place.linkUrl); return next; });
                 }} />
-                <span><strong>{place.title}</strong>{place.notes ? <small>{place.notes}</small> : null}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
+                <span><strong>{place.title}</strong>{place.match ? <><small>{place.match.matchedName} · {place.match.formattedAddress}</small><small><span className={styles.attribution} translate="no">Google Maps</span><span className={place.match.confidence === "MATCHED" ? styles.match : styles.check}>{place.match.confidence === "MATCHED" ? " · Matched" : " · Check this match"}</span></small></> : <small className={styles.missing}>Not found on Google Maps · edit the CSV name and upload again</small>}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
               </label>
+              <div className={styles.rowFields}>
+                <label>Category<select aria-label={`Category for ${place.title}`} value={place.itemType ?? "PLACE"} disabled={saved || busy} onChange={(event) => setPlaces((current) => current.map((p) => p.linkUrl === place.linkUrl ? { ...p, itemType: event.target.value as SavedPlaceDraft["itemType"] } : p))}><option value="PLACE">Places</option><option value="FOOD">Meals</option><option value="SHOPPING">Shop</option></select></label>
+                <small>{stayPoint && point ? `${distanceKm(stayPoint, point).toFixed(2)} km from stay` : "Distance unavailable"}</small>
+              </div>
               <a href={place.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${place.title} in Google Maps`}>Map ↗</a>
             </li>;
           })}

@@ -6,6 +6,14 @@
   color: #183f3b;
   overflow: hidden;
 }
+.stay { padding: 20px; border-bottom: 1px solid #baded8; background: #fff9ed; }
+.stay h3 { margin: 0; }
+.stayForm { display: grid; gap: 12px; margin-top: 16px; }
+.stayForm label, .rowFields label { display: grid; gap: 6px; min-width: 0; font-size: 13px; }
+.rowFields { display: grid; gap: 8px; flex: 0 1 240px; min-width: 0; }
+.card .rowFields input, .card .rowFields select, .card .stayForm input { min-width: 0; max-width: 100%; width: 100%; font-size: 16px; }
+.sort { display: flex; gap: 10px; align-items: center; }
+.card .sort input { width: 22px; height: 22px; inline-size: 22px; block-size: 22px; flex: 0 0 22px; }
 .intro { display: flex; align-items: center; gap: 14px; padding: 20px; flex-wrap: wrap; }
 .icon { display: grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 14px; background: #d0ece2; color: #136653; font-size: 25px; }
 .introText { flex: 1 1 180px; min-width: 0; }
@@ -34,6 +42,10 @@
 .list a { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; min-height: 44px; padding: 8px; color: #096b62; font-size: 13px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .saved { background: #f4f7f6; }
 .place .savedLabel { color: #11684e; font-weight: 700; }
+.place .match { color: #11684e; font-weight: 700; }
+.place .check { color: #95620b; font-weight: 700; }
+.place .missing { color: #a53a32; font-weight: 700; }
+.place .attribution { color: #5e5e5e; font-family: Roboto, sans-serif; font-size: 12px; font-style: normal; font-weight: 400; letter-spacing: normal; white-space: nowrap; }
 .footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .footer p { display: grid; gap: 4px; margin: 0; min-width: 0; flex: 1; }
 .footer p span { font-size: 13px; color: #536b68; overflow-wrap: anywhere; }
@@ -48,6 +60,9 @@
   .panel { padding: 0 14px 16px; gap: 14px; }
   .file { padding: 14px; }
   .list > li { padding: 12px; gap: 4px; }
+  .list > li { flex-wrap: wrap; }
+  .place { flex-basis: calc(100% - 70px); }
+  .rowFields { flex-basis: 100%; order: 3; margin-top: 10px; }
   .place { gap: 10px; }
   .footer { flex-direction: column; align-items: stretch; }
   .footer button { width: 100%; }

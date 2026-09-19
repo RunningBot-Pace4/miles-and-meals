@@ -22,6 +22,7 @@ import { compactOptionText } from "@/lib/display-text";
 import { PlanImport } from "@/components/PlanImport";
 import { GooglePlacesImport } from "@/components/GooglePlacesImport";
 import type { PlannerItem } from "@/lib/planner-types";
+import { plannerTab, plannerTabUrl } from "@/lib/planner-tab";
 import { SmartDayRoute } from "@/components/SmartDayRoute";
 
 type CountryOption = {
@@ -678,16 +679,18 @@ export function PlannerClient({
   trips,
   activeTripId,
   initialShowForm = false,
+  initialTab,
 }: {
   countries: CountryOption[];
   items: PlannerItem[];
   trips: TripOption[];
   activeTripId: string;
   initialShowForm?: boolean;
+  initialTab?: string;
 }) {
   const [itemsState, setItemsState] =
     useState<PlannerItem[]>(items);
-  const [tab, setTab] = useState<TabValue>("ITINERARY");
+  const [tab, setTab] = useState<TabValue>(() => plannerTab(initialTab));
   const [showForm, setShowForm] = useState(initialShowForm);
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
   const [detailItem, setDetailItem] = useState<PlannerItem | null>(null);
@@ -1240,7 +1243,7 @@ export function PlannerClient({
         );
       }
 
-      window.location.assign("/planner");
+      window.location.assign(plannerTabUrl(tab));
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -1253,6 +1256,7 @@ export function PlannerClient({
 
   function switchTab(nextTab: TabValue) {
     setTab(nextTab);
+    window.history.replaceState(window.history.state, "", plannerTabUrl(nextTab));
     setShowForm(false);
     setEditingItem(null);
     setDetailItem(null);
@@ -1375,13 +1379,15 @@ export function PlannerClient({
         </div>
       ) : null}
 
-      {tab === "PLACE" ? (
+      {["PLACE", "FOOD", "SHOPPING"].includes(tab) ? (
         <GooglePlacesImport
           key={defaultCountryId}
           countryId={defaultCountryId}
           tripName={activeTrip?.name ?? countries[0]?.tripName ?? "this trip"}
           disabled={activeClosed || busy}
-          existingLinks={itemsState.filter((item) => item.itemType === "PLACE" && item.countryId === defaultCountryId).map((item) => item.linkUrl)}
+          existingLinks={itemsState.filter((item) => ["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) && item.countryId === defaultCountryId).map((item) => item.linkUrl)}
+          stay={itemsState.find((item) => item.countryId === defaultCountryId && item.subtype === "Accommodation" && item.provider === "Miles & Meals stay")}
+          onStaySaved={refreshItems}
           onImported={(saved) => {
             setItemsState((current) => {
               const ids = new Set(current.map((item) => item.id));

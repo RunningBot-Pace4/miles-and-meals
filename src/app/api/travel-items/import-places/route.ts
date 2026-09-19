@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { createTransactionalDatabase } from "@/db/transaction";
 import { travelItems, trips } from "@/db/schema";
@@ -17,6 +17,7 @@ const importSchema = z.object({
     title: z.string().trim().min(1).max(250),
     linkUrl: z.string().trim().max(1000).refine((value) => !!googleMapsPlaceKey(value)),
     notes: z.string().trim().max(1000).default(""),
+    itemType: z.enum(["PLACE", "FOOD", "SHOPPING"]).default("PLACE"),
   })).min(1).max(MAX_PLACES_PER_IMPORT),
 });
 
@@ -51,12 +52,12 @@ export async function POST(request: Request) {
       if (!trip) return { error: "Trip not found.", status: 404 } as const;
       if (trip.status === "CLOSED") return { error: "This trip is closed. Reopen it before importing places.", status: 423 } as const;
       const existing = await tx.select({ linkUrl: travelItems.linkUrl, sortOrder: travelItems.sortOrder })
-        .from(travelItems).where(and(eq(travelItems.countryId, input.countryId), eq(travelItems.itemType, "PLACE")));
+        .from(travelItems).where(and(eq(travelItems.countryId, input.countryId), inArray(travelItems.itemType, ["PLACE", "FOOD", "SHOPPING"])));
       const fresh = newSavedPlaces(input.places, existing.map((item) => item.linkUrl));
       const nextOrder = existing.reduce((max, item) => Math.max(max, item.sortOrder), -1) + 1;
       const items = fresh.length ? await tx.insert(travelItems).values(fresh.map((place, index) => ({
         countryId: input.countryId,
-        itemType: "PLACE",
+        itemType: place.itemType ?? "PLACE",
         title: place.title,
         linkUrl: place.linkUrl,
         notes: place.notes || null,
