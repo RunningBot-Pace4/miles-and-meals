@@ -3,9 +3,11 @@ import { useRef, useState } from "react";
 import type { PlannerItem } from "@/lib/planner-types";
 import type { GooglePlaceMatch } from "@/lib/google-places";
 import { placeCoordinates } from "@/lib/place-distance";
+import { PlacePinPicker } from "@/components/PlacePinPicker";
 import styles from "./GooglePlacesImport.module.css";
 
 export function TripStay({ countryId, stay, disabled, onSaved, onMatched }: { countryId: string; stay?: PlannerItem; disabled?: boolean; onSaved: () => Promise<void>; onMatched: (match: GooglePlaceMatch) => void }) {
+  const [pinning, setPinning] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(stay?.title ?? "");
   const [query, setQuery] = useState("");
@@ -58,6 +60,8 @@ export function TripStay({ countryId, stay, disabled, onSaved, onMatched }: { co
       <label>Find your location<input value={query} required maxLength={1000} onChange={event => { setQuery(event.target.value); setMatch(null); setError(""); }} placeholder="Hotel, street address or full map-pin link" disabled={busy} /></label>
       <p className={styles.hint}>For an apartment, search the building or street address. Your stay name can be anything you like.</p>
       <button className="button secondary" disabled={busy || disabled || !query.trim()} type="submit">{busy ? "Please wait…" : "Find location"}</button>
+      <button className="button secondary" type="button" disabled={busy} onClick={() => setPinning(true)}>Choose pin on map</button>
+      {pinning ? <PlacePinPicker initial={match ?? placeCoordinates(stay?.linkUrl ?? "", stay?.notes ?? "")} onCancel={() => setPinning(false)} onChoose={point => { setMatch({ ...point, clientKey: "stay", title: name || "My stay", matchedName: name || "Selected pin", formattedAddress: "Exact pin selected by you", placeId: "", googleMapsUri: "", confidence: "MATCHED" }); setPinning(false); setError(""); }} /> : null}
       {match ? <div className={styles.stayPreview}>
         <strong>Is this the right location?</strong><p>{match.matchedName}</p><p>{match.formattedAddress}</p>
         <a href={`https://www.openstreetmap.org/?mlat=${match.latitude}&mlon=${match.longitude}#map=18/${match.latitude}/${match.longitude}`} target="_blank" rel="noreferrer">Check pin on map ↗</a>
@@ -67,6 +71,6 @@ export function TripStay({ countryId, stay, disabled, onSaved, onMatched }: { co
     </form> : null}
     {error ? <p className="form-error" role="alert">{error}</p> : null}
     {message ? <p role="status">{message}</p> : null}
-    <small>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></small>
+
   </div>;
 }

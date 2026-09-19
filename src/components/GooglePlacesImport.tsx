@@ -6,6 +6,7 @@ import type { PlannerItem } from "@/lib/planner-types";
 import styles from "./GooglePlacesImport.module.css";
 import { distanceKm, placeCoordinates } from "@/lib/place-distance";
 import { type GooglePlaceMatch } from "@/lib/google-places";
+import { PlacePinPicker } from "@/components/PlacePinPicker";
 import { TripStay } from "@/components/TripStay";
 
 export function GooglePlacesImport({ countryId, tripName, existingLinks, disabled, onImported, stay, onStaySaved }: {
@@ -18,6 +19,7 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   onStaySaved: () => Promise<void>;
 }) {
   const panelId = useId();
+  const [pinning, setPinning] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [fileName, setFileName] = useState("");
   const [places, setPlaces] = useState<SavedPlaceDraft[]>([]);
@@ -33,14 +35,14 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   const submitting = useRef(false);
   const readVersion = useRef(0);
   const existing = new Set(existingLinks.map((link) => link ? googleMapsPlaceKey(link) : null).filter(Boolean));
-  const available = places.filter((place) => !!place.match && !existing.has(googleMapsPlaceKey(place.linkUrl)));
+  const available = places.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)));
   const stayPoint = stayMatch ? { latitude: stayMatch.latitude, longitude: stayMatch.longitude } : null;
   const ordered = nearestFirst && stayPoint ? [...places].sort((a, b) => {
     if (!a.match) return b.match ? 1 : 0;
     if (!b.match) return -1;
     return distanceKm(stayPoint, a.match) - distanceKm(stayPoint, b.match);
   }) : places;
-  const chosen = ordered.filter((place) => !!place.match && !existing.has(googleMapsPlaceKey(place.linkUrl)) && selected.has(place.linkUrl));
+  const chosen = ordered.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl)) && selected.has(place.linkUrl));
   const unavailable = places.filter((place) => existing.has(googleMapsPlaceKey(place.linkUrl))).length;
 
   function addGoogleLocation(place: SavedPlaceDraft, match: GooglePlaceMatch): SavedPlaceDraft {
@@ -70,19 +72,22 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
 
   async function resolveFromGoogle(input: SavedPlaceDraft[], version: number): Promise<SavedPlaceDraft[]> {
     const matches = new Map<string, GooglePlaceMatch>();
-    for (let start = 0; start < input.length; start += 2) {
-      const chunk = input.slice(start, start + 2);
+    const needsLookup = input.filter(place => !placeCoordinates(place.linkUrl, place.notes));
+    for (let start = 0; start < needsLookup.length; start += 2) {
+      const chunk = needsLookup.slice(start, start + 2);
       const response = await fetch("/api/travel-items/resolve-places", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ countryId, places: chunk.map((place) => ({ clientKey: place.linkUrl, title: place.title })) }),
         signal: AbortSignal.timeout(30_000),
       });
       const payload = await response.json() as { error?: string; matches?: GooglePlaceMatch[] };
-      if (!response.ok) throw new Error(payload.error ?? "Unable to check locations using open map data.");
+      if (!response.ok) { setError("Location lookup unavailable. Your list can still be imported; use Set exact pin to add distances."); break; }
       for (const match of payload.matches ?? []) matches.set(match.clientKey, match);
       if (readVersion.current !== version) return [];
     }
     return input.map((place) => {
+      const point = placeCoordinates(place.linkUrl, place.notes);
+      if (point) return { ...place, notes: `Coordinates: ${point.latitude}, ${point.longitude}\n${place.notes}`.slice(0, 1000), match: { ...point, matchedName: place.title, formattedAddress: "Pin from imported data", googleMapsUri: "", placeId: "", confidence: "MATCHED" as const } };
       const match = matches.get(place.linkUrl);
       return match ? addGoogleLocation(place, match) : place;
     });
@@ -102,13 +107,15 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
     try {
       const result = parseGoogleSavedPlaces(await file.text());
       if (readVersion.current !== version) return;
-      const resolved = await resolveFromGoogle(result.places, version);
+      let resolved = result.places;
+      try { resolved = await resolveFromGoogle(result.places, version); }
+      catch { setError("Location lookup unavailable. You can still import the list and add pins."); }
       if (readVersion.current !== version) return;
       setFileName(file.name);
       setPlaces(resolved);
       setWarnings(result.warnings);
       setDuplicates(result.duplicateCount);
-      setSelected(new Set(resolved.filter((place) => place.match && !existing.has(googleMapsPlaceKey(place.linkUrl))).map((place) => place.linkUrl)));
+      setSelected(new Set(resolved.filter((place) => !existing.has(googleMapsPlaceKey(place.linkUrl))).map((place) => place.linkUrl)));
     } catch (caught) {
       if (readVersion.current === version) setError(caught instanceof Error ? caught.message : "Unable to read this CSV.");
     } finally {
@@ -170,23 +177,28 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
         {unavailable || duplicates ? <p className={styles.hint}>{unavailable ? `${unavailable} already in this trip. ` : ""}{duplicates ? `${duplicates} repeated entries removed from the file. ` : ""}Existing places are kept unchanged.</p> : null}
         <p className={styles.hint}>{chosen.filter((p) => !p.itemType || p.itemType === "PLACE").length} Places · {chosen.filter((p) => p.itemType === "FOOD").length} Meals · {chosen.filter((p) => p.itemType === "SHOPPING").length} Shop</p>
         <label className={styles.sort}><input type="checkbox" disabled={!stayPoint || busy} checked={nearestFirst && !!stayPoint} onChange={(event) => setNearestFirst(event.target.checked)} /> Nearest to accommodation first</label>
-        <p className={styles.hint}>{stayPoint ? `${places.filter((p) => p.match).length} of ${places.length} locations matched. Straight-line distance; unmatched locations stay last and are not selected. Order is saved within each tab.` : "Save your accommodation above to enable automatic nearest-to-farthest sorting."}</p>
+        <p className={styles.hint}>{stayPoint ? `${places.filter((p) => p.match).length} of ${places.length} locations matched. Straight-line distance; unmatched locations stay last. Order is saved within each tab.` : "Save your accommodation above to enable automatic nearest-to-farthest sorting."}</p>
         <ul className={styles.list} aria-label="Places to import">
           {ordered.map((place) => {
             const saved = existing.has(googleMapsPlaceKey(place.linkUrl));
             const point = place.match ? { latitude: place.match.latitude, longitude: place.match.longitude } : null;
             return <li key={place.linkUrl} className={saved ? styles.saved : undefined}>
               <label className={styles.place}>
-                <input type="checkbox" checked={!saved && selected.has(place.linkUrl)} disabled={saved || busy || disabled || !place.match} onChange={(event) => {
+                <input type="checkbox" checked={!saved && selected.has(place.linkUrl)} disabled={saved || busy || disabled} onChange={(event) => {
                   const checked = event.target.checked;
                   setSelected((current) => { const next = new Set(current); if (checked) next.add(place.linkUrl); else next.delete(place.linkUrl); return next; });
                 }} />
-                <span><strong>{place.title}</strong>{place.match ? <><small>{place.match.matchedName} · {place.match.formattedAddress}</small><small><span className={styles.attribution}>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></span><span className={place.match.confidence === "MATCHED" ? styles.match : styles.check}>{place.match.confidence === "MATCHED" ? " · Matched" : " · Check this match"}</span></small></> : <small className={styles.missing}>Not found using open map data · edit the CSV name and upload again</small>}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
+                <span><strong>{place.title}</strong>{place.match ? <><small>{place.match.matchedName} · {place.match.formattedAddress}</small><small><span className={place.match.confidence === "MATCHED" ? styles.match : styles.check}>{place.match.confidence === "MATCHED" ? " · Matched" : " · Check this match"}</span></small></> : <small className={styles.missing}>Location not matched · you can still import this place and add a pin</small>}{saved ? <small className={styles.savedLabel}>Already saved</small> : null}</span>
               </label>
               <div className={styles.rowFields}>
                 <label>Category<select aria-label={`Category for ${place.title}`} value={place.itemType ?? "PLACE"} disabled={saved || busy} onChange={(event) => setPlaces((current) => current.map((p) => p.linkUrl === place.linkUrl ? { ...p, itemType: event.target.value as SavedPlaceDraft["itemType"] } : p))}><option value="PLACE">Places</option><option value="FOOD">Meals</option><option value="SHOPPING">Shop</option></select></label>
                 <small>{stayPoint && point ? `${distanceKm(stayPoint, point).toFixed(2)} km from stay` : "Distance unavailable"}</small>
               </div>
+              <button type="button" className="button secondary" disabled={busy || saved} onClick={() => setPinning(place.linkUrl)}>Set exact pin</button>
+              {pinning === place.linkUrl ? <PlacePinPicker initial={place.match ?? stayPoint} onCancel={() => setPinning(null)} onChoose={point => {
+                setPlaces(current => current.map(p => p.linkUrl === place.linkUrl ? { ...p, notes: `Coordinates: ${point.latitude}, ${point.longitude}\n${p.notes.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim()}`.slice(0, 1000), match: { ...point, matchedName: p.title, formattedAddress: "Pin selected by you", googleMapsUri: "", placeId: "", confidence: "MATCHED" } } : p));
+                setPinning(null);
+              }} /> : null}
               <a href={place.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${place.title} in Google Maps`}>Map ↗</a>
             </li>;
           })}

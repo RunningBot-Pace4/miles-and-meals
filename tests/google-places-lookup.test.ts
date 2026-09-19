@@ -27,3 +27,7 @@ describe("free place lookup", () => {
     expect(placeMatchConfidence("Cafe", "Other Hotel")).toBe("CHECK");
   });
 });
+
+it("rejects a country-named business as the result of a detailed address", async () => {
+  expect(await searchFreePlace({ ...input, title: "6-8 Kings Road", fetcher: async () => Response.json({ results: [{ name: "Hong Kong", lat: 22.28, lon: 114.15, result_type: "amenity" }] }) })).toBeNull();
+});

@@ -9,6 +9,7 @@ export async function searchFreePlace(input: { clientKey: string; title: string;
   const body = await response.json() as { results?: Array<{ lat?: number; lon?: number; name?: string; formatted?: string; place_id?: string; result_type?: string }> };
   const place = body.results?.find(p => Number.isFinite(p.lat) && Number.isFinite(p.lon) && !["country", "state", "county", "city", "postcode", "suburb"].includes(p.result_type ?? ""));
   if (!place) return null;
+  if ((place.name ?? "").trim().toLowerCase() === input.countryName.trim().toLowerCase() && input.title.trim().toLowerCase() !== input.countryName.trim().toLowerCase()) return null;
   const matchedName = place.name || place.formatted || input.title;
   return { clientKey: input.clientKey, title: input.title, matchedName, formattedAddress: place.formatted ?? "", latitude: place.lat!, longitude: place.lon!, placeId: place.place_id ?? "", googleMapsUri: "", confidence: placeMatchConfidence(input.title, matchedName) };
 }

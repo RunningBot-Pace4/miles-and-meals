@@ -138,6 +138,7 @@ export default function RootLayout({
           <a href="/privacy">Privacy</a>
           <span aria-hidden="true">·</span>
           <a href="/terms">Terms</a>
+          <small>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a></small>
         </footer>
 
         <NetworkStatusBanner />

@@ -1,5 +1,6 @@
 "use client";
 import { comparePlaceDistances, distanceKm, placeCoordinates } from "@/lib/place-distance";
+import { PlacePinPicker } from "@/components/PlacePinPicker";
 import type { GooglePlaceMatch } from "@/lib/google-places";
 
 import {
@@ -700,6 +701,7 @@ export function PlannerClient({
   const [busy, setBusy] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState("Updating your plan");
 
+  const [pinItem, setPinItem] = useState<PlannerItem | null>(null);
   const [distanceSort, setDistanceSort] = useState("nearest");
   const [distances, setDistances] = useState<Record<string, number>>({});
   const [distanceStatus, setDistanceStatus] = useState("");
@@ -869,7 +871,7 @@ export function PlannerClient({
           if (match) values[row.id] = distanceKm(start, match);
           if (!cancelled) setDistances({ ...values });
         }
-        if (!cancelled) { setDistances(values); setDistanceStatus(`${Object.keys(values).length} distances calculated · Straight-line km from ${stayRow.title}. Unmatched places appear last.`); }
+        if (!cancelled) { setDistances(values); setDistanceStatus(`Straight-line km from ${stayRow.title}. Unmatched places appear last.`); }
       } catch (error) { if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Unable to calculate distances."); }
     })();
     return () => { cancelled = true; controller.abort(); };
@@ -1502,10 +1504,20 @@ export function PlannerClient({
         </p>
       ) : null}
 
+      {pinItem ? <div className="planner-pin-editor"><h3>Set location · {pinItem.title}</h3><PlacePinPicker initial={placeCoordinates(pinItem.linkUrl ?? "", pinItem.notes ?? "") ?? placeCoordinates(itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.linkUrl ?? "", itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.notes ?? "")} onCancel={() => setPinItem(null)} onChoose={async point => {
+        if (busy || activeClosed) return;
+        setBusy(true); setError("");
+        try {
+          const preserved = Object.fromEntries(Object.entries(pinItem).map(([key, value]) => [key, value ?? ""]));
+          const response = await fetch(`/api/travel-items/${pinItem.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...preserved, expectedUpdatedAt: pinItem.updatedAt, notes: `Coordinates: ${point.latitude}, ${point.longitude}\n${(pinItem.notes ?? "").replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim()}`.slice(0,1000) }) });
+          const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not save pin.");
+          await refreshItems(); setPinItem(null);
+        } catch (e) { setError(e instanceof Error ? e.message : "Could not save pin."); } finally { setBusy(false); }
+      }} /></div> : null}
       {isSpots ? <div className="place-distance-toolbar">
         <label>Sort places <select value={distanceSort} onChange={event => setDistanceSort(event.target.value)}><option value="nearest">Nearest first · ascending</option><option value="farthest">Farthest first · descending</option><option value="plan">Plan order</option></select></label>
-        <p role="status">{distanceStatus}</p>
-        <small>Powered by <a href="https://www.geoapify.com/">Geoapify</a> · <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a></small>
+        <p role="status">{visible.filter(item => distances[item.id] !== undefined).length} / {visible.length} places located in this tab · {distanceStatus}</p>
+
       </div> : null}
       <section
         className={
@@ -1557,8 +1569,9 @@ export function PlannerClient({
                 </div>
 
                 <h2>{item.title}</h2>
-                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${distances[item.id].toFixed(2)} km from stay` : "Distance unavailable"}</strong> : null}
+                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km straight-line` : "Distance unavailable"}</strong> : null}
 
+                {isSpots && !activeClosed ? <button className="button secondary" type="button" disabled={busy} onClick={() => { setPinItem(item); window.setTimeout(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0); }}>Set / correct pin</button> : null}
                 <p className="travel-card-meta">
                   {[item.area, item.subtype]
                     .filter(Boolean)

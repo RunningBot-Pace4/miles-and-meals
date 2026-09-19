@@ -20152,3 +20152,8 @@ select {
 .compact-place-list .travel-card-icon { width:32px; height:32px; font-size:18px; }
 .place-distance-badge { display:inline-block; color:#086e65; background:#e0f5ed; border-radius:8px; padding:5px 9px; font-size:14px; }
 @media(max-width:600px) { .compact-place-list { grid-template-columns:minmax(0,1fr); } .place-distance-toolbar { align-items:stretch; } .place-distance-toolbar label, .place-distance-toolbar select { width:100%; } }
+
+.place-pin-picker { display:grid; gap:12px; width:100%; min-width:0; padding:12px; border:1px solid #a9d7ce; background:#fff; border-radius:14px; grid-column:1/-1; }
+.place-pin-picker p { margin:0; font-size:14px; }
+.place-pin-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.planner-pin-editor { padding:16px; margin:12px 0; background:#eef9f7; border-radius:16px; }
