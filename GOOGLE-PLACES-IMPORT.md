@@ -28,8 +28,7 @@ No manual coordinate entry is required. Real results for your list remain unveri
 Original Google links remain available for checking the exact branch.
 
 Imported rows retain their original names/links/categories, a Geoapify ID and selected order.
-Coordinates and matched addresses are used in the preview. Saved accommodation names are looked up again
-when opening an import. Earlier Google-based accommodation records can be resolved by their original name.
+Place coordinates and matched addresses are used in the preview. Confirmed accommodation coordinates are stored and reused. Legacy stays without a confirmed pin are looked up by name. Earlier Google-based accommodation records can be resolved by their original name.
 Existing imported rows are skipped rather than moved. Changing the stay does not reorder existing records.
 
 ## Validation and deployment
@@ -38,4 +37,7 @@ Four financial integration tests require TEST_DATABASE_URL. A real-device PWA im
 The source archive is not a live deployment. Keep your existing Neon and Vercel configuration.
 
 ## Saved place distance display
-Saved Places, Meals and Shop now resolve distances automatically when a stay exists. Each located item shows km from stay. Use Nearest first, Farthest first, or Plan order. Unmatched items remain last; distances are straight-line estimates. Results are reused in memory during the current planner session to reduce calls. Existing stays with weak matches require editing. New stays show a name/address confirmation before saving. Compact cards keep all actions available; full metadata is in View details.
+Saved Places, Meals and Shop now resolve distances automatically when a stay exists. Each located item shows km from stay. Use Nearest first, Farthest first, or Plan order. Unmatched items remain last; distances are straight-line estimates. Results are reused in memory during the current planner session to reduce calls. Legacy stays with weak matches require editing. New stays show a result card and map link before the user confirms the location. Compact cards keep all actions available; full metadata is in View details.
+
+## Easier accommodation search
+Use an optional friendly name and a separate hotel/address search. Review the result and open its map pin before choosing Use this location & save stay. Full map links with explicit pin coordinates also work without a lookup. Short links and camera-center URLs are not treated as exact pins. Confirmed stay coordinates are stored with the stay and reused for import and saved-place distance calculations. A changed stay pin recalculates distances. No browser confirmation popup or name-only rejection is used.

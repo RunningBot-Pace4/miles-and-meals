@@ -1,5 +1,5 @@
 "use client";
-import { comparePlaceDistances, distanceKm } from "@/lib/place-distance";
+import { comparePlaceDistances, distanceKm, placeCoordinates } from "@/lib/place-distance";
 import type { GooglePlaceMatch } from "@/lib/google-places";
 
 import {
@@ -836,16 +836,17 @@ export function PlannerClient({
   const defaultCountryId =
     countries[0]?.id ?? "";
 
-  const distanceInput = JSON.stringify(itemsState.filter(item => item.countryId === defaultCountryId && (["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) || (item.subtype === "Accommodation" && item.provider === "Miles & Meals stay"))).map(item => ({ id: item.id, title: item.title, stay: item.subtype === "Accommodation" && item.provider === "Miles & Meals stay" })));
+  const distanceInput = JSON.stringify(itemsState.filter(item => item.countryId === defaultCountryId && (["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) || (item.subtype === "Accommodation" && item.provider === "Miles & Meals stay"))).map(item => ({ id: item.id, title: item.title, point: placeCoordinates(item.linkUrl ?? "", item.notes ?? ""), stay: item.subtype === "Accommodation" && item.provider === "Miles & Meals stay" })));
   useEffect(() => {
     if (!isSpots) return;
-    const rows = JSON.parse(distanceInput) as Array<{ id: string; title: string; stay: boolean }>;
+    const rows = JSON.parse(distanceInput) as Array<{ id: string; title: string; point?: { latitude: number; longitude: number } | null; stay: boolean }>;
     const stayRow = rows.find(row => row.stay);
     setDistances({});
     if (!stayRow) { setDistanceStatus("Add your stay to calculate distances."); return; }
     let cancelled = false;
     const controller = new AbortController();
     const lookup = async (row: typeof rows[number]) => {
+      if (row.point) return { ...row.point } as GooglePlaceMatch;
       const key = `${defaultCountryId}:${row.id}:${row.title}`;
       if (locationCache.current.has(key)) return locationCache.current.get(key);
       const response = await fetch("/api/travel-items/resolve-places", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, places: [{ clientKey: row.id, title: row.title }] }), signal: controller.signal });

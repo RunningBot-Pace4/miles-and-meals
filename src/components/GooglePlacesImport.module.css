@@ -67,3 +67,7 @@
   .footer { flex-direction: column; align-items: stretch; }
   .footer button { width: 100%; }
 }
+
+.stayPreview { display:grid; gap:10px; padding:16px; background:white; border:1px solid #8bc8bf; border-radius:14px; min-width:0; }
+.stayPreview p { margin:0; overflow-wrap:anywhere; }
+.stayPreview a { color:#086e65; font-weight:700; text-decoration:underline; }

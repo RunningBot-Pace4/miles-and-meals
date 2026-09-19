@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 import { googleMapsPlaceKey, MAX_PLACES_FILE_BYTES, parseGoogleSavedPlaces, type SavedPlaceDraft } from "@/lib/google-saved-places";
 import type { PlannerItem } from "@/lib/planner-types";
 import styles from "./GooglePlacesImport.module.css";
-import { distanceKm } from "@/lib/place-distance";
+import { distanceKm, placeCoordinates } from "@/lib/place-distance";
 import { type GooglePlaceMatch } from "@/lib/google-places";
 import { TripStay } from "@/components/TripStay";
 
@@ -53,6 +53,8 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
   useEffect(() => {
     if (!open) return;
     if (!stay) { setStayMatch(null); return; }
+    const point = placeCoordinates(stay.linkUrl ?? "", stay.notes ?? "");
+    if (point) { setStayMatch({ ...point, title: stay.title, clientKey: "stay", matchedName: stay.title, formattedAddress: "Confirmed stay pin", placeId: "", googleMapsUri: "", confidence: "MATCHED" }); return; }
     setStayMatch(null);
     const controller = new AbortController();
     void fetch("/api/travel-items/resolve-places", {
