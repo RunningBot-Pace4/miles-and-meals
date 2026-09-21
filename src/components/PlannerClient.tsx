@@ -870,27 +870,48 @@ export function PlannerClient({
         if (!start) throw new Error("Stay location needs checking. Edit stay and enter the full hotel name and address.");
         const values: Record<string, number> = {};
         const minutes: Record<string, number> = {};
+        let unavailable = 0;
+        let lastRouteError = "";
         for (const row of rows.filter(row => !row.stay)) {
           if (cancelled) return;
-          const match = await lookup(row);
+          let match: GooglePlaceMatch | null = null;
+          try {
+            match = (await lookup(row)) ?? null;
+          } catch (error) {
+            unavailable += 1;
+            lastRouteError = error instanceof Error ? error.message : "Location lookup unavailable.";
+          }
           if (match) {
             const key = JSON.stringify([defaultCountryId, start.latitude, start.longitude, match.latitude, match.longitude, routeMode]);
             let route = routeCache.current.get(key);
             if (route === undefined) {
-              const response = await fetch("/api/travel-items/route-distance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, start, end: match, mode: routeMode }), signal: controller.signal });
-              const data = await response.json();
-              if (!response.ok) throw new Error(data.error || "Route unavailable.");
-              route = data.route;
-              if (routeCache.current.size > 500) routeCache.current.clear();
-              routeCache.current.set(key, route ?? null);
-              await new Promise(resolve => setTimeout(resolve, 300));
+              try {
+                const response = await fetch("/api/travel-items/route-distance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, start, end: match, mode: routeMode }), signal: controller.signal });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Route unavailable.");
+                route = data.route;
+                if (routeCache.current.size > 500) routeCache.current.clear();
+                routeCache.current.set(key, route ?? null);
+                await new Promise(resolve => setTimeout(resolve, 300));
+              } catch (error) {
+                if (controller.signal.aborted) return;
+                unavailable += 1;
+                lastRouteError = error instanceof Error ? error.message : "Route unavailable.";
+                route = null;
+              }
             }
             if (route) { values[row.id] = route.km; minutes[row.id] = route.minutes; }
           }
           if (!cancelled) setRouteMinutes({ ...minutes });
           if (!cancelled) setDistances({ ...values });
         }
-        if (!cancelled) { setDistances(values); setDistanceStatus(`${routeMode === "walk" ? "Walking" : "Driving"} routes from ${stayRow.title}. Estimated times, not live traffic. Unavailable routes appear last.`); }
+        if (!cancelled) {
+          setDistances(values);
+          const modeLabel = routeMode === "walk" ? "Walking" : "Driving";
+          setDistanceStatus(Object.keys(values).length === 0 && lastRouteError
+            ? lastRouteError
+            : `${modeLabel} routes from ${stayRow.title}. ${unavailable ? `${unavailable} unavailable. ` : ""}Estimated times, not live traffic.`);
+        }
       } catch (error) { if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Unable to calculate distances."); }
     })();
     return () => { cancelled = true; controller.abort(); };

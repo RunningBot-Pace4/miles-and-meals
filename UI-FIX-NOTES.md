@@ -18,3 +18,10 @@ Validation: unit tests and production build. Real iPhone installed-PWA and authe
 - Import preview distances remain explicitly labelled straight-line; saved-place views use the selected walking/driving route. Provider routes may differ from Google Maps and estimated times do not include live traffic.
 - Mobile itinerary cards now retain padding and wrap action buttons. Undated accommodation uses a compact Your stay banner; coordinate metadata stays saved but is omitted from card notes.
 - Validation: 375 unit tests passed; four database integration tests skipped. Provider responses tested with mocks. Live route calls and installed iPhone PWA are not verified in this environment.
+
+## Route distance compatibility fix
+
+- Accepts Geoapify's actual lowercase `meters` unit as well as equivalent metric spellings. The earlier exact `Meters` comparison rejected valid route responses.
+- A failed place route no longer stops all remaining places; successful cards continue to receive distance and duration.
+- Routing-key restrictions, allowance limits, and temporary provider failures now produce distinct user-facing messages.
+- Service-worker cache revision increased so installed PWAs fetch this correction after deployment.

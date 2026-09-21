@@ -16,5 +16,8 @@ export async function POST(request: Request) {
   const apiKey = process.env.GEOAPIFY_API_KEY?.trim();
   if (!apiKey) return Response.json({ error: "Route lookup needs GEOAPIFY_API_KEY in Vercel." }, { status: 503 });
   try { return Response.json({ route: await routeDistance(input.data.start, input.data.end, input.data.mode, apiKey) }); }
-  catch { return Response.json({ error: "Route lookup unavailable or allowance reached. Try again later." }, { status: 502 }); }
+  catch (error) {
+    const message = error instanceof Error ? error.message : "Route lookup is temporarily unavailable.";
+    return Response.json({ error: message }, { status: message.includes("allowance") ? 429 : 502 });
+  }
 }
