@@ -29,7 +29,7 @@ describe("V92.21 single navigation and restored Halo", () => {
   });
 
   it("shows one Halo indicator without launching a timeout navigation", () => {
-    expect(navigation).toContain("createPortal(<BrandedLoadingScreen />");
+    expect(navigation).toContain("navigation-progress");
     expect(navigation).toContain("NAVIGATION_INDICATOR_TIMEOUT_MS");
     expect(navigation).toContain("never start a second");
   });

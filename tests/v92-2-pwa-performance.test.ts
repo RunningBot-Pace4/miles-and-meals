@@ -27,7 +27,7 @@ describe("V92.2 PWA reliability and performance", () => {
   it("uses one document navigation with visible progress and no fallback request", () => {
     expect(link).toContain("<a");
     expect(link).toContain('data-navigation-mode="document"');
-    expect(link).toContain("createPortal(<BrandedLoadingScreen />");
+    expect(link).toContain('className="navigation-progress"');
     expect(link).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(link).not.toContain("window.location.assign(targetUrl.href)");
     expect(link).toContain("data-navigation-pending");

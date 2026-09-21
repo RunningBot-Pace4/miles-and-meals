@@ -1,6 +1,5 @@
 "use client";
 
-import { BrandedLoadingScreen } from "@/components/BrandedLoadingScreen";
 import { needsDocumentIndicator } from "@/lib/navigation-feedback";
 import { appDestination } from "@/lib/app-destinations";
 import type {
@@ -121,7 +120,7 @@ export function FullPageLink({
       </a>
 
       {navigationPending && showIndicator && portalHost
-        ? createPortal(<BrandedLoadingScreen />, portalHost)
+        ? createPortal(<div className="navigation-progress" role="status"><span aria-hidden="true" />Opening page…</div>, portalHost)
         : null}
     </>
   );

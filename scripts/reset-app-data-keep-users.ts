@@ -29,6 +29,7 @@ console.log("Before:", before[0]);
 
 await sql`
   TRUNCATE TABLE
+    saved_route_distances,
     location_pings,
     expense_item_assignments,
     expense_items,

@@ -22,7 +22,7 @@ must(worker, "miles-meals-static-v92-21", "V92.21 PWA cache missing");
 for (const marker of [
   "<a",
   'data-navigation-mode="document"',
-  "createPortal(<BrandedLoadingScreen />",
+  "navigation-progress",
   "NAVIGATION_INDICATOR_TIMEOUT_MS",
   "Leave the anchor's native default action intact",
 ]) must(navigation, marker, `V92.21 single-navigation marker missing: ${marker}`);

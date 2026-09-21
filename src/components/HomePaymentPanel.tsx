@@ -6,6 +6,7 @@ import { SettlementActionButton } from "@/components/SettlementActionButton";
 import { HomePaymentAmount } from "@/components/HomePaymentAmount";
 import { allocateHomePayment } from "@/lib/home-payment-allocation";
 import { formatMoney } from "@/lib/money";
+import { paymentStatusSummary } from "@/lib/payment-status-summary";
 import type { SettlementLiveData } from "@/lib/settlement-live";
 
 type SmartPlan = SettlementLiveData["smartPlans"][number];
@@ -88,6 +89,7 @@ export function HomePaymentRequestCard({ choices, currentUserId }: { choices: Pa
 }
 
 export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLiveData; currentUserId: string }) {
+  const summaries = paymentStatusSummary([...data.pendingSettlements, ...data.settledSettlements], currentUserId);
   const pending = data.pendingSettlements.filter((payment) => payment.fromUserId === currentUserId || payment.toUserId === currentUserId);
   const requests = data.smartPlans.flatMap((plan) => plan.originalExpenseBalances
     .filter((balance) => balance.directRemaining > 0.009 && (balance.fromUserId === currentUserId || balance.toUserId === currentUserId))
@@ -103,6 +105,13 @@ export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLive
 
   return <section className="panel settlement-panel home-payment-panel" id="home-payment">
     <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">Send a payment or confirm money received, right here.</p></div><Link className="button secondary" href={historyHref}>Payment history</Link></div>
+    {summaries.map(summary => <dl className="payment-status-summary" key={summary.currency} aria-label={`${summary.currency} payment status`}>
+      <div><dt>Sent · awaiting confirmation</dt><dd>{formatMoney(summary.sent, summary.currency)}</dd></div>
+      <div><dt>Received? Confirm below</dt><dd>{formatMoney(summary.awaitingReceipt, summary.currency)}</dd></div>
+      <div><dt>Confirmed paid</dt><dd>{formatMoney(summary.paid, summary.currency)}</dd></div>
+      <div><dt>Confirmed received</dt><dd>{formatMoney(summary.received, summary.currency)}</dd></div>
+    </dl>)}
+    {pending.length ? <p className="payment-status-help">Sent payments already reserve their amount. You can pay the remaining balance below while confirmation is pending.</p> : null}
     <div className="settlement-status-list">
       {pending.map((payment) => <article className="home-pending-payment" key={payment.id}>
         <header className="home-pending-heading">

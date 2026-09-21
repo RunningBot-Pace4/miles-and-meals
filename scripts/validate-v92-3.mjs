@@ -23,7 +23,7 @@ for (const marker of [
   'data-navigation-mode="document"',
   "data-navigation-pending",
   "onPointerDown={handlePointerDown}",
-  "createPortal(<BrandedLoadingScreen />",
+  "navigation-progress",
 ]) must(links, marker, `V92.3 reliable navigation feedback missing: ${marker}`);
 
 if (links.includes('from "next/link"') || links.includes("NATIVE_NAVIGATION_FALLBACK_MS")) {

@@ -891,7 +891,19 @@ export const locationPings = pgTable(
   ],
 );
 
+export const savedRouteDistances = pgTable("saved_route_distances", {
+  countryId: uuid("country_id").notNull().references(() => countries.id, { onDelete: "cascade" }),
+  stayId: uuid("stay_id").notNull().references(() => travelItems.id, { onDelete: "cascade" }),
+  placeId: uuid("place_id").notNull().references(() => travelItems.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull(),
+  pinKey: text("pin_key").notNull(),
+  km: doublePrecision("km").notNull(),
+  minutes: integer("minutes").notNull(),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [primaryKey({ columns: [table.countryId, table.stayId, table.placeId, table.mode] })]);
+
 export const schema = {
+  savedRouteDistances,
   user,
   session,
   loginAudits,

@@ -46,7 +46,7 @@ describe("V92.19 payer layout and speed", () => {
   it("uses one document navigation with an immediate Halo indicator", () => {
     expect(navigation).toContain("<a");
     expect(navigation).toContain('data-navigation-mode="document"');
-    expect(navigation).toContain("createPortal(<BrandedLoadingScreen />");
+    expect(navigation).toContain('className="navigation-progress"');
     expect(navigation).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
     expect(mobileNav).toContain("prefetch");
   });

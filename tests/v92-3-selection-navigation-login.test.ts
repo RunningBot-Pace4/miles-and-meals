@@ -20,7 +20,7 @@ describe("V92.3 mobile selection and transition reliability", () => {
     expect(links).toContain("<a");
     expect(links).toContain('data-navigation-mode="document"');
     expect(links).toContain("data-navigation-pending");
-    expect(links).toContain("createPortal(<BrandedLoadingScreen />");
+    expect(links).toContain("navigation-progress");
     expect(links).not.toContain("NATIVE_NAVIGATION_FALLBACK_MS");
   });
 

@@ -20,6 +20,7 @@ BEGIN
 END $$;
 
 TRUNCATE TABLE
+  public.saved_route_distances,
   public.location_pings,
   public.expense_item_assignments,
   public.expense_items,

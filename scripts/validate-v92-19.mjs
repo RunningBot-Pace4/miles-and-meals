@@ -43,7 +43,7 @@ for (const marker of [
 for (const marker of [
   "<a",
   'data-navigation-mode="document"',
-  "createPortal(<BrandedLoadingScreen />",
+  "navigation-progress",
   "NAVIGATION_INDICATOR_TIMEOUT_MS",
 ]) must(navigation, marker, `V92.19-or-newer single navigation missing: ${marker}`);
 must(mobileNav, "prefetch", "V92.19 main-navigation intent marker missing");

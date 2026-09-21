@@ -46,7 +46,7 @@ for (const marker of [
 for (const marker of [
   "<a",
   'data-navigation-mode="document"',
-  "createPortal(<BrandedLoadingScreen />",
+  "navigation-progress",
   "NAVIGATION_INDICATOR_TIMEOUT_MS",
   "data-navigation-pending",
 ]) must(links, marker, `Resilient navigation wrapper missing: ${marker}`);
