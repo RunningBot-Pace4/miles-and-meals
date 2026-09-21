@@ -1,5 +1,13 @@
 # Import and place card layout update
 
+## Saved distance checks
+
+- Use Check distances after import, or Recalculate distances for a fresh provider request. Tab switches do not request routes.
+- Walking and driving results persist on the current device. Changing stay/place coordinates invalidates the saved snapshot; checking again uses the new pins.
+- Distance lookup uses explicit saved coordinates only. Name-only searches previously produced a misleading 3,604 km result; unresolved places now require an exact pin.
+- Idea badges are hidden on planner cards. The summary now says Estimated time. Live traffic is not provided.
+- These results are device-local, not shared through the database. Google Maps may choose different routes using its own road and traffic data.
+
 - Import review rows use a responsive grid. Opening an exact pin editor gives the map its own full-width row, keeping names and category controls readable.
 - Places, Meals and Shopping use compact tinted cards. Map and Details are primary actions; More actions contains editing, exact pin correction, adding an expense and deletion. Manual reordering is shown when Plan order is selected.
 - Phone layouts stack cards in a single column, retain 44px action targets and use 16px pin input text.

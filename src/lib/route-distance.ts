@@ -1,8 +1,8 @@
 import type { Coordinates } from "./place-distance";
 
-export async function routeDistance(start: Coordinates, end: Coordinates, mode: "walk" | "drive", apiKey: string) {
+export async function routeDistance(start: Coordinates, end: Coordinates, mode: "walk" | "drive", apiKey: string, refresh = false) {
   const params = new URLSearchParams({ waypoints: `${start.latitude},${start.longitude}|${end.latitude},${end.longitude}`, mode, units: "metric", format: "json", apiKey });
-  const response = await fetch(`https://api.geoapify.com/v1/routing?${params}`, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(12000) });
+  const response = await fetch(`https://api.geoapify.com/v1/routing?${params}`, { ...(refresh ? { cache: "no-store" as const } : { next: { revalidate: 86400 } }), signal: AbortSignal.timeout(12000) });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
       throw new Error("The Geoapify key cannot access Routing API. Check the key restrictions in Geoapify.");

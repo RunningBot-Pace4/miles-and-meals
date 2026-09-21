@@ -1,7 +1,6 @@
 "use client";
 import { comparePlaceDistances, placeCoordinates } from "@/lib/place-distance";
 import { PlacePinPicker } from "@/components/PlacePinPicker";
-import type { GooglePlaceMatch } from "@/lib/google-places";
 
 import {
   FormEvent,
@@ -704,11 +703,9 @@ export function PlannerClient({
   const [pinItem, setPinItem] = useState<PlannerItem | null>(null);
   const [routeMode, setRouteMode] = useState<"walk" | "drive">("walk");
   const [routeMinutes, setRouteMinutes] = useState<Record<string, number>>({});
-  const routeCache = useRef(new Map<string, { km: number; minutes: number } | null>());
   const [distanceSort, setDistanceSort] = useState("nearest");
   const [distances, setDistances] = useState<Record<string, number>>({});
   const [distanceStatus, setDistanceStatus] = useState("");
-  const locationCache = useRef(new Map<string, GooglePlaceMatch | null>());
   const isSpots = ["PLACE", "FOOD", "SHOPPING"].includes(tab);
   const meta = tabMeta[tab];
   const activeTrip = trips.find((trip) => trip.id === activeTripId);
@@ -842,80 +839,79 @@ export function PlannerClient({
     countries[0]?.id ?? "";
 
   const distanceInput = JSON.stringify(itemsState.filter(item => item.countryId === defaultCountryId && (["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) || (item.subtype === "Accommodation" && item.provider === "Miles & Meals stay"))).map(item => ({ id: item.id, title: item.title, point: placeCoordinates(item.linkUrl ?? "", item.notes ?? ""), stay: item.subtype === "Accommodation" && item.provider === "Miles & Meals stay" })));
+  const [distanceRequest, setDistanceRequest] = useState(0);
+  const [checkingDistances, setCheckingDistances] = useState(false);
+  const handledDistanceRequest = useRef(0);
   useEffect(() => {
     if (!isSpots) return;
     const rows = JSON.parse(distanceInput) as Array<{ id: string; title: string; point?: { latitude: number; longitude: number } | null; stay: boolean }>;
     const stayRow = rows.find(row => row.stay);
+    const storageKey = `mm-route-results-v2:${defaultCountryId}:${routeMode}`;
+    const signature = distanceInput;
+    const recalculate = distanceRequest !== handledDistanceRequest.current;
+    handledDistanceRequest.current = distanceRequest;
+    setCheckingDistances(false);
     setDistances({});
     setRouteMinutes({});
-    if (!stayRow) { setDistanceStatus("Add your stay to calculate distances."); return; }
+    if (!stayRow?.point) {
+      setDistanceStatus("Set the exact stay pin before checking distances.");
+      return;
+    }
+    if (!recalculate) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(storageKey) || "null");
+        if (cached?.signature === signature && cached.values && cached.minutes) {
+          setDistances(cached.values);
+          setRouteMinutes(cached.minutes);
+          setDistanceStatus("Saved on this device · Estimated time");
+          return;
+        }
+      } catch { /* Storage is optional; manual checking remains available. */ }
+      setDistanceStatus("Check distances using saved pins. Results stay saved on this device.");
+      return;
+    }
     let cancelled = false;
     const controller = new AbortController();
-    const lookup = async (row: typeof rows[number]) => {
-      if (row.point) return { ...row.point } as GooglePlaceMatch;
-      const key = `${defaultCountryId}:${row.id}:${row.title}`;
-      if (locationCache.current.has(key)) return locationCache.current.get(key);
-      const response = await fetch("/api/travel-items/resolve-places", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, places: [{ clientKey: row.id, title: row.title }] }), signal: controller.signal });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not calculate distances.");
-      const match = data.matches?.[0] as GooglePlaceMatch | undefined;
-      const located = match?.confidence === "MATCHED" ? match : null;
-      locationCache.current.set(key, located);
-      return located;
-    };
+    const start = stayRow.point;
+    setCheckingDistances(true);
     void (async () => {
-      setDistanceStatus("Calculating distances from your stay…");
+      const values: Record<string, number> = {};
+      const minutes: Record<string, number> = {};
+      let missing = 0;
+      let lastError = "";
       try {
-        const start = await lookup(stayRow);
-        if (!start) throw new Error("Stay location needs checking. Edit stay and enter the full hotel name and address.");
-        const values: Record<string, number> = {};
-        const minutes: Record<string, number> = {};
-        let unavailable = 0;
-        let lastRouteError = "";
         for (const row of rows.filter(row => !row.stay)) {
           if (cancelled) return;
-          let match: GooglePlaceMatch | null = null;
+          if (!row.point) { missing++; continue; }
+          setDistanceStatus(`Checking ${row.title}…`);
           try {
-            match = (await lookup(row)) ?? null;
+            const response = await fetch("/api/travel-items/route-distance", {
+              method: "POST", headers: { "content-type": "application/json" },
+              body: JSON.stringify({ countryId: defaultCountryId, start, end: row.point, mode: routeMode, refresh: true }),
+              signal: controller.signal,
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Route unavailable.");
+            if (data.route) { values[row.id] = data.route.km; minutes[row.id] = data.route.minutes; }
+            else missing++;
           } catch (error) {
-            unavailable += 1;
-            lastRouteError = error instanceof Error ? error.message : "Location lookup unavailable.";
+            if (controller.signal.aborted) return;
+            missing++;
+            lastError = error instanceof Error ? error.message : "Route unavailable.";
           }
-          if (match) {
-            const key = JSON.stringify([defaultCountryId, start.latitude, start.longitude, match.latitude, match.longitude, routeMode]);
-            let route = routeCache.current.get(key);
-            if (route === undefined) {
-              try {
-                const response = await fetch("/api/travel-items/route-distance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ countryId: defaultCountryId, start, end: match, mode: routeMode }), signal: controller.signal });
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || "Route unavailable.");
-                route = data.route;
-                if (routeCache.current.size > 500) routeCache.current.clear();
-                routeCache.current.set(key, route ?? null);
-                await new Promise(resolve => setTimeout(resolve, 300));
-              } catch (error) {
-                if (controller.signal.aborted) return;
-                unavailable += 1;
-                lastRouteError = error instanceof Error ? error.message : "Route unavailable.";
-                route = null;
-              }
-            }
-            if (route) { values[row.id] = route.km; minutes[row.id] = route.minutes; }
-          }
-          if (!cancelled) setRouteMinutes({ ...minutes });
-          if (!cancelled) setDistances({ ...values });
+          if (cancelled) return;
+          setDistances({ ...values });
+          setRouteMinutes({ ...minutes });
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
-        if (!cancelled) {
-          setDistances(values);
-          const modeLabel = routeMode === "walk" ? "Walking" : "Driving";
-          setDistanceStatus(Object.keys(values).length === 0 && lastRouteError
-            ? lastRouteError
-            : `${modeLabel} routes from ${stayRow.title}. ${unavailable ? `${unavailable} unavailable. ` : ""}Estimated times, not live traffic.`);
-        }
-      } catch (error) { if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Unable to calculate distances."); }
+        if (cancelled) return;
+        const status = `${missing ? `${missing} need a pin or have no route. ` : ""}Estimated time · Saved on this device`;
+        setDistanceStatus(lastError ? `${status}. ${lastError}` : status);
+        try { localStorage.setItem(storageKey, JSON.stringify({ signature, values, minutes })); } catch { /* Keep session results if storage is unavailable. */ }
+      } finally { if (!cancelled) setCheckingDistances(false); }
     })();
     return () => { cancelled = true; controller.abort(); };
-  }, [distanceInput, defaultCountryId, isSpots, routeMode]);
+  }, [distanceInput, defaultCountryId, isSpots, routeMode, distanceRequest]);
 
   useEffect(() => {
     if (!detailItem) {
@@ -1557,7 +1553,8 @@ export function PlannerClient({
       {isSpots ? <div className="place-distance-toolbar">
         <label>Travel by <select value={routeMode} onChange={event => { setDistances({}); setRouteMinutes({}); setRouteMode(event.target.value as "walk" | "drive"); }}><option value="walk">Walking</option><option value="drive">Driving</option></select></label>
         <label>Sort places <select value={distanceSort} onChange={event => setDistanceSort(event.target.value)}><option value="nearest">Nearest first · ascending</option><option value="farthest">Farthest first · descending</option><option value="plan">Plan order</option></select></label>
-        <p role="status">{visible.filter(item => distances[item.id] !== undefined).length} / {visible.length} places located in this tab · {distanceStatus}</p>
+        <button type="button" className="button secondary" disabled={checkingDistances} onClick={() => setDistanceRequest(value => value + 1)}>{checkingDistances ? "Checking…" : Object.keys(distances).length ? "Recalculate distances" : "Check distances"}</button>
+        <p role="status">{visible.filter(item => distances[item.id] !== undefined).length} / {visible.length} routes in this tab · {distanceStatus}</p>
 
       </div> : null}
       <section
@@ -1598,7 +1595,7 @@ export function PlannerClient({
                 <div className="travel-card-topline">
                   <span>{countryName}</span>
 
-                  {item.status ? (
+                  {item.status && item.status !== "Idea" ? (
                     <span
                       className={`status-pill ${statusClass(
                         item.status,
