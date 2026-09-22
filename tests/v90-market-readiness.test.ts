@@ -38,7 +38,7 @@ describe("v90 market-readiness behavior", () => {
     expect(suggestions.map((item) => item.id)).toEqual(expect.arrayContaining(["emergency", "receipts", "budget", "settlement", "memory"]));
   });
 
-  it("orders timed stops, clusters flexible areas and detects an overlap", () => {
+  it("preserves flexible order and detects an overlap", () => {
     const items = [
       routeItem({ id: "flex-far", title: "Market", area: "Old Town West", sortOrder: 2 }),
       routeItem({ id: "lunch", title: "Lunch", itemTime: "11:30", area: "Riverside", durationMinutes: 60 }),
@@ -46,9 +46,9 @@ describe("v90 market-readiness behavior", () => {
       routeItem({ id: "flex-near", title: "Gallery", area: "Riverside Walk", sortOrder: 1 }),
     ];
 
-    expect(suggestedDayOrder(items).map((item) => item.id)).toEqual(["museum", "lunch", "flex-near", "flex-far"]);
-    expect(analyzeDayRoute(items, "walking").warnings).toContain("Museum overlaps Lunch.");
-    expect(dayRouteUrl(items, "transit")).toContain("travelmode=transit");
+    expect(suggestedDayOrder(items).map((item) => item.id)).toEqual(["lunch", "museum", "flex-near", "flex-far"]);
+    expect(analyzeDayRoute(items, "walking").warnings).toContain("Lunch overlaps Museum.");
+    expect(dayRouteUrl(items, "transit")).toBe("");
   });
 
   it("validates scoped traveler permissions and private travel files", () => {

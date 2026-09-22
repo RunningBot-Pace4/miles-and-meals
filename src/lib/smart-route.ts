@@ -1,3 +1,5 @@
+import { placeCoordinates } from "./place-distance";
+
 export type SmartRouteItem = {
   id: string;
   title: string;
@@ -6,6 +8,8 @@ export type SmartRouteItem = {
   area: string | null;
   durationMinutes: number | null;
   sortOrder: number;
+  linkUrl?: string | null;
+  notes?: string | null;
 };
 
 export type TravelMode = "driving" | "walking" | "transit" | "bicycling";
@@ -15,35 +19,17 @@ function minutes(value: string | null): number | null {
   return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 }
 
-function areaTokens(value: string | null): Set<string> {
-  return new Set((value ?? "").toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length > 2));
-}
-
-function similarity(left: string | null, right: string | null): number {
-  const a = areaTokens(left);
-  const b = areaTokens(right);
-  let score = 0;
-  for (const token of a) if (b.has(token)) score += 1;
-  return score;
-}
-
 export function suggestedDayOrder(items: SmartRouteItem[]): SmartRouteItem[] {
-  const timed = items.filter((item) => minutes(item.itemTime) !== null)
-    .sort((a, b) => (minutes(a.itemTime) ?? 0) - (minutes(b.itemTime) ?? 0));
-  const remaining = items.filter((item) => minutes(item.itemTime) === null)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-  const result = [...timed];
-  while (remaining.length) {
-    const previous = result.at(-1);
-    let bestIndex = 0;
-    if (previous?.area) {
-      for (let index = 1; index < remaining.length; index += 1) {
-        if (similarity(previous.area, remaining[index].area) > similarity(previous.area, remaining[bestIndex].area)) bestIndex = index;
-      }
-    }
-    result.push(remaining.splice(bestIndex, 1)[0]);
+  // Relative times belong in the author's sequence, not after every clock time.
+  if (items.some(item => minutes(item.itemTime) === null)) {
+    return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
   }
-  return result;
+  return [...items].sort((a, b) => minutes(a.itemTime)! - minutes(b.itemTime)! || a.sortOrder - b.sortOrder);
+}
+
+export function routePoint(item: SmartRouteItem): string | null {
+  const point = placeCoordinates(item.linkUrl ?? "", item.notes ?? "");
+  return point ? `${point.latitude},${point.longitude}` : null;
 }
 
 export function analyzeDayRoute(items: SmartRouteItem[], mode: TravelMode) {
@@ -66,9 +52,20 @@ export function analyzeDayRoute(items: SmartRouteItem[], mode: TravelMode) {
 }
 
 export function dayRouteUrl(items: SmartRouteItem[], mode: TravelMode): string {
-  const stops = suggestedDayOrder(items).map((item) => item.area?.trim()).filter((area): area is string => Boolean(area)).slice(0, 10);
-  if (stops.length < 2) return "";
-  const parameters = new URLSearchParams({ api: "1", origin: stops[0], destination: stops.at(-1) as string, travelmode: mode });
+  const stops = suggestedDayOrder(items).map(routePoint);
+  // Mobile supports at most three intermediate stops; transit uses individual legs.
+  if (stops.length < 2 || stops.some(stop => !stop) || stops.length > 5 || (mode === "transit" && stops.length > 2)) return "";
+  const parameters = new URLSearchParams({ api: "1", origin: stops[0]!, destination: stops.at(-1)!, travelmode: mode });
   if (stops.length > 2) parameters.set("waypoints", stops.slice(1, -1).join("|"));
   return `https://www.google.com/maps/dir/?${parameters.toString()}`;
+}
+
+export function dayRouteLegs(items: SmartRouteItem[], mode: TravelMode) {
+  const ordered = suggestedDayOrder(items);
+  return ordered.slice(1).map((to, index) => {
+    const from = ordered[index];
+    // Preserve adjacency: never silently skip an unresolved stop.
+    const url = dayRouteUrl([{ ...from, itemTime: null, sortOrder: 0 }, { ...to, itemTime: null, sortOrder: 1 }], mode);
+    return { from, to, url };
+  });
 }

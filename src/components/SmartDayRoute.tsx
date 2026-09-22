@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { analyzeDayRoute, dayRouteUrl, type SmartRouteItem, type TravelMode } from "@/lib/smart-route";
+import { analyzeDayRoute, dayRouteUrl, dayRouteLegs, routePoint, type SmartRouteItem, type TravelMode } from "@/lib/smart-route";
 
-export function SmartDayRoute({ items, countryId, tripName, disabled, onUpdated }: {
-  items: SmartRouteItem[]; countryId: string; tripName: string; disabled: boolean; onUpdated: () => Promise<void>;
+export function SmartDayRoute({ items, countryId, tripName, disabled, onUpdated, onPin }: {
+  items: SmartRouteItem[]; countryId: string; tripName: string; disabled: boolean; onUpdated: () => Promise<void>; onPin: (id: string) => void;
 }) {
   const dates = useMemo(() => [...new Set(items.map((item) => item.itemDate).filter((date): date is string => Boolean(date)))].sort(), [items]);
   const [date, setDate] = useState(dates[0] ?? "");
@@ -15,6 +15,8 @@ export function SmartDayRoute({ items, countryId, tripName, disabled, onUpdated 
   const dayItems = useMemo(() => items.filter((item) => item.itemDate === date), [date, items]);
   const analysis = useMemo(() => analyzeDayRoute(dayItems, mode), [dayItems, mode]);
   const routeUrl = useMemo(() => dayRouteUrl(dayItems, mode), [dayItems, mode]);
+  const legs = dayRouteLegs(dayItems, mode);
+  const missingPins = dayItems.filter(item => !routePoint(item));
   const searchBase = analysis.ordered.find((item) => item.area)?.area ?? tripName;
 
   async function applyOrder() {
@@ -33,8 +35,11 @@ export function SmartDayRoute({ items, countryId, tripName, disabled, onUpdated 
     <div className="smart-route-head"><div><p className="eyebrow">SMART DAY ROUTE</p><h3 id="smart-route-title">Schedule and movement check</h3></div><div className="smart-route-selectors"><label>Day<select value={date} onChange={(event) => setDate(event.target.value)}>{dates.map((value) => <option key={value}>{value}</option>)}</select></label><label>Mode<select value={mode} onChange={(event) => setMode(event.target.value as TravelMode)}><option value="driving">Drive</option><option value="transit">Public transport</option><option value="walking">Walk</option><option value="bicycling">Cycle</option></select></label></div></div>
     {!dates.length ? <p className="muted">Add dates to itinerary activities to build a day route.</p> : <>
       <div className="smart-route-summary"><span>{dayItems.length} stops</span><span>{analysis.missingTimes} without time</span><span>{analysis.warnings.length} warning{analysis.warnings.length === 1 ? "" : "s"}</span></div>
-      {analysis.warnings.length ? <ul className="smart-route-warnings">{analysis.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul> : <p className="form-success">No schedule overlap detected for this day.</p>}
-      <ol className="smart-route-order">{analysis.ordered.map((item) => <li key={item.id}><span>{item.itemTime ?? "Flexible"}</span><strong>{item.title}</strong><small>{item.area ?? "Area not set"}</small></li>)}</ol>
+      {analysis.warnings.length ? <ul className="smart-route-warnings">{analysis.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul> : <p className="form-success">No overlap found between recognized clock times. Flexible timings need your review.</p>}
+      <ol className="smart-route-order">{analysis.ordered.map((item) => <li key={item.id}><span>{item.itemTime ?? "Flexible"}</span><strong>{item.title}</strong><small>{item.area ?? "Area not set"}<br />{routePoint(item) ? "Map pin saved" : "Choose an exact location"}{!disabled ? <button type="button" className="button secondary" onClick={() => onPin(item.id)}>{routePoint(item) ? "Change pin" : "Set map pin"}</button> : null}</small></li>)}</ol>
+      <p className="muted">Flexible activities keep your saved order. Route directions use exact saved pins, not area labels. For an activity with several alternatives, choose the place you will visit.</p>
+      {missingPins.length > 0 ? <p role="status">{missingPins.length} stop{missingPins.length === 1 ? " needs" : "s need"} a map pin. Set the locations above to open the complete route.</p> : null}
+      {!routeUrl && legs.length > 0 ? <div className="smart-route-actions" aria-label="Route legs">{legs.map(({ from, to, url }, index) => url ? <a key={from.id} className="button secondary" href={url} target="_blank" rel="noreferrer">{index + 1}. {from.title} → {to.title} ↗</a> : <span key={from.id}>{index + 1}. {from.title} → {to.title}: set both pins</span>)}</div> : null}
       <div className="smart-route-actions"><button className="button secondary" disabled={busy || disabled || analysis.ordered.length < 2} type="button" onClick={() => void applyOrder()}>{busy ? "Applying…" : "Apply suggested order"}</button>{routeUrl ? <a className="button secondary" href={routeUrl} target="_blank" rel="noreferrer">Open route ↗</a> : null}</div>
       <div className="discovery-shortcuts" aria-label="Nearby discovery"><span>Discover nearby:</span>{[["Top sights", "top attractions"], ["Local food", "local food"], ["Rainy day", "indoor attractions"], ["Pharmacy", "pharmacy"], ["Hospital", "hospital"]].map(([label, query]) => <a key={label} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${query} near ${searchBase}`)}`} target="_blank" rel="noreferrer">{label}</a>)}</div>
     </>}

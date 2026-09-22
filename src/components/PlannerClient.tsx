@@ -1517,6 +1517,7 @@ export function PlannerClient({
         items={itemsState.filter((item) => item.itemType === "ITINERARY")}
         countryId={defaultCountryId}
         tripName={activeTrip?.name ?? "this Trip"}
+        onPin={id => { const item = itemsState.find(item => item.id === id); if (item) { setPinItem(item); window.requestAnimationFrame(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "start" })); } }}
         disabled={activeClosed}
         onUpdated={refreshItems}
       /> : null}
