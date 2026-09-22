@@ -1,0 +1,138 @@
+.shell {
+  --plan-teal: #087e78;
+  --plan-ink: #183e42;
+  --plan-line: #dbe7e5;
+  color: var(--plan-ink);
+  display: flex; flex-direction: column; gap: 18px;
+  min-width: 0; width: 100%;
+}
+.shell :global(.planner-filter) { margin: 0; padding: 14px 18px; border: 1px solid var(--plan-line); border-radius: 20px; background: linear-gradient(110deg,#edf9f5,#fff8ed); display:flex; align-items:center; gap:12px; }
+.shell :global(.planner-filter label) { flex:1; min-width:0; }
+.shell :global(.planner-filter label > span) { font-size:11px; text-transform:uppercase; letter-spacing:.12em; }
+.shell :global(.planner-filter select) { min-height:44px; border:0; background:transparent; padding:4px 26px 4px 0; font-size:19px; font-weight:750; width:100%; }
+.shell :global(.planner-count) { font-size:12px; white-space:nowrap; background:#fff; padding:8px 12px; border-radius:20px; }
+.shell :global(.planner-tabs) { display:flex; overflow-x:auto; gap:4px; padding:5px; border:1px solid var(--plan-line); border-radius:16px; background:#f3f6f5; scrollbar-width:thin; }
+.shell :global(.planner-tab) { display:flex; flex:1 0 auto; align-items:center; justify-content:center; gap:6px; border:0; box-shadow:none; border-radius:12px; padding:10px 13px; min-height:46px; color:#536768; background:transparent; }
+.shell :global(.planner-tab small) { font-size:14px; font-weight:650; }
+.shell :global(.planner-tab.active) { background:var(--plan-teal); color:white; }
+.shell :global(.planner-intro) { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:0; border:0; background:none; box-shadow:none; margin:0; }
+.shell :global(.planner-intro .eyebrow), .shell :global(.planner-intro p:not(.eyebrow)) { display:none; }
+.shell :global(.planner-intro h2) { font-size:clamp(21px,3vw,28px); line-height:1.2; margin:0; color:var(--plan-ink); }
+.shell :global(.planner-add-button) { min-height:44px; padding:10px 16px; font-size:14px; border-radius:13px; width:auto; flex-shrink:0; }
+.toolbar { display:flex; gap:10px; align-items:center; }
+.search { flex:1; min-width:0; }
+.search input { margin:0; width:100%; min-height:46px; border:1px solid #dbe7e5; border-radius:13px; padding:10px 14px; background:white; font-size:16px; }
+.toolbar button { padding:10px 14px; min-height:46px; font-size:13px; border-radius:13px; }
+.days { display:flex; gap:8px; overflow-x:auto; padding:3px 0 8px; scrollbar-width:thin; }
+.days button { flex:0 0 auto; min-height:54px; min-width:70px; padding:10px 15px; background:white; color:#536768; border:1px solid #dbe7e5; border-radius:15px; font-size:13px; }
+.days button[aria-pressed="true"] { color:#075d58; background:#dff2ed; border-color:#8ac8bd; font-weight:750; }
+.dayHeading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.dayHeading small { color:#087e78; font-size:10px; letter-spacing:.13em; font-weight:750; }
+.dayHeading h3 { margin:3px 0 0; font-size:20px; }
+.dayHeading button { font-size:13px; min-height:44px; border-radius:12px; padding:10px 12px; }
+.stay { display:flex; align-items:center; gap:14px; text-align:left; padding:15px 18px; width:100%; border:1px solid #cbe8df; background:#edf9f5; border-radius:17px; color:#195c54; }
+.stay > span:first-child { font-size:28px; }
+.stay > span:nth-child(2) { flex:1; min-width:0; }
+.stay small,.stay strong { display:block; }
+.stay small { font-size:10px; letter-spacing:.1em; margin-bottom:3px; }
+.tools[hidden] { display:none; }
+.tools { padding:14px; border:1px solid #dbe7e5; border-radius:18px; background:#f6faf8; display:grid; gap:14px; }
+.shell :global(.timeline-list) { display:grid; gap:12px; }
+.shell :global(.timeline-list .timeline-card) { display:grid; grid-template-columns:92px minmax(0,1fr); gap:16px; padding:18px; background:#fff; border:1px solid var(--plan-line); border-radius:18px; box-shadow:0 3px 12px #163e3c04; }
+.shell :global(.timeline-list .timeline-time) { padding:8px 0; background:none; border:0; border-right:2px solid #b6ddd3; border-radius:0; text-align:left; align-self:stretch; display:flex; flex-direction:column; justify-content:flex-start; gap:5px; }
+.shell :global(.timeline-time strong) { font-size:15px; color:#087e78; overflow-wrap:normal; }
+.shell :global(.timeline-time span) { font-size:11px; color:#697b7a; }
+.shell :global(.travel-card-grid) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.shell :global(.travel-card) { display:grid; grid-template-columns:44px minmax(0,1fr); gap:13px; padding:18px; border:1px solid var(--plan-line); border-radius:20px; box-shadow:0 3px 12px #163e3c04; background:white; }
+.shell :global(.travel-card-icon) { width:44px; height:44px; min-width:0; border-radius:14px; background:#e0f3e7; display:grid; place-items:center; font-size:22px; }
+.shell[data-plan-tab="FOOD"] :global(.travel-card-icon) { background:#ffecd7; }
+.shell[data-plan-tab="SHOPPING"] :global(.travel-card-icon) { background:#ece7fc; }
+.shell[data-plan-tab="CHECKLIST"] :global(.travel-card-icon),.shell[data-plan-tab="PACKING"] :global(.travel-card-icon) { background:#e4edff; }
+.shell :global(.travel-card-body) { min-width:0; }
+.shell :global(.travel-card h2), .shell :global(.timeline-card h2) { color:var(--plan-ink); font-size:18px; line-height:1.35; margin:2px 0 5px; overflow-wrap:anywhere; }
+.shell :global(.travel-card-topline) { display:flex; justify-content:flex-end; font-size:11px; margin:0; min-height:0; }
+.shell :global(.travel-card-topline > span:first-child) { display:none; }
+.shell :global(.travel-card-meta) { font-size:13px; color:#677975; margin:4px 0; }
+.shell :global(.place-distance-badge) { display:inline-block; font-size:12px; background:#eef8f4; color:#126c5b; padding:5px 8px; border-radius:8px; margin:3px 0; white-space:normal; }
+.shell :global(.travel-notes) { font-size:13px; color:#6a7976; margin:6px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.shell :global(.provider-strip) { font-size:12px; padding:5px 8px; margin:5px 0; }
+.shell :global(.place-card-actions) { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+.shell :global(.place-card-actions > a), .shell :global(.place-card-actions > button), .shell :global(.place-more-actions > summary) { display:flex; align-items:center; justify-content:center; min-height:44px; border:1px solid #cbe0db; background:#fff; color:#126c65; border-radius:11px; padding:9px 12px; font-size:13px; font-weight:650; width:auto; flex:1 0 auto; }
+.shell :global(.place-card-actions) .addDay { background:#087e78; color:white; border-color:#087e78; }
+.shell :global(.place-more-actions) { flex:1 0 auto; }
+.shell :global(.place-more-actions > div) { display:grid; gap:6px; padding:10px 0; }
+.shell :global(.planner-card-footer) { margin-top:12px; padding-top:10px; border-top:1px solid #eef3f1; display:block; }
+.shell :global(.planner-proposer) { font-size:11px; color:#7c8984; margin-bottom:8px; }
+.shell :global(.planner-card-buttons) { display:flex; flex-wrap:wrap; gap:6px; }
+.shell :global(.planner-card-buttons button),.shell :global(.planner-card-buttons a) { font-size:12px; min-height:44px; padding:8px 11px; border-radius:10px; border:1px solid #dbe7e5; background:#fafcfb; }
+.shell :global(.planner-order-buttons) { display:inline-flex; gap:4px; }
+.shell :global(.place-distance-toolbar) { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:14px; border:1px solid #d5e8e2; background:#f0f8f4; border-radius:16px; margin:0; align-items:end; }
+.shell :global(.place-distance-toolbar label) { font-size:12px; min-width:0; }
+.shell :global(.place-distance-toolbar select) { min-height:44px; font-size:14px; border-radius:10px; padding:8px; width:100%; }
+.shell :global(.place-distance-toolbar button) { font-size:12px; min-height:44px; padding:8px; }
+.shell :global(.place-distance-toolbar p) { grid-column:1/-1; font-size:12px; margin:0; color:#58766c; }
+.shell :global(.place-distance-toolbar label:nth-of-type(3)) { grid-column:1/-1; }
+.sheet { --plan-ink:#183e42; position:fixed; inset:0; margin:auto; padding:0; width:min(760px,calc(100% - 32px)); max-width:100%; max-height:90dvh; border:1px solid #d4e4df; border-radius:24px; background:#fff; color:var(--plan-ink); box-shadow:0 20px 90px #143f4140; overflow:hidden; }
+.sheet[open] { display:flex; flex-direction:column; }
+.sheet::backdrop { background:#183b4266; backdrop-filter:blur(3px); }
+.sheet > header { display:flex; align-items:center; justify-content:space-between; padding:16px 22px; gap:12px; border-bottom:1px solid #e4edeb; flex-shrink:0; }
+.sheet > header h2 { font-size:20px; margin:0; }
+.sheet > header button { width:44px; height:44px; border:0; background:#f0f6f4; color:#245f58; border-radius:50%; }
+.sheetBody { overflow-y:auto; overscroll-behavior:contain; padding:20px; min-height:0; scroll-padding-bottom:25px; }
+.sheetBody :global(.planner-add-form),.sheetBody :global(.planner-edit-form) { margin:0; padding:0; border:0; box-shadow:none; background:none; }
+.sheetBody :global(.section-heading) { display:none; }
+.sheetBody :global(input),.sheetBody :global(select),.sheetBody :global(textarea) { font-size:16px; min-width:0; max-width:100%; }
+.sheetBody :global(.form-grid) { gap:16px; }
+.sheetBody :global(.smart-day-route) { padding:0; border:0; box-shadow:none; background:none; }
+.sheetBody :global(.smart-route-head) { display:block; }
+.sheetBody :global(.smart-route-selectors) { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:15px 0; }
+.sheetBody :global(.smart-route-selectors label) { min-width:0; font-size:12px; }
+.sheetBody :global(.smart-route-order li) { grid-template-columns:70px minmax(0,1fr); padding:14px 0; }
+.sheetBody :global(.smart-route-order li small) { grid-column:2; font-size:12px; }
+.sheetBody :global(.smart-route-order button) { display:block; margin-top:8px; font-size:12px; min-height:44px; padding:8px 12px; }
+.sheetBody :global(.smart-route-summary) { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; font-size:12px; }
+.sheetBody :global(.smart-route-actions) { display:flex; flex-wrap:wrap; gap:8px; }
+.sheetBody :global(.smart-route-actions > *) { max-width:100%; overflow-wrap:anywhere; font-size:13px; }
+.sheetBody :global(.smart-route-warnings),.sheetBody :global(.smart-day-route > p) { font-size:13px; line-height:1.5; }
+.sheetBody :global(.plan-route-map) { border:1px solid #dbe7e5; border-radius:16px; overflow:hidden; }
+.sheetBody :global(.plan-route-map p),.sheetBody :global(.plan-map-empty) { font-size:12px; padding:10px 12px; margin:0; background:#f0f7f4; }
+.sheetBody :global(.plan-map-number) { width:30px; height:30px; background:#087e78; color:white; border:2px solid white; border-radius:50%; display:grid; place-items:center; font-weight:750; box-shadow:0 2px 7px #0003; }
+.scheduleForm { display:grid; gap:16px; }
+.scheduleForm label { display:grid; gap:7px; font-size:14px; }
+.scheduleForm h3,.scheduleForm p { margin:0; }
+.scheduleForm p { color:#677975; font-size:14px; }
+.handle { display:none; }
+@media(max-width:600px) {
+ .shell { gap:14px; }
+ .shell :global(.planner-tab > span) { display:none; }
+ .shell :global(.planner-tab) { padding:9px 12px; }
+ .shell :global(.planner-tabs) { border-radius:13px; }
+ .shell :global(.travel-card-grid) { grid-template-columns:minmax(0,1fr); }
+ .shell :global(.timeline-list .timeline-card) { grid-template-columns:65px minmax(0,1fr); padding:14px 12px; gap:12px; }
+ .shell :global(.timeline-time strong) { font-size:12px; line-height:1.5; padding-right:7px; }
+ .shell :global(.timeline-time span) { font-size:10px; }
+ .shell :global(.travel-card h2),.shell :global(.timeline-card h2) { font-size:17px; }
+ .shell :global(.planner-intro h2) { font-size:21px; }
+ .shell :global(.planner-add-button) { font-size:12px; padding:9px 11px; }
+ .shell :global(.travel-card) { padding:15px 12px; gap:10px; }
+ .toolbar { flex-wrap:wrap; }
+ .toolbar .search { flex:1 1 180px; }
+ .shell :global(.place-distance-toolbar) { grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px; }
+ .shell :global(.place-distance-toolbar > button) { grid-column:1/-1; }
+ .sheet { inset:auto 0 0; margin:0; width:100%; max-height:94dvh; border-radius:24px 24px 0 0; }
+ .sheet > header { padding:12px 16px; }
+ .sheetBody { padding:16px 16px max(24px,env(safe-area-inset-bottom)); }
+ .sheetBody :global(.form-grid) { grid-template-columns:minmax(0,1fr); }
+ .sheetBody :global(.span-2) { grid-column:auto; }
+ .handle { display:block; width:36px; height:4px; background:#d7e5df; border-radius:5px; margin-bottom:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .shell *, .sheet * { scroll-behavior:auto !important; } }
+
+.tripDates { display:block; color:#648077; font-size:12px; padding-top:3px; }
+.sheetBody :global(.planner-pin-editor) { padding:0; margin:0; border:0; }
+
+.shell :global(.timeline-list .timeline-card .travel-card-body) { padding:0; }
+.shell :global(.timeline-list .planner-card-buttons > :is(a,button)) { flex:0 1 auto; }
+.shell :global(.timeline-list .timeline-time) { align-items:flex-start; }
+.shell :global(.travel-card .travel-card-topline) { min-height:0; }
+.sheetBody :global(.planner-form-actions) { position:static; }

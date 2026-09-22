@@ -63,7 +63,7 @@ export default async function PlannerPage({
 
   return (
     <div className="stack gap-lg">
-      <div className="page-heading planner-page-heading">
+      <div className="sr-only">
         <div>
           <p className="eyebrow">MILES & MEALS</p>
           <h1>Plan the good stuff</h1>

@@ -28,6 +28,9 @@ import { ItineraryExcel } from "@/components/ItineraryExcel";
 import { GooglePlacesImport } from "@/components/GooglePlacesImport";
 import type { PlannerItem } from "@/lib/planner-types";
 import { plannerTab, plannerTabUrl } from "@/lib/planner-tab";
+import { PlanSheet } from "@/components/PlanSheet";
+import { itineraryDays, scheduledPlace } from "@/lib/plan-experience";
+import design from "./PlanExperience.module.css";
 import { SmartDayRoute } from "@/components/SmartDayRoute";
 
 type CountryOption = {
@@ -40,10 +43,12 @@ type TripOption = {
   id: string;
   name: string;
   financialStatus: string;
+  startDate?: string | null;
+  endDate?: string | null;
 };
 
 const tabs = [
-  ["ITINERARY", "Plan", "🗓️"],
+  ["ITINERARY", "Itinerary", "🗓️"],
   ["PLACE", "Places", "📍"],
   ["FOOD", "Meals", "🍜"],
   ["SHOPPING", "Shop", "🛍️"],
@@ -215,6 +220,7 @@ function PlannerItemForm({
   countries,
   itemType,
   defaultCountryId,
+  defaultDate = "",
   initial,
   busy,
   error,
@@ -226,6 +232,7 @@ function PlannerItemForm({
   itemType: TabValue;
   defaultCountryId: string;
   initial?: PlannerItem;
+  defaultDate?: string;
   busy: boolean;
   error: string;
   draftStorageKey: string;
@@ -385,7 +392,7 @@ function PlannerItemForm({
             className="planner-native-input"
             name="itemDate"
             type="date"
-            defaultValue={initial?.itemDate ?? ""}
+            defaultValue={initial?.itemDate ?? defaultDate}
           />
         </label>
 
@@ -699,6 +706,16 @@ export function PlannerClient({
   const [itemsState, setItemsState] =
     useState<PlannerItem[]>(items);
   const [tab, setTab] = useState<TabValue>(() => plannerTab(initialTab));
+  const [selectedDay, setSelectedDay] = useState("all");
+  const [search, setSearch] = useState("");
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [scheduleItem, setScheduleItem] = useState<PlannerItem | null>(null);
+  const [scheduleError, setScheduleError] = useState("");
+  const [scheduleBusy, setScheduleBusy] = useState(false);
+  const tripDates = trips.find(trip => trip.id === activeTripId);
+  const planDays = useMemo(() => itineraryDays(itemsState, tripDates?.startDate, tripDates?.endDate), [itemsState, tripDates?.startDate, tripDates?.endDate]);
+  useEffect(() => { if (selectedDay !== "all" && selectedDay !== "unscheduled" && !planDays.includes(selectedDay)) setSelectedDay("all"); }, [planDays, selectedDay]);
   const [showForm, setShowForm] = useState(initialShowForm);
   const [editingItem, setEditingItem] = useState<PlannerItem | null>(null);
   const [detailItem, setDetailItem] = useState<PlannerItem | null>(null);
@@ -721,7 +738,9 @@ export function PlannerClient({
     return itemsState
       .filter(
         (item) =>
-          item.itemType === tab,
+          item.itemType === tab &&
+          (tab !== "ITINERARY" || selectedDay === "all" || (selectedDay === "unscheduled" ? !item.itemDate : item.itemDate === selectedDay)) &&
+          (!search.trim() || `${item.title} ${item.area ?? ""} ${item.subtype ?? ""}`.toLowerCase().includes(search.trim().toLowerCase())),
       )
       .sort((a, b) => {
         if (isSpots && distanceSort !== "plan") {
@@ -743,7 +762,7 @@ export function PlannerClient({
           b.itemTime ?? "99:99",
         );
       });
-  }, [itemsState, tab, distances, distanceSort, isSpots]);
+  }, [itemsState, tab, distances, distanceSort, isSpots, selectedDay, search]);
 
   const countryById = useMemo(
     () =>
@@ -1032,6 +1051,24 @@ export function PlannerClient({
     }
   }
 
+  async function addToDay(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!scheduleItem || scheduleBusy || activeClosed) return;
+    setScheduleBusy(true); setScheduleError("");
+    const form = new FormData(event.currentTarget);
+    const date = String(form.get("date") ?? "");
+    const time = String(form.get("time") ?? "");
+    const payload = scheduledPlace(scheduleItem, date, time, itemsState);
+    try {
+      if (!navigator.onLine) throw new Error("Reconnect to add this place to your shared itinerary.");
+      const response = await fetch("/api/travel-items", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not add this activity.");
+      await refreshItems(); setScheduleItem(null); setSelectedDay(date); switchTab("ITINERARY");
+    } catch (caught) { setScheduleError(caught instanceof Error ? caught.message : "Could not add this activity."); }
+    finally { setScheduleBusy(false); }
+  }
+
   async function saveEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -1236,9 +1273,9 @@ export function PlannerClient({
       setError(activeClosed ? "This Trip is closed and its Plan is read-only." : "Reconnect before reordering the shared plan.");
       return;
     }
-    const group = visible.filter((candidate) =>
-      candidate.countryId === item.countryId && candidate.itemDate === item.itemDate,
-    );
+    const group = itemsState.filter((candidate) =>
+      candidate.itemType === item.itemType && candidate.countryId === item.countryId && candidate.itemDate === item.itemDate,
+    ).sort((a, b) => a.sortOrder - b.sortOrder || (a.itemTime ?? "99:99").localeCompare(b.itemTime ?? "99:99"));
     const index = group.findIndex((candidate) => candidate.id === item.id);
     const nextIndex = index + direction;
     if (index < 0 || nextIndex < 0 || nextIndex >= group.length) return;
@@ -1361,6 +1398,9 @@ export function PlannerClient({
 
   function switchTab(nextTab: TabValue) {
     setTab(nextTab);
+    setSearch("");
+    setToolsOpen(false);
+    setRouteOpen(false);
     window.history.replaceState(window.history.state, "", plannerTabUrl(nextTab));
     setShowForm(false);
     setEditingItem(null);
@@ -1380,7 +1420,7 @@ export function PlannerClient({
   }
 
   return (
-    <div className="planner-shell">
+    <div className={`planner-shell ${design.shell}`} data-plan-tab={tab}>
       {busy ? (
         <SavingOverlay
           title={loadingTitle}
@@ -1391,9 +1431,38 @@ export function PlannerClient({
           }
         />
       ) : null}
+      <div className="planner-filter">
+        <label>
+          <span>Trip</span>
+          <select
+            aria-label="Change planner trip"
+            value={activeTripId}
+            disabled={busy}
+            onChange={(event) => {
+              setEditingItem(null);
+              setDetailItem(null);
+              setShowForm(false);
+              setError("");
+              void changeTrip(event.target.value);
+            }}
+          >
+            {trips.map((trip) => (
+              <option value={trip.id} key={trip.id} title={trip.name}>
+                {compactOptionText(`${trip.name}${trip.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
+              </option>
+            ))}
+          </select>
+          {activeTrip?.startDate ? <small className={design.tripDates}>{formatDate(activeTrip.startDate)}{activeTrip.endDate ? ` – ${formatDate(activeTrip.endDate)}` : ""}</small> : null}
+        </label>
+
+        <span className="planner-count">
+          {visible.length} {visible.length === 1 ? "item" : "items"}
+        </span>
+      </div>
+
       <div
         className="planner-tabs"
-        role="tablist"
+        role="group"
         aria-label="Trip planner sections"
       >
         {tabs.map(([value, label, icon]) => (
@@ -1401,6 +1470,7 @@ export function PlannerClient({
             className={
               tab === value ? "planner-tab active" : "planner-tab"
             }
+            aria-pressed={tab === value}
             key={value}
             onClick={() => switchTab(value)}
             type="button"
@@ -1440,34 +1510,20 @@ export function PlannerClient({
         </p>
       ) : null}
 
-      <div className="planner-filter">
-        <label>
-          <span>Trip</span>
-          <select
-            aria-label="Change planner trip"
-            value={activeTripId}
-            disabled={busy}
-            onChange={(event) => {
-              setEditingItem(null);
-              setDetailItem(null);
-              setShowForm(false);
-              setError("");
-              void changeTrip(event.target.value);
-            }}
-          >
-            {trips.map((trip) => (
-              <option value={trip.id} key={trip.id} title={trip.name}>
-                {compactOptionText(`${trip.name}${trip.financialStatus === "CLOSED" ? " · Closed" : ""}`, 36)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <span className="planner-count">
-          {visible.length} {visible.length === 1 ? "item" : "items"}
-        </span>
+      <div className={design.toolbar}>
+        <label className={design.search}><span className="sr-only">Search this section</span><input type="search" placeholder={isSpots ? "Search saved places" : "Search your plan"} value={search} onChange={event => setSearch(event.target.value)} /></label>
+        {tab === "ITINERARY" || isSpots ? <button type="button" className="button secondary" aria-expanded={toolsOpen} onClick={() => setToolsOpen(value => !value)}>{toolsOpen ? "Close tools" : isSpots ? "Import / stay" : "Import / export"}</button> : null}
       </div>
-
+      {tab === "ITINERARY" ? <>
+        <div className={design.days} aria-label="Itinerary days">
+          <button type="button" aria-pressed={selectedDay === "all"} onClick={() => setSelectedDay("all")}>All days</button>
+          {planDays.map(day => <button type="button" key={day} aria-pressed={selectedDay === day} onClick={() => setSelectedDay(day)}>{formatDate(day)}</button>)}
+          {itemsState.some(item => item.itemType === "ITINERARY" && !item.itemDate) ? <button type="button" aria-pressed={selectedDay === "unscheduled"} onClick={() => setSelectedDay("unscheduled")}>Unscheduled</button> : null}
+        </div>
+        <div className={design.dayHeading}><div><small>YOUR ITINERARY</small><h3>{selectedDay === "all" ? "The whole trip" : selectedDay === "unscheduled" ? "Flexible plans" : formatDate(selectedDay)}</h3></div><button type="button" className="button secondary" onClick={() => setRouteOpen(true)}>View day route ↗</button></div>
+        {itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation") ? <button type="button" className={design.stay} onClick={() => setDetailItem(itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")!)}><span>⌂</span><span><small>YOUR STAY</small><strong>{itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")?.title}</strong></span><span>›</span></button> : null}
+      </> : null}
+      <div hidden={!toolsOpen} className={design.tools}>
       {tab === "ITINERARY" ? <ItineraryExcel
         key={defaultCountryId}
         countryId={defaultCountryId}
@@ -1513,17 +1569,19 @@ export function PlannerClient({
         />
       ) : null}
 
-      {tab === "ITINERARY" ? <SmartDayRoute
+      </div>
+      {tab === "ITINERARY" && routeOpen ? <PlanSheet title="Your day route" onClose={() => setRouteOpen(false)}><SmartDayRoute
+        initialDate={selectedDay === "all" || selectedDay === "unscheduled" ? undefined : selectedDay}
         items={itemsState.filter((item) => item.itemType === "ITINERARY")}
         countryId={defaultCountryId}
         tripName={activeTrip?.name ?? "this Trip"}
-        onPin={id => { const item = itemsState.find(item => item.id === id); if (item) { setPinItem(item); window.requestAnimationFrame(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "start" })); } }}
+        onPin={id => { const item = itemsState.find(item => item.id === id); if (item) { setRouteOpen(false); setPinItem(item); window.requestAnimationFrame(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "start" })); } }}
         disabled={activeClosed}
         onUpdated={refreshItems}
-      /> : null}
+      /></PlanSheet> : null}
 
       {showForm && !activeClosed ? (
-        <PlannerItemForm
+        <PlanSheet title={meta.addLabel} busy={busy} onClose={() => { setShowForm(false); setError(""); }}><PlannerItemForm
           countries={countries}
           itemType={tab}
           defaultCountryId={defaultCountryId}
@@ -1533,16 +1591,17 @@ export function PlannerClient({
             "planner",
             `new:${tab}`,
           )}
+          defaultDate={selectedDay !== "all" && selectedDay !== "unscheduled" ? selectedDay : ""}
           onSubmit={add}
           onCancel={() => {
             setShowForm(false);
             setError("");
           }}
-        />
+        /></PlanSheet>
       ) : null}
 
       {editingItem && !activeClosed ? (
-        <div id="planner-edit-panel">
+        <PlanSheet title="Edit plan" busy={busy} onClose={() => { setEditingItem(null); setError(""); }}><div id="planner-edit-panel">
           <PlannerItemForm
             countries={countries}
             itemType={editingItem.itemType as TabValue}
@@ -1560,7 +1619,7 @@ export function PlannerClient({
               setError("");
             }}
           />
-        </div>
+        </div></PlanSheet>
       ) : null}
 
       {error && !showForm && !editingItem ? (
@@ -1569,7 +1628,7 @@ export function PlannerClient({
         </p>
       ) : null}
 
-      {pinItem ? <div className="planner-pin-editor"><h3>Set location · {pinItem.title}</h3><PlacePinPicker initial={placeCoordinates(pinItem.linkUrl ?? "", pinItem.notes ?? "") ?? placeCoordinates(itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.linkUrl ?? "", itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.notes ?? "")} onCancel={() => setPinItem(null)} onChoose={async point => {
+      {pinItem ? <PlanSheet title="Choose location" busy={busy} onClose={() => setPinItem(null)}><div className="planner-pin-editor"><h3>Set location · {pinItem.title}</h3>{error ? <p className="form-error" role="alert">{error}</p> : null}<PlacePinPicker initial={placeCoordinates(pinItem.linkUrl ?? "", pinItem.notes ?? "") ?? placeCoordinates(itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.linkUrl ?? "", itemsState.find(i => i.subtype === "Accommodation" && i.countryId === pinItem.countryId)?.notes ?? "")} onCancel={() => setPinItem(null)} onChoose={async point => {
         if (busy || activeClosed) return;
         setBusy(true); setError("");
         try {
@@ -1578,7 +1637,7 @@ export function PlannerClient({
           const data = await response.json(); if (!response.ok) throw new Error(data.error || "Could not save pin.");
           await refreshItems(); setPinItem(null);
         } catch (e) { setError(e instanceof Error ? e.message : "Could not save pin."); } finally { setBusy(false); }
-      }} /></div> : null}
+      }} /></div></PlanSheet> : null}
       {isSpots ? <div className="place-distance-toolbar">
         <label>Travel by <select value={routeMode} onChange={event => { setDistances({}); setRouteMinutes({}); setRouteMode(event.target.value as "walk" | "drive"); }}><option value="walk">Walking</option><option value="drive">Driving</option></select></label>
         <label>Sort places <select value={distanceSort} onChange={event => setDistanceSort(event.target.value)}><option value="nearest">Nearest first · ascending</option><option value="farthest">Farthest first · descending</option><option value="plan">Plan order</option></select></label>
@@ -1691,7 +1750,8 @@ export function PlannerClient({
                 ) : null}
 
                 {isSpots ? <div className="place-card-actions">
-                  {item.linkUrl ? <a href={item.linkUrl} target="_blank" rel="noreferrer">Map ↗</a> : null}
+                  {placeCoordinates(item.linkUrl ?? "", item.notes ?? "") || item.linkUrl ? <a href={placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? `https://www.google.com/maps/search/?api=1&query=${placeCoordinates(item.linkUrl ?? "", item.notes ?? "")!.latitude},${placeCoordinates(item.linkUrl ?? "", item.notes ?? "")!.longitude}` : item.linkUrl!} target="_blank" rel="noreferrer">Map ↗</a> : null}
+                  {!activeClosed ? <button type="button" className={design.addDay} onClick={() => { setScheduleError(""); setScheduleItem(item); }}>＋ Add to day</button> : null}
                   <button type="button" onClick={() => setDetailItem(item)}>Details</button>
                   {!activeClosed ? <details className="place-more-actions"><summary>More actions</summary><div>
                     <button type="button" disabled={busy} onClick={() => { setPinItem(item); window.setTimeout(() => document.querySelector(".planner-pin-editor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0); }}>Set / correct pin</button>
@@ -1702,70 +1762,15 @@ export function PlannerClient({
                   </div></details> : null}
                 </div> : null}
                 {!isSpots ? <div className="planner-card-footer">
-                  <div className="planner-proposer">
-                    <span className="planner-proposer-icon">✦</span>
-                    <span>
-                      Proposed by{" "}
-                      <strong>
-                        {item.proposedByName ?? "Traveler"}
-                      </strong>
-                    </span>
-                  </div>
-
                   <div className="planner-card-buttons">
-                    {!activeClosed && visible.length > 1 ? (
-                      <span className="planner-order-buttons" aria-label="Change item order">
-                        <button type="button" onClick={() => void moveItem(item, -1)} aria-label={`Move ${item.title} earlier`}>↑</button>
-                        <button type="button" onClick={() => void moveItem(item, 1)} aria-label={`Move ${item.title} later`}>↓</button>
-                      </span>
-                    ) : null}
-
-                    {!activeClosed && (item.itemType === "CHECKLIST" || item.itemType === "PACKING") ? (
-                      <button
-                        className={item.status === "Done" ? "planner-done-button completed" : "planner-done-button"}
-                        onClick={() => void toggleDone(item)}
-                        type="button"
-                      >
-                        {item.status === "Done" ? "Undo" : "Mark done"}
-                      </button>
-                    ) : null}
-
-                    <button
-                      className="planner-detail-button"
-                      onClick={() => setDetailItem(item)}
-                      type="button"
-                    >
-                      View details
-                    </button>
-
-                    {!activeClosed ? (
-                      <>
-                        {item.itemType !== "CHECKLIST" && item.itemType !== "PACKING" ? (
-                          <a
-                            className="planner-expense-button"
-                            href={expenseHrefForItem(item)}
-                          >
-                            Add expense
-                          </a>
-                        ) : null}
-
-                        <button
-                          className="planner-edit-button"
-                          onClick={() => startEdit(item)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          className="text-danger"
-                          onClick={() => remove(item.id)}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    ) : null}
+                    {!activeClosed ? <button className="planner-edit-button" type="button" onClick={() => startEdit(item)}>✎ Edit</button> : null}
+                    <button className="planner-detail-button" type="button" onClick={() => setDetailItem(item)}>Details</button>
+                    {!activeClosed && (item.itemType === "CHECKLIST" || item.itemType === "PACKING") ? <button className={item.status === "Done" ? "planner-done-button completed" : "planner-done-button"} type="button" onClick={() => void toggleDone(item)}>{item.status === "Done" ? "Undo" : "Mark done"}</button> : null}
+                    {!activeClosed ? <details className="place-more-actions"><summary>More</summary><div>
+                      {item.itemType !== "CHECKLIST" && item.itemType !== "PACKING" ? <a className="planner-expense-button" href={expenseHrefForItem(item)}>Add expense</a> : null}
+                      <span className="planner-order-buttons" aria-label="Change item order"><button type="button" disabled={busy} onClick={() => void moveItem(item, -1)}>Move earlier ↑</button><button type="button" disabled={busy} onClick={() => void moveItem(item, 1)}>Move later ↓</button></span>
+                      <button className="text-danger" type="button" disabled={busy} onClick={() => remove(item.id)}>Delete</button>
+                    </div></details> : null}
                   </div>
                 </div> : null}
               </div>
@@ -1779,13 +1784,13 @@ export function PlannerClient({
               {tabs.find(([value]) => value === tab)?.[2]}
             </div>
             <h2>
-              No{" "}
+              {search ? "No matching " : "No "}
               {tabs
                 .find(([value]) => value === tab)?.[1]
                 .toLowerCase()}{" "}
               yet
             </h2>
-            <p>{meta.subtitle}</p>
+            <p>{search ? "Try another name or clear the search." : meta.subtitle}</p>
             {!activeClosed ? (
               <button
                 className="button primary"
@@ -1799,6 +1804,14 @@ export function PlannerClient({
         ) : null}
       </section>
 
+      {scheduleItem ? <PlanSheet title="Add to your day" busy={scheduleBusy} onClose={() => setScheduleItem(null)}><form className={design.scheduleForm} onSubmit={addToDay}>
+        <h3>{scheduleItem.title}</h3><p>{scheduleItem.area || "Choose when you want to visit."}</p>
+        <label>Day<input name="date" type="date" required defaultValue={selectedDay !== "all" && selectedDay !== "unscheduled" ? selectedDay : planDays[0] ?? ""} /></label>
+        <label>Time · optional<input name="time" type="text" maxLength={100} placeholder="14:00 or After lunch" /></label>
+        <p>The saved place stays in this list. Its map pin and details are copied into your itinerary.</p>
+        {scheduleError ? <p className="form-error" role="alert">{scheduleError}</p> : null}
+        <button type="submit" className="button primary" disabled={scheduleBusy}>{scheduleBusy ? "Adding…" : "Add activity"}</button>
+      </form></PlanSheet> : null}
       {detailItem ? (
         <PlannerDetailsModal
           item={detailItem}
