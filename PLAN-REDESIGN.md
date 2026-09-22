@@ -22,3 +22,9 @@ Replace your source with the complete package and redeploy the existing Vercel p
 Automated regression and feature tests plus the production build are recorded in the delivery message. A local browser installation was attempted but failed with a download gateway error, so physical iPhone/PWA layout and keyboard behavior have not been visually verified. Before broad rollout, check a 360px phone, an installed iPhone PWA with the keyboard open, and desktop, especially add/edit sheets, long place names and long time labels.
 
 The map in the approved concept image was illustrative. The implemented map displays actual saved pins and provider attribution; route geometry is shown by Google Maps when opened.
+
+## Design correction after screenshot review
+
+The first redesign reused legacy planner class names. The global theme applies !important rules to those names, producing black pill buttons, wrapped navigation and the oversized title panel. Plan now uses separate plan-v2 style hooks for those elements. Mobile icons are no longer hidden. Inline SVG section icons and colored activity icons replace inconsistent emoji rendering, with categories selected from each activity's type/title.
+
+Validated with a server-render regression test that checks section icons exist and that navigation does not expose the old conflicting class names. This does not substitute for physical iPhone visual verification.

@@ -28,6 +28,7 @@ import { ItineraryExcel } from "@/components/ItineraryExcel";
 import { GooglePlacesImport } from "@/components/GooglePlacesImport";
 import type { PlannerItem } from "@/lib/planner-types";
 import { plannerTab, plannerTabUrl } from "@/lib/planner-tab";
+import { PlanIcon, activityIcon } from "@/components/PlanIcon";
 import { PlanSheet } from "@/components/PlanSheet";
 import { itineraryDays, scheduledPlace } from "@/lib/plan-experience";
 import design from "./PlanExperience.module.css";
@@ -1431,9 +1432,9 @@ export function PlannerClient({
           }
         />
       ) : null}
-      <div className="planner-filter">
+      <div className="plan-v2-planner-filter">
         <label>
-          <span>Trip</span>
+          <span className="sr-only">Trip</span>
           <select
             aria-label="Change planner trip"
             value={activeTripId}
@@ -1455,33 +1456,33 @@ export function PlannerClient({
           {activeTrip?.startDate ? <small className={design.tripDates}>{formatDate(activeTrip.startDate)}{activeTrip.endDate ? ` – ${formatDate(activeTrip.endDate)}` : ""}</small> : null}
         </label>
 
-        <span className="planner-count">
+        <span className="plan-v2-planner-count">
           {visible.length} {visible.length === 1 ? "item" : "items"}
         </span>
       </div>
 
       <div
-        className="planner-tabs"
+        className="plan-v2-planner-tabs"
         role="group"
         aria-label="Trip planner sections"
       >
         {tabs.map(([value, label, icon]) => (
           <button
             className={
-              tab === value ? "planner-tab active" : "planner-tab"
+              tab === value ? "plan-v2-planner-tab active" : "plan-v2-planner-tab"
             }
             aria-pressed={tab === value}
             key={value}
             onClick={() => switchTab(value)}
             type="button"
           >
-            <span>{icon}</span>
+            <span><PlanIcon kind={value} size={19} /></span>
             <small>{label}</small>
           </button>
         ))}
       </div>
 
-      <section className="planner-intro">
+      <section className="plan-v2-planner-intro">
         <div>
           <p className="eyebrow">
             {tabs.find(([value]) => value === tab)?.[1]}
@@ -1491,7 +1492,7 @@ export function PlannerClient({
         </div>
 
         <button
-          className="button primary planner-add-button"
+          className="button primary plan-v2-planner-add-button"
           onClick={() => {
             setEditingItem(null);
             setError("");
@@ -1521,7 +1522,7 @@ export function PlannerClient({
           {itemsState.some(item => item.itemType === "ITINERARY" && !item.itemDate) ? <button type="button" aria-pressed={selectedDay === "unscheduled"} onClick={() => setSelectedDay("unscheduled")}>Unscheduled</button> : null}
         </div>
         <div className={design.dayHeading}><div><small>YOUR ITINERARY</small><h3>{selectedDay === "all" ? "The whole trip" : selectedDay === "unscheduled" ? "Flexible plans" : formatDate(selectedDay)}</h3></div><button type="button" className="button secondary" onClick={() => setRouteOpen(true)}>View day route ↗</button></div>
-        {itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation") ? <button type="button" className={design.stay} onClick={() => setDetailItem(itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")!)}><span>⌂</span><span><small>YOUR STAY</small><strong>{itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")?.title}</strong></span><span>›</span></button> : null}
+        {itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation") ? <button type="button" className={design.stay} onClick={() => setDetailItem(itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")!)}><span><PlanIcon kind="STAY" size={28} /></span><span><small>YOUR STAY</small><strong>{itemsState.find(item => item.provider === "Miles & Meals stay" && item.subtype === "Accommodation")?.title}</strong></span><span>›</span></button> : null}
       </> : null}
       <div hidden={!toolsOpen} className={design.tools}>
       {tab === "ITINERARY" ? <ItineraryExcel
@@ -1652,8 +1653,8 @@ export function PlannerClient({
       <section
         className={
           tab === "ITINERARY"
-            ? "timeline-list"
-            : isSpots ? "travel-card-grid compact-place-list" : "travel-card-grid"
+            ? "plan-v2-timeline-list"
+            : isSpots ? "plan-v2-travel-card-grid plan-v2-compact-place-list" : "plan-v2-travel-card-grid"
         }
       >
         {visible.map((item) => {
@@ -1667,24 +1668,24 @@ export function PlannerClient({
             <article
               className={
                 tab === "ITINERARY"
-                  ? "timeline-card"
-                  : "travel-card"
+                  ? "plan-v2-timeline-card"
+                  : "plan-v2-travel-card"
               }
               key={item.id}
             >
               {tab === "ITINERARY" ? (
-                <div className={`timeline-time ${!item.itemDate && !item.itemTime ? "timeline-unscheduled" : ""}`}>
+                <div className={`plan-v2-timeline-time ${!item.itemDate && !item.itemTime ? "plan-v2-timeline-unscheduled" : ""}`}>
                   <strong>{item.itemTime || (item.subtype === "Accommodation" ? "Your stay" : "Flexible")}</strong>
                   <span>{formatDate(item.itemDate)}</span>
                 </div>
               ) : (
-                <div className="travel-card-icon">
-                  {tabInfo?.[2] ?? "📌"}
+                <div className="plan-v2-travel-card-icon">
+                  <PlanIcon kind={item.itemType} size={25} />
                 </div>
               )}
 
-              <div className="travel-card-body">
-                <div className="travel-card-topline">
+              <div className="plan-v2-travel-card-body">
+                <div className="plan-v2-travel-card-topline">
                   <span>{countryName}</span>
 
                   {item.status && item.status !== "Idea" ? (
@@ -1698,11 +1699,11 @@ export function PlannerClient({
                   ) : null}
                 </div>
 
-                <h2>{item.title}</h2>
+                <h2 className={design.activityTitle}>{tab === "ITINERARY" ? <span className={design.activityIcon} data-kind={activityIcon(item.itemType, item.title, item.subtype ?? "")}><PlanIcon kind={activityIcon(item.itemType, item.title, item.subtype ?? "")} size={24} /></span> : null}<span>{item.title}</span></h2>
                 {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km · ${routeMode === "walk" ? "walk" : "drive"} · ${routeMinutes[item.id] ?? "—"} min` : "Distance unavailable"}</strong> : null}
 
 
-                <p className="travel-card-meta" hidden={isSpots && !item.area && !item.subtype}>
+                <p className="plan-v2-travel-card-meta" hidden={isSpots && !item.area && !item.subtype}>
                   {[item.area, item.subtype]
                     .filter(Boolean)
                     .join(" · ") ||
@@ -1713,7 +1714,7 @@ export function PlannerClient({
 
                 {tab !== "ITINERARY" &&
                 (item.itemDate || item.itemTime) ? (
-                  <p className="travel-card-date">
+                  <p className="plan-v2-travel-card-date">
                     {formatDate(item.itemDate)}
                     {item.itemTime
                       ? ` · ${item.itemTime}`
