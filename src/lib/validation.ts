@@ -236,7 +236,7 @@ export const travelItemSchema = z.object({
   itemType: z.enum(["ITINERARY", "PLACE", "FOOD", "SHOPPING", "CHECKLIST", "PACKING"]),
   title: z.string().trim().min(1).max(250),
   itemDate: z.string().optional().default(""),
-  itemTime: z.string().trim().max(30).optional().default(""),
+  itemTime: z.string().trim().max(100).optional().default(""),
   area: z.string().trim().max(120).optional().default(""),
   subtype: z.string().trim().max(100).optional().default(""),
   priority: z.string().trim().max(50).optional().default(""),

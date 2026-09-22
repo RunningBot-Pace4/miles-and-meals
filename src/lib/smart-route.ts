@@ -11,7 +11,7 @@ export type SmartRouteItem = {
 export type TravelMode = "driving" | "walking" | "transit" | "bicycling";
 
 function minutes(value: string | null): number | null {
-  const match = value?.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  const match = value?.match(/^([01]\d|2[0-3]):([0-5]\d)(?:\s*[-–—]\s*(?:[01]\d|2[0-3]):[0-5]\d)?$/);
   return match ? Number(match[1]) * 60 + Number(match[2]) : null;
 }
 

@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
   const events = items.filter((item) => item.itemDate).map((item) => {
     const date = compactDate(item.itemDate as string);
-    const parsedTime = item.itemTime?.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+    const parsedTime = item.itemTime?.match(/^([01]\d|2[0-3]):([0-5]\d)(?:\s*[-–—]\s*(?:[01]\d|2[0-3]):[0-5]\d)?$/);
     const time = parsedTime ? `${parsedTime[1]}${parsedTime[2]}` : "";
     const start = time ? `${date}T${time}00` : date;
     const endDate = new Date(`${item.itemDate}T00:00:00Z`);
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
       time ? `DTEND:${timedEnd}` : `DTEND;VALUE=DATE:${timedEnd}`,
       `SUMMARY:${escapeIcs(item.title)}`,
       item.area ? `LOCATION:${escapeIcs(item.area)}` : "",
-      item.notes ? `DESCRIPTION:${escapeIcs(item.notes)}` : "",
+      item.notes || item.itemTime ? `DESCRIPTION:${escapeIcs([item.itemTime ? `Timing: ${item.itemTime}` : "", item.notes].filter(Boolean).join("\n"))}` : "",
       "END:VEVENT",
     ].filter(Boolean).join("\r\n");
   });

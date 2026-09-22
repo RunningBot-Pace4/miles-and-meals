@@ -1,0 +1,23 @@
+.card { min-width:0; margin:16px 0; padding:20px; border:1px solid #b7ddd7; border-radius:20px; background:linear-gradient(120deg,#edf8f4,#f5f8ff); color:#204a43; }
+.heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; }
+.heading p { margin:0 0 5px; color:#12766b; font-size:12px; font-weight:800; letter-spacing:.12em; }
+.heading h3 { margin:0 0 6px; font-size:20px; }
+.heading span { overflow-wrap:anywhere; }
+.actions { display:flex; flex-wrap:wrap; gap:8px; }
+.card button { min-height:44px; white-space:normal; }
+.importPanel { display:grid; gap:14px; min-width:0; margin-top:18px; border-top:1px solid #c6dfdc; padding-top:14px; }
+.importPanel p { margin:0; line-height:1.55; }
+.importPanel label { display:grid; gap:8px; min-width:0; }
+.file { padding:16px; border:1px dashed #7fb3ac; border-radius:14px; background:#fff; }
+.file input { width:100%; min-width:0; max-width:100%; }
+.help,.file small { font-size:13px; color:#536c65; }
+.reviewHeader { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.rows { display:grid; gap:8px; max-height:440px; max-height:min(440px,55dvh); overflow-y:auto; overscroll-behavior:contain; }
+.importPanel .row { display:grid; grid-template-columns:24px minmax(0,1fr); gap:12px; align-items:start; padding:14px; border:1px solid #d6e3e0; background:white; border-radius:14px; cursor:pointer; }
+.row input { width:22px; height:22px; margin:3px 0 0; accent-color:#107e72; }
+.row > span { display:grid; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.row small { color:#58706a; font-size:13px; font-weight:400; }
+.row b { color:#985115; font-size:13px; }
+.row.invalid { border-color:#e4b4a5; background:#fff8f4; }
+.success { padding:12px; border-radius:12px; background:#e0f3e9; color:#146442; }
+@media(max-width:600px) { .card { padding:14px; }.heading,.actions { width:100%; }.actions { display:grid; grid-template-columns:minmax(0,1fr); }.actions button { width:100%; }.heading h3 { font-size:18px; } }

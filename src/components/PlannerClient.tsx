@@ -24,6 +24,7 @@ import {
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
 import { compactOptionText } from "@/lib/display-text";
 import { PlanImport } from "@/components/PlanImport";
+import { ItineraryExcel } from "@/components/ItineraryExcel";
 import { GooglePlacesImport } from "@/components/GooglePlacesImport";
 import type { PlannerItem } from "@/lib/planner-types";
 import { plannerTab, plannerTabUrl } from "@/lib/planner-tab";
@@ -403,7 +404,9 @@ function PlannerItemForm({
           <input
             className="planner-native-input"
             name="itemTime"
-            type="time"
+            type={itemType === "ITINERARY" ? "text" : "time"}
+            placeholder={itemType === "ITINERARY" ? "09:00–10:30 or After check-in" : undefined}
+            maxLength={100}
             defaultValue={initial?.itemTime ?? ""}
           />
         </label>
@@ -412,6 +415,7 @@ function PlannerItemForm({
           <label>
             Duration
             <select name="durationMinutes" defaultValue={initial?.durationMinutes ?? 60}>
+              {initial?.durationMinutes && ![30,60,90,120,180,240,480].includes(initial.durationMinutes) ? <option value={initial.durationMinutes}>{initial.durationMinutes} minutes</option> : null}
               <option value="30">30 minutes</option>
               <option value="60">1 hour</option>
               <option value="90">1.5 hours</option>
@@ -1463,6 +1467,17 @@ export function PlannerClient({
           {visible.length} {visible.length === 1 ? "item" : "items"}
         </span>
       </div>
+
+      {tab === "ITINERARY" ? <ItineraryExcel
+        key={defaultCountryId}
+        countryId={defaultCountryId}
+        tripName={activeTrip?.name ?? "Selected trip"}
+        disabled={activeClosed || busy}
+        onImported={saved => setItemsState(current => {
+          const ids = new Set(current.map(item => item.id));
+          return [...current, ...saved.filter(item => !ids.has(item.id))];
+        })}
+      /> : null}
 
       {tab === "ITINERARY" ? (
         <div className="planner-operations-bar">
