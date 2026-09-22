@@ -28,3 +28,10 @@ The map in the approved concept image was illustrative. The implemented map disp
 The first redesign reused legacy planner class names. The global theme applies !important rules to those names, producing black pill buttons, wrapped navigation and the oversized title panel. Plan now uses separate plan-v2 style hooks for those elements. Mobile icons are no longer hidden. Inline SVG section icons and colored activity icons replace inconsistent emoji rendering, with categories selected from each activity's type/title.
 
 Validated with a server-render regression test that checks section icons exist and that navigation does not expose the old conflicting class names. This does not substitute for physical iPhone visual verification.
+
+## PWA inset correction and admin-only reset
+
+- Timeline cards now retain 12–16px horizontal inset at phone widths; time labels no longer sit on the card edge.
+- The trip selector has explicit touch height, text inset and a single custom dropdown arrow.
+- Active tab labels and icons use white text for contrast on teal.
+- neon-cleanup-keep-all-admins.sql clears current application tables, non-admin users and all sessions, preserving every admin user plus their account credentials. Admins must sign in again. Take a database backup/branch first and run the whole transaction in Neon SQL Editor. The script was checked against the source schema but was not executed against a database. External object/file storage is not cleaned by SQL.
