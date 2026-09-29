@@ -1,3 +1,4 @@
+import { RouteLookupError } from "./route-error";
 import type { Coordinates } from "./place-distance";
 
 export async function routeDistance(start: Coordinates, end: Coordinates, mode: "walk" | "drive", apiKey: string, refresh = false) {
@@ -5,10 +6,10 @@ export async function routeDistance(start: Coordinates, end: Coordinates, mode: 
   const response = await fetch(`https://api.geoapify.com/v1/routing?${params}`, { ...(refresh ? { cache: "no-store" as const } : { next: { revalidate: 86400 } }), signal: AbortSignal.timeout(12000) });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      throw new Error("The Geoapify key cannot access Routing API. Check the key restrictions in Geoapify.");
+      throw new RouteLookupError("Routing access is unavailable. Ask the trip admin to check the routing key.", 503);
     }
-    if (response.status === 429) throw new Error("Route allowance reached. Please try again later.");
-    throw new Error("Routing is temporarily unavailable.");
+    if (response.status === 429) throw new RouteLookupError("Route allowance reached. Please try again later.", 429);
+    throw new RouteLookupError("Routing is temporarily unavailable. Please try again later.");
   }
   const data = await response.json();
   const route = data.results?.[0];

@@ -49,6 +49,9 @@ export const OFFLINE_MUTATION_STORAGE_KEY = "mnm:offline-mutation-queue:v1";
 export const OFFLINE_SYNC_HISTORY_STORAGE_KEY = "mnm:offline-sync-history:v1";
 const MAX_ITEMS = 60;
 const MAX_RETRY_DELAY_MS = 5 * 60 * 1000;
+const inFlightMutations = new Set<string>();
+export function isOfflineMutationSyncing(id: string): boolean { return inFlightMutations.has(id); }
+
 let automaticFlush: Promise<OfflineFlushResult> | null = null;
 let flushTail: Promise<unknown> = Promise.resolve();
 
@@ -192,6 +195,7 @@ function canSafelyEditOfflineExpenseAmount(
  * routed to a different ledger by accident.
  */
 export function editOfflineMutation(id: string, edit: OfflineMutationEdit): boolean {
+  if (isOfflineMutationSyncing(id)) return false;
   return updateOfflineMutation(id, (current) => {
     const body = editableBody(current.body);
     if (!body) return current;
@@ -315,7 +319,8 @@ export function enqueueOfflineMutation(
 }
 
 export function removeOfflineMutation(id: string) {
-  updateOfflineMutation(id, () => null);
+  if (isOfflineMutationSyncing(id)) return false;
+  return updateOfflineMutation(id, () => null);
 }
 
 export function clearOfflineQueue(): void {
@@ -442,6 +447,8 @@ async function performFlush(options: {
       updateOfflineMutation(id, clearRetryState);
     }
 
+    inFlightMutations.add(id);
+    window.dispatchEvent(new CustomEvent("mnm:offline-queue-changed"));
     try {
       const response = await fetchWithTimeout(item.url, {
         method: item.method,
@@ -473,6 +480,9 @@ async function performFlush(options: {
           "Connection failed. This change is still safe on this device and will retry automatically.",
         blocked: false,
       });
+    } finally {
+      inFlightMutations.delete(id);
+      window.dispatchEvent(new CustomEvent("mnm:offline-queue-changed"));
     }
   }
 

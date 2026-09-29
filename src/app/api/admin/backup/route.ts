@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 import { db } from "@/db";
+import { createTransactionalDatabase } from "@/db/transaction";
 import {
   countries,
   countryMembers,
@@ -11,6 +12,7 @@ import {
   expenseSplits,
   expenses,
   journeys,
+  savedRouteDistances,
   settlementExpenseAllocations,
   settlements,
   travelItems,
@@ -39,7 +41,7 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 6;
+const BACKUP_VERSION = 7;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
@@ -51,6 +53,7 @@ const backupSchema = z.object({
     z.literal(3),
     z.literal(4),
     z.literal(5),
+    z.literal(6),
     z.literal(BACKUP_VERSION),
   ]),
   exportedAt: z.string(),
@@ -87,6 +90,12 @@ const backupSchema = z.object({
       .optional()
       .default([]),
     travelItems: z.array(z.record(z.string(), z.unknown())),
+    savedRouteDistances: z.array(z.object({
+      countryId: z.string().uuid(), stayId: z.string().uuid(), placeId: z.string().uuid(),
+      mode: z.enum(["walk", "drive"]), pinKey: z.string().min(1),
+      km: z.number().finite().nonnegative(), minutes: z.number().int().min(0).max(2147483647),
+      checkedAt: z.string().datetime({ offset: true }),
+    })).optional().default([]),
     tripInboxItems: z.array(z.record(z.string(), z.unknown())).optional().default([]),
   }),
 });
@@ -690,6 +699,18 @@ async function validateBackup(
     }
   }
 
+  const routeKeys = new Set<string>();
+  for (const [index, row] of backup.data.savedRouteDistances.entries()) {
+    const stay = backup.data.travelItems.find(item => item.id === row.stayId);
+    const place = backup.data.travelItems.find(item => item.id === row.placeId);
+    if (!countryIds.has(row.countryId) || stay?.countryId !== row.countryId || place?.countryId !== row.countryId || stay?.subtype !== "Accommodation" || !["PLACE", "FOOD", "SHOPPING"].includes(String(place?.itemType))) {
+      errors.push(`savedRouteDistances[${index}] must reference a stay and place in the same country.`);
+    }
+    const key = [row.countryId, row.stayId, row.placeId, row.mode].join(":");
+    if (routeKeys.has(key)) errors.push(`savedRouteDistances[${index}] duplicates a saved route.`);
+    routeKeys.add(key);
+  }
+
   for (const [index, row] of backup.data.tripInboxItems.entries()) {
     const tripId = requiredString(row, "tripId", errors, `tripInboxItems[${index}]`);
     const countryId = requiredString(row, "countryId", errors, `tripInboxItems[${index}]`);
@@ -796,6 +817,7 @@ async function validateBackup(
       plannerItems:
         backup.data.travelItems
           .length,
+      savedRoutes: backup.data.savedRouteDistances.length,
       inboxItems: backup.data.tripInboxItems.length,
     },
   };
@@ -1303,6 +1325,13 @@ async function restoreBackup(
     `);
   }
 
+  for (const row of backup.data.savedRouteDistances) {
+    queries.push(sql`
+      INSERT INTO saved_route_distances (country_id, stay_id, place_id, mode, pin_key, km, minutes, checked_at)
+      VALUES (${row.countryId}, ${row.stayId}, ${row.placeId}, ${row.mode}, ${row.pinKey}, ${row.km}, ${row.minutes}, ${new Date(row.checkedAt)})
+    `);
+  }
+
   await sql.transaction(queries);
 }
 
@@ -1320,6 +1349,38 @@ async function requireAdmin() {
   }
 
   return session;
+}
+
+async function readBackupSnapshot() {
+  const client = createTransactionalDatabase();
+  try {
+    return await client.database.transaction(async tx => Promise.all([
+    tx.select().from(journeys),
+    tx.select().from(trips),
+    tx.select().from(tripMembers),
+    tx.select().from(tripMemberPermissions),
+    tx.select().from(tripDocuments),
+    tx.select().from(tripEmergencyContacts),
+    tx.select().from(tripMemories),
+    tx.select().from(tripBudgets),
+    tx.select().from(tripCategoryBudgets),
+    tx.select().from(countries),
+    tx.select().from(countryMembers),
+    tx.select().from(expenses),
+    tx.select().from(expenseSplits),
+    tx.select().from(expensePayers),
+    tx.select().from(expenseComments),
+    tx.select().from(splitPresets),
+    tx.select().from(settlements),
+    tx.select().from(settlementExpenseAllocations),
+    tx.select().from(travelItems),
+    tx.select().from(expenseItems),
+    tx.select().from(expenseItemAssignments),
+    tx.select().from(savedRouteDistances),
+    ]), { isolationLevel: "repeatable read", accessMode: "read only" });
+  } finally {
+    await client.close();
+  }
 }
 
 export async function GET() {
@@ -1355,29 +1416,8 @@ export async function GET() {
     plannerRows,
     expenseItemRows,
     expenseItemAssignmentRows,
-  ] = await Promise.all([
-    db.select().from(journeys),
-    db.select().from(trips),
-    db.select().from(tripMembers),
-    db.select().from(tripMemberPermissions),
-    db.select().from(tripDocuments),
-    db.select().from(tripEmergencyContacts),
-    db.select().from(tripMemories),
-    db.select().from(tripBudgets),
-    db.select().from(tripCategoryBudgets),
-    db.select().from(countries),
-    db.select().from(countryMembers),
-    db.select().from(expenses),
-    db.select().from(expenseSplits),
-    db.select().from(expensePayers),
-    db.select().from(expenseComments),
-    db.select().from(splitPresets),
-    db.select().from(settlements),
-    db.select().from(settlementExpenseAllocations),
-    db.select().from(travelItems),
-    db.select().from(expenseItems),
-    db.select().from(expenseItemAssignments),
-  ]);
+    routeRows,
+  ] = await readBackupSnapshot();
 
   const backup = {
     format: BACKUP_FORMAT,
@@ -1433,6 +1473,7 @@ export async function GET() {
         settlementAllocationRows,
       travelItems:
         plannerRows,
+      savedRouteDistances: routeRows,
     },
   };
 

@@ -138,7 +138,7 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
       const payload = await response.json() as { error?: string; items: PlannerItem[]; imported: number; skipped: number };
       if (!response.ok) throw new Error(payload.error ?? "Unable to import places.");
       onImported(payload.items);
-      setMessage(`${payload.imported} ${payload.imported === 1 ? "item" : "items"} added to ${tripName}, split into Places, Meals and Shop by category.${payload.skipped ? ` ${payload.skipped} already saved and skipped.` : ""} You can add visit dates using Edit.`);
+      setMessage(`${payload.imported} ${payload.imported === 1 ? "item" : "items"} added to ${tripName}, split into Places, Meals and Shop by category.${payload.skipped ? ` ${payload.skipped} already saved and skipped.` : ""} Pinned places will be checked once from your saved stay using the selected travel mode. If a route is unavailable, use Check distances to retry. You can add visit dates using Edit.`);
       setPlaces([]); setSelected(new Set()); setFileName(""); setWarnings([]); setDuplicates(0);
     } catch (caught) {
       setError(caught instanceof Error && caught.name !== "TimeoutError" && caught.name !== "TypeError"
@@ -192,7 +192,7 @@ export function GooglePlacesImport({ countryId, tripName, existingLinks, disable
               </label>
               <div className={styles.rowFields}>
                 <label>Category<select aria-label={`Category for ${place.title}`} value={place.itemType ?? "PLACE"} disabled={saved || busy} onChange={(event) => setPlaces((current) => current.map((p) => p.linkUrl === place.linkUrl ? { ...p, itemType: event.target.value as SavedPlaceDraft["itemType"] } : p))}><option value="PLACE">Places</option><option value="FOOD">Meals</option><option value="SHOPPING">Shop</option></select></label>
-                <small>{stayPoint && point ? `${distanceKm(stayPoint, point).toFixed(2)} km from stay` : "Distance unavailable"}</small>
+                <small>{stayPoint && point ? `${distanceKm(stayPoint, point).toFixed(2)} km straight-line from stay` : "Distance unavailable"}</small>
               </div>
               <button type="button" className="button secondary" disabled={busy || saved} onClick={() => setPinning(place.linkUrl)}>Set exact pin</button>
               <a href={place.linkUrl} target="_blank" rel="noopener noreferrer" aria-label={`Open ${place.title} in Google Maps`}>Map ↗</a>

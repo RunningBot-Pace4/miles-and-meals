@@ -76,8 +76,9 @@
 .sheet[open] { display:flex; flex-direction:column; }
 .sheet::backdrop { background:#183b4266; backdrop-filter:blur(3px); }
 .sheet > header { display:flex; align-items:center; justify-content:space-between; padding:16px 22px; gap:12px; border-bottom:1px solid #e4edeb; flex-shrink:0; }
-.sheet > header h2 { font-size:20px; margin:0; }
-.sheet > header button { width:44px; height:44px; border:0; background:#f0f6f4; color:#245f58; border-radius:50%; }
+.sheet > header > div { min-width:0; }
+.sheet > header h2 { font-size:20px; margin:0; overflow-wrap:anywhere; }
+.sheet > header button { flex:0 0 44px; width:44px; height:44px; border:0; background:#f0f6f4; color:#245f58; border-radius:50%; }
 .sheetBody { overflow-y:auto; overscroll-behavior:contain; padding:20px; min-height:0; scroll-padding-bottom:25px; }
 .sheetBody :global(.planner-add-form),.sheetBody :global(.planner-edit-form) { margin:0; padding:0; border:0; box-shadow:none; background:none; }
 .sheetBody :global(.section-heading) { display:none; }

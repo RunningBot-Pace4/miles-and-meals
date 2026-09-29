@@ -14,6 +14,7 @@ vi.mock("@/db", () => ({ db: {
   delete: () => ({ where: async () => { state.removed++; } }),
 } }));
 import { GET, POST } from "../src/app/api/travel-items/route-distance/route";
+import { RouteLookupError } from "../src/lib/route-error";
 import { routePinKey } from "../src/lib/saved-route";
 const countryId = "10000000-0000-4000-8000-000000000001";
 const stayId = "10000000-0000-4000-8000-000000000002";
@@ -50,6 +51,24 @@ describe("shared route API", () => {
     expect((await post()).status).toBe(200);
     expect(state.provider).toHaveBeenCalledWith(start, end, "walk", "test-key", true);
     expect(state.saved[0]).toMatchObject({ countryId, stayId, placeId, km: 2.5, minutes: 30, pinKey: routePinKey(start, end, "walk") });
+  });
+  it("returns safe quota feedback and stops the batch without deleting saved routes", async () => {
+    state.results = [[{ status: "OPEN" }], items];
+    state.provider.mockRejectedValue(new RouteLookupError("Route allowance reached. Please try again later.", 429));
+    const response = await post();
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: "Route allowance reached. Please try again later.", stopBatch: true });
+    expect(state.saved).toHaveLength(0);
+    expect(state.removed).toBe(0);
+  });
+  it("does not expose arbitrary upstream error details", async () => {
+    state.results = [[{ status: "OPEN" }], items];
+    state.provider.mockRejectedValue(new Error("secret-provider-key"));
+    const response = await post();
+    expect(response.status).toBe(502);
+    const result = await response.json();
+    expect(result.stopBatch).toBe(true);
+    expect(result.error).not.toContain("secret-provider-key");
   });
   it("removes obsolete saved results if the provider reports no route", async () => {
     state.results = [[{ status: "OPEN" }], items]; state.provider.mockResolvedValue(null);

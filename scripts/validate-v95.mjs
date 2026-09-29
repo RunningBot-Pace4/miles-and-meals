@@ -110,7 +110,7 @@ for (const marker of [
   "amount: allocation.amount * factor",
 ]) must(dashboardScope, marker, `V95 display-currency allocation scaling missing: ${marker}`);
 
-must(backup, "const BACKUP_VERSION = 6;", "V95 backup format must be version 6");
+must(backup, "const BACKUP_VERSION = 7;", "Backup format must include saved route distances (version 7)");
 for (const marker of [
   "payment_method",
   "payment_reference",
@@ -124,3 +124,5 @@ for (const marker of [
 ]) must(migration, marker, `V95 migration missing: ${marker}`);
 
 console.log("V95 IA, person statements and payment evidence gate passed.");
+
+for (const marker of ["z.literal(6)", "savedRouteDistances: routeRows", "INSERT INTO saved_route_distances", 'isolationLevel: "repeatable read"']) must(backup, marker, `Backup compatibility or snapshot support missing: ${marker}`);

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   editOfflineMutation,
+  isOfflineMutationSyncing,
   flushOfflineQueue,
   readOfflineQueue,
   readOfflineSyncHistory,
@@ -192,6 +193,10 @@ export function OfflineQueueSync() {
   }
 
   function saveEdit(item: OfflineMutation) {
+    if (isOfflineMutationSyncing(item.id)) {
+      setEditMessage("This change is syncing. Wait for it to finish before editing.");
+      return;
+    }
     const kind = editableKind(item);
     if (!kind) return;
     if (kind === "expense") {
@@ -357,7 +362,7 @@ export function OfflineQueueSync() {
                     </span>
                   ) : null}
                   {item.meta?.description ? <small>{item.meta.description}</small> : null}
-                  <small>{item.lastError ?? retryText(item)}</small>
+                  <small>{isOfflineMutationSyncing(item.id) ? "Sending… Please wait before editing or discarding." : item.lastError ?? retryText(item)}</small>
                   <small>
                     Saved {new Intl.DateTimeFormat("en-MY", {
                       day: "numeric",
@@ -393,13 +398,13 @@ export function OfflineQueueSync() {
                       </>}
                       <small>Original Trip, currency, payer and sharing cannot be changed.</small>
                       {editMessage ? <small className="field-error">{editMessage}</small> : null}
-                      <div className="offline-queue-editor-actions"><button type="button" onClick={() => saveEdit(item)}>Save correction</button><button type="button" onClick={() => { setEditingId(null); setEditMessage(""); }}>Cancel</button></div>
+                      <div className="offline-queue-editor-actions"><button type="button" disabled={isOfflineMutationSyncing(item.id)} onClick={() => saveEdit(item)}>Save correction</button><button type="button" onClick={() => { setEditingId(null); setEditMessage(""); }}>Cancel</button></div>
                     </div>
                   ) : null}
                 </div>
 
                 <div className="offline-queue-item-actions">
-                  {editableKind(item) && editingId !== item.id ? <button type="button" onClick={() => startEdit(item)}>Edit</button> : null}
+                  {editableKind(item) && editingId !== item.id ? <button type="button" disabled={isOfflineMutationSyncing(item.id)} onClick={() => startEdit(item)}>Edit</button> : null}
                   {!item.blocked ? (
                     <button
                       type="button"
@@ -409,7 +414,7 @@ export function OfflineQueueSync() {
                       {retryingId === item.id ? "Retrying…" : "Retry"}
                     </button>
                   ) : null}
-                  <button type="button" onClick={() => discard(item.id)}>
+                  <button type="button" disabled={isOfflineMutationSyncing(item.id)} onClick={() => discard(item.id)}>
                     Discard
                   </button>
                 </div>

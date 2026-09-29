@@ -11,3 +11,10 @@ export function compactOptionText(value: string, maxLength = 42): string {
 
   return `${normalized.slice(0, Math.max(1, maxLength - 1)).trimEnd()}…`;
 }
+
+/** Hide import metadata in read-only notes without changing stored pin data. */
+export function plannerDisplayNotes(notes?: string | null): string {
+  return (notes ?? "").split(/\r?\n/)
+    .filter(line => !/^(?:Coordinates|Geoapify Place ID): /.test(line))
+    .join("\n").trim();
+}

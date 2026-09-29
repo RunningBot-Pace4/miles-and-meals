@@ -22,7 +22,7 @@ import {
   writeDraft,
 } from "@/lib/draft-storage";
 import { enqueueOfflineMutation } from "@/lib/offline-queue";
-import { compactOptionText } from "@/lib/display-text";
+import { compactOptionText, plannerDisplayNotes } from "@/lib/display-text";
 import { PlanImport } from "@/components/PlanImport";
 import { ItineraryExcel } from "@/components/ItineraryExcel";
 import { GooglePlacesImport } from "@/components/GooglePlacesImport";
@@ -655,7 +655,7 @@ function PlannerDetailsModal({
 
           <div className="planner-detail-block">
             <small>Notes</small>
-            <p>{item.notes || "—"}</p>
+            <p>{plannerDisplayNotes(item.notes) || "—"}</p>
           </div>
 
           <div className="planner-detail-block">
@@ -867,8 +867,12 @@ export function PlannerClient({
   const distanceInput = JSON.stringify(itemsState.filter(item => item.countryId === defaultCountryId && (["PLACE", "FOOD", "SHOPPING"].includes(item.itemType) || (item.subtype === "Accommodation" && item.provider === "Miles & Meals stay"))).map(item => ({ id: item.id, title: item.title, point: placeCoordinates(item.linkUrl ?? "", item.notes ?? ""), stay: item.subtype === "Accommodation" && item.provider === "Miles & Meals stay" })));
   const [distanceRequest, setDistanceRequest] = useState(0);
   const [checkingDistances, setCheckingDistances] = useState(false);
+  const [checkingPlaceId, setCheckingPlaceId] = useState("");
+  const [unavailableRoutes, setUnavailableRoutes] = useState<Record<string, boolean>>({});
   const [reviewPlaceId, setReviewPlaceId] = useState("");
   const handledDistanceRequest = useRef(0);
+  // One-shot import work, scoped to the trip and travel mode. Tab visits only read saved routes.
+  const importedRouteQueue = useRef(new Map<string, Set<string>>());
   const sharedRoutesCache = useRef(new Map<string, { values: Record<string, number>; minutes: Record<string, number> }>());
   const routeRows = JSON.parse(distanceInput) as Array<{ id: string; title: string; point: Coordinates | null; stay: boolean }>;
   const routeStay = routeRows.find(row => row.stay);
@@ -878,12 +882,17 @@ export function PlannerClient({
     const rows = JSON.parse(distanceInput) as typeof routeRows;
     const stayRow = rows.find(row => row.stay);
     const signature = defaultCountryId + ":" + routeMode + ":" + distanceInput;
+    const queueKey = `${defaultCountryId}:${routeMode}`;
+    const importedIds = importedRouteQueue.current.get(queueKey);
     const recalculate = distanceRequest !== handledDistanceRequest.current;
+    const checkImported = Boolean(importedIds?.size);
     handledDistanceRequest.current = distanceRequest;
     const cached = sharedRoutesCache.current.get(signature);
+    setCheckingPlaceId("");
+    setUnavailableRoutes({});
     setDistances(cached?.values ?? {});
     setRouteMinutes(cached?.minutes ?? {});
-    setCheckingDistances(recalculate && Boolean(stayRow?.point));
+    setCheckingDistances((recalculate || checkImported) && Boolean(stayRow?.point));
     if (!stayRow?.point) {
       setDistanceStatus("Set the exact stay pin before checking distances.");
       return;
@@ -910,12 +919,16 @@ export function PlannerClient({
           }
         }
         setDistances({ ...values }); setRouteMinutes({ ...minutes });
-        if (recalculate) {
+        if (recalculate || checkImported) {
           setCheckingDistances(true);
-          for (const row of rows.filter(row => !row.stay)) {
+          for (const row of rows.filter(row => !row.stay && (recalculate || importedIds?.has(row.id)))) {
             if (cancelled) return;
-            if (!row.point) { missing++; continue; }
+            if (!row.point) { importedIds?.delete(row.id); missing++; continue; }
+            // Reuse a matching route if a refresh interrupted the import checks.
+            if (!recalculate && values[row.id] !== undefined) { importedIds?.delete(row.id); continue; }
+            setCheckingPlaceId(row.id);
             setDistanceStatus(`Checking ${row.title}…`);
+            let stopBatch = false;
             try {
               const response = await fetch("/api/travel-items/route-distance", {
                 method: "POST", headers: { "content-type": "application/json" },
@@ -923,15 +936,22 @@ export function PlannerClient({
                 signal: controller.signal,
               });
               const data = await response.json();
-              if (!response.ok) throw new Error(data.error || "Route unavailable.");
+              if (!response.ok) {
+                stopBatch = data.stopBatch === true || [401, 403, 409, 429, 503].includes(response.status);
+                throw new Error(data.error || "Route unavailable.");
+              }
               if (data.route) { values[row.id] = data.route.km; minutes[row.id] = data.route.minutes; }
-              else { missing++; delete values[row.id]; delete minutes[row.id]; }
+              else { missing++; delete values[row.id]; delete minutes[row.id]; setUnavailableRoutes(current => ({ ...current, [row.id]: true })); }
             } catch (error) {
               if (controller.signal.aborted) return;
               missing++; lastError = error instanceof Error ? error.message : "Route unavailable.";
+              setUnavailableRoutes(current => ({ ...current, [row.id]: true }));
             }
             if (cancelled) return;
+            // Failed lookups require an explicit retry, rather than spending quota on every tab visit.
+            importedIds?.delete(row.id);
             setDistances({ ...values }); setRouteMinutes({ ...minutes });
+            if (stopBatch) { importedIds?.clear(); break; }
             await new Promise(resolve => setTimeout(resolve, 300));
           }
         }
@@ -945,7 +965,7 @@ export function PlannerClient({
             : "No saved routes yet. Review the pins, then check distances.");
       } catch (error) {
         if (!cancelled) setDistanceStatus(error instanceof Error ? error.message : "Could not load saved routes.");
-      } finally { if (!cancelled) setCheckingDistances(false); }
+      } finally { if (!cancelled) { setCheckingDistances(false); setCheckingPlaceId(""); } }
     })();
     return () => { cancelled = true; controller.abort(); };
   }, [distanceInput, defaultCountryId, isSpots, routeMode, distanceRequest]);
@@ -1562,6 +1582,13 @@ export function PlannerClient({
           stay={itemsState.find((item) => item.countryId === defaultCountryId && item.subtype === "Accommodation" && item.provider === "Miles & Meals stay")}
           onStaySaved={refreshItems}
           onImported={(saved) => {
+            for (const item of saved) {
+              if (!placeCoordinates(item.linkUrl ?? "", item.notes ?? "")) continue;
+              const key = `${item.countryId}:${routeMode}`;
+              const queued = importedRouteQueue.current.get(key) ?? new Set<string>();
+              queued.add(item.id);
+              importedRouteQueue.current.set(key, queued);
+            }
             setItemsState((current) => {
               const ids = new Set(current.map((item) => item.id));
               return [...current, ...saved.filter((item) => !ids.has(item.id))];
@@ -1700,7 +1727,7 @@ export function PlannerClient({
                 </div>
 
                 <h2 className={design.activityTitle}>{tab === "ITINERARY" ? <span className={design.activityIcon} data-kind={activityIcon(item.itemType, item.title, item.subtype ?? "")}><PlanIcon kind={activityIcon(item.itemType, item.title, item.subtype ?? "")} size={24} /></span> : null}<span>{item.title}</span></h2>
-                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km · ${routeMode === "walk" ? "walk" : "drive"} · ${routeMinutes[item.id] ?? "—"} min` : "Distance unavailable"}</strong> : null}
+                {isSpots ? <strong className="place-distance-badge">{distances[item.id] !== undefined ? `${placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "" : "≈ "}${distances[item.id].toFixed(2)} km · ${routeMode === "walk" ? "walk" : "drive"} · ${routeMinutes[item.id] ?? "—"} min` : checkingPlaceId === item.id ? "Checking route…" : unavailableRoutes[item.id] ? "Route unavailable · Retry later" : placeCoordinates(item.linkUrl ?? "", item.notes ?? "") ? "Route not checked · Check distances" : "Set a pin to check distance"}</strong> : null}
 
 
                 <p className="plan-v2-travel-card-meta" hidden={isSpots && !item.area && !item.subtype}>
@@ -1734,8 +1761,8 @@ export function PlannerClient({
                   </div>
                 ) : null}
 
-                {item.notes?.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim() ? (
-                  <p className="travel-notes">{item.notes.replace(/(?:^|\n)Coordinates: [^\n]*/g, "").trim()}</p>
+                {plannerDisplayNotes(item.notes) ? (
+                  <p className="travel-notes">{plannerDisplayNotes(item.notes)}</p>
                 ) : null}
 
                 {!isSpots && item.linkUrl ? (

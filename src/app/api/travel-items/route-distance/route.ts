@@ -6,6 +6,7 @@ import { canAccessCountry, getCountryWithTrip } from "@/lib/access";
 import { getSession } from "@/lib/session";
 import { getTripCapabilities } from "@/lib/trip-capabilities";
 import { isTrustedMutationRequest, mutationRejectedResponse } from "@/lib/request-security";
+import { RouteLookupError } from "@/lib/route-error";
 import { routeDistance } from "@/lib/route-distance";
 import { resolveRoutePins, routePinKey } from "@/lib/saved-route";
 export const runtime = "nodejs";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   const pins = resolveRoutePins(items, countryId, stayId, placeId);
   if (!pins) return Response.json({ error: "Set exact pins for both the stay and place." }, { status: 422 });
   const apiKey = process.env.GEOAPIFY_API_KEY?.trim();
-  if (!apiKey) return Response.json({ error: "Route lookup needs GEOAPIFY_API_KEY in Vercel." }, { status: 503 });
+  if (!apiKey) return Response.json({ error: "Route lookup needs GEOAPIFY_API_KEY in Vercel.", stopBatch: true }, { status: 503 });
   try {
     const route = await routeDistance(pins.start, pins.end, mode, apiKey, true);
     if (!route) {
@@ -60,7 +61,8 @@ export async function POST(request: Request) {
       set: { pinKey, ...route, checkedAt },
     });
     return Response.json({ route, checkedAt, pinKey });
-  } catch {
-    return Response.json({ error: "Could not calculate and save this route. Check routing availability and the shared-route migration." }, { status: 502 });
+  } catch (error) {
+    if (error instanceof RouteLookupError) return Response.json({ error: error.message, stopBatch: true }, { status: error.status });
+    return Response.json({ error: "Could not calculate and save this route. Check routing availability and the shared-route migration.", stopBatch: true }, { status: 502 });
   }
 }

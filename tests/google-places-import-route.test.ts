@@ -34,6 +34,7 @@ vi.mock("@/db/transaction", () => ({ createTransactionalDatabase: () => ({ close
   },
 } }) }));
 
+import { placeCoordinates } from "@/lib/place-distance";
 import { POST } from "@/app/api/travel-items/import-places/route";
 const countryId = "10000000-0000-4000-8000-000000000001";
 const place = (id: number) => ({ title: `Place ${id}`, linkUrl: `https://www.google.com/maps/place/name/data=!4m2!3m1!1s0x123:0x${id}`, notes: "Keep my note" });
@@ -51,6 +52,13 @@ describe("places batch import API", () => {
     expect(result.imported).toBe(2);
     expect(result.items[0]).toMatchObject({ countryId, itemType: "PLACE", provider: "Google Maps", title: "Place 1", notes: "Keep my note", status: "Idea", createdBy: "traveler" });
     expect(result.items[0].itemDate).toBeUndefined();
+  });
+  it("preserves a corrected pin for routing after import, ahead of the original map pin", async () => {
+    const corrected = { ...place(1), linkUrl: "https://www.google.com/maps/place/name/data=!3d1!4d2", notes: "Coordinates: 22.283, 114.158\nMy corrected entrance" };
+    const result = await (await call([corrected])).json();
+    expect(result.imported).toBe(1);
+    expect(placeCoordinates(result.items[0].linkUrl, result.items[0].notes)).toEqual({ latitude: 22.283, longitude: 114.158 });
+    expect(state.records[0].notes).toBe(corrected.notes);
   });
   it("makes repeat requests safe and preserves existing edits", async () => {
     await call();

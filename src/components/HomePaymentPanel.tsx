@@ -102,9 +102,11 @@ export function HomePaymentPanel({ data, currentUserId }: { data: SettlementLive
   const paymentTripIds = [...new Set([...requests.map(({ plan }) => plan.tripId), ...pending.map((payment) => payment.tripId)])];
   const historyTripId = paymentTripIds.length === 1 ? paymentTripIds[0] : data.smartPlans.length === 1 ? data.smartPlans[0].tripId : undefined;
   const historyHref = `/spend?tab=settlements${historyTripId ? `&tripId=${encodeURIComponent(historyTripId)}` : ""}#payment-history`;
+  const netSettlementHref = `/spend?tab=settlements${historyTripId ? `&tripId=${encodeURIComponent(historyTripId)}` : ""}#smart-settlement-title`;
 
   return <section className="panel settlement-panel home-payment-panel" id="home-payment">
     <div className="panel-title"><div><p className="eyebrow">PAYMENT REQUESTS</p><h2>Payments to send or confirm</h2><p className="muted">Send a payment or confirm money received, right here.</p></div><Link className="button secondary" href={historyHref}>Payment history</Link></div>
+    {requests.length > 0 && <p className="payment-status-help">These bill balances are before offsets within each trip. Smart settlement combines what everyone owes to reduce transfers. <Link href={netSettlementHref}>View net settlement →</Link></p>}
     {summaries.map(summary => <dl className="payment-status-summary" key={summary.currency} aria-label={`${summary.currency} payment status`}>
       <div><dt>Sent · awaiting confirmation</dt><dd>{formatMoney(summary.sent, summary.currency)}</dd></div>
       <div><dt>Received? Confirm below</dt><dd>{formatMoney(summary.awaitingReceipt, summary.currency)}</dd></div>

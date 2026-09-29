@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   OFFLINE_MUTATION_STORAGE_KEY,
   editOfflineMutation,
+  isOfflineMutationSyncing,
+  removeOfflineMutation,
   enqueueOfflineMutation,
   flushOfflineQueue,
   readOfflineQueue,
@@ -50,6 +52,22 @@ function queueOne() {
 }
 
 describe("offline mutation resync", () => {
+  it("locks editing and discarding while a queued mutation is in flight, then unlocks on failure", async () => {
+    const item = queueOne();
+    let finish!: (response: Response) => void;
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(resolve => { finish = resolve; })));
+    const pending = flushOfflineQueue();
+    await vi.waitFor(() => expect(isOfflineMutationSyncing(item.id)).toBe(true));
+    expect(editOfflineMutation(item.id, { description: "Correction" })).toBe(false);
+    expect(removeOfflineMutation(item.id)).toBe(false);
+    expect(readOfflineQueue()[0].body).toEqual({ description: "Dinner" });
+    finish(new Response(null, { status: 503 }));
+    await pending;
+    expect(isOfflineMutationSyncing(item.id)).toBe(false);
+    expect(editOfflineMutation(item.id, { description: "Correction" })).toBe(true);
+    expect(readOfflineQueue()[0].body).toEqual({ description: "Correction" });
+  });
+
   it("releases a stalled sync and retries with the same mutation ID", async () => {
     vi.useFakeTimers();
     try {
