@@ -1,4 +1,5 @@
 "use client";
+import { isGuestParticipantId } from "@/lib/guest-participant";
 
 import {
   useCallback,
@@ -89,9 +90,10 @@ function formatSettlementDate(value: string): string {
 
 function paymentStatusLabel(
   status: "SENT" | "SETTLED" | "CANCELLED" | "REVERSED",
+  guest = false,
 ): string {
   if (status === "SETTLED") {
-    return "Confirmed received";
+    return guest ? "Manually recorded · guest" : "Confirmed received";
   }
 
   if (status === "CANCELLED") {
@@ -702,7 +704,7 @@ function SmartSettlementPanel({
                     <span>
                       <strong>{payment.fromName} → {payment.toName}</strong>
                       <small>
-                        {plan.tripName} · {paymentStatusLabel(payment.status)} · {formatSettlementDate(payment.sentAt)}
+                        {plan.tripName} · {paymentStatusLabel(payment.status, isGuestParticipantId(payment.fromUserId) || isGuestParticipantId(payment.toUserId))} · {formatSettlementDate(payment.sentAt)}
                       </small>
                       {isInactive && payment.reversedAt ? (
                         <small className="settlement-reversal-meta">

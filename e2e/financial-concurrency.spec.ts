@@ -112,13 +112,14 @@ test.describe("financial API concurrency", () => {
   test.describe.configure({ mode: "serial" });
 
   test.skip(
-    !ownerEmail ||
+    process.env.E2E_ALLOW_FINANCIAL_MUTATION !== "1" ||
+      !ownerEmail ||
       !ownerPassword ||
       !ownerUserId ||
       !receiverUserId ||
       !countryId ||
       !tripId,
-    "Use a disposable E2E trip and set all E2E_FINANCIAL_* fixture variables.",
+    "Use a disposable E2E trip; set E2E_ALLOW_FINANCIAL_MUTATION=1 and all E2E_FINANCIAL_* fixture variables.",
   );
 
   test.beforeEach(async ({ page }, testInfo) => {

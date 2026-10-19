@@ -1,3 +1,7 @@
+Latest update: [PERSONAL-GALLERY.md](PERSONAL-GALLERY.md) explains the local-only photo/video viewer and its file-selection limits.
+
+Latest feature: see [NAMED-GUEST-TRAVELERS.md](NAMED-GUEST-TRAVELERS.md) for mixed app-user/guest expense splitting and validation.
+
 # V92.21 Living Journey — single navigation release
 
 Version `1.92.21` fixes the repeated fresh-load prompt and true double navigation. Every shared route now opens through one reliable document request, with no delayed second fallback request. The approved PWA launch artwork and rotating Halo are restored. See `V92-21-SINGLE-NAVIGATION.md` for the release details.

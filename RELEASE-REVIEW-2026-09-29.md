@@ -57,3 +57,12 @@ Spend's detailed breakdown reconciled with Home: RM494.08 owed less RM441.35 to 
 No real trip, expense, payment or database content was changed. No credentials were read. The source changes in this package have not been deployed; the live observations describe the existing deployment.
 
 To finish the remaining evidence: use two designated test accounts and a disposable trip for payment testing; a separate test database/branch for integration and restore testing; and a real iPhone for installed-PWA keyboard, offline/reconnect and update checks. First-time-user usability also requires observing a person complete the three tasks without guidance. The provisional 7.5/10 score is not raised merely because more unit tests pass.
+
+
+## Verification follow-up — 30 September 2026
+
+The two-user browser test now requires explicit mutation opt-in and a deterministic disposable MYR fixture. It checks RM20 + RM40 → RM45 sent → RM15 remaining, another payment while confirmation is pending, cancellation, receiver confirmation, reversal, exact receipt allocations, and no full document reload. It rejects the known production hostname. Cleanup affects only payments created by that run and preserves audit records. The financial concurrency browser suite now also requires explicit mutation opt-in.
+
+The full automated suite was rerun: 428 tests passed and four PostgreSQL integration tests were skipped. Two public offline-screen assertions were corrected to match the current heading and retry-button label. Browser test type checking and discovery completed; these are not browser execution results. The runtime application source is unchanged from the reviewed update. See VERIFICATION-GUIDE.md for the preview fixture, credentials configuration, physical iPhone checklist, recovery drill and first-time-user trial.
+
+No TEST_DATABASE_URL or two-user E2E credentials were configured. Local PostgreSQL setup was blocked by workspace operating-system permission restrictions. Therefore real database integration, restore and two-user browser workflows remain unexecuted. No production mutations, deployment or database cleanup took place.

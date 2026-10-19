@@ -1,3 +1,4 @@
+import { participantDisplayName } from "@/lib/guest-participant";
 import { inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -149,7 +150,7 @@ export async function buildExpenseSummary(countryIds: string[]) {
           .from(user)
           .where(inArray(user.id, [...participantIds]));
   const names = new Map<string, string>(
-    userRows.map((row) => [row.id, row.name]),
+    userRows.map((row) => [row.id, participantDisplayName(row.id, row.name)]),
   );
 
   const people = [...participantIds]

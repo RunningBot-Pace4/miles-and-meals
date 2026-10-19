@@ -17,6 +17,7 @@ const routes = [
   "/companion",
   "/documents",
   "/memories",
+  "/my-gallery",
   "/receipts",
   "/trips",
   "/journeys",

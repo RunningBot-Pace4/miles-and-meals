@@ -1,3 +1,4 @@
+import { isGuestParticipantId } from "@/lib/guest-participant";
 export type SettlementStatus =
   | "SENT"
   | "SETTLED"
@@ -53,7 +54,7 @@ export function canReverseSettlement(
   }
 
   if (settlement.status === "SETTLED") {
-    return settlement.toUserId === currentUserId;
+    return settlement.toUserId === currentUserId || (isGuestParticipantId(settlement.toUserId) && settlement.fromUserId === currentUserId);
   }
 
   return false;

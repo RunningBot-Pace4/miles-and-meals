@@ -1,3 +1,4 @@
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { createTransactionalDatabase } from "@/db/transaction";
@@ -193,6 +194,7 @@ export async function POST(request: Request) {
         }
       | {
           kind: "markedPaid";
+          guestRecorded: boolean;
           settlementId: string;
           amount: number;
           currency: string;
@@ -408,7 +410,8 @@ export async function POST(request: Request) {
                 paymentReference: input.paymentReference || null,
                 paymentNote: input.paymentNote || null,
                 paymentProofData: input.paymentProofData || null,
-                status: "SENT",
+                status: isGuestParticipantId(input.counterpartyUserId) ? "SETTLED" : "SENT",
+                ...(isGuestParticipantId(input.counterpartyUserId) ? { confirmedBy: session.user.id, confirmedAt: new Date() } : {}),
                 initiatedBy: session.user.id,
               })
               .returning({ id: settlements.id });
@@ -432,6 +435,7 @@ export async function POST(request: Request) {
 
             return {
               kind: "markedPaid" as const,
+              guestRecorded: isGuestParticipantId(input.counterpartyUserId),
               settlementId,
               amount: paymentAmount,
               currency: ledger.currency,
@@ -623,7 +627,7 @@ export async function POST(request: Request) {
           entityId: result.settlementId,
           tripId: result.tripId,
           countryId: result.countryId,
-          summary: `${session.user.name} marked ${result.currency} ${result.amount.toFixed(2)} as paid.`,
+          summary: `${session.user.name} recorded ${result.currency} ${result.amount.toFixed(2)} as paid${result.guestRecorded ? " to a guest (manually recorded)" : ""}.`,
         }),
         queuePaymentPush(
           [input.counterpartyUserId],
@@ -641,7 +645,8 @@ export async function POST(request: Request) {
       return Response.json({
         ok: true,
         settlementId: result.settlementId,
-        status: "SENT",
+        status: result.guestRecorded ? "SETTLED" : "SENT",
+        guestRecorded: result.guestRecorded,
       });
     }
 

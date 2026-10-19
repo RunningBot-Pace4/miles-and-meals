@@ -4,6 +4,7 @@ import { admin } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
 import { loginAudits, schema, session } from "@/db/schema";
+import { isGuestParticipantId } from "@/lib/guest-participant";
 function normalizeBaseUrl(value: string | undefined): string | null {
   const trimmed = value?.trim();
 
@@ -114,6 +115,7 @@ export const auth = betterAuth({
     session: {
       create: {
         before: async (newSession) => {
+          if (isGuestParticipantId(newSession.userId)) return false;
           await db
             .delete(session)
             .where(eq(session.userId, newSession.userId));

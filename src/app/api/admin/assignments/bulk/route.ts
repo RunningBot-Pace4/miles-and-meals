@@ -1,3 +1,4 @@
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import {
   and,
   eq,
@@ -85,6 +86,8 @@ export async function POST(
 
     const target =
       targetRows[0];
+
+    if (isGuestParticipantId(input.userId)) return Response.json({ error: "Guest travelers do not have login accounts. Manage them through the trip's expenses." }, { status: 400 });
 
     if (!target) {
       return Response.json(

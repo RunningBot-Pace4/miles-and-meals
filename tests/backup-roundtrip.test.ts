@@ -40,7 +40,7 @@ describe("admin backup and restore contract", () => {
   it("exports route results within one read-only repeatable-read transaction", async () => {
     const response = await GET();
     const backup = await response.json();
-    expect(backup.version).toBe(7);
+    expect(backup.version).toBe(8);
     expect(backup.data.savedRouteDistances).toEqual([route]);
     expect(state.options).toEqual({ isolationLevel: "repeatable read", accessMode: "read only" });
     expect(state.closed).toBe(1);
@@ -94,4 +94,35 @@ describe("admin backup and restore contract", () => {
     expect((await post(backup)).status).toBe(403);
     expect(state.restores).toBe(0);
   });
+  it("includes only named guest profiles in the backup and restores them before their assignments", async () => {
+    const guestId = `guest:${countryId}:10000000-0000-4000-8000-000000000005`;
+    state.rows.user = [{ id: "admin", name: "Admin" }, { id: guestId, name: "Alex" }];
+    state.rows.country_members = [{ countryId, userId: guestId }];
+    const backup = await (await GET()).json();
+    expect(backup.data.guestParticipants).toEqual([{ id: guestId, name: "Alex" }]);
+    expect((await post(backup, "restore", "RESTORE TRAVEL DATA")).status).toBe(200);
+    const guestIndex = state.queries.findIndex(q => q.text.includes('INSERT INTO "user"'));
+    const assignmentIndex = state.queries.findIndex(q => q.text.includes("INSERT INTO country_members"));
+    expect(guestIndex).toBeGreaterThanOrEqual(0);
+    expect(assignmentIndex).toBeGreaterThan(guestIndex);
+    expect(state.queries[guestIndex].text).toContain("'guest', true, false");
+  });
+  it("rejects guests assigned to a different trip or missing their named profile", async () => {
+    const guestId = `guest:${countryId}:10000000-0000-4000-8000-000000000005`;
+    state.rows.user = [{ id: guestId, name: "Alex" }];
+    state.rows.country_members = [{ countryId, userId: guestId }];
+    const backup = await (await GET()).json();
+    backup.data.guestParticipants = [];
+    expect((await post(backup, "restore", "RESTORE TRAVEL DATA")).status).toBe(400);
+    backup.data.guestParticipants = [{ id: guestId, name: "Alex" }];
+    backup.data.countryMembers[0].countryId = "10000000-0000-4000-8000-000000000009";
+    expect((await post(backup, "restore", "RESTORE TRAVEL DATA")).status).toBe(400);
+    expect(state.restores).toBe(0);
+  });
+  it("accepts version 7 backups without guest profiles", async () => {
+    const backup = await (await GET()).json();
+    backup.version = 7; delete backup.data.guestParticipants;
+    expect((await post(backup)).status).toBe(200);
+  });
+
 });

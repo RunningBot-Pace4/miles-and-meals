@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import { db } from "@/db";
 import {
   countries,
@@ -130,7 +131,7 @@ export async function listCountryMembers(
     .orderBy(user.name);
 
   if (!includeUserId || assigned.some((member) => member.id === includeUserId)) {
-    return assigned;
+    return assigned.map(member => ({ ...member, isGuest: isGuestParticipantId(member.id) }));
   }
 
   const additional = await db
@@ -142,7 +143,7 @@ export async function listCountryMembers(
     .where(eq(user.id, includeUserId))
     .limit(1);
 
-  return [...assigned, ...additional];
+  return [...assigned, ...additional].map(member => ({ ...member, isGuest: isGuestParticipantId(member.id) }));
 }
 
 

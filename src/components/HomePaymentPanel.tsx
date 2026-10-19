@@ -1,4 +1,5 @@
 "use client";
+import { isGuestParticipantId } from "@/lib/guest-participant";
 
 import { useEffect, useRef, useState } from "react";
 import { FullPageLink as Link } from "@/components/FullPageLink";
@@ -79,7 +80,7 @@ export function HomePaymentRequestCard({ choices, currentUserId }: { choices: Pa
     <div className="settlement-status-copy"><strong>{paying ? `You → ${balance.toName}` : `${balance.fromName} → You`}</strong><span className="settlement-state-pill waiting">Payment due</span><small>{plan.tripName}</small></div>
     <strong className="settlement-amount">{formatMoney(maximum, plan.currency)}</strong>
     <div className="home-payment-request-action">
-      <HomePaymentAmount amount={amount} currency={plan.currency} paying={paying} maximum={maximum} busy={busy} onChange={setAmount}
+      <HomePaymentAmount confirmationRequired={!isGuestParticipantId(balance.toUserId)} amount={amount} currency={plan.currency} paying={paying} maximum={maximum} busy={busy} onChange={setAmount}
         selectedMaximum={selected.length ? bills.filter(bill => selected.includes(bill.expenseId)).reduce((sum, bill) => sum + bill.remainingAmount, 0) : undefined}
         remaining={valid ? Math.max(0, maximum - numericAmount) : null}
         error={amount ? exceedsBalance ? `Cannot exceed ${formatMoney(maximum, plan.currency)}.` : preview.error ?? "" : ""} />

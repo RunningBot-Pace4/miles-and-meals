@@ -1,3 +1,4 @@
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema";
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
       adminUserRoleSchema.parse(
         await request.json(),
       );
+
+    if (isGuestParticipantId(input.userId)) return Response.json({ error: "Guest travelers do not have login accounts. Manage them through the trip's expenses." }, { status: 400 });
 
     if (
       input.userId === session.user.id &&

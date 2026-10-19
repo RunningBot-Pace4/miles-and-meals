@@ -84,13 +84,13 @@ test("offline shell is available", async ({
 
   await expect(
     page.getByRole("heading", {
-      name: "You’re offline",
+      name: "Your trip keeps moving.",
     }),
   ).toBeVisible();
 
   await expect(
     page.getByRole("button", {
-      name: "Try again",
+      name: "Try connection again",
     }),
   ).toBeVisible();
 });

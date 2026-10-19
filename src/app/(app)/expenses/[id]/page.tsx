@@ -1,3 +1,4 @@
+import { participantDisplayName } from "@/lib/guest-participant";
 import { BillSettlementAllocator } from "@/components/BillSettlementAllocator";
 import { PageLiveRefresh } from "@/components/PageLiveRefresh";
 import { getTripFinancialState } from "@/lib/financial-close";
@@ -23,7 +24,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
   const [ledger, capabilities, shares] = await Promise.all([
     buildCountrySettlementLedger(expense.countryId),
     getTripCapabilities(session.user, expense.tripId),
-    db.select({ name: user.name, amount: expenseSplits.shareAmountBase }).from(expenseSplits).innerJoin(user, eq(user.id, expenseSplits.userId)).where(eq(expenseSplits.expenseId, id)),
+    db.select({ userId: user.id, name: user.name, amount: expenseSplits.shareAmountBase }).from(expenseSplits).innerJoin(user, eq(user.id, expenseSplits.userId)).where(eq(expenseSplits.expenseId, id)),
   ]);
   if (!ledger) notFound();
   const financialState = await getTripFinancialState(expense.tripId);
@@ -41,7 +42,7 @@ export default async function BillDetailPage({ params }: { params: Promise<{ id:
           {shares.map((share, index) => (
             <span key={index}>
               <b aria-hidden="true">{share.name.trim().charAt(0).toUpperCase()}</b>
-              <span>{share.name}<small>Share</small></span>
+              <span>{participantDisplayName(share.userId, share.name)}<small>Share</small></span>
               <strong>{formatMoney(Number(share.amount), expense.baseCurrency)}</strong>
             </span>
           ))}

@@ -3,10 +3,10 @@
 import { useId } from "react";
 import { formatMoney } from "@/lib/money";
 
-export function HomePaymentAmount({ amount, currency, paying, maximum, selectedMaximum, remaining, error, busy, onChange }: {
+export function HomePaymentAmount({ amount, currency, paying, maximum, selectedMaximum, remaining, error, busy, onChange, confirmationRequired = true }: {
   amount: string; currency: string; paying: boolean; maximum: number;
   selectedMaximum?: number; remaining: number | null; error: string;
-  busy: boolean; onChange: (amount: string) => void;
+  confirmationRequired?: boolean; busy: boolean; onChange: (amount: string) => void;
 }) {
   const id = useId();
   const fullAmount = Math.min(maximum, selectedMaximum ?? maximum);
@@ -27,7 +27,7 @@ export function HomePaymentAmount({ amount, currency, paying, maximum, selectedM
       <button type="button" disabled={busy || fullAmount <= 0} onClick={() => onChange(fullAmount.toFixed(2))}>{selectedMaximum === undefined ? "Use full amount" : "Use selected bills’ balance"}</button>
     </div>
     <p id={`${id}-hint`} className={error ? "home-amount-error" : "home-amount-hint"} aria-live="polite">
-      {error || (remaining !== null ? `${formatMoney(remaining, currency)} left${paying ? " after confirmation" : " after this payment"}` : "Enter the amount you want to record.")}
+      {error || (remaining !== null ? `${formatMoney(remaining, currency)} left${paying && confirmationRequired ? " after confirmation" : " after this payment"}` : "Enter the amount you want to record.")}
     </p>
   </div>;
 }

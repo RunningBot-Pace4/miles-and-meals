@@ -1,3 +1,4 @@
+import { guestCountryId, guestParticipantProfile, isGuestParticipantId } from "@/lib/guest-participant";
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 import { db } from "@/db";
@@ -41,7 +42,7 @@ export const runtime = "nodejs";
 
 const BACKUP_FORMAT =
   "miles-and-meals-travel-backup";
-const BACKUP_VERSION = 7;
+const BACKUP_VERSION = 8;
 const RESTORE_CONFIRMATION =
   "RESTORE TRAVEL DATA";
 
@@ -54,6 +55,7 @@ const backupSchema = z.object({
     z.literal(4),
     z.literal(5),
     z.literal(6),
+    z.literal(7),
     z.literal(BACKUP_VERSION),
   ]),
   exportedAt: z.string(),
@@ -90,6 +92,7 @@ const backupSchema = z.object({
       .optional()
       .default([]),
     travelItems: z.array(z.record(z.string(), z.unknown())),
+    guestParticipants: z.array(z.object({ id: z.string().refine(isGuestParticipantId, "Invalid guest identity"), name: z.string().trim().min(1).max(80) })).optional().default([]),
     savedRouteDistances: z.array(z.object({
       countryId: z.string().uuid(), stayId: z.string().uuid(), placeId: z.string().uuid(),
       mode: z.enum(["walk", "drive"]), pinKey: z.string().min(1),
@@ -730,12 +733,22 @@ async function validateBackup(
     });
   }
 
-  const neededUserIds =
-    requiredUserIds(backup);
+  const guestIds = new Set<string>();
+  for (const guest of backup.data.guestParticipants) {
+    const countryId = guestCountryId(guest.id)!;
+    if (guestIds.has(guest.id)) errors.push("Duplicate guest participant.");
+    guestIds.add(guest.id);
+    if (!countryIds.has(countryId) || !backup.data.countryMembers.some(row => row.countryId === countryId && row.userId === guest.id)) errors.push("Guest participant must belong to its original trip country.");
+    if (backup.data.countryMembers.some(row => row.userId === guest.id && row.countryId !== countryId)) errors.push("Guest participants cannot be assigned across trips.");
+    if (backup.data.tripMembers.some(row => row.userId === guest.id)) errors.push("Guest participants cannot have login membership permissions.");
+  }
+  const neededUserIds = requiredUserIds(backup);
+  if (neededUserIds.some(id => isGuestParticipantId(id) && !guestIds.has(id))) errors.push("Backup is missing a guest participant profile.");
   const currentUsers =
     await db
       .select({
         id: user.id,
+        role: user.role,
       })
       .from(user);
   const currentUserIds =
@@ -745,10 +758,14 @@ async function validateBackup(
       ),
     );
 
+  for (const guest of backup.data.guestParticipants) {
+    const existing = currentUsers.find(item => item.id === guest.id);
+    if (existing && existing.role !== "guest") errors.push("Guest identity conflicts with an existing login account.");
+  }
   const missingUsers =
     neededUserIds.filter(
       (id) =>
-        !currentUserIds.has(id),
+        !currentUserIds.has(id) && !guestIds.has(id),
     );
 
   if (missingUsers.length) {
@@ -818,6 +835,7 @@ async function validateBackup(
         backup.data.travelItems
           .length,
       savedRoutes: backup.data.savedRouteDistances.length,
+      guestTravelers: backup.data.guestParticipants.length,
       inboxItems: backup.data.tripInboxItems.length,
     },
   };
@@ -862,6 +880,14 @@ async function restoreBackup(
     sql`DELETE FROM trips`,
     sql`DELETE FROM journeys`,
   ];
+
+  for (const row of backup.data.guestParticipants) {
+    const profile = guestParticipantProfile(guestCountryId(row.id)!, row.id.split(":")[2], row.name);
+    queries.push(sql`INSERT INTO "user" (id, name, email, role, banned, email_verified, ban_reason)
+      VALUES (${profile.id}, ${profile.name}, ${profile.email}, 'guest', true, false, ${profile.banReason})
+      ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, banned = true, updated_at = NOW()
+      WHERE "user".role = 'guest'`);
+  }
 
   for (const row of backup.data.journeys) {
     queries.push(sql`
@@ -1377,6 +1403,7 @@ async function readBackupSnapshot() {
     tx.select().from(expenseItems),
     tx.select().from(expenseItemAssignments),
     tx.select().from(savedRouteDistances),
+    tx.select({ id: user.id, name: user.name }).from(user),
     ]), { isolationLevel: "repeatable read", accessMode: "read only" });
   } finally {
     await client.close();
@@ -1417,6 +1444,7 @@ export async function GET() {
     expenseItemRows,
     expenseItemAssignmentRows,
     routeRows,
+    participantRows,
   ] = await readBackupSnapshot();
 
   const backup = {
@@ -1474,6 +1502,7 @@ export async function GET() {
       travelItems:
         plannerRows,
       savedRouteDistances: routeRows,
+      guestParticipants: participantRows.filter(row => isGuestParticipantId(row.id) && countryMemberRows.some(member => member.userId === row.id)).map(row => ({ id: row.id, name: row.name })),
     },
   };
 

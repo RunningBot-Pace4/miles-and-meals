@@ -20223,3 +20223,12 @@ select {
  .timeline-list .timeline-time span { font-size:12px; }
  .timeline-list .timeline-unscheduled { justify-content:flex-start; }
 }
+
+/* Named non-login travelers in the existing expense split flow. */
+.guest-traveler-adder { display:grid; gap:12px; padding:16px; margin:14px 0; min-width:0; border:1px solid #b9ddd5; border-radius:18px; background:linear-gradient(120deg,#edf9f4,#f0f7ff); }
+.guest-traveler-adder p { margin:4px 0 0; color:#526762; font-size:14px; line-height:1.5; }
+.guest-traveler-controls { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:10px; min-width:0; }
+.guest-traveler-controls label, .guest-traveler-controls input { min-width:0; width:100%; }
+.guest-traveler-controls input { font-size:16px; }
+.guest-traveler-controls button { min-height:46px; white-space:nowrap; }
+@media(max-width:480px) { .guest-traveler-controls { grid-template-columns:minmax(0,1fr); } .guest-traveler-controls button { width:100%; } }

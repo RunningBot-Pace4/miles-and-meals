@@ -1,5 +1,6 @@
 "use client";
 
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { compressPaymentProofForDatabase } from "@/lib/payment-proof-storage";
 
@@ -106,6 +107,8 @@ export function SettlementActionButton({
   } | null>(null);
   const requestIdRef = useRef<string | null>(null);
 
+  const guestCounterparty = isGuestParticipantId(counterpartyUserId);
+  const actionLabel = guestCounterparty && !disabled ? (action === "MARK_PAID" ? "Record paid to guest" : "Record received from guest") : label;
   const showPaymentDetails = maximumAmount !== undefined || Boolean(detailsContent);
 
   useEffect(() => {
@@ -274,6 +277,7 @@ export function SettlementActionButton({
 
   return (
     <div className="settlement-action-wrap">
+      {guestCounterparty && <small className="payment-status-help">Guest payment: record money actually paid or received. It is saved immediately under your name; no guest confirmation is requested.</small>}
       {maximumAmount !== undefined && !fixedAmount ? (
         <label className="settlement-partial-amount">
           <span>Amount</span>
@@ -284,7 +288,7 @@ export function SettlementActionButton({
               data-numeric-input="decimal"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
-              aria-label={`${label} amount`}
+              aria-label={`${actionLabel} amount`}
             />
           </span>
           <small>Enter the full or partial amount received/paid.</small>
@@ -406,7 +410,7 @@ export function SettlementActionButton({
             Payment saved
           </>
         ) : (
-          label
+          actionLabel
         )}
       </button>
 

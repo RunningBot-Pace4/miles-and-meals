@@ -8,6 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
+import { GuestTravelerAdder } from "@/components/GuestTravelerAdder";
+import { participantDisplayName } from "@/lib/guest-participant";
 import { SavingOverlay } from "@/components/SavingOverlay";
 import {
   clearDraft,
@@ -37,6 +39,7 @@ type CountryOption = {
 type Member = {
   id: string;
   name: string;
+  isGuest?: boolean;
 };
 
 type ReceiptAnalysis = {
@@ -295,6 +298,7 @@ export function ExpenseForm({
   const [actualConvertedAmount, setActualConvertedAmount] = useState(
     normalizeOptionalActualCharge(initial?.actualConvertedAmount),
   );
+  const [guestBusy, setGuestBusy] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersCountryId, setMembersCountryId] = useState("");
@@ -1448,7 +1452,7 @@ export function ExpenseForm({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (submitInFlightRef.current || tripSwitching || membersLoading || membersCountryId !== countryId) {
+    if (submitInFlightRef.current || guestBusy || tripSwitching || membersLoading || membersCountryId !== countryId) {
       return;
     }
 
@@ -2205,7 +2209,7 @@ export function ExpenseForm({
                   >
                     <span className="avatar">{initials(member.name)}</span>
                     <span className="member-copy">
-                      <strong>{member.name}</strong>
+                      <strong>{participantDisplayName(member.id, member.name)}</strong>
                       <small>{selected ? "Selected payer" : "Choose as payer"}</small>
                     </span>
                     <span className={selected ? "round-check checked" : "round-check"}>
@@ -2229,7 +2233,7 @@ export function ExpenseForm({
                     >
                       <span className="avatar">{initials(member.name)}</span>
                       <span className="member-copy">
-                        <strong>{member.name}</strong>
+                        <strong>{participantDisplayName(member.id, member.name)}</strong>
                         <small>{selected ? "Contributed" : "Not a payer"}</small>
                       </span>
                       <span className={selected ? "round-check checked" : "round-check"}>
@@ -2250,7 +2254,7 @@ export function ExpenseForm({
                             }));
                             markFormEdited();
                           }}
-                          aria-label={`${member.name} paid amount`}
+                          aria-label={`${participantDisplayName(member.id, member.name)} paid amount`}
                         />
                       </label>
                     ) : null}
@@ -2341,6 +2345,17 @@ export function ExpenseForm({
           </div>
         </div>
 
+        <GuestTravelerAdder key={countryId} countryId={countryId} disabled={busy || membersLoading || tripSwitching || !countryId} onBusyChange={setGuestBusy} onAdded={guest => {
+          markFormEdited();
+          setMembers(current => current.some(member => member.id === guest.id) ? current : [...current, guest]);
+          setSplitUserIds(current => {
+            if (current.includes(guest.id)) return current;
+            const next = [...current, guest.id];
+            if (splitMode === "PERCENTAGE") setSplitValues(equalPercentages(next));
+            else setSplitValues(values => ({ ...values, [guest.id]: splitMode === "SHARES" ? "1" : "" }));
+            return next;
+          });
+        }} />
         <div className="member-split-list">
           {members.map((member) => {
             const selected = splitUserIds.includes(member.id);
@@ -2355,7 +2370,7 @@ export function ExpenseForm({
                 >
                   <span className="avatar">{initials(member.name)}</span>
                   <span className="member-copy">
-                    <strong>{member.name}</strong>
+                    <strong>{participantDisplayName(member.id, member.name)}</strong>
                     <small>{selected ? "Sharing" : "Not included"}</small>
                   </span>
                   <span className={selected ? "round-check checked" : "round-check"}>
@@ -2383,7 +2398,7 @@ export function ExpenseForm({
                         }));
                       }}
                       required
-                      aria-label={`${member.name} split value`}
+                      aria-label={`${participantDisplayName(member.id, member.name)} split value`}
                     />
                   </label>
                 ) : selected ? (
@@ -2754,7 +2769,7 @@ export function ExpenseForm({
             {currentCountry?.baseCurrency ?? "MYR"} {settlementTotal.toFixed(2)}
           </strong>
         </div>
-        <button className="button primary save-expense-button" disabled={busy || offlineQueued || tripSwitching || membersLoading || membersCountryId !== countryId} type="submit">
+        <button className="button primary save-expense-button" disabled={busy || guestBusy || offlineQueued || tripSwitching || membersLoading || membersCountryId !== countryId} type="submit">
           {busy ? "Saving…" : offlineQueued ? "Waiting to sync" : initial ? "Save changes" : "Save expense"}
         </button>
       </div>

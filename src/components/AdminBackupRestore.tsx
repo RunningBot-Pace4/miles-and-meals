@@ -242,7 +242,7 @@ export function AdminBackupRestore() {
               Download full travel backup
             </h2>
             <p className="muted">
-              Includes trips, personal budgets, country assignments, expenses, splits, settlements, planner items and saved route distances. Login/password tables are excluded. Keep a separate database backup if you need to recover accounts too.
+              Includes trips, personal budgets, country assignments, expenses, splits, settlements, planner items saved route distances and named guest travelers. Login/password tables are excluded. Keep a separate database backup if you need to recover accounts too.
             </p>
           </div>
 

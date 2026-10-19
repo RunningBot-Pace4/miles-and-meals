@@ -110,7 +110,7 @@ for (const marker of [
   "amount: allocation.amount * factor",
 ]) must(dashboardScope, marker, `V95 display-currency allocation scaling missing: ${marker}`);
 
-must(backup, "const BACKUP_VERSION = 7;", "Backup format must include saved route distances (version 7)");
+must(backup, "const BACKUP_VERSION = 8;", "Backup format must include named guest travelers (version 8)");
 for (const marker of [
   "payment_method",
   "payment_reference",

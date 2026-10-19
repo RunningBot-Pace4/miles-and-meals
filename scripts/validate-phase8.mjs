@@ -683,8 +683,8 @@ if (
 }
 
 if (
-  !twoUserE2EV45.includes(
-    "Mark Paid and Confirm Received update in place without page reload",
+  !["RM20 + RM40: pay RM45", "Confirm received", "expect(navigations,"].every(
+    marker => twoUserE2EV45.includes(marker),
   )
 ) {
   fail(

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { isGuestParticipantId } from "@/lib/guest-participant";
 import { auth } from "@/lib/auth";
 
 type BetterAuthSession = typeof auth.$Infer.Session;
@@ -23,6 +24,7 @@ const readSession = cache(async (): Promise<AppSession | null> => {
    * server-side inference paths omit the plugin-added field from getSession().
    * Keep the assertion centralized so authorization callers stay type-safe.
    */
+  if (session && isGuestParticipantId(session.user.id)) return null;
   return session as AppSession | null;
 });
 

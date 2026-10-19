@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, notLike } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FullPageLink as Link } from "@/components/FullPageLink";
 import { AdminForms } from "@/components/AdminForms";
@@ -67,6 +67,7 @@ export default async function AdminPage() {
         createdAt: user.createdAt,
       })
       .from(user)
+      .where(notLike(user.id, "guest:%"))
       .orderBy(user.name),
 
     db

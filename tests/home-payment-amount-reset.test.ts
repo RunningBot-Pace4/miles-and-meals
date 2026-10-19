@@ -3,6 +3,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 import { describe, expect, it, vi } from "vitest";
 import { allocateHomePayment } from "../src/lib/home-payment-allocation";
+import { isGuestParticipantId } from "../src/lib/guest-participant";
 import { formatMoney } from "../src/lib/money";
 
 // Render the production card with a small hook harness. Network submission is
@@ -40,6 +41,7 @@ function setup() {
     if (name === "react") return react;
     if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
     if (name.endsWith("/home-payment-allocation")) return { allocateHomePayment };
+    if (name.endsWith("/guest-participant")) return { isGuestParticipantId };
     if (name.endsWith("/money")) return { formatMoney };
     return { HomePaymentAmount: "Amount", SettlementActionButton: "Action", FullPageLink: "Link" };
   } });
@@ -66,6 +68,13 @@ function setup() {
 }
 
 describe("Home payment remainder", () => {
+  it("does not promise receiver confirmation when the counterparty is a guest", () => {
+    const card = setup();
+    expect(card.field().confirmationRequired).toBe(true);
+    card.balance.toUserId = "guest:10000000-0000-4000-8000-000000000001:10000000-0000-4000-8000-000000000002";
+    card.render();
+    expect(card.field().confirmationRequired).toBe(false);
+  });
   it("keeps payment details expanded when the chosen trip changes", () => {
     const card = setup();
     card.props.choices.push({ plan: { tripId: "second", countryId: "second-country", tripName: "Second", currency: "MYR" }, balance: { ...card.balance, directRemaining: 30 } });

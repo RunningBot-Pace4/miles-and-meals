@@ -1,3 +1,4 @@
+import { participantDisplayName } from "@/lib/guest-participant";
 import {
   desc,
   eq,
@@ -134,6 +135,7 @@ export async function loadExpenseLiveData(
         expenses.countryId,
       countryName:
         countries.name,
+      paidByUserId: expenses.paidByUserId,
       paidByName:
         user.name,
       receiptReviewStatus: expenses.receiptReviewStatus,
@@ -206,7 +208,7 @@ export async function loadExpenseLiveData(
     const current = payersByExpense.get(payer.expenseId) ?? [];
     current.push({
       userId: payer.userId,
-      name: payer.name,
+      name: participantDisplayName(payer.userId, payer.name),
       amount: toNumber(payer.amountBase),
     });
     payersByExpense.set(payer.expenseId, current);
@@ -225,7 +227,7 @@ export async function loadExpenseLiveData(
 
     current.push({
       userId: split.userId,
-      name: split.name,
+      name: participantDisplayName(split.userId, split.name),
       share,
     });
 
@@ -281,7 +283,7 @@ export async function loadExpenseLiveData(
       paidByName:
         (payersByExpense.get(row.id)?.length ?? 0) > 1
           ? "Multiple travelers"
-          : row.paidByName,
+          : participantDisplayName(row.paidByUserId, row.paidByName),
       payers: payersByExpense.get(row.id) ?? [],
       hasReceipt:
         Boolean(row.hasReceipt),

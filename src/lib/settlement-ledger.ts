@@ -1,3 +1,4 @@
+import { participantDisplayName } from "@/lib/guest-participant";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -370,7 +371,7 @@ export async function buildCountrySettlementLedger(
           .from(user)
           .where(inArray(user.id, reversalActorIds));
   const names = new Map(
-    [...namesRows, ...reversalActorRows].map((row) => [row.id, row.name]),
+    [...namesRows, ...reversalActorRows].map((row) => [row.id, participantDisplayName(row.id, row.name)]),
   );
 
   const input: SettlementInput[] = [...participantIds].map((userId) => ({
