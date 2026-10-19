@@ -902,7 +902,24 @@ export const savedRouteDistances = pgTable("saved_route_distances", {
   checkedAt: timestamp("checked_at", { withTimezone: true }).defaultNow().notNull(),
 }, table => [primaryKey({ columns: [table.countryId, table.stayId, table.placeId, table.mode] })]);
 
+// Private uploads shared deliberately with system admins. Revoked rows are tombstones.
+export const sharedMedia = pgTable("shared_media", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerId: text("owner_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  pathname: text("pathname").notNull(),
+  name: text("name").notNull(),
+  contentType: text("content_type").notNull(),
+  byteSize: integer("byte_size").notNull(),
+  status: text("status").default("UPLOADING").notNull(),
+  consentVersion: text("consent_version").notNull(),
+  consentText: text("consent_text").notNull(),
+  consentedAt: timestamp("consented_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+}, table => [uniqueIndex("shared_media_path_uq").on(table.pathname), index("shared_media_owner_idx").on(table.ownerId, table.createdAt)]);
+
 export const schema = {
+  sharedMedia,
   savedRouteDistances,
   user,
   session,

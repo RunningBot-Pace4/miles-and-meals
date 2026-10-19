@@ -39,6 +39,7 @@ const morePrefixes = [
   "/trip-story",
   "/memories",
   "/my-gallery",
+  "/shared-gallery",
   "/wrapped",
   "/offline",
   "/documents",

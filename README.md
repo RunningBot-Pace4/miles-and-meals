@@ -1,4 +1,6 @@
-Latest update: [PERSONAL-GALLERY.md](PERSONAL-GALLERY.md) explains the local-only photo/video viewer and its file-selection limits.
+Latest update: [SHARED-GALLERY-SETUP.md](SHARED-GALLERY-SETUP.md) explains owner-selected uploads shared remotely with system admins. **This feature requires `neon-shared-media.sql` plus a Private Vercel Blob store before sharing is enabled.** It does not provide remote access to phone galleries. More now links to Shared gallery; the previous local viewer remains available only at `/my-gallery`.
+
+Previous update: [PERSONAL-GALLERY.md](PERSONAL-GALLERY.md) explains the local-only photo/video viewer and its file-selection limits.
 
 Latest feature: see [NAMED-GUEST-TRAVELERS.md](NAMED-GUEST-TRAVELERS.md) for mixed app-user/guest expense splitting and validation.
 

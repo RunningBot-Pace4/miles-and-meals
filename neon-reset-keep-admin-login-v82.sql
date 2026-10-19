@@ -76,6 +76,7 @@ TRUNCATE TABLE
   trip_documents,
   trip_emergency_contacts,
   trip_memories,
+  shared_media,
   trip_inbox_items,
   travel_items,
   trip_invites,

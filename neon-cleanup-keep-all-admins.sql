@@ -49,6 +49,7 @@ BEGIN
     'trip_documents',
     'trip_emergency_contacts',
     'trip_memories',
+    'shared_media',
     'trip_budgets',
     'trip_category_budgets',
     'countries',

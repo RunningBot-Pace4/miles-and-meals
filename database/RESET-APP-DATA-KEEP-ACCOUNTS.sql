@@ -33,6 +33,7 @@ TRUNCATE TABLE
   public.trip_documents,
   public.trip_emergency_contacts,
   public.trip_memories,
+  public.shared_media,
   public.trip_inbox_items,
   public.travel_items,
   public.trip_invites,
