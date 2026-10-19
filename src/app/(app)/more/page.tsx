@@ -86,10 +86,6 @@ export default async function MorePage() {
           <span>Trip Story · memories & Wrapped</span>
           <span>›</span>
         </Link>
-        <Link className="menu-row link-row" href="/shared-gallery">
-          <span>Shared gallery · photos & videos</span>
-          <span>›</span>
-        </Link>
         {/* Direct /memories and /wrapped routes are retained inside Trip Story. */}
         <Link className="menu-row link-row" href="/updates">
           <span>

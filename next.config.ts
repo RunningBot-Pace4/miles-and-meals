@@ -9,7 +9,6 @@ const contentSecurityPolicy = [
   "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
-  "media-src 'self' blob:",
   "font-src 'self' data:",
   "connect-src 'self' https: wss:",
   "worker-src 'self' blob:",

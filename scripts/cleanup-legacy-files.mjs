@@ -5,6 +5,32 @@ import {
 import path from "node:path";
 
 const obsoletePaths = [
+  // Retired photo/video gallery modules: remove stale files from source ZIP overlays.
+  "PERSONAL-GALLERY.md",
+  "SHARED-GALLERY-SETUP.md",
+  "neon-shared-media.sql",
+  "scripts/cleanup-shared-media.ts",
+  "src/app/(app)/my-gallery/page.tsx",
+  "src/app/(app)/shared-gallery/page.tsx",
+  "src/app/api/shared-media/[id]/route.ts",
+  "src/app/api/shared-media/complete/route.ts",
+  "src/app/api/shared-media/route.ts",
+  "src/app/api/shared-media/upload/route.ts",
+  "src/components/PersonalGallery.module.css",
+  "src/components/PersonalGallery.tsx",
+  "src/components/SharedGallery.module.css",
+  "src/components/SharedGallery.tsx",
+  "src/lib/personal-gallery.ts",
+  "src/lib/shared-media-server.ts",
+  "src/lib/shared-media.ts",
+  "tests/personal-gallery.test.ts",
+  "tests/shared-media-access.test.ts",
+  "tests/shared-media-callback-signature.test.ts",
+  "tests/shared-media-completion.test.ts",
+  "tests/shared-media-reservations.test.ts",
+  "tests/shared-media-upload.test.ts",
+  "tests/shared-media.test.ts",
+
   "src/app/api/receipts/upload",
   "src/app/api/receipts/analyze",
   "src/lib/receipt-storage.ts",

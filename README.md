@@ -1,6 +1,6 @@
-Latest update: [SHARED-GALLERY-SETUP.md](SHARED-GALLERY-SETUP.md) explains owner-selected uploads shared remotely with system admins. **This feature requires `neon-shared-media.sql` plus a Private Vercel Blob store before sharing is enabled.** It does not provide remote access to phone galleries. More now links to Shared gallery; the previous local viewer remains available only at `/my-gallery`.
+Latest update: both gallery features have been removed (the shared uploads/admin gallery and the local photo/video viewer). The More menu and their page/API routes have been removed, along with Blob storage dependencies and settings. Receipt photos/camera attachments, payment proofs, Trip Story memories, and named guest expense splitting remain available.
 
-Previous update: [PERSONAL-GALLERY.md](PERSONAL-GALLERY.md) explains the local-only photo/video viewer and its file-selection limits.
+Deploy this complete source ZIP through your existing Vercel repository. The prebuild cleanup also removes obsolete gallery files when this ZIP is extracted over an earlier source version. No database migration is required for this removal; no production database or storage changes were made. If you already created the optional `shared_media` table or a private Blob store using the previous package, these are no longer used by the app; existing external media is not deleted by this source update.
 
 Latest feature: see [NAMED-GUEST-TRAVELERS.md](NAMED-GUEST-TRAVELERS.md) for mixed app-user/guest expense splitting and validation.
 

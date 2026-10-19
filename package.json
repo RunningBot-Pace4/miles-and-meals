@@ -85,7 +85,6 @@
     "@neondatabase/serverless": "^1.0.0",
     "@tesseract.js-data/eng": "1.0.0",
     "@tesseract.js-data/vie": "1.0.0",
-    "@vercel/blob": "2.8.2",
     "better-auth": "1.6.29",
     "drizzle-orm": "0.45.2",
     "exceljs": "4.4.0",
